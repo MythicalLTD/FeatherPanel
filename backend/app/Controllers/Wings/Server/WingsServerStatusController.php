@@ -23,6 +23,7 @@ use App\Chat\Server;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Plugins\Events\Events\WingsEvent;
+use App\Services\Notifications\InboxNotifier;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use App\Services\Server\LifecycleHookExecutorService;
@@ -114,7 +115,7 @@ class WingsServerStatusController
 
         // Get request data
         $data = json_decode($request->getContent(), true);
-        if (json_last_error() !== JSON_ERROR_NONE) {
+        if (json_last_error() !== JSON_ERROR_NONE || !is_array($data)) {
             return ApiResponse::error('Invalid JSON in request body', 'INVALID_JSON', 400);
         }
 
@@ -152,6 +153,18 @@ class WingsServerStatusController
 
         $oldState = (string) ($server['status'] ?? 'offline');
 
+        // A pending or failed install is tracked by the install endpoints, not by power state.
+        // Do not let runtime reports (e.g. "offline" after a daemon reboot) turn such a server back
+        // into a normal one; only a new install result or reinstall may change it.
+        $installPending = $oldState === Server::STATUS_INSTALLING || in_array($oldState, Server::INSTALL_FAILED_STATUSES, true);
+        if ($installPending && !in_array($state, [Server::STATUS_INSTALLING, Server::STATUS_INSTALL_FAILED], true)) {
+            return ApiResponse::success([
+                'message' => 'Server install state preserved',
+                'state' => $oldState,
+                'server_uuid' => $uuid,
+            ]);
+        }
+
         // Update server status
         $updateData = [
             'status' => $state,
@@ -172,6 +185,7 @@ class WingsServerStatusController
         }
 
         if ($state === 'crashed' && $oldState !== 'crashed') {
+            InboxNotifier::serverCrashed($server);
             try {
                 (new LifecycleHookExecutorService())->executeForServerCrash($server, $node);
             } catch (\Throwable $e) {

@@ -22,7 +22,25 @@ use RateLimit\Rate;
 
 class RateLimitConfig
 {
+    /**
+     * Namespaces whose code default (e.g. Rate::perMinute(10) on the login
+     * route) is enforced even without a matching ratelimit.json entry.
+     *
+     * Deliberately limited to authentication, public webhooks and API-client
+     * endpoints - the brute-force and abuse targets. Other routes stay opt-in
+     * as before, so a running installation does not suddenly answer HTTP 429
+     * on busy UI polling routes.
+     */
+    private const DEFAULT_ENFORCED_NAMESPACES = [
+        'user-auth',
+        'user-auth-verify-email',
+        'user-api-clients',
+        'user-api-clients-validate',
+        'public-webhooks',
+    ];
     private static ?array $config = null;
+    /** mtime/size of the config file when it was loaded, to notice edits by other processes. */
+    private static ?string $configSignature = null;
     private static string $configPath = __DIR__ . '/../../storage/config/ratelimit.json';
 
     /**
@@ -44,13 +62,15 @@ class RateLimitConfig
     {
         $config = self::loadConfig();
 
-        // Check global _enabled flag (defaults to false - disabled by default)
+        // Check global _enabled flag. An explicit value wins (installs that
+        // deliberately switched rate limiting off keep it off); without the
+        // flag rate limiting is now ON, because an "opt-in" default left the
+        // login/2FA limits inactive on every untouched installation.
         if (isset($config['_enabled'])) {
             return $config['_enabled'] === true;
         }
 
-        // Default to disabled if not explicitly set
-        return false;
+        return true;
     }
 
     /**
@@ -93,7 +113,12 @@ class RateLimitConfig
 
             // Only return config if enabled
             if (!$isEnabled || !$hasValues) {
-                return null;
+                // An explicit per-route `_enabled: false` stays an admin decision.
+                if (isset($routeConfig['_enabled']) && $routeConfig['_enabled'] === false) {
+                    return null;
+                }
+
+                return self::defaultRateFor($defaultRate, $defaultNamespace, $routeConfig);
             }
 
             $rate = self::parseRateConfig($routeConfig);
@@ -106,8 +131,7 @@ class RateLimitConfig
             }
         }
 
-        // Don't return default - rate limiting is opt-in only
-        return null;
+        return self::defaultRateFor($defaultRate, $defaultNamespace);
     }
 
     /**
@@ -212,12 +236,8 @@ class RateLimitConfig
     {
         $config = self::loadConfig();
 
-        // Ensure _enabled flag exists
-        if (!isset($config['_enabled'])) {
-            $config['_enabled'] = false;
-        }
-
-        // Ensure routes key exists
+        // Do not manufacture `_enabled: false` when the key is absent - callers
+        // that need the effective flag should use isGloballyEnabled().
         if (!isset($config['routes'])) {
             $config['routes'] = [];
         }
@@ -242,8 +262,10 @@ class RateLimitConfig
         // Load config (this will create file if it doesn't exist)
         $allConfig = self::loadConfig();
 
-        // PRESERVE the existing _enabled flag - don't overwrite it!
-        $existingEnabled = $allConfig['_enabled'] ?? false;
+        // Preserve an explicit `_enabled` only when it was set; do not invent false.
+        $hasExplicitEnabled = array_key_exists('_enabled', $allConfig);
+        $existingEnabled = $hasExplicitEnabled ? $allConfig['_enabled'] : null;
+        $existingExplicitMarker = $allConfig['_enabled_explicit'] ?? null;
 
         // Ensure routes key exists
         if (!isset($allConfig['routes'])) {
@@ -277,7 +299,9 @@ class RateLimitConfig
                 // Reload to get the default structure
                 self::reloadConfig();
                 $allConfig = self::loadConfig();
-                $existingEnabled = $allConfig['_enabled'] ?? false;
+                $hasExplicitEnabled = array_key_exists('_enabled', $allConfig);
+                $existingEnabled = $hasExplicitEnabled ? $allConfig['_enabled'] : null;
+                $existingExplicitMarker = $allConfig['_enabled_explicit'] ?? null;
                 if (!isset($allConfig['routes'])) {
                     $allConfig['routes'] = [];
                 }
@@ -291,10 +315,16 @@ class RateLimitConfig
                 return false;
             }
 
-            // PRESERVE the _enabled flag - restore it before writing
-            $allConfig['_enabled'] = $existingEnabled;
+            if ($hasExplicitEnabled) {
+                $allConfig['_enabled'] = $existingEnabled;
+            } else {
+                unset($allConfig['_enabled']);
+            }
+            if ($existingExplicitMarker !== null) {
+                $allConfig['_enabled_explicit'] = $existingExplicitMarker;
+            }
 
-            // Write the updated config with preserved _enabled flag
+            // Write the updated config with preserved explicit _enabled (if any)
             $result = file_put_contents(
                 self::$configPath,
                 json_encode($allConfig, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n",
@@ -320,15 +350,63 @@ class RateLimitConfig
      *
      * @return array The configuration array
      */
+    /**
+     * Drop the cached config when the file changed since it was loaded (an
+     * admin edit handled by another worker or php-fpm process). Called once
+     * per request; costs one stat().
+     */
+    public static function refreshIfChanged(): void
+    {
+        if (self::$config !== null && self::fileSignature() !== self::$configSignature) {
+            self::$config = null;
+        }
+    }
+
+    /**
+     * Resolve the developer default for namespaces that are enforced without
+     * a config entry.
+     *
+     * @param array<string, mixed> $routeConfig Existing (but disabled/empty) route entry, if any
+     *
+     * @return array{rate: Rate, namespace: string}|null
+     */
+    private static function defaultRateFor(?Rate $defaultRate, ?string $defaultNamespace, array $routeConfig = []): ?array
+    {
+        if (!$defaultRate instanceof Rate) {
+            return null;
+        }
+
+        $namespace = (string) ($routeConfig['namespace'] ?? $defaultNamespace ?? 'rate_limit');
+
+        if (!in_array($namespace, self::DEFAULT_ENFORCED_NAMESPACES, true)) {
+            return null;
+        }
+
+        return [
+            'rate' => $defaultRate,
+            'namespace' => $namespace,
+        ];
+    }
+
+    private static function fileSignature(): string
+    {
+        clearstatcache(true, self::$configPath);
+        $mtime = @filemtime(self::$configPath);
+        $size = @filesize(self::$configPath);
+
+        return $mtime === false ? 'missing' : $mtime . ':' . (int) $size;
+    }
+
     private static function loadConfig(): array
     {
         if (self::$config !== null) {
             return self::$config;
         }
 
-        // Default empty config with _enabled flag
+        self::$configSignature = self::fileSignature();
+
+        // Absent `_enabled` means enabled-by-default (see isGloballyEnabled()).
         self::$config = [
-            '_enabled' => false,
             'routes' => [],
         ];
 
@@ -354,22 +432,57 @@ class RateLimitConfig
                 return self::$config;
             }
 
-            // Ensure _enabled flag exists (default to false if not present)
-            if (!isset($decoded['_enabled'])) {
-                $decoded['_enabled'] = false;
-            }
-
-            // Ensure routes key exists
+            // Do not inject `_enabled: false` when missing - leave the key absent
+            // so isGloballyEnabled() can apply enabled-by-default.
             if (!isset($decoded['routes'])) {
                 $decoded['routes'] = [];
             }
 
-            self::$config = $decoded;
+            self::$config = self::migrateAutoWrittenDisabledFlag($decoded);
         } catch (\Exception $e) {
             App::getInstance(true)->getLogger()->error('Error loading rate limit config: ' . $e->getMessage());
         }
 
         return self::$config;
+    }
+
+    /**
+     * One-time migration: older createDefaultConfig() auto-wrote `_enabled: false`
+     * without an admin opt-out marker. Those values are cleared so the new
+     * enabled-by-default behaviour applies. Deliberate admin toggles set
+     * `_enabled_explicit` and are left alone.
+     *
+     * @param array<string, mixed> $config
+     *
+     * @return array<string, mixed>
+     */
+    private static function migrateAutoWrittenDisabledFlag(array $config): array
+    {
+        if (!empty($config['_enabled_explicit'])) {
+            return $config;
+        }
+
+        if (!array_key_exists('_enabled', $config) || $config['_enabled'] !== false) {
+            return $config;
+        }
+
+        unset($config['_enabled']);
+        $config['_enabled_migrated'] = true;
+
+        try {
+            $dir = dirname(self::$configPath);
+            if (is_dir($dir) && is_writable($dir) && (is_writable(self::$configPath) || !file_exists(self::$configPath))) {
+                file_put_contents(
+                    self::$configPath,
+                    json_encode($config, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n",
+                    LOCK_EX
+                );
+            }
+        } catch (\Throwable $e) {
+            // Migration is best-effort; in-memory config still has the flag cleared.
+        }
+
+        return $config;
     }
 
     /**
@@ -427,12 +540,13 @@ class RateLimitConfig
      */
     private static function createDefaultConfig(): void
     {
+        // Omit `_enabled` so isGloballyEnabled() defaults to on. Admins who
+        // deliberately opt out set the key via the rate-limit UI (with marker).
         $defaultConfig = [
-            '_enabled' => false, // Global rate limiting disabled by default
             'routes' => [],
             '_comment' => 'Rate limit configuration for routes. Use route names as keys.',
             '_documentation' => [
-                '_enabled' => 'Global flag to enable/disable rate limiting for all routes (default: false)',
+                '_enabled' => 'Optional global flag. Absent = enabled by default; set false with admin UI to opt out.',
                 'per_second' => 'Rate limit per second',
                 'per_minute' => 'Rate limit per minute',
                 'per_hour' => 'Rate limit per hour',

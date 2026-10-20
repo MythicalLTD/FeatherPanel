@@ -28,7 +28,8 @@ import { Textarea } from '@/components/featherui/Textarea';
 import { Select } from '@/components/ui/select-native';
 import { Label } from '@/components/ui/label';
 import { WebHostingAlphaNotice } from '@/components/admin/WebHostingAlphaNotice';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Tabs, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { ScrollableTabsList } from '@/components/ui/scrollable-tabs-list';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -64,6 +65,8 @@ import {
     getFirstWebNodeErrorTab,
     getWebNodeTabLabelKey,
 } from '../types';
+import { UnsavedChangesBar } from '@/components/featherui/UnsavedChangesBar';
+import { useFormBaseline } from '@/hooks/useFormBaseline';
 
 interface Location {
     id: number;
@@ -102,6 +105,7 @@ export default function CreateWebNodePage() {
     });
 
     const [form, setForm] = useState<WebNodeForm>(defaultWebNodeForm());
+    const { dirty: unsaved, restore: restoreForm } = useFormBaseline(form, { trackFromStart: true });
     const [errors, setErrors] = useState<Record<string, string>>({});
 
     const { fetchWidgets, getWidgets } = usePluginWidgets('admin-web-nodes-create');
@@ -296,8 +300,8 @@ export default function CreateWebNodePage() {
                     orientation='vertical'
                     className='flex w-full flex-col gap-6 md:flex-row'
                 >
-                    <aside className='w-full shrink-0 overflow-x-auto pb-2 md:w-64 md:overflow-visible md:pb-0'>
-                        <TabsList className='bg-card/30 border-border/50 flex h-auto w-max flex-row gap-2 rounded-2xl border p-2 md:w-full md:flex-col md:gap-1'>
+                    <aside className='w-full shrink-0 md:sticky md:top-24 md:w-64 md:self-start'>
+                        <ScrollableTabsList className='fp-surface flex h-auto w-full flex-row gap-2 rounded-2xl border p-2 md:flex-col md:gap-1 md:overflow-visible'>
                             {tabs.map((tab) => {
                                 const Icon = tab.icon;
                                 return (
@@ -311,7 +315,7 @@ export default function CreateWebNodePage() {
                                     </TabsTrigger>
                                 );
                             })}
-                        </TabsList>
+                        </ScrollableTabsList>
                     </aside>
 
                     <div className='min-w-0 flex-1 space-y-6'>
@@ -543,6 +547,17 @@ export default function CreateWebNodePage() {
             </Sheet>
 
             <WidgetRenderer widgets={getWidgets('admin-web-nodes-create', 'bottom-of-page')} />
+
+            <UnsavedChangesBar
+                dirty={unsaved}
+                saving={loading}
+                onSave={() => void handleSubmit()}
+                onDiscard={() => {
+                    const saved = restoreForm();
+                    if (saved) setForm(saved);
+                }}
+                saveLabel={t('common.create')}
+            />
         </div>
     );
 }

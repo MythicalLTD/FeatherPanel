@@ -322,7 +322,7 @@ class UserSshKeyController
         // Validate required fields
         $required = ['name', 'public_key'];
         foreach ($required as $field) {
-            if (!isset($data[$field]) || trim($data[$field]) === '') {
+            if (!isset($data[$field]) || !is_scalar($data[$field]) || trim((string) $data[$field]) === '') {
                 return ApiResponse::error("Missing required field: $field", 'MISSING_REQUIRED_FIELD', 400);
             }
         }
@@ -447,6 +447,12 @@ class UserSshKeyController
 
         if (empty($validData)) {
             return ApiResponse::error('No valid fields to update', 'NO_VALID_FIELDS', 400);
+        }
+
+        foreach ($validData as $key => $value) {
+            if (!is_string($value)) {
+                return ApiResponse::error("Field $key must be a string", 'INVALID_DATA_TYPE', 400);
+            }
         }
 
         // Validate data length
@@ -872,7 +878,7 @@ class UserSshKeyController
         }
 
         $data = json_decode($request->getContent(), true);
-        if ($data == null || !isset($data['public_key'])) {
+        if ($data == null || !isset($data['public_key']) || !is_string($data['public_key'])) {
             return ApiResponse::error('Public key is required', 'PUBLIC_KEY_REQUIRED', 400);
         }
 

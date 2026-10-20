@@ -3,7 +3,22 @@
 
 /* Class-based dark mode (matches ThemeContext / html.dark). Without this, Tailwind v4
    keys `dark:` off prefers-color-scheme - so OS light + panel dark = white text on light panels. */
-@custom-variant dark (&:where(.dark, .dark *));
+/* A light FeatherOS shell (data-fos-theme='light') opts its subtree out of html.dark. */
+@custom-variant dark (&:where(.dark, .dark *):not(:where([data-fos-theme='light'], [data-fos-theme='light'] *)));
+
+/*
+ * Tailwind 4 draws a bare `border` in currentColor, which is near white in dark mode. Give every
+ * border the same subtle surface edge unless a class picks a colour.
+ */
+@layer base {
+    *,
+    ::after,
+    ::before,
+    ::backdrop,
+    ::file-selector-button {
+        border-color: var(--fp-surface-border, hsl(var(--border)));
+    }
+}
 
 :root {
     --background: 0 0% 100%;
@@ -18,14 +33,22 @@
     --secondary: 0 0% 96%;
     --secondary-foreground: 0 0% 9%;
     --muted: 0 0% 96%;
-    --muted-foreground: 0 0% 45%;
+    --muted-foreground: 0 0% 40%; /* 5.7:1 on white, 5.2:1 on muted */
     --accent: 0 0% 96%;
     --accent-foreground: 0 0% 9%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
     --border: 0 0% 90%;
+    /* Glass surfaces (cards): light needs more body so text stays crisp over the backdrop. */
+    --fp-surface-alpha: 0.72;
+    --fp-surface-highlight: 0 0% 100% / 0.6;
+    /* Tint under the glass, its edge and how much the backdrop colour is boosted. */
+    --fp-surface-tint: var(--card);
+    --fp-surface-border: hsl(var(--border) / 0.8);
+    --fp-surface-saturate: 1.35;
+    --fp-chrome-alpha: 0.62;
     --input: 0 0% 90%;
-    --ring: 262 83% 58%;
+    --ring: var(--primary);
     --radius: 0.5rem;
     /* Default UI font (can be overridden via theme). --font-inter comes from next/font/local. */
     --app-font-family: var(--font-inter), system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -58,7 +81,7 @@
 }
 
 .dark {
-    --background: 220 15% 6%; /* Deep dark blue-grey/black for premium look */
+    --background: 220 15% 6%;
     --foreground: 210 20% 98%;
     --card: 220 15% 9%;
     --card-foreground: 210 20% 98%;
@@ -69,14 +92,28 @@
     --secondary: 0 0% 15%;
     --secondary-foreground: 0 0% 93%;
     --muted: 0 0% 15%;
-    --muted-foreground: 0 0% 64%;
+    --muted-foreground: 220 10% 66%;
     --accent: 0 0% 15%;
     --accent-foreground: 0 0% 93%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
-    --border: 220 15% 8%; /* Almost background color to hide borders */
-    --input: 220 15% 10%;
-    --ring: 262 83% 58%;
+    /* Visible but quiet: cards and inputs need an edge against --card (9%) to read as surfaces. */
+    --border: 220 13% 17%;
+    /* Dark glass: a near black tint so bright backgrounds read through darkened, never washed
+       out, with a quiet dark hairline. */
+    --fp-surface-alpha: 0.74;
+    --fp-surface-highlight: 0 0% 100% / 0.04;
+    --fp-surface-tint: 0 0% 3%;
+    /* Solid, not translucent: a see-through edge lets bright backdrops (and the blur halo some
+       GPUs draw at the edge) shine through as a light outline. */
+    --fp-surface-border: hsl(0 0% 13%);
+    --fp-surface-saturate: 1;
+    --fp-chrome-alpha: 0.76;
+    /* Panels nested in a card: a slightly lighter wash, not a grey slab. */
+    --fp-inset-bg: rgb(255 255 255 / 0.035);
+    --fp-inset-border: hsl(0 0% 100% / 0.06);
+    --input: 220 13% 19%;
+    --ring: var(--primary);
 }
 
 body {
@@ -563,6 +600,23 @@ html[data-fp-plugin-fullbleed='1'] body [data-fp-plugin-main-inner] {
     box-shadow: 0 0 0 1px hsl(var(--border) / 0.55);
 }
 
+.auth-shell[data-auth-preset='glass'] .fp-surface {
+    background-color: hsl(var(--card) / 0.62);
+    backdrop-filter: blur(22px);
+}
+
+.auth-shell[data-auth-preset='minimal'] .fp-surface {
+    background-color: transparent;
+    border-color: hsl(var(--border) / 0.72);
+    box-shadow: none;
+}
+
+.auth-shell[data-auth-preset='contrast'] .fp-surface {
+    background-color: hsl(var(--card) / 0.94);
+    border-color: hsl(var(--foreground) / 0.16);
+    box-shadow: 0 18px 50px -28px hsl(var(--foreground) / 0.55);
+}
+
 /* Custom scrollbar utilities */
 .hide-scrollbar::-webkit-scrollbar {
     display: none;
@@ -720,4 +774,185 @@ html[data-fp-plugin-fullbleed='1'] body [data-fp-plugin-main-inner] {
     max-width: min(18rem, 90vw);
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+/*
+ * Appearance: layout density + UI scale (set on <html> by the boot script and ThemeContext).
+ * Tailwind v4 spacing utilities are calc(var(--spacing) * n), so overriding --spacing scales
+ * padding, gaps and control heights together. UI scale changes the root font size, so rem-based
+ * text and spacing grow/shrink together without breaking layouts.
+ */
+html[data-density='compact'] {
+    --spacing: 0.21rem;
+}
+
+html[data-density='spacious'] {
+    --spacing: 0.28rem;
+}
+
+html[data-ui-scale='sm'] {
+    font-size: 93.75%;
+}
+
+html[data-ui-scale='lg'] {
+    font-size: 106.25%;
+}
+
+html[data-ui-scale='xl'] {
+    font-size: 112.5%;
+}
+
+/* Page header actions: full-width, evenly sized buttons on phones instead of a ragged wrap. */
+@media (max-width: 639.98px) {
+    .fp-page-header-actions {
+        width: 100%;
+    }
+
+    .fp-page-header-actions > div {
+        width: 100%;
+    }
+
+    .fp-page-header-actions > :is(button, a),
+    .fp-page-header-actions > div > :is(button, a) {
+        flex: 1 1 auto;
+        justify-content: center;
+    }
+}
+
+/* Horizontally scrollable strips (tabs, chips): fade the edges so it is obvious there is more. */
+.fp-scroll-fade-x {
+    scrollbar-width: none;
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 2rem), transparent 100%);
+    mask-image: linear-gradient(to right, #000 calc(100% - 2rem), transparent 100%);
+}
+
+.fp-scroll-fade-x::-webkit-scrollbar {
+    display: none;
+}
+
+/*
+ * Dashboard blocks whose content rendered nothing (e.g. no announcements) should not leave a gap.
+ * Structure is block > chrome > content wrapper > content, so "no element 3 levels down" = empty.
+ */
+.fp-collapse-empty-block:not(:has(* * *)) {
+    display: none;
+}
+
+/* Privacy mode: inputs that hold sensitive values (emails, hosts, keys) are
+   masked while the field is not focused. The value stays intact for editing. */
+html.fp-privacy [data-fp-sensitive]:not(:focus) {
+    -webkit-text-security: disc;
+}
+@supports not (-webkit-text-security: disc) {
+    html.fp-privacy [data-fp-sensitive]:not(:focus) {
+        filter: blur(5px);
+    }
+}
+
+/* Card surfaces. One definition for every shared building block (PageCard, ResourceCard,
+   FormSection, EmptyState, ui/card...), so the panel reads as a single material: translucent
+   glass that lets the theme background through, a hairline edge and a faint top highlight.
+   fp-surface-inset is for panels nested inside a surface (no second blur layer). */
+@utility fp-surface {
+    background-color: hsl(var(--fp-surface-tint) / var(--fp-surface-alpha));
+    border-color: var(--fp-surface-border);
+    box-shadow:
+        inset 0 1px 0 0 hsl(var(--fp-surface-highlight)),
+        0 1px 2px 0 rgb(0 0 0 / 0.06),
+        0 8px 24px -12px rgb(0 0 0 / 0.25);
+    -webkit-backdrop-filter: blur(14px) saturate(var(--fp-surface-saturate));
+    backdrop-filter: blur(14px) saturate(var(--fp-surface-saturate));
+}
+
+@utility fp-surface-inset {
+    background-color: var(--fp-inset-bg, hsl(var(--muted) / 0.35));
+    border-color: var(--fp-inset-border, hsl(var(--border) / 0.65));
+}
+
+/* Glass for the sidebar and floating top bar: same tint as cards, a little denser. */
+@utility fp-chrome-surface {
+    background-color: hsl(var(--fp-surface-tint) / var(--fp-chrome-alpha));
+    border-color: var(--fp-surface-border);
+    -webkit-backdrop-filter: blur(24px) saturate(var(--fp-surface-saturate));
+    backdrop-filter: blur(24px) saturate(var(--fp-surface-saturate));
+}
+
+@utility fp-surface-interactive {
+    transition:
+        border-color 150ms ease,
+        background-color 150ms ease,
+        box-shadow 150ms ease,
+        transform 150ms ease;
+    &:hover {
+        border-color: hsl(var(--primary) / 0.45);
+        background-color: hsl(var(--fp-surface-tint) / calc(var(--fp-surface-alpha) + 0.12));
+        box-shadow:
+            inset 0 1px 0 0 hsl(var(--fp-surface-highlight)),
+            0 0 0 1px hsl(var(--primary) / 0.12),
+            0 12px 28px -14px hsl(var(--primary) / 0.35);
+    }
+    &:focus-visible {
+        outline: 2px solid hsl(var(--ring));
+        outline-offset: 2px;
+    }
+}
+
+/* Icon tile used in card and page headers: soft accent gradient with an inner ring. */
+@utility fp-icon-tile {
+    /* Accent wash over the glass tint, so the icon stays visible on bright backgrounds. */
+    background-color: hsl(var(--fp-surface-tint) / 0.6);
+    background-image: linear-gradient(135deg, hsl(var(--primary) / 0.22), hsl(var(--primary) / 0.06));
+    box-shadow: inset 0 0 0 1px hsl(var(--primary) / 0.22);
+    color: hsl(var(--primary));
+}
+
+/* A surface inside another surface already sits on blurred glass: a second backdrop blur costs a
+   full compositing pass per card and is invisible, so only the outermost layer blurs. */
+.fp-surface :is(.fp-surface, .fp-chrome-surface),
+.fp-chrome-surface .fp-surface {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+}
+
+@media (prefers-reduced-transparency: reduce) {
+    :root {
+        --fp-surface-alpha: 0.97;
+    }
+    .fp-surface {
+        -webkit-backdrop-filter: none;
+        backdrop-filter: none;
+    }
+}
+
+/* Dashboard packed grid: each card fills the space it was given (DashboardPackedGrid measures
+   natural heights with .fp-pack-measuring on, then places and stretches the cards). */
+.fp-pack-grid [data-pack-id] > .fp-pack-cell {
+    display: flex;
+    height: 100%;
+    flex-direction: column;
+}
+.fp-pack-grid [data-pack-id] > .fp-pack-cell > * {
+    min-height: 0;
+    flex: 1 1 auto;
+}
+.fp-pack-grid.fp-pack-measuring [data-pack-id] > .fp-pack-cell {
+    height: auto;
+}
+.fp-pack-grid.fp-pack-measuring [data-pack-id] > .fp-pack-cell > * {
+    flex: none;
+}
+.fp-pack-grid [data-pack-id] > .fp-pack-cell:not(:has(* * *)) {
+    display: none;
+}
+
+/* Popovers and menus: the card glass, denser so menu text stays readable over busy backgrounds. */
+@utility fp-menu-surface {
+    /* Menus must be opaque: translucent popovers make option text and controls underneath overlap. */
+    background-color: hsl(var(--popover));
+    border-color: var(--fp-surface-border);
+    box-shadow:
+        inset 0 1px 0 0 hsl(var(--fp-surface-highlight)),
+        0 16px 40px -12px rgb(0 0 0 / 0.55);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
 }

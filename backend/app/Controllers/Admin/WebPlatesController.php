@@ -27,7 +27,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * Admin CRUD for WebPlates (web hosting templates — not Spells).
+ * Admin CRUD for WebPlates (web hosting templates - not Spells).
  */class WebPlatesController
 {
     #[OA\Get(path: '/api/admin/webplates', summary: 'List WebPlates', tags: ['Admin - WebPlates'])]

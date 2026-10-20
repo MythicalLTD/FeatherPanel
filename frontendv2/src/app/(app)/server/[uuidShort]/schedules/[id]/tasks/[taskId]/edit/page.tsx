@@ -21,7 +21,7 @@ import axios, { AxiosError } from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { ListCheck, Save, Lock } from 'lucide-react';
 
-import { PageHeader } from '@/components/featherui/PageHeader';
+import { ServerPageHeader } from '@/components/server/ServerPageHeader';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { FormSection } from '@/components/featherui/FormSection';
@@ -53,6 +53,8 @@ import {
 } from '@/components/server/backup/backup-payload';
 import { parseContainerShellFields } from '@/components/server/schedule/container-shell-payload';
 import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
+import { UnsavedChangesBar } from '@/components/featherui/UnsavedChangesBar';
+import { useFormBaseline } from '@/hooks/useFormBaseline';
 
 export default function EditTaskPage() {
     const {
@@ -84,6 +86,7 @@ export default function EditTaskPage() {
     });
     const [backup, setBackup] = React.useState<BackupFields>(emptyBackupFields());
     const [containerShell, setContainerShell] = React.useState<ContainerShellFields>(emptyContainerShellFields());
+    const { dirty: unsaved, markClean, restore: restoreSaved } = useFormBaseline({ form, backup, containerShell });
     const { getWidgets, fetchWidgets } = usePluginWidgets('server-tasks-edit');
 
     // Container Shell runs arbitrary commands in the container: it needs the admin switch and console access.
@@ -148,6 +151,7 @@ export default function EditTaskPage() {
                 });
                 setBackup(parseBackupFields(task.action, task.payload || ''));
                 setContainerShell(parseContainerShellFields(task.payload || ''));
+                markClean();
                 setTaskCount(tasksRes.data?.data?.data?.length || 1);
                 if (databasesRes.data?.success && databasesRes.data?.data) {
                     setDatabases(databasesRes.data.data.data || []);
@@ -161,7 +165,7 @@ export default function EditTaskPage() {
             }
         };
         load();
-    }, [uuidShort, scheduleId, taskId, router, t]);
+    }, [uuidShort, scheduleId, taskId, router, t, markClean]);
 
     const handleUpdate = async (e?: React.FormEvent) => {
         e?.preventDefault();
@@ -230,9 +234,9 @@ export default function EditTaskPage() {
     }
 
     return (
-        <div className='mx-auto max-w-4xl space-y-8 pb-16'>
+        <div className='space-y-6 pb-12'>
             <WidgetRenderer widgets={getWidgets('server-tasks-edit', 'top-of-page')} />
-            <PageHeader
+            <ServerPageHeader
                 title={t('serverTasks.editTask')}
                 description={t('serverTasks.editTaskDescription')}
                 actions={
@@ -321,7 +325,7 @@ export default function EditTaskPage() {
                                 {form.action === 'backup' ? t('serverTasks.backupSettings') : t('serverTasks.payload')}
                             </h2>
                             <p className='text-muted-foreground text-[9px] font-bold tracking-widest uppercase opacity-50'>
-                                Configuration
+                                {t('ui.server.schedules.tasks.edit.configuration')}
                             </p>
                         </div>
                     </div>
@@ -383,9 +387,11 @@ export default function EditTaskPage() {
                             <ListCheck className='text-primary h-5 w-5' />
                         </div>
                         <div className='space-y-0.5'>
-                            <h2 className='text-xl font-black tracking-tight uppercase italic'>Options</h2>
+                            <h2 className='text-xl font-black tracking-tight uppercase italic'>
+                                {t('ui.server.schedules.tasks.edit.options')}
+                            </h2>
                             <p className='text-muted-foreground text-[9px] font-bold tracking-widest uppercase opacity-50'>
-                                Execution
+                                {t('ui.server.schedules.tasks.edit.execution')}
                             </p>
                         </div>
                     </div>
@@ -425,6 +431,19 @@ export default function EditTaskPage() {
                 </FormSection>
             </form>
             <WidgetRenderer widgets={getWidgets('server-tasks-edit', 'bottom-of-page')} />
+
+            <UnsavedChangesBar
+                dirty={unsaved}
+                saving={saving}
+                onSave={() => void handleUpdate()}
+                onDiscard={() => {
+                    const saved = restoreSaved();
+                    if (!saved) return;
+                    setForm(saved.form);
+                    setBackup(saved.backup);
+                    setContainerShell(saved.containerShell);
+                }}
+            />
         </div>
     );
 }

@@ -65,13 +65,13 @@ export async function generateMetadata(): Promise<Metadata> {
     );
     const settings = boot.settings;
 
-    const title = settings?.app_seo_title || settings?.app_name || 'FeatherPanel';
+    const title = settings?.app_seo_title || settings?.app_name || 'Panel';
     const description = settings?.app_seo_description || 'A powerful game server management panel.';
     const keywords = settings?.app_seo_keywords || 'game, server, management, panel, hosting';
     const logo = settings?.app_logo_dark || settings?.app_logo_white || '/assets/logo.png';
     const indexingEnabled = settings?.app_seo_indexing === 'true';
     const pwaEnabled = settings?.app_pwa_enabled === 'true';
-    const appName = settings?.app_name || 'FeatherPanel';
+    const appName = settings?.app_name || 'Panel';
 
     return {
         title: {
@@ -215,6 +215,16 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                   localStorage.setItem('motionLevel', motion);
                   document.documentElement.dataset.motion = motion;
 
+                  // Initialize layout density and UI scale (see ThemeContext).
+                  var savedDensity = localStorage.getItem('uiDensity');
+                  if (savedDensity === 'compact' || savedDensity === 'spacious') {
+                    document.documentElement.dataset.density = savedDensity;
+                  }
+                  var savedScale = localStorage.getItem('uiScale');
+                  if (savedScale === 'sm' || savedScale === 'lg' || savedScale === 'xl') {
+                    document.documentElement.dataset.uiScale = savedScale;
+                  }
+
                   // Initialize font preference for UI.
                   const savedFont = localStorage.getItem('fontFamily');
                   var fontStacks = ${APP_FONT_BOOT_STACKS_JSON};
@@ -272,7 +282,13 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                                                     <SystemHealthCheck />
                                                     <PwaInstaller />
                                                     <AppContent>{children}</AppContent>
-                                                    <Toaster richColors position='top-right' />
+                                                    {/* Below the floating top bar, not on top of its buttons. */}
+                                                    <Toaster
+                                                        richColors
+                                                        position='top-right'
+                                                        offset={{ top: '4.75rem', right: '1.5rem' }}
+                                                        mobileOffset={{ top: '4.25rem' }}
+                                                    />
                                                 </FeatherPanelHost>
                                             </NotificationProvider>
                                         </SidebarPrefsBootstrap>

@@ -398,14 +398,14 @@ class SpellsController
     public function create(Request $request): Response
     {
         $data = json_decode($request->getContent(), true);
-        if (json_last_error() !== JSON_ERROR_NONE) {
+        if (json_last_error() !== JSON_ERROR_NONE || !is_array($data)) {
             return ApiResponse::error('Invalid JSON in request body', 'INVALID_JSON', 400);
         }
 
         $requiredFields = ['realm_id', 'author', 'name'];
         $missingFields = [];
         foreach ($requiredFields as $field) {
-            if (!isset($data[$field]) || trim($data[$field]) === '') {
+            if (!isset($data[$field]) || !is_scalar($data[$field]) || trim((string) $data[$field]) === '') {
                 $missingFields[] = $field;
             }
         }
@@ -414,7 +414,10 @@ class SpellsController
         }
 
         // Validate realm_id exists
-        if (!Realm::getById($data['realm_id'])) {
+        if (!is_numeric($data['realm_id'])) {
+            return ApiResponse::error('realm_id must be an integer', 'INVALID_DATA_TYPE', 400);
+        }
+        if (!Realm::getById((int) $data['realm_id'])) {
             return ApiResponse::error('Realm not found', 'REALM_NOT_FOUND', 404);
         }
 
@@ -478,7 +481,7 @@ class SpellsController
             $data['uuid'] = Spell::generateUuid();
         } else {
             // Validate UUID format
-            if (!preg_match('/^[a-f0-9\-]{36}$/i', $data['uuid'])) {
+            if (!is_string($data['uuid']) || !preg_match('/^[a-f0-9\-]{36}$/i', $data['uuid'])) {
                 return ApiResponse::error('Invalid UUID format', 'INVALID_UUID');
             }
         }
@@ -576,7 +579,7 @@ class SpellsController
         }
 
         $data = json_decode($request->getContent(), true);
-        if (json_last_error() !== JSON_ERROR_NONE) {
+        if (json_last_error() !== JSON_ERROR_NONE || !is_array($data)) {
             return ApiResponse::error('Invalid JSON in request body', 'INVALID_JSON', 400);
         }
 
@@ -590,7 +593,10 @@ class SpellsController
 
         // Validate realm_id if provided
         if (isset($data['realm_id'])) {
-            if (!Realm::getById($data['realm_id'])) {
+            if (!is_numeric($data['realm_id'])) {
+                return ApiResponse::error('realm_id must be an integer', 'INVALID_DATA_TYPE', 400);
+            }
+            if (!Realm::getById((int) $data['realm_id'])) {
                 return ApiResponse::error('Realm not found', 'REALM_NOT_FOUND', 404);
             }
         }
@@ -652,7 +658,7 @@ class SpellsController
             return ApiResponse::error($error, 'INVALID_INHERITANCE', 400);
         }
         if (isset($data['uuid'])) {
-            if (!preg_match('/^[a-f0-9\-]{36}$/i', $data['uuid'])) {
+            if (!is_string($data['uuid']) || !preg_match('/^[a-f0-9\-]{36}$/i', $data['uuid'])) {
                 return ApiResponse::error('Invalid UUID format', 'INVALID_UUID');
             }
             // Check if UUID already exists (excluding current spell)
@@ -910,7 +916,7 @@ class SpellsController
     public function reorder(Request $request): Response
     {
         $data = json_decode($request->getContent(), true);
-        if (json_last_error() !== JSON_ERROR_NONE) {
+        if (json_last_error() !== JSON_ERROR_NONE || !is_array($data)) {
             return ApiResponse::error('Invalid JSON in request body', 'INVALID_JSON', 400);
         }
 
@@ -1243,7 +1249,7 @@ class SpellsController
         return $response;
     }
 
-    // --- Spell Variables CRUD ---
+    // Spell variables crud
     #[OA\Get(
         path: '/api/admin/spells/{spellId}/variables',
         summary: 'List spell variables',
@@ -1326,7 +1332,7 @@ class SpellsController
             return ApiResponse::error('Spell not found', 'SPELL_NOT_FOUND', 404);
         }
         $data = json_decode($request->getContent(), true);
-        if (json_last_error() !== JSON_ERROR_NONE) {
+        if (json_last_error() !== JSON_ERROR_NONE || !is_array($data)) {
             return ApiResponse::error('Invalid JSON in request body', 'INVALID_JSON', 400);
         }
         $data['spell_id'] = $spellId;
@@ -1408,7 +1414,7 @@ class SpellsController
             return ApiResponse::error('Variable not found', 'VARIABLE_NOT_FOUND', 404);
         }
         $data = json_decode($request->getContent(), true);
-        if (json_last_error() !== JSON_ERROR_NONE) {
+        if (json_last_error() !== JSON_ERROR_NONE || !is_array($data)) {
             return ApiResponse::error('Invalid JSON in request body', 'INVALID_JSON', 400);
         }
         unset($data['id']);
@@ -1535,12 +1541,12 @@ class SpellsController
     public function onlineList(Request $request): Response
     {
         try {
-            $q = trim((string) ($request->query->get('q') ?? ''));
-            $page = (int) ($request->query->get('page') ?? 1);
-            $perPage = (int) ($request->query->get('per_page') ?? 20);
-            $category = trim((string) ($request->query->get('category') ?? ''));
-            $channel = trim((string) ($request->query->get('channel') ?? ''));
-            $sort = trim((string) ($request->query->get('sort') ?? ''));
+            $q = trim((string) (self::scalarQuery($request, 'q') ?? ''));
+            $page = (int) (self::scalarQuery($request, 'page') ?? 1);
+            $perPage = (int) (self::scalarQuery($request, 'per_page') ?? 20);
+            $category = trim((string) (self::scalarQuery($request, 'category') ?? ''));
+            $channel = trim((string) (self::scalarQuery($request, 'channel') ?? ''));
+            $sort = trim((string) (self::scalarQuery($request, 'sort') ?? ''));
 
             $mythicResult = $this->tryMythicEggsList($q, $page, $perPage, $category, $channel, $sort);
             if ($mythicResult !== null) {
@@ -1643,7 +1649,7 @@ class SpellsController
                 'source' => 'pterodactyl',
             ], 'Online spells fetched', 200);
         } catch (\Exception $e) {
-            return ApiResponse::error('Failed to fetch online spells: ' . $e->getMessage(), 500);
+            return ApiResponse::error('Failed to fetch online spells: ' . $e->getMessage(), 'INTERNAL_SERVER_ERROR', 500);
         }
     }
 
@@ -1865,7 +1871,7 @@ class SpellsController
 
             return ApiResponse::success(['spell' => $spell], 'Spell installed successfully from online repository', 201);
         } catch (\Exception $e) {
-            return ApiResponse::error('Failed to install spell from online repository: ' . $e->getMessage(), 500);
+            return ApiResponse::error('Failed to install spell from online repository: ' . $e->getMessage(), 'INTERNAL_SERVER_ERROR', 500);
         }
     }
 
@@ -2350,5 +2356,15 @@ class SpellsController
         );
 
         return $spellData;
+    }
+
+    /**
+     * Read a query value as a scalar (arrays such as ?x[]=1 count as absent).
+     */
+    private static function scalarQuery(Request $request, string $key, mixed $default = null): mixed
+    {
+        $value = $request->query->all()[$key] ?? $default;
+
+        return is_scalar($value) ? $value : $default;
     }
 }

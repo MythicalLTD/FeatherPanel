@@ -64,7 +64,7 @@ export function preparePmaAuthContext(
         accentColor,
         fontFamily,
         branding: {
-            appName: settings?.app_name?.trim() || 'FeatherPanel',
+            appName: settings?.app_name?.trim() || 'Panel',
             logoDark: settings?.app_logo_dark?.trim() || '',
             logoWhite: settings?.app_logo_white?.trim() || '',
             appUrl: settings?.website_url?.trim() || settings?.app_url?.trim() || '/',
@@ -81,7 +81,7 @@ export function preparePmaAuthContext(
             loggingOutMessage: t('serverDatabases.pmaAuth.loggingOutMessage'),
             authError: t('serverDatabases.pmaAuth.authError'),
             poweredBy: t('serverDatabases.pmaAuth.poweredBy', {
-                name: settings?.app_name?.trim() || 'FeatherPanel',
+                name: settings?.app_name?.trim() || 'Panel',
             }),
             loading: t('serverDatabases.pmaAuth.loading'),
         },

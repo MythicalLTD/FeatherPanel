@@ -21,7 +21,7 @@ import axios, { AxiosError } from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { ListCheck, Plus, Pencil, Trash2, ChevronUp, ChevronDown, Lock, AlertTriangle } from 'lucide-react';
 
-import { PageHeader } from '@/components/featherui/PageHeader';
+import { ServerPageHeader } from '@/components/server/ServerPageHeader';
 import { EmptyState } from '@/components/featherui/EmptyState';
 import { Button } from '@/components/featherui/Button';
 import { ResourceCard } from '@/components/featherui/ResourceCard';
@@ -272,10 +272,10 @@ export default function ServerTasksPage() {
     }
 
     return (
-        <div className='space-y-6'>
+        <div className='space-y-6 pb-12'>
             <WidgetRenderer widgets={getWidgets('server-tasks', 'top-of-page')} />
 
-            <PageHeader
+            <ServerPageHeader
                 title={t('serverTasks.title')}
                 description={t('serverTasks.description', { scheduleName: schedule?.name || '' })}
                 actions={
@@ -343,7 +343,7 @@ export default function ServerTasksPage() {
                                     ? 'bg-red-500/10 border-red-500/20 text-red-500'
                                     : isBackupAction(task.action)
                                       ? 'bg-blue-500/10 border-blue-500/20 text-blue-500'
-                                      : 'bg-white/5 border-white/10 text-muted-foreground'
+                                      : 'bg-muted/40 border-border/60 text-muted-foreground'
                             }
                             title={getActionLabel(task.action)}
                             description={
@@ -368,7 +368,7 @@ export default function ServerTasksPage() {
                             badges={[
                                 {
                                     label: `#${task.sequence_id}`,
-                                    className: 'bg-white/5 border-white/10 text-muted-foreground',
+                                    className: 'bg-muted/40 border-border/60 text-muted-foreground',
                                 },
                                 ...(task.is_queued === 1
                                     ? [
@@ -387,7 +387,7 @@ export default function ServerTasksPage() {
                                                 <Button
                                                     size='sm'
                                                     variant='ghost'
-                                                    className='h-6 w-6 p-0 hover:bg-white/10'
+                                                    className='hover:bg-muted/70 h-6 w-6 p-0'
                                                     disabled={task.sequence_id <= 1}
                                                     onClick={() => handleMoveUp(task)}
                                                 >
@@ -396,7 +396,7 @@ export default function ServerTasksPage() {
                                                 <Button
                                                     size='sm'
                                                     variant='ghost'
-                                                    className='h-6 w-6 p-0 hover:bg-white/10'
+                                                    className='hover:bg-muted/70 h-6 w-6 p-0'
                                                     disabled={task.sequence_id >= sortedTasks.length}
                                                     onClick={() => handleMoveDown(task)}
                                                 >

@@ -24,6 +24,8 @@ import { Plug, Search as SearchIcon, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { AllocationCreateForm, type CreatedAllocationRow } from '@/components/admin/AllocationCreateForm';
+import { Sensitive } from '@/components/common/Sensitive';
+import { maskEndpoint } from '@/lib/ip-mask';
 
 export interface PickerAllocation {
     id: number;
@@ -171,10 +173,12 @@ export function AllocationPickerSheet({
                             </div>
                             <div className='min-w-0 flex-1'>
                                 <div className='font-mono font-semibold'>
-                                    {allocation.ip}:{allocation.port}
+                                    <Sensitive>{maskEndpoint(allocation.ip, allocation.port, false)}</Sensitive>
                                 </div>
                                 {allocation.ip_alias && (
-                                    <div className='text-muted-foreground mt-0.5 text-xs'>{allocation.ip_alias}</div>
+                                    <div className='text-muted-foreground mt-0.5 text-xs'>
+                                        <Sensitive>{allocation.ip_alias}</Sensitive>
+                                    </div>
                                 )}
                                 {allocation.notes && (
                                     <div

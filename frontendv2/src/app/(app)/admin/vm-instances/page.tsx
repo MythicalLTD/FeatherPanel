@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { TipCard, TipGrid } from '@/components/featherui/TipCard';
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
@@ -22,10 +23,9 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
-import { ResourceCard, type ResourceBadge } from '@/components/featherui/ResourceCard';
+import { ResourceCard, ResourceTable, type ResourceBadge } from '@/components/featherui/ResourceCard';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
-import { EmptyState } from '@/components/featherui/EmptyState';
-import { PageCard } from '@/components/featherui/PageCard';
+import { ListEmptyState } from '@/components/featherui/ListEmptyState';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { usePersistedListFilters } from '@/hooks/usePersistedListFilters';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
@@ -65,6 +65,8 @@ import {
 import { Select } from '@/components/ui/select-native';
 import { Dialog, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
+import { Sensitive } from '@/components/common/Sensitive';
+import { ListPagination } from '@/components/featherui/ListPagination';
 
 interface VmInstance {
     id: number;
@@ -138,7 +140,7 @@ export default function VmInstancesPage() {
     const { t } = useTranslation();
     const router = useRouter();
 
-    const { filters, patchFilters, resetFilters, hydrated } = usePersistedListFilters(
+    const { filters, patchFilters, resetFilters, hydrated, isFiltered } = usePersistedListFilters(
         VM_INSTANCES_LIST_FILTERS_KEY,
         VM_INSTANCES_LIST_FILTERS_DEFAULTS,
     );
@@ -366,7 +368,7 @@ export default function VmInstancesPage() {
 
             <WidgetRenderer widgets={getWidgets('admin-vm-instances', 'after-header')} />
 
-            <div className='bg-card/50 border-border flex flex-col items-stretch gap-4 rounded-2xl border p-4 shadow-sm backdrop-blur-md'>
+            <div className='fp-surface flex flex-col items-stretch gap-4 rounded-2xl border p-4'>
                 <div className='group relative w-full flex-1'>
                     <Search className='text-muted-foreground group-focus-within:text-primary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transition-colors' />
                     <Input
@@ -450,48 +452,32 @@ export default function VmInstancesPage() {
             {loading ? (
                 <TableSkeleton count={5} />
             ) : instances.length === 0 ? (
-                <EmptyState
+                <ListEmptyState
                     icon={Server}
-                    title={t('admin.vmInstances.no_results')}
-                    description={t('admin.vmInstances.empty_desc')}
+                    title={t('emptyStates.vmInstances.title')}
+                    description={t('emptyStates.vmInstances.description')}
                     action={
                         <Button size='sm' onClick={() => router.push('/admin/vm-instances/create')}>
                             <Plus className='mr-2 h-4 w-4' />
                             {t('admin.vmInstances.create')}
                         </Button>
                     }
+                    filtered={isFiltered}
+                    onClearFilters={resetFilters}
                 />
             ) : (
                 <>
                     {pagination.totalPages > 1 && (
-                        <div className='border-border bg-card/50 mb-4 flex items-center justify-between gap-4 rounded-xl border px-4 py-3'>
-                            <Button
-                                variant='outline'
-                                size='sm'
-                                disabled={!pagination.hasPrev}
-                                onClick={() => patchFilters({ page: page - 1 })}
-                                className='gap-1.5'
-                            >
-                                <ChevronLeft className='h-4 w-4' />
-                                {t('common.previous')}
-                            </Button>
-                            <span className='text-sm font-medium'>
-                                {page} / {pagination.totalPages}
-                                {pagination.total > 0 && ` (${pagination.total} ${t('common.total')})`}
-                            </span>
-                            <Button
-                                variant='outline'
-                                size='sm'
-                                disabled={!pagination.hasNext}
-                                onClick={() => patchFilters({ page: page + 1 })}
-                                className='gap-1.5'
-                            >
-                                {t('common.next')}
-                                <ChevronRight className='h-4 w-4' />
-                            </Button>
-                        </div>
+                        <ListPagination
+                            page={page}
+                            totalPages={pagination.totalPages}
+                            totalItems={pagination.total}
+                            pageSize={pageSize}
+                            onPageChange={(nextPage) => patchFilters({ page: nextPage })}
+                            className='mb-4'
+                        />
                     )}
-                    <div className='grid grid-cols-1 gap-4'>
+                    <ResourceTable>
                         {instances.map((inst) => {
                             const badges: ResourceBadge[] = [
                                 {
@@ -578,7 +564,7 @@ export default function VmInstancesPage() {
                                                             `/admin/vm-instances/${inst.id}/edit?tab=details&assign=1`,
                                                         )
                                                     }
-                                                    title={t('admin.vmInstances.assign_owner') ?? 'Assign owner'}
+                                                    title={t('admin.vmInstances.assign_owner')}
                                                 >
                                                     <UserPlus className='h-4 w-4' />
                                                 </Button>
@@ -605,7 +591,7 @@ export default function VmInstancesPage() {
                                 />
                             );
                         })}
-                    </div>
+                    </ResourceTable>
 
                     {pagination.totalPages > 1 && (
                         <div className='mt-8 flex items-center justify-center gap-2'>
@@ -633,25 +619,25 @@ export default function VmInstancesPage() {
                 </>
             )}
 
-            <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
-                <PageCard title={t('admin.vmInstances.help.managing.title')} icon={Server}>
+            <TipGrid>
+                <TipCard title={t('admin.vmInstances.help.managing.title')} icon={Server}>
                     <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.vmInstances.help.managing.description')}
                     </p>
-                </PageCard>
-                <PageCard title={t('admin.vmInstances.help.resources.title')} icon={Layers}>
+                </TipCard>
+                <TipCard title={t('admin.vmInstances.help.resources.title')} icon={Layers}>
                     <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.vmInstances.help.resources.description')}
                     </p>
-                </PageCard>
-                <PageCard title={t('admin.vmInstances.help.tips.title')} icon={HelpCircle} className='md:col-span-2'>
+                </TipCard>
+                <TipCard title={t('admin.vmInstances.help.tips.title')} icon={HelpCircle} className='md:col-span-2'>
                     <ul className='text-muted-foreground list-inside list-disc space-y-1 text-sm leading-relaxed'>
                         <li>{t('admin.vmInstances.help.tips.item1')}</li>
                         <li>{t('admin.vmInstances.help.tips.item2')}</li>
                         <li>{t('admin.vmInstances.help.tips.item3')}</li>
                     </ul>
-                </PageCard>
-            </div>
+                </TipCard>
+            </TipGrid>
 
             <AlertDialog
                 open={confirmDeleteId !== null}
@@ -755,7 +741,9 @@ export default function VmInstancesPage() {
                                 >
                                     <div className='flex flex-col'>
                                         <span className='font-semibold'>{user.username}</span>
-                                        <span className='text-muted-foreground text-xs'>{user.email}</span>
+                                        <span className='text-muted-foreground text-xs'>
+                                            <Sensitive>{user.email}</Sensitive>
+                                        </span>
                                     </div>
                                 </button>
                             ))

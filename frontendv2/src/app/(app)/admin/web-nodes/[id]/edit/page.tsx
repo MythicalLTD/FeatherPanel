@@ -22,7 +22,8 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { getApiErrorMessage } from '@/lib/api-errors';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Tabs, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { ScrollableTabsList } from '@/components/ui/scrollable-tabs-list';
 import { Sheet, SheetHeader, SheetTitle, SheetDescription, SheetContent } from '@/components/ui/sheet';
 import { Input } from '@/components/featherui/Input';
 import { toast } from 'sonner';
@@ -39,8 +40,6 @@ import {
     Loader2,
     Search as SearchIcon,
     MapPin,
-    ChevronLeft,
-    ChevronRight,
     HeartPulse,
     Stethoscope,
     Package,
@@ -70,6 +69,10 @@ import {
     getFirstWebNodeErrorTab,
     getWebNodeTabLabelKey,
 } from '../../types';
+import { UnsavedChangesBar } from '@/components/featherui/UnsavedChangesBar';
+import { useFormBaseline } from '@/hooks/useFormBaseline';
+import { useIpMask } from '@/hooks/useIpMask';
+import { ListPagination } from '@/components/featherui/ListPagination';
 
 const WEB_NODE_EDIT_TABS = new Set([
     'status',
@@ -98,6 +101,7 @@ interface Location {
 
 export default function EditWebNodePage() {
     const { t } = useTranslation();
+    const privacyMask = useIpMask();
     const router = useRouter();
     const params = useParams();
     const searchParams = useSearchParams();
@@ -124,6 +128,7 @@ export default function EditWebNodePage() {
     const [debouncedLocationSearch, setDebouncedLocationSearch] = useState('');
 
     const [form, setForm] = useState<WebNodeForm>(defaultWebNodeForm());
+    const { dirty: unsaved, markClean, restore: restoreForm } = useFormBaseline(form);
     const [errors, setErrors] = useState<Record<string, string>>({});
 
     const { fetchWidgets, getWidgets } = usePluginWidgets('admin-web-node-edit');
@@ -254,6 +259,7 @@ export default function EditWebNodePage() {
                 proxyBackendHost: node.proxyBackendHost || '127.0.0.1',
                 proxyBackendBindHost: node.proxyBackendBindHost || '127.0.0.1',
             });
+            markClean();
         } catch (error) {
             console.error('Error loading web node:', error);
             toast.error(getApiErrorMessage(error, t, 'admin.webNodes.messages.fetch_failed'));
@@ -261,7 +267,7 @@ export default function EditWebNodePage() {
         } finally {
             setLoading(false);
         }
-    }, [id, router, t]);
+    }, [id, router, t, markClean]);
 
     useEffect(() => {
         if (id) void fetchInitialData();
@@ -372,7 +378,7 @@ export default function EditWebNodePage() {
                 title={form.name || t('admin.webNodes.form.edit_title')}
                 description={
                     form.fqdn
-                        ? `${t('admin.webNodes.form.edit_description')} · ${form.fqdn}`
+                        ? `${t('admin.webNodes.form.edit_description')} · ${privacyMask.text(form.fqdn)}`
                         : t('admin.webNodes.form.edit_description')
                 }
                 icon={Server}
@@ -411,8 +417,8 @@ export default function EditWebNodePage() {
                     orientation='vertical'
                     className='flex w-full flex-col gap-6 md:flex-row'
                 >
-                    <aside className='w-full shrink-0 overflow-x-auto pb-2 md:w-64 md:overflow-visible md:pb-0'>
-                        <TabsList className='bg-card/30 border-border/50 flex h-auto w-max flex-row gap-2 rounded-2xl border p-2 md:w-full md:flex-col md:gap-1'>
+                    <aside className='w-full shrink-0 md:sticky md:top-24 md:w-64 md:self-start'>
+                        <ScrollableTabsList className='fp-surface flex h-auto w-full flex-row gap-2 rounded-2xl border p-2 md:flex-col md:gap-1 md:overflow-visible'>
                             {tabs.map((tab) => {
                                 const Icon = tab.icon;
                                 return (
@@ -426,7 +432,7 @@ export default function EditWebNodePage() {
                                     </TabsTrigger>
                                 );
                             })}
-                        </TabsList>
+                        </ScrollableTabsList>
                     </aside>
 
                     <div className='min-w-0 flex-1 space-y-6'>
@@ -532,41 +538,16 @@ export default function EditWebNodePage() {
                         </div>
 
                         {locationPagination.total_pages > 1 && (
-                            <div className='border-border bg-muted/30 flex items-center justify-between gap-2 rounded-lg border px-3 py-2'>
-                                <Button
-                                    variant='outline'
-                                    size='sm'
-                                    disabled={!locationPagination.has_prev}
-                                    onClick={() =>
-                                        setLocationPagination((prev) => ({
-                                            ...prev,
-                                            current_page: prev.current_page - 1,
-                                        }))
-                                    }
-                                    className='h-8 gap-1'
-                                >
-                                    <ChevronLeft className='h-3 w-3' />
-                                    {t('common.previous')}
-                                </Button>
-                                <span className='text-xs font-medium'>
-                                    {locationPagination.current_page} / {locationPagination.total_pages}
-                                </span>
-                                <Button
-                                    variant='outline'
-                                    size='sm'
-                                    disabled={!locationPagination.has_next}
-                                    onClick={() =>
-                                        setLocationPagination((prev) => ({
-                                            ...prev,
-                                            current_page: prev.current_page + 1,
-                                        }))
-                                    }
-                                    className='h-8 gap-1'
-                                >
-                                    {t('common.next')}
-                                    <ChevronRight className='h-3 w-3' />
-                                </Button>
-                            </div>
+                            <ListPagination
+                                page={locationPagination.current_page}
+                                totalPages={locationPagination.total_pages}
+                                onPageChange={(nextPage) =>
+                                    setLocationPagination((prev) => ({
+                                        ...prev,
+                                        current_page: nextPage,
+                                    }))
+                                }
+                            />
                         )}
 
                         <div className='max-h-[calc(100vh-300px)] space-y-2 overflow-y-auto'>
@@ -608,6 +589,16 @@ export default function EditWebNodePage() {
             </Sheet>
 
             <WidgetRenderer widgets={getWidgets('admin-web-node-edit', 'bottom-of-page')} context={{ id }} />
+
+            <UnsavedChangesBar
+                dirty={unsaved}
+                saving={saving}
+                onSave={() => void handleSave()}
+                onDiscard={() => {
+                    const saved = restoreForm();
+                    if (saved) setForm(saved);
+                }}
+            />
         </div>
     );
 }

@@ -24,7 +24,7 @@ import { cn } from '@/lib/utils';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
-import { ResourceCard, type ResourceBadge } from '@/components/featherui/ResourceCard';
+import { ResourceCard, ResourceTable, type ResourceBadge } from '@/components/featherui/ResourceCard';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
 import { EmptyState } from '@/components/featherui/EmptyState';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
@@ -46,6 +46,8 @@ import {
     HardDrive,
     Network,
 } from 'lucide-react';
+import { Sensitive } from '@/components/common/Sensitive';
+import { ListPagination } from '@/components/featherui/ListPagination';
 
 interface UserServersPagination {
     current_page: number;
@@ -267,31 +269,12 @@ export default function UserServersPage({ params }: { params: Promise<{ uuid: st
                 ) : (
                     <>
                         {pagination.total_pages > 1 && (
-                            <div className='border-border bg-card/50 mb-4 flex items-center justify-between gap-4 rounded-xl border px-4 py-3'>
-                                <Button
-                                    variant='outline'
-                                    size='sm'
-                                    disabled={!pagination.has_prev}
-                                    onClick={() => changePage(pagination.current_page - 1)}
-                                    className='gap-1.5'
-                                >
-                                    <ChevronLeft className='h-4 w-4' />
-                                    {t('common.previous')}
-                                </Button>
-                                <span className='text-sm font-medium'>
-                                    {pagination.current_page} / {pagination.total_pages}
-                                </span>
-                                <Button
-                                    variant='outline'
-                                    size='sm'
-                                    disabled={!pagination.has_next}
-                                    onClick={() => changePage(pagination.current_page + 1)}
-                                    className='gap-1.5'
-                                >
-                                    {t('common.next')}
-                                    <ChevronRight className='h-4 w-4' />
-                                </Button>
-                            </div>
+                            <ListPagination
+                                page={pagination.current_page}
+                                totalPages={pagination.total_pages}
+                                onPageChange={(nextPage) => changePage(nextPage)}
+                                className='mb-4'
+                            />
                         )}
                         {servers.length === 0 ? (
                             <EmptyState
@@ -302,7 +285,7 @@ export default function UserServersPage({ params }: { params: Promise<{ uuid: st
                                 })}
                             />
                         ) : (
-                            <div className='grid grid-cols-1 gap-4'>
+                            <ResourceTable>
                                 {servers.map((server) => {
                                     const badges: ResourceBadge[] = [
                                         {
@@ -375,7 +358,7 @@ export default function UserServersPage({ params }: { params: Promise<{ uuid: st
                                         />
                                     );
                                 })}
-                            </div>
+                            </ResourceTable>
                         )}
 
                         {pagination.total_pages > 1 && (
@@ -430,7 +413,7 @@ export default function UserServersPage({ params }: { params: Promise<{ uuid: st
                                     })}
                                 />
                             ) : (
-                                <div className='grid grid-cols-1 gap-4'>
+                                <ResourceTable>
                                     {vms.map((vm) => {
                                         const vmBadges: ResourceBadge[] = [
                                             {
@@ -470,7 +453,13 @@ export default function UserServersPage({ params }: { params: Promise<{ uuid: st
                                                         </Badge>
                                                         <div className='text-muted-foreground flex items-center gap-1.5 text-xs'>
                                                             <Network className='h-3.5 w-3.5' />
-                                                            <span>{vm.ip_address || '-'}</span>
+                                                            <span>
+                                                                {vm.ip_address ? (
+                                                                    <Sensitive>{vm.ip_address}</Sensitive>
+                                                                ) : (
+                                                                    '-'
+                                                                )}
+                                                            </span>
                                                         </div>
                                                     </div>
                                                 }
@@ -503,7 +492,7 @@ export default function UserServersPage({ params }: { params: Promise<{ uuid: st
                                             />
                                         );
                                     })}
-                                </div>
+                                </ResourceTable>
                             )}
                         </div>
                     </>

@@ -232,7 +232,7 @@ class PterodactylImporterController
     {
         try {
             $data = json_decode($request->getContent(), true);
-            if (json_last_error() !== JSON_ERROR_NONE) {
+            if (json_last_error() !== JSON_ERROR_NONE || !is_array($data)) {
                 return ApiResponse::error('Invalid JSON in request body', 'INVALID_JSON', 400);
             }
 
@@ -448,7 +448,7 @@ class PterodactylImporterController
     {
         try {
             $data = json_decode($request->getContent(), true);
-            if (json_last_error() !== JSON_ERROR_NONE) {
+            if (json_last_error() !== JSON_ERROR_NONE || !is_array($data)) {
                 return ApiResponse::error('Invalid JSON in request body', 'INVALID_JSON', 400);
             }
 
@@ -653,7 +653,7 @@ class PterodactylImporterController
     {
         try {
             $data = json_decode($request->getContent(), true);
-            if (json_last_error() !== JSON_ERROR_NONE) {
+            if (json_last_error() !== JSON_ERROR_NONE || !is_array($data)) {
                 return ApiResponse::error('Invalid JSON in request body', 'INVALID_JSON', 400);
             }
 
@@ -822,7 +822,7 @@ class PterodactylImporterController
     {
         try {
             $data = json_decode($request->getContent(), true);
-            if (json_last_error() !== JSON_ERROR_NONE) {
+            if (json_last_error() !== JSON_ERROR_NONE || !is_array($data)) {
                 return ApiResponse::error('Invalid JSON in request body', 'INVALID_JSON', 400);
             }
 
@@ -936,7 +936,7 @@ class PterodactylImporterController
             }
 
             // Remove sensitive information from response
-            unset($createdUser['password'], $createdUser['remember_token'], $createdUser['two_fa_key']);
+            $createdUser = User::stripSensitiveFields($createdUser);
 
             // Log activity
             $admin = $request->attributes->get('user');
@@ -1027,7 +1027,7 @@ class PterodactylImporterController
     {
         try {
             $data = json_decode($request->getContent(), true);
-            if (json_last_error() !== JSON_ERROR_NONE) {
+            if (json_last_error() !== JSON_ERROR_NONE || !is_array($data)) {
                 return ApiResponse::error('Invalid JSON in request body', 'INVALID_JSON', 400);
             }
 
@@ -1268,7 +1268,7 @@ class PterodactylImporterController
     {
         try {
             $data = json_decode($request->getContent(), true);
-            if (json_last_error() !== JSON_ERROR_NONE) {
+            if (json_last_error() !== JSON_ERROR_NONE || !is_array($data)) {
                 return ApiResponse::error('Invalid JSON in request body', 'INVALID_JSON', 400);
             }
 
@@ -1690,7 +1690,7 @@ class PterodactylImporterController
     {
         try {
             $data = json_decode($request->getContent(), true);
-            if (json_last_error() !== JSON_ERROR_NONE) {
+            if (json_last_error() !== JSON_ERROR_NONE || !is_array($data)) {
                 return ApiResponse::error('Invalid JSON in request body', 'INVALID_JSON', 400);
             }
 
@@ -1848,7 +1848,7 @@ class PterodactylImporterController
     {
         try {
             $data = json_decode($request->getContent(), true);
-            if (json_last_error() !== JSON_ERROR_NONE) {
+            if (json_last_error() !== JSON_ERROR_NONE || !is_array($data)) {
                 return ApiResponse::error('Invalid JSON in request body', 'INVALID_JSON', 400);
             }
 
@@ -2176,7 +2176,7 @@ class PterodactylImporterController
     {
         try {
             $data = json_decode($request->getContent(), true);
-            if (json_last_error() !== JSON_ERROR_NONE) {
+            if (json_last_error() !== JSON_ERROR_NONE || !is_array($data)) {
                 return ApiResponse::error('Invalid JSON in request body', 'INVALID_JSON', 400);
             }
 
@@ -2346,7 +2346,7 @@ class PterodactylImporterController
     {
         try {
             $data = json_decode($request->getContent(), true);
-            if (json_last_error() !== JSON_ERROR_NONE) {
+            if (json_last_error() !== JSON_ERROR_NONE || !is_array($data)) {
                 return ApiResponse::error('Invalid JSON in request body', 'INVALID_JSON', 400);
             }
 

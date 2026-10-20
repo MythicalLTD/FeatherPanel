@@ -35,6 +35,8 @@ import { WebSpaceAccessLinks } from '@/components/webspace/WebSpaceAccessLinks';
 import { WebSpaceUsageBar } from '@/components/webspace/WebSpaceUsageBar';
 import type { WebSpaceAccessUrls } from '@/lib/webspace-urls';
 import { getApiErrorMessage } from '@/lib/api-errors';
+import { UnsavedChangesBar } from '@/components/featherui/UnsavedChangesBar';
+import { useFormBaseline } from '@/hooks/useFormBaseline';
 
 interface WebSpace {
     uuid: string;
@@ -82,6 +84,8 @@ export default function WebSpaceSettingsPage() {
     const [currentRuntime, setCurrentRuntime] = useState('');
     const [phpIni, setPhpIni] = useState('');
     const [savingPhpIni, setSavingPhpIni] = useState(false);
+    const { dirty: formDirty, markClean: markFormClean, restore: restoreForm } = useFormBaseline(form);
+    const { dirty: phpIniDirty, markClean: markPhpIniClean, restore: restorePhpIni } = useFormBaseline(phpIni);
     const [phpExtCatalog, setPhpExtCatalog] = useState<string[]>([]);
     const [phpExtSelected, setPhpExtSelected] = useState<string[]>([]);
     const [savingPhpExt, setSavingPhpExt] = useState(false);
@@ -119,6 +123,8 @@ export default function WebSpaceSettingsPage() {
             setCurrentRuntime((current?.runtime || ws.webplate_runtime || '').toLowerCase());
             setPhpPlates(plates.filter((p) => (p.runtime || '').toLowerCase() === 'php'));
             setPhpIni(String(phpIniRes?.data?.data?.contents ?? ''));
+            markFormClean();
+            markPhpIniClean();
             setPhpExtCatalog((phpExtRes?.data?.data?.catalog as string[]) || []);
             setPhpExtSelected((phpExtRes?.data?.data?.extensions as string[]) || []);
             setRedisEnabled(!!redisRes?.data?.data?.enabled);
@@ -137,7 +143,7 @@ export default function WebSpaceSettingsPage() {
         } finally {
             setLoading(false);
         }
-    }, [uuidShort, t]);
+    }, [uuidShort, t, markFormClean, markPhpIniClean]);
 
     useEffect(() => {
         void load();
@@ -162,6 +168,7 @@ export default function WebSpaceSettingsPage() {
             if (data.data?.webspace) {
                 setSpace(data.data.webspace);
             }
+            markFormClean();
             toast.success(t('webSpaces.settings.saved'));
         } catch (error) {
             let msg = getApiErrorMessage(error, t, 'webSpaces.settings.saveFailed');
@@ -178,6 +185,7 @@ export default function WebSpaceSettingsPage() {
         setSavingPhpIni(true);
         try {
             await axios.put(`/api/user/webspaces/${uuidShort}/php-ini`, { contents: phpIni });
+            markPhpIniClean();
             toast.success(t('webSpaces.settings.phpIniSaved'));
         } catch (error) {
             toast.error(getApiErrorMessage(error, t, 'webSpaces.settings.phpIniSaveFailed'));
@@ -501,6 +509,23 @@ export default function WebSpaceSettingsPage() {
                     confirmLabel={t('webSpaces.overview.reinstall')}
                     cancelLabel={t('common.cancel')}
                     onConfirm={() => void reinstall()}
+                />
+
+                <UnsavedChangesBar
+                    dirty={formDirty || phpIniDirty}
+                    saving={saving || savingPhpIni}
+                    onSave={() => {
+                        void (async () => {
+                            if (formDirty) await saveSettings();
+                            if (phpIniDirty) await savePhpIni();
+                        })();
+                    }}
+                    onDiscard={() => {
+                        const savedForm = restoreForm();
+                        if (savedForm) setForm(savedForm);
+                        const savedPhpIni = restorePhpIni();
+                        if (savedPhpIni !== null) setPhpIni(savedPhpIni);
+                    }}
                 />
             </div>
         </WebSpacePageWidgets>

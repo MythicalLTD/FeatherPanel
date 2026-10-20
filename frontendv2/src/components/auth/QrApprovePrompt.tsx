@@ -131,7 +131,7 @@ export function QrResultScreen({
 
     return (
         <div className='animate-fade-in-up mx-auto flex min-h-[70svh] w-full max-w-md flex-col justify-center px-1 pb-[max(1rem,env(safe-area-inset-bottom))]'>
-            <div className='border-border/50 bg-card space-y-5 rounded-2xl border p-6 text-center shadow-xl'>
+            <div className='fp-surface space-y-5 rounded-2xl border p-6 text-center'>
                 <div
                     className={cn(
                         'animate-qr-pop mx-auto flex h-16 w-16 items-center justify-center rounded-full',
@@ -234,7 +234,7 @@ export function QrApprovePrompt({
                     <p className='text-muted-foreground mx-auto max-w-xs text-sm leading-relaxed'>{subtitle}</p>
                 </div>
 
-                <div className='border-border/50 bg-card/95 space-y-4 rounded-2xl border p-4 shadow-xl sm:p-5'>
+                <div className='fp-surface space-y-4 rounded-2xl border p-4 sm:p-5'>
                     {error ? (
                         <p className='text-destructive animate-fade-in text-center text-sm' role='alert'>
                             {error}
@@ -252,9 +252,7 @@ export function QrApprovePrompt({
                                 )}
                             </div>
                             <div className='min-w-0 text-left'>
-                                <p className='text-muted-foreground text-[11px] font-medium tracking-wide uppercase'>
-                                    {t('auth.qr.approvingAs')}
-                                </p>
+                                <p className='text-muted-foreground text-xs font-medium'>{t('auth.qr.approvingAs')}</p>
                                 <p className='text-foreground truncate text-sm font-semibold'>{name}</p>
                             </div>
                         </div>

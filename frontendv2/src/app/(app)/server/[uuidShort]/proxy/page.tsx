@@ -30,13 +30,14 @@ import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { cn, isEnabled } from '@/lib/utils';
 import type { Proxy, ProxiesResponse } from '@/types/server';
-import { PageHeader } from '@/components/featherui/PageHeader';
+import { ServerPageHeader } from '@/components/server/ServerPageHeader';
 import { EmptyState } from '@/components/featherui/EmptyState';
 import { ResourceCard } from '@/components/featherui/ResourceCard';
 import { safeBack } from '@/lib/safe-back';
 import { supportsDaemonFeature } from '@/lib/daemonCapabilities';
 import { PageLoading } from '@/components/featherui/PageLoading';
 import { getApiErrorMessage } from '@/lib/api-errors';
+import { Sensitive } from '@/components/common/Sensitive';
 
 export default function ServerProxyPage() {
     const { uuidShort } = useParams();
@@ -157,15 +158,15 @@ export default function ServerProxyPage() {
     }
 
     return (
-        <div key={pathname} className='space-y-8 pb-12'>
+        <div key={pathname} className='space-y-6 pb-12'>
             <WidgetRenderer widgets={getWidgets('server-proxy', 'top-of-page')} />
 
-            <PageHeader
+            <ServerPageHeader
                 title={t('serverProxy.title')}
                 description={
                     <>
                         {t('serverProxy.description')}
-                        <span className='ml-2 rounded-md border border-white/10 bg-white/5 px-2 py-0.5 text-sm font-bold'>
+                        <span className='border-border/60 bg-muted/40 ml-2 rounded-md border px-2 py-0.5 text-sm font-bold'>
                             {proxies.length} / {maxProxies > 0 ? maxProxies : '∞'}
                         </span>
                     </>
@@ -244,14 +245,16 @@ export default function ServerProxyPage() {
                             iconWrapperClassName={
                                 proxy.ssl
                                     ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500'
-                                    : 'bg-white/5 border-white/10 text-muted-foreground'
+                                    : 'bg-muted/40 border-border/60 text-muted-foreground'
                             }
                             title={proxy.domain}
                             description={
                                 <div className='flex flex-col gap-1'>
                                     <div className='text-muted-foreground flex items-center gap-2'>
                                         <Network className='h-3 w-3 opacity-50' />
-                                        <span className='text-foreground/70 text-xs font-bold'>{proxy.ip}</span>
+                                        <span className='text-foreground/70 text-xs font-bold'>
+                                            <Sensitive>{proxy.ip}</Sensitive>
+                                        </span>
                                     </div>
                                     <div className='text-muted-foreground flex items-center gap-2'>
                                         <Globe className='h-3 w-3 opacity-50' />

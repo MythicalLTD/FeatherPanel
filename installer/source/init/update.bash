@@ -13,6 +13,9 @@ NEXT_SERVICE_NAME="${NEXT_SERVICE_NAME:-featherpanel-next}"
 RUNNER_SERVICE_NAME="${RUNNER_SERVICE_NAME:-featherpanel-async-runner}"
 NGINX_SITE_NAME="${NGINX_SITE_NAME:-FeatherPanel.conf}"
 NGINX_SITE_FILE="${NGINX_SITE_FILE:-/etc/nginx/sites-available/${NGINX_SITE_NAME}}"
+# frankenphp (default): FrankenPHP worker mode + Mercure on 127.0.0.1:8721.
+# fpm: keep an existing nginx + php-fpm backend untouched.
+FEATHERPANEL_BACKEND="${FEATHERPANEL_BACKEND:-frankenphp}"
 
 GIT_CLEAN_EXCLUDES=(
     -e 'backend/public/pma'
@@ -190,7 +193,7 @@ update_repo() {
 
 update_backend() {
     step "Installing backend dependencies and running migrations..."
-    COMPOSER_ALLOW_SUPERUSER=1 composer install --working-dir="$BACKEND_DIR" --no-interaction --prefer-dist
+    COMPOSER_ALLOW_SUPERUSER=1 composer install --working-dir="$BACKEND_DIR" --no-interaction --prefer-dist --optimize-autoloader
     run_as_www_data "cd '${PANEL_DIR}' && php app migrate"
     run_as_www_data "cd '${PANEL_DIR}' && php app module ensure pma" || true
 }
@@ -359,6 +362,70 @@ ensure_nginx_proxy_buffers() {
     echo "Inserted proxy_buffer_size into ${site_file}"
 }
 
+# Move the backend from nginx + php-fpm to FrankenPHP (once), or restart it
+# so worker mode picks up the new code. If FrankenPHP does not come up the
+# old nginx config is restored, so the panel keeps running on php-fpm.
+setup_frankenphp_backend() {
+    local lib="${PANEL_DIR}/installer/source/lib/frankenphp.bash"
+    local migrated=0 snapshot
+    if [ "$FEATHERPANEL_BACKEND" = "fpm" ]; then
+        echo "FEATHERPANEL_BACKEND=fpm: leaving the php-fpm backend as it is."
+        return 0
+    fi
+    if [ ! -f "$lib" ]; then
+        echo "No FrankenPHP installer library in this panel version; skipping." >&2
+        return 0
+    fi
+    # shellcheck source=/dev/null
+    . "$lib"
+
+    step "Setting up the FrankenPHP backend (worker mode, Mercure, OPcache)..."
+    if ! (fp_setup_backend "$BACKEND_DIR"); then
+        echo "FrankenPHP setup failed; the backend stays on its current setup." >&2
+        return 0
+    fi
+
+    snapshot="${NGINX_SITE_FILE}.bak.pre-frankenphp-update"
+    [ -f "$NGINX_SITE_FILE" ] && cp -a "$NGINX_SITE_FILE" "$snapshot"
+
+    if [ -f "$NGINX_SITE_FILE" ] && grep -Eq "listen[[:space:]]+(127\.0\.0\.1:)?${FP_BACKEND_PORT}[[:space:];]" "$NGINX_SITE_FILE"; then
+        fp_strip_nginx_fpm_backend "$NGINX_SITE_FILE"
+        migrated=1
+    fi
+    fp_ensure_nginx_mercure_location "$NGINX_SITE_FILE"
+    if ! nginx -t; then
+        echo "nginx rejected the updated config, restoring the previous one." >&2
+        restore_nginx_backup "$snapshot"
+        return 0
+    fi
+    # nginx must release port ${FP_BACKEND_PORT} before FrankenPHP binds it.
+    if [ "$migrated" -eq 1 ]; then
+        systemctl restart nginx
+    fi
+
+    if ! (fp_start_backend); then
+        if [ "$migrated" -eq 1 ]; then
+            echo "FrankenPHP did not start: rolling back to nginx + php-fpm." >&2
+            systemctl disable --now "${FP_SERVICE_NAME}.service" || true
+            restore_nginx_backup "$snapshot"
+            nginx -t && systemctl restart nginx
+        fi
+        echo "Backend left on the previous setup. Check: journalctl -u ${FP_SERVICE_NAME}" >&2
+        return 0
+    fi
+    if [ "$migrated" -eq 1 ]; then
+        echo "Backend moved to FrankenPHP. php-fpm is no longer used by FeatherPanel;"
+        echo "disable it if nothing else needs it: systemctl disable --now 'php*-fpm'"
+    fi
+}
+
+restore_nginx_backup() {
+    local backup="$1"
+    [ -f "$backup" ] || return 0
+    cp -a "$backup" "$NGINX_SITE_FILE"
+    echo "Restored ${NGINX_SITE_FILE} from ${backup}"
+}
+
 restart_services() {
     step "Restarting services (runner, frontend, nginx)..."
     systemctl restart "$RUNNER_SERVICE_NAME" || true
@@ -376,6 +443,7 @@ main() {
     chown -R root:root "$PANEL_DIR"
     set_runtime_permissions
     update_backend
+    setup_frankenphp_backend
     update_frontend
     update_runner
     restart_services

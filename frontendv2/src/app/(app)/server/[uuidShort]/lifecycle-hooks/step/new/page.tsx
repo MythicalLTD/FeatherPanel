@@ -24,7 +24,7 @@ import { ArrowLeft, Lock, Loader2, Power } from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useServerPermissions } from '@/hooks/useServerPermissions';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
-import { PageHeader } from '@/components/featherui/PageHeader';
+import { ServerPageHeader } from '@/components/server/ServerPageHeader';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Button } from '@/components/featherui/Button';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
@@ -222,8 +222,8 @@ export default function NewLifecycleHookStepPage() {
 
     if (!featureEnabled) {
         return (
-            <div className='space-y-8 pb-12'>
-                <PageHeader
+            <div className='space-y-6 pb-12'>
+                <ServerPageHeader
                     title={t('lifecycleHooks.stepNew.title', { hookType: hookLabels[hookType] })}
                     description={stepDescription}
                     actions={
@@ -243,7 +243,7 @@ export default function NewLifecycleHookStepPage() {
     if (!canUpdate) {
         return (
             <div className='space-y-8 pb-12'>
-                <PageHeader
+                <ServerPageHeader
                     title={t('lifecycleHooks.stepNew.title', { hookType: hookLabels[hookType] })}
                     description={stepDescription}
                     actions={
@@ -264,7 +264,7 @@ export default function NewLifecycleHookStepPage() {
         <>
             <WidgetRenderer widgets={getWidgets('server-lifecycle-step-create', 'top-of-page')} />
             <div className='space-y-8 pb-12'>
-                <PageHeader
+                <ServerPageHeader
                     title={t('lifecycleHooks.stepNew.title', { hookType: hookLabels[hookType] })}
                     description={stepDescription}
                     actions={

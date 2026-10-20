@@ -359,7 +359,7 @@ class WingsAdminController
 
         $ips = $wings->getSystem()->getSystemIPs();
 
-        // Calagopus has no /api/system/ips — fall back to node public IPs for allocation UX.
+        // Calagopus has no /api/system/ips - fall back to node public IPs for allocation UX.
         if (empty($ips['ip_addresses'])) {
             $fallback = [];
             foreach (['public_ip_v4', 'public_ip_v6'] as $key) {

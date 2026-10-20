@@ -15,6 +15,8 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { DataTable, RowActionsMenu } from '@/components/featherui/DataTable';
+
 import * as React from 'react';
 import { useParams, useRouter, usePathname } from 'next/navigation';
 import axios, { AxiosError } from 'axios';
@@ -38,10 +40,10 @@ import {
     Upload,
 } from 'lucide-react';
 
-import { PageHeader } from '@/components/featherui/PageHeader';
+import { ServerPageHeader } from '@/components/server/ServerPageHeader';
+import { ServerPageTips } from '@/components/server/ServerPageTips';
 import { EmptyState } from '@/components/featherui/EmptyState';
 import { Button } from '@/components/featherui/Button';
-import { ResourceCard } from '@/components/featherui/ResourceCard';
 import { Dialog, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { useServerPermissions } from '@/hooks/useServerPermissions';
@@ -55,6 +57,15 @@ import type { Schedule, SchedulePagination } from '@/types/server';
 import { safeBack } from '@/lib/safe-back';
 import { PageLoading } from '@/components/featherui/PageLoading';
 import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
+import { ListPagination } from '@/components/featherui/ListPagination';
+
+function scheduleBadge(schedule: { is_active?: unknown; is_processing?: unknown }): string {
+    return schedule.is_active
+        ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
+        : schedule.is_processing
+          ? 'bg-blue-500/10 text-blue-500 border-blue-500/20'
+          : 'bg-destructive/10 text-destructive border-destructive/20';
+}
 
 export default function ServerSchedulesPage() {
     const { uuidShort } = useParams() as { uuidShort: string };
@@ -268,7 +279,7 @@ export default function ServerSchedulesPage() {
 
     if (!isEnabledUnlessExplicitlyFalse(settings?.server_allow_schedules)) {
         return (
-            <div className='bg-card/40 border-border/50 flex flex-col items-center justify-center space-y-8 rounded-3xl border py-24 text-center backdrop-blur-xl'>
+            <div className='fp-surface flex flex-col items-center justify-center space-y-8 rounded-xl border py-24 text-center'>
                 <div className='relative'>
                     <div className='absolute inset-0 scale-150 rounded-full bg-red-500/20 blur-3xl' />
                     <div className='relative flex h-32 w-32 rotate-3 items-center justify-center rounded-3xl border-2 border-red-500/20 bg-red-500/10'>
@@ -276,9 +287,7 @@ export default function ServerSchedulesPage() {
                     </div>
                 </div>
                 <div className='max-w-md space-y-3 px-4'>
-                    <h2 className='text-3xl font-black tracking-tight uppercase'>
-                        {t('serverSchedules.featureDisabled')}
-                    </h2>
+                    <h2 className='text-3xl font-semibold tracking-tight'>{t('serverSchedules.featureDisabled')}</h2>
                     <p className='text-muted-foreground text-lg leading-relaxed font-medium'>
                         {t('serverSchedules.featureDisabledDescription')}
                     </p>
@@ -310,7 +319,7 @@ export default function ServerSchedulesPage() {
                 <div className='mb-6 flex h-20 w-20 items-center justify-center rounded-3xl bg-red-500/10'>
                     <Lock className='h-10 w-10 text-red-500' />
                 </div>
-                <h1 className='text-2xl font-black tracking-tight uppercase'>{t('common.accessDenied')}</h1>
+                <h1 className='text-2xl font-semibold tracking-tight'>{t('common.accessDenied')}</h1>
                 <p className='text-muted-foreground mt-2'>{t('common.noPermission')}</p>
                 <Button variant='outline' className='mt-8' onClick={() => safeBack(router)}>
                     {t('common.goBack')}
@@ -320,10 +329,10 @@ export default function ServerSchedulesPage() {
     }
 
     return (
-        <div key={pathname} className='space-y-8 pb-12'>
+        <div key={pathname} className='space-y-6 pb-12'>
             <WidgetRenderer widgets={getWidgets('server-schedules', 'top-of-page')} />
 
-            <PageHeader
+            <ServerPageHeader
                 title={t('serverSchedules.title')}
                 description={t('serverSchedules.description')}
                 actions={
@@ -393,161 +402,143 @@ export default function ServerSchedulesPage() {
             ) : (
                 <>
                     {pagination.total > pagination.per_page && (
-                        <div className='border-border bg-card/50 mb-4 flex items-center justify-between gap-4 rounded-xl border px-4 py-3'>
-                            <Button
-                                variant='outline'
-                                size='sm'
-                                disabled={pagination.current_page <= 1 || loading}
-                                onClick={() => fetchData(pagination.current_page - 1)}
-                                className='gap-1.5'
-                            >
-                                <ChevronLeft className='h-4 w-4' />
-                                {t('common.previous')}
-                            </Button>
-                            <span className='text-sm font-medium'>
-                                {pagination.current_page} / {pagination.last_page}
-                            </span>
-                            <Button
-                                variant='outline'
-                                size='sm'
-                                disabled={pagination.current_page >= pagination.last_page || loading}
-                                onClick={() => fetchData(pagination.current_page + 1)}
-                                className='gap-1.5'
-                            >
-                                {t('common.next')}
-                                <ChevronRight className='h-4 w-4' />
-                            </Button>
-                        </div>
+                        <ListPagination
+                            page={pagination.current_page}
+                            totalPages={pagination.last_page}
+                            disabled={loading}
+                            onPageChange={(nextPage) => fetchData(nextPage)}
+                            className='mb-4'
+                        />
                     )}
-                    <div className='grid grid-cols-1 gap-4'>
-                        {schedules.map((schedule) => (
-                            <ResourceCard
-                                key={schedule.id}
-                                icon={Calendar}
-                                iconWrapperClassName={
-                                    schedule.is_processing
-                                        ? 'bg-blue-500/10 border-blue-500/20 text-blue-500'
-                                        : schedule.is_active
-                                          ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500'
-                                          : 'bg-gray-500/10 border-gray-500/20 text-gray-500'
-                                }
-                                title={schedule.name}
-                                description={
-                                    <div className='flex flex-col gap-1'>
-                                        <div className='text-muted-foreground flex flex-wrap items-center gap-3 text-xs font-medium'>
-                                            <span className='flex items-center gap-1.5 rounded-lg bg-white/5 px-2 py-1 font-mono'>
-                                                <Clock className='h-3 w-3' />
-                                                {formatCronExpression(schedule)}
-                                            </span>
-                                            {schedule.timezone && (
-                                                <span className='flex items-center gap-1.5 px-2 py-1 font-mono'>
-                                                    {schedule.timezone}
-                                                </span>
-                                            )}
-                                            {schedule.next_run_at && (
-                                                <span className='flex items-center gap-1.5 px-2 py-1'>
-                                                    <CalendarClock className='h-3 w-3' />
-                                                    {t('serverSchedules.nextRun')}{' '}
-                                                    {formatDateTimeInTz(schedule.next_run_at, dateOpts)}
-                                                </span>
-                                            )}
-                                        </div>
+                    <DataTable
+                        rows={schedules}
+                        rowKey={(schedule) => schedule.id}
+                        columns={[
+                            {
+                                key: 'name',
+                                header: t('serverSchedules.name'),
+                                cell: (schedule) => (
+                                    <div className='flex min-w-0 items-center gap-3'>
+                                        <span className='fp-icon-tile text-primary flex h-9 w-9 shrink-0 items-center justify-center rounded-xl'>
+                                            <Calendar className='h-4 w-4' />
+                                        </span>
+                                        <p className='truncate font-medium'>{schedule.name}</p>
                                     </div>
-                                }
-                                badges={[
+                                ),
+                            },
+                            {
+                                key: 'cron',
+                                header: t('serverSchedules.cron'),
+                                className: 'font-mono text-xs',
+                                cell: (schedule) => (
+                                    <span>
+                                        {formatCronExpression(schedule)}
+                                        {schedule.timezone && (
+                                            <span className='text-muted-foreground ml-2'>{schedule.timezone}</span>
+                                        )}
+                                    </span>
+                                ),
+                            },
+                            {
+                                key: 'next',
+                                header: t('serverSchedules.nextRunHeader'),
+                                className: 'text-muted-foreground whitespace-nowrap text-xs',
+                                cell: (schedule) =>
+                                    schedule.next_run_at ? formatDateTimeInTz(schedule.next_run_at, dateOpts) : '-',
+                            },
+                            {
+                                key: 'status',
+                                header: t('common.status'),
+                                cell: (schedule) => (
+                                    <span
+                                        className={cn(
+                                            'rounded-full border px-2.5 py-0.5 text-xs',
+                                            scheduleBadge(schedule),
+                                        )}
+                                    >
+                                        {getStatusText(schedule)}
+                                    </span>
+                                ),
+                            },
+                        ]}
+                        mobileCard={(schedule) => (
+                            <div className='min-w-0 space-y-1.5'>
+                                <div className='flex items-center justify-between gap-2'>
+                                    <p className='truncate font-medium'>{schedule.name}</p>
+                                    <span
+                                        className={cn(
+                                            'shrink-0 rounded-full border px-2.5 py-0.5 text-xs',
+                                            scheduleBadge(schedule),
+                                        )}
+                                    >
+                                        {getStatusText(schedule)}
+                                    </span>
+                                </div>
+                                <p className='text-muted-foreground flex items-center gap-1.5 font-mono text-xs'>
+                                    <Clock className='h-3 w-3' />
+                                    {formatCronExpression(schedule)}
+                                </p>
+                                {schedule.next_run_at && (
+                                    <p className='text-muted-foreground flex items-center gap-1.5 text-xs'>
+                                        <CalendarClock className='h-3 w-3' />
+                                        {t('serverSchedules.nextRun')}{' '}
+                                        {formatDateTimeInTz(schedule.next_run_at, dateOpts)}
+                                    </p>
+                                )}
+                            </div>
+                        )}
+                        actions={(schedule) => (
+                            <RowActionsMenu
+                                items={[
                                     {
-                                        label: getStatusText(schedule),
-                                        className: schedule.is_active
-                                            ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
-                                            : schedule.is_processing
-                                              ? 'bg-blue-500/10 text-blue-500 border-blue-500/20'
-                                              : 'bg-destructive/10 text-destructive border-destructive/20',
+                                        label: t('common.edit'),
+                                        icon: Pencil,
+                                        hidden: !canUpdate,
+                                        onClick: () =>
+                                            router.push(`/server/${uuidShort}/schedules/${schedule.id}/edit`),
+                                    },
+                                    {
+                                        label: t('serverSchedules.tasks'),
+                                        icon: ListTodo,
+                                        onClick: () =>
+                                            router.push(`/server/${uuidShort}/schedules/${schedule.id}/tasks`),
+                                    },
+                                    {
+                                        label: t('serverSchedules.runNow'),
+                                        icon: runningNow === schedule.id ? Loader2 : Play,
+                                        hidden: !canUpdate,
+                                        disabled: runningNow === schedule.id || !!schedule.is_processing,
+                                        onClick: () => handleRunNow(schedule),
+                                    },
+                                    {
+                                        label: t('serverSchedules.export'),
+                                        icon: exporting === schedule.id ? Loader2 : Download,
+                                        disabled: exporting === schedule.id,
+                                        onClick: () => handleExport(schedule),
+                                    },
+                                    {
+                                        label: schedule.is_active ? t('common.disable') : t('common.enable'),
+                                        icon: Power,
+                                        hidden: !canUpdate,
+                                        separated: true,
+                                        onClick: () => handleToggle(schedule),
+                                    },
+                                    {
+                                        label: t('common.delete'),
+                                        icon: Trash2,
+                                        destructive: true,
+                                        hidden: !canDelete,
+                                        onClick: () => {
+                                            setSelectedSchedule(schedule);
+                                            setIsDeleteOpen(true);
+                                        },
                                     },
                                 ]}
-                                actions={
-                                    <div className='flex items-center gap-2'>
-                                        {canUpdate && (
-                                            <Button
-                                                variant='glass'
-                                                size='sm'
-                                                onClick={() =>
-                                                    router.push(`/server/${uuidShort}/schedules/${schedule.id}/edit`)
-                                                }
-                                            >
-                                                <Pencil className='mr-1.5 h-3.5 w-3.5' />
-                                                <span className='hidden sm:inline'>{t('common.edit')}</span>
-                                            </Button>
-                                        )}
-                                        <Button
-                                            variant='glass'
-                                            size='sm'
-                                            onClick={() =>
-                                                router.push(`/server/${uuidShort}/schedules/${schedule.id}/tasks`)
-                                            }
-                                        >
-                                            <ListTodo className='mr-1.5 h-3.5 w-3.5' />
-                                            <span className='hidden sm:inline'>{t('serverSchedules.tasks')}</span>
-                                        </Button>
-                                        {canUpdate && (
-                                            <Button
-                                                variant='glass'
-                                                size='sm'
-                                                disabled={runningNow === schedule.id || !!schedule.is_processing}
-                                                onClick={() => handleRunNow(schedule)}
-                                            >
-                                                {runningNow === schedule.id ? (
-                                                    <Loader2 className='mr-1.5 h-3.5 w-3.5 animate-spin' />
-                                                ) : (
-                                                    <Play className='mr-1.5 h-3.5 w-3.5' />
-                                                )}
-                                                <span className='hidden sm:inline'>{t('serverSchedules.runNow')}</span>
-                                            </Button>
-                                        )}
-                                        <Button
-                                            variant='glass'
-                                            size='sm'
-                                            disabled={exporting === schedule.id}
-                                            onClick={() => handleExport(schedule)}
-                                        >
-                                            {exporting === schedule.id ? (
-                                                <Loader2 className='mr-1.5 h-3.5 w-3.5 animate-spin' />
-                                            ) : (
-                                                <Download className='mr-1.5 h-3.5 w-3.5' />
-                                            )}
-                                            <span className='hidden sm:inline'>{t('serverSchedules.export')}</span>
-                                        </Button>
-                                        {canUpdate && (
-                                            <Button
-                                                variant={schedule.is_active ? 'warning' : 'default'}
-                                                size='sm'
-                                                onClick={() => handleToggle(schedule)}
-                                            >
-                                                <Power className='mr-1.5 h-3.5 w-3.5' />
-                                                <span className='hidden sm:inline'>
-                                                    {schedule.is_active ? t('common.disable') : t('common.enable')}
-                                                </span>
-                                            </Button>
-                                        )}
-                                        {canDelete && (
-                                            <Button
-                                                variant='destructive'
-                                                size='sm'
-                                                onClick={() => {
-                                                    setSelectedSchedule(schedule);
-                                                    setIsDeleteOpen(true);
-                                                }}
-                                            >
-                                                <Trash2 className='mr-1.5 h-3.5 w-3.5' />
-                                                <span className='hidden sm:inline'>{t('common.delete')}</span>
-                                            </Button>
-                                        )}
-                                    </div>
-                                }
                             />
-                        ))}
-                    </div>
+                        )}
+                    />
                     {pagination.total > pagination.per_page && (
-                        <div className='flex items-center justify-between gap-3 border-t border-white/5 pt-4'>
+                        <div className='border-border/50 flex items-center justify-between gap-3 border-t pt-4'>
                             <div className='text-muted-foreground text-xs'>
                                 {t('serverSchedules.showing', {
                                     from: String(pagination.from),
@@ -639,7 +630,7 @@ export default function ServerSchedulesPage() {
                 </DialogHeader>
                 <div className='flex flex-col gap-4 pt-2'>
                     <div
-                        className='flex cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-white/10 bg-white/5 p-6 transition-colors hover:border-white/20'
+                        className='border-border/60 bg-muted/40 hover:border-border flex cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed p-6 transition-colors'
                         onClick={() => importFileRef.current?.click()}
                     >
                         <Upload className='text-muted-foreground h-8 w-8' />
@@ -653,12 +644,12 @@ export default function ServerSchedulesPage() {
                         />
                     </div>
                     <div className='text-muted-foreground flex items-center gap-3 text-xs'>
-                        <div className='h-px flex-1 bg-white/10' />
+                        <div className='bg-border h-px flex-1' />
                         <span>{t('serverSchedules.orPasteJson')}</span>
-                        <div className='h-px flex-1 bg-white/10' />
+                        <div className='bg-border h-px flex-1' />
                     </div>
                     <textarea
-                        className='text-foreground placeholder:text-muted-foreground focus:ring-primary min-h-40 w-full resize-none rounded-xl border border-white/10 bg-white/5 p-3 font-mono text-xs focus:ring-1 focus:outline-none'
+                        className='text-foreground placeholder:text-muted-foreground focus:ring-primary border-border/60 bg-muted/40 min-h-40 w-full resize-none rounded-xl border p-3 font-mono text-xs focus:ring-1 focus:outline-none'
                         placeholder='{"name": "My Schedule", "cron_minute": "0", ...}'
                         value={importJson}
                         onChange={(e) => setImportJson(e.target.value)}
@@ -686,6 +677,7 @@ export default function ServerSchedulesPage() {
                     </div>
                 </div>
             </Dialog>
+            <ServerPageTips page='schedules' />
         </div>
     );
 }

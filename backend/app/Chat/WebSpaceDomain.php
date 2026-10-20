@@ -114,8 +114,27 @@ class WebSpaceDomain
             ];
         }
 
-        if ($routes !== []) {
-            self::replaceForWebspace($webspaceId, $routes);
+        if ($routes === []) {
+            return;
+        }
+
+        // A domain may already be owned by another WebSpace (e.g. moved between
+        // spaces or left over from a deleted one). Instead of aborting the whole
+        // listing with a 500, keep the conflicting domains out and migrate the
+        // rest - the conflict is logged so an admin can resolve it.
+        $kept = [];
+        foreach ($routes as $route) {
+            if (self::findOwnerId($route['domain'], $webspaceId) !== null) {
+                \App\App::getInstance(true)->getLogger()->warning(
+                    "WebSpaceDomain: skipping legacy domain '{$route['domain']}' for webspace {$webspaceId} — already owned by another WebSpace"
+                );
+                continue;
+            }
+            $kept[] = $route;
+        }
+
+        if ($kept !== []) {
+            self::replaceForWebspace($webspaceId, $kept);
         }
     }
 

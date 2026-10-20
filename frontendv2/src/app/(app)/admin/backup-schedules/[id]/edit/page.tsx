@@ -32,12 +32,15 @@ import {
     emptyBackupScheduleForm,
     formFromPolicy,
 } from '@/components/admin/backup-schedules/BackupScheduleFormFields';
+import { UnsavedChangesBar } from '@/components/featherui/UnsavedChangesBar';
+import { useFormBaseline } from '@/hooks/useFormBaseline';
 
 export default function EditBackupSchedulePage() {
     const { id } = useParams() as { id: string };
     const { t } = useTranslation();
     const router = useRouter();
     const [form, setForm] = React.useState(emptyBackupScheduleForm());
+    const { dirty: unsaved, markClean, restore: restoreForm } = useFormBaseline(form);
     const [loading, setLoading] = React.useState(true);
     const [saving, setSaving] = React.useState(false);
 
@@ -48,6 +51,7 @@ export default function EditBackupSchedulePage() {
                 const { data } = await axios.get(`/api/admin/backup-schedules/${id}`);
                 if (!cancelled && data?.data?.policy) {
                     setForm(formFromPolicy(data.data.policy));
+                    markClean();
                 }
             } catch (error) {
                 toast.error(getApiErrorMessage(error, t, 'adminBackupSchedules.loadFailed'));
@@ -59,10 +63,10 @@ export default function EditBackupSchedulePage() {
         return () => {
             cancelled = true;
         };
-    }, [id, router, t]);
+    }, [id, router, t, markClean]);
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleSubmit = async (e?: React.FormEvent) => {
+        e?.preventDefault();
         const body = buildScheduleRequestBody(form);
         if (!body) {
             toast.error(t('adminBackupSchedules.invalidPayload'));
@@ -83,6 +87,7 @@ export default function EditBackupSchedulePage() {
         setSaving(true);
         try {
             await axios.patch(`/api/admin/backup-schedules/${id}`, body);
+            markClean();
             toast.success(t('adminBackupSchedules.updateSuccess'));
         } catch (error) {
             toast.error(getApiErrorMessage(error, t, 'adminBackupSchedules.updateFailed'));
@@ -114,7 +119,7 @@ export default function EditBackupSchedulePage() {
             />
             <form onSubmit={handleSubmit} className='space-y-6' data-fp-save-shortcut>
                 <BackupScheduleFormFields form={form} setForm={setForm} disabled={saving} />
-                <div className='bg-card/40 border-border/50 sticky bottom-4 z-10 flex flex-wrap justify-end gap-2 rounded-2xl border p-4 shadow-sm backdrop-blur-md'>
+                <div className='fp-surface sticky bottom-4 z-10 flex flex-wrap justify-end gap-2 rounded-2xl border p-4'>
                     <Button type='button' variant='outline' onClick={() => safeBack(router, '/admin/backup-schedules')}>
                         {t('common.cancel')}
                     </Button>
@@ -123,6 +128,16 @@ export default function EditBackupSchedulePage() {
                     </Button>
                 </div>
             </form>
+
+            <UnsavedChangesBar
+                dirty={unsaved}
+                saving={saving}
+                onSave={() => void handleSubmit()}
+                onDiscard={() => {
+                    const saved = restoreForm();
+                    if (saved) setForm(saved);
+                }}
+            />
         </div>
     );
 }

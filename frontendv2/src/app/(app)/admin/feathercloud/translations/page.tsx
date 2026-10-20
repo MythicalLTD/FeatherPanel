@@ -328,19 +328,19 @@ export default function MythicTranslationsPage() {
             />
 
             <div className='grid gap-3 sm:grid-cols-3'>
-                <div className='bg-card/60 rounded-2xl px-4 py-3'>
+                <div className='fp-surface rounded-xl border px-4 py-3'>
                     <p className='text-muted-foreground text-xs'>
                         {t('admin.feathercloud.translations.stats.locales')}
                     </p>
                     <p className='mt-1 text-sm font-medium'>{stats.total}</p>
                 </div>
-                <div className='bg-card/60 rounded-2xl px-4 py-3'>
+                <div className='fp-surface rounded-xl border px-4 py-3'>
                     <p className='text-muted-foreground text-xs'>
                         {t('admin.feathercloud.translations.stats.complete')}
                     </p>
                     <p className='mt-1 text-sm font-medium'>{stats.complete}</p>
                 </div>
-                <div className='bg-card/60 rounded-2xl px-4 py-3'>
+                <div className='fp-surface rounded-xl border px-4 py-3'>
                     <p className='text-muted-foreground text-xs'>
                         {t('admin.feathercloud.translations.stats.installed')}
                     </p>
@@ -349,7 +349,7 @@ export default function MythicTranslationsPage() {
             </div>
 
             {projectInfo ? (
-                <div className='bg-card/60 flex flex-wrap items-center gap-4 rounded-2xl px-4 py-3'>
+                <div className='fp-surface flex flex-wrap items-center gap-4 rounded-xl border px-4 py-3'>
                     {projectInfo.iconUrl ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img src={projectInfo.iconUrl} alt='' className='h-10 w-10 rounded-xl object-cover' />
@@ -465,9 +465,9 @@ export default function MythicTranslationsPage() {
                             <article
                                 key={code}
                                 className={cn(
-                                    'bg-card/80 flex flex-col overflow-hidden rounded-2xl shadow-sm ring-1 transition',
-                                    'hover:bg-card hover:shadow-md',
-                                    checked ? 'ring-primary/50' : 'ring-border/40',
+                                    'fp-surface flex flex-col overflow-hidden rounded-2xl border ring-1 transition-colors',
+                                    'hover:border-primary/30',
+                                    checked ? 'ring-primary/50' : 'ring-transparent',
                                 )}
                             >
                                 <div className='flex flex-1 flex-col space-y-3 p-4'>
@@ -490,7 +490,7 @@ export default function MythicTranslationsPage() {
                                         </div>
                                         <div className='flex shrink-0 flex-col items-end gap-1'>
                                             {installed ? (
-                                                <span className='rounded-md bg-blue-500/15 px-1.5 py-0.5 text-[10px] font-medium text-blue-600 dark:text-blue-400'>
+                                                <span className='bg-primary/10 text-primary rounded-md px-1.5 py-0.5 text-[10px] font-medium'>
                                                     {t('admin.feathercloud.translations.labels.installed')}
                                                 </span>
                                             ) : null}

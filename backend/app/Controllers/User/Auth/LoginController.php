@@ -31,6 +31,7 @@ use App\CloudFlare\CloudFlareRealIP;
 use App\Helpers\SessionCookieHelper;
 use App\Helpers\AccountLockoutHelper;
 use App\Plugins\Events\Events\AuthEvent;
+use App\Helpers\PasswordResetTokenHelper;
 use App\Helpers\TwoFactorChallengeHelper;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -99,6 +100,9 @@ class LoginController
 
         // Handle Discord OAuth login
         $discordToken = $data['discord_token'] ?? null;
+        if ($discordToken !== null && !is_string($discordToken)) {
+            return ApiResponse::error('Invalid or expired Discord token', 'INVALID_DISCORD_TOKEN', 400);
+        }
         if ($discordToken) {
             $discordController = new DiscordController();
             $userInfo = $discordController->authenticateWithToken($discordToken);
@@ -113,6 +117,9 @@ class LoginController
 
         // Handle SSO token login
         $ssoToken = $data['sso_token'] ?? null;
+        if ($ssoToken !== null && !is_string($ssoToken)) {
+            return ApiResponse::error('Invalid or expired SSO token', 'INVALID_SSO_TOKEN', 400);
+        }
         if ($ssoToken) {
             $record = SsoToken::getValidToken($ssoToken);
             if ($record === null || !isset($record['user_uuid'])) {
@@ -131,7 +138,7 @@ class LoginController
         }
 
         if ($config->getSetting(ConfigInterface::TURNSTILE_ENABLED, 'false') == 'true') {
-            if (!isset($data['turnstile_token']) || trim($data['turnstile_token']) === '') {
+            if (!isset($data['turnstile_token']) || !is_scalar($data['turnstile_token']) || trim((string) $data['turnstile_token']) === '') {
                 return ApiResponse::error('Captcha token is required', 'CAPTCHA_TOKEN_REQUIRED');
             }
             if (!\App\Helpers\CaptchaHelper::validate($data['turnstile_token'], CloudFlareRealIP::getRealIP())) {
@@ -277,7 +284,7 @@ class LoginController
         AccountLockoutHelper::clear($lockoutId);
 
         $requiresEmailVerification = $config->getSetting(ConfigInterface::REGISTRATION_REQUIRE_EMAIL_VERIFICATION, 'false') === 'true';
-        $isEmailVerified = !isset($userInfo['mail_verify']) || $userInfo['mail_verify'] === null || trim((string) $userInfo['mail_verify']) === '';
+        $isEmailVerified = PasswordResetTokenHelper::isEmailVerified($userInfo['mail_verify'] ?? null);
         if ($requiresEmailVerification && !$isEmailVerified) {
             return ApiResponse::error('Email verification is required before login. Please verify your email first.', 'EMAIL_NOT_VERIFIED', 403);
         }
@@ -328,7 +335,7 @@ class LoginController
             return ApiResponse::error('Remember token not set', 'REMEMBER_TOKEN_NOT_SET');
         }
         $userInfo['remember_token'] = $token;
-        SessionCookieHelper::set($token, time() + 60 * 60 * 24 * 30);
+        SessionCookieHelper::startSession($userInfo, $token, time() + 60 * 60 * 24 * 30);
         User::updateUser($userInfo['uuid'], ['last_ip' => CloudFlareRealIP::getRealIP()]);
         UserDeviceTracker::trackFromGlobals($userInfo);
 
@@ -351,7 +358,7 @@ class LoginController
         }
 
         // Unset stuff thats dangerous
-        unset($userInfo['password']);
+        $userInfo = User::stripSensitiveFields($userInfo);
 
         if ($app->isDemoMode()) {
             $userInfo['first_ip'] = $app->getIPIntoFBIFormat();

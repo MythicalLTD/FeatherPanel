@@ -72,7 +72,7 @@ export function CreateServerAction({ compact = false }: { compact?: boolean }) {
             <Dialog
                 open={open}
                 onOpenChange={setOpen}
-                className='bg-card/80 border-border/50 max-w-2xl backdrop-blur-xl'
+                className='fp-surface max-w-2xl border'
                 enableSaveShortcut={false}
             >
                 <DialogHeader>

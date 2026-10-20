@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { AdminPageTips } from '@/components/admin/AdminPageTips';
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
@@ -433,6 +434,8 @@ export default function PluginManagerPage() {
                         </Button>
                     }
                 />
+                <AdminPageTips page='dev-plugins' />
+
                 <WidgetRenderer widgets={getWidgets('admin-dev-plugins', 'bottom-of-page')} />
             </div>
         );
@@ -481,7 +484,7 @@ export default function PluginManagerPage() {
 
             <WidgetRenderer widgets={getWidgets('admin-dev-plugins', 'before-list')} />
 
-            <div className='bg-card/50 border-border flex flex-col items-center gap-4 rounded-2xl border p-4 shadow-sm backdrop-blur-md sm:flex-row'>
+            <div className='fp-surface flex flex-col items-center gap-4 rounded-2xl border p-4 sm:flex-row'>
                 <div className='group relative w-full flex-1'>
                     <Search className='text-muted-foreground group-focus-within:text-primary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transition-colors' />
                     <Input
@@ -767,7 +770,7 @@ export default function PluginManagerPage() {
                                     {selectedPlugin.target && (
                                         <div className='bg-muted/30 border-border/50 space-y-1 rounded-2xl border p-5'>
                                             <p className='text-muted-foreground text-[10px] font-bold tracking-wider uppercase'>
-                                                Target
+                                                {t('ui.admin.dev.plugins.target')}
                                             </p>
                                             <p className='font-semibold'>{selectedPlugin.target}</p>
                                         </div>
@@ -953,7 +956,7 @@ export default function PluginManagerPage() {
                                         </Label>
                                         {field.type === 'file' && (
                                             <div className='mb-2'>
-                                                <div className='mb-2 flex items-center gap-2 rounded-xl border border-yellow-300 bg-yellow-100 p-3 text-xs text-yellow-800 dark:border-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-200'>
+                                                <div className='mb-2 flex items-center gap-2 rounded-xl border border-yellow-500/25 bg-yellow-500/[0.06] p-3 text-xs text-yellow-800 dark:text-yellow-200'>
                                                     <AlertCircle className='h-4 w-4 shrink-0 font-bold' />
                                                     <span>{t('admin.dev.plugins.create_action.file_warning')}</span>
                                                 </div>

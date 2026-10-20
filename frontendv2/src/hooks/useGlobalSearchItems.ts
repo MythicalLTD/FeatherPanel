@@ -33,9 +33,12 @@ import {
     Type,
     User,
     Zap,
+    Monitor,
 } from 'lucide-react';
 import { useSession } from '@/contexts/SessionContext';
 import { useSettings } from '@/contexts/SettingsContext';
+import { usePterodactylImporterVisible, withoutPterodactylImporter } from '@/hooks/usePterodactylImporterVisibility';
+import { getModuleStates, isModuleEnabled } from '@/lib/modules';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useDeveloperMode } from '@/hooks/useDeveloperMode';
 import { usePluginRoutes } from '@/hooks/usePluginRoutes';
@@ -67,6 +70,7 @@ import { getServerRouteId } from '@/lib/server-switch';
 import { getWebSpaceRouteId } from '@/lib/webspace-switch';
 import { vmsApi, type VmInstance } from '@/lib/vms-api';
 import type { PluginSidebarItem } from '@/types/navigation';
+import { filterNavigationByPermission } from '@/hooks/useNavigation';
 
 const APPEARANCE_SECTIONS = [
     { id: 'theme', icon: Palette, labelKey: 'appearance.sections.theme', descKey: 'appearance.sections.themeDesc' },
@@ -228,6 +232,7 @@ export function useGlobalSearchItems(open: boolean, query: string) {
     const pathname = usePathname();
     const { hasPermission, user } = useSession();
     const { settings } = useSettings();
+    const importerVisible = usePterodactylImporterVisible();
     const { t } = useTranslation();
     const { isDeveloperModeEnabled } = useDeveloperMode();
     const { data: pluginRoutes } = usePluginRoutes();
@@ -235,8 +240,12 @@ export function useGlobalSearchItems(open: boolean, query: string) {
 
     const parsedQuery = useMemo(() => parseGlobalSearchQuery(query), [query]);
 
-    const { servers, loading: serversLoading } = useUserServersList(enabled);
-    const { webspaces, loading: webspacesLoading } = useUserWebSpacesList(enabled);
+    const modules = getModuleStates(settings);
+    const { servers: rawServers, loading: serversLoading } = useUserServersList(enabled && modules.game);
+    const { webspaces: rawWebspaces, loading: webspacesLoading } = useUserWebSpacesList(enabled && modules.web);
+    // Lists can still hold entries fetched before a module was switched off.
+    const servers = useMemo(() => (modules.game ? rawServers : []), [modules.game, rawServers]);
+    const webspaces = useMemo(() => (modules.web ? rawWebspaces : []), [modules.web, rawWebspaces]);
     const [vms, setVms] = useState<VmInstance[]>([]);
     const [vmsLoading, setVmsLoading] = useState(false);
     const [adminSettingsOrganized, setAdminSettingsOrganized] = useState<OrganizedSettings | null>(null);
@@ -275,8 +284,12 @@ export function useGlobalSearchItems(open: boolean, query: string) {
 
     useEffect(() => {
         if (!enabled) return;
+        if (!modules.vds) {
+            setVms([]);
+            return;
+        }
         void fetchVms();
-    }, [enabled, fetchVms]);
+    }, [enabled, modules.vds, fetchVms]);
 
     useEffect(() => {
         if (!enabled || !canViewAdminSettings) {
@@ -320,11 +333,25 @@ export function useGlobalSearchItems(open: boolean, query: string) {
     const baseItems = useMemo(() => {
         const items: GlobalSearchResult[] = [...accountItems];
 
-        const mainItems = getMainNavigationItems(t, settings, hasPermission).filter(
-            (item) => !item.permission || hasPermission(item.permission),
+        const mainItems = filterNavigationByPermission(
+            getMainNavigationItems(t, settings, hasPermission),
+            hasPermission,
         );
 
         items.push(...navigationToSearchResults(mainItems, 'pages', t('globalSearch.categories.pages')));
+
+        if (isModuleEnabled(settings, 'game')) {
+            const osTitle = `${settings?.app_name || 'Panel'} OS`;
+            items.push({
+                id: 'featheros',
+                title: t('featheros.nav_open', { name: osTitle }),
+                subtitle: t('featheros.nav_open_hint'),
+                href: '/os',
+                category: 'pages',
+                icon: Monitor,
+                keywords: [osTitle, 'featheros', 'desktop', 'workspace', 'os', 'windows', 'apps'],
+            });
+        }
 
         if (pluginRoutes?.client) {
             items.push(
@@ -345,10 +372,22 @@ export function useGlobalSearchItems(open: boolean, query: string) {
         }
 
         if (canViewAdmin) {
-            const adminItems = getAdminNavigationItems(t, settings, isDeveloperModeEnabled ?? false).filter(
-                (item) => !item.permission || hasPermission(item.permission),
+            const adminItems = filterNavigationByPermission(
+                withoutPterodactylImporter(
+                    getAdminNavigationItems(t, settings, isDeveloperModeEnabled ?? false),
+                    importerVisible,
+                ),
+                hasPermission,
             );
-            items.push(...navigationToSearchResults(adminItems, 'admin', t('globalSearch.categories.admin')));
+            const adminLabel = t('globalSearch.categories.admin');
+            items.push(
+                ...navigationToSearchResults(adminItems, 'admin', (item) => {
+                    if (!item.group) return adminLabel;
+                    const key = `navigation.groups.${item.group}`;
+                    const section = t(key);
+                    return section === key ? adminLabel : `${adminLabel} · ${section}`;
+                }),
+            );
 
             if (pluginRoutes?.admin) {
                 items.push(
@@ -365,6 +404,7 @@ export function useGlobalSearchItems(open: boolean, query: string) {
     }, [
         t,
         settings,
+        importerVisible,
         hasPermission,
         canViewAdmin,
         canViewAdminSettings,
@@ -392,6 +432,7 @@ export function useGlobalSearchItems(open: boolean, query: string) {
                 subtitle: server.spell?.name ?? routeId,
                 href: `/server/${routeId}`,
                 category: 'servers',
+                module: 'game',
                 icon: consoleNav?.icon && typeof consoleNav.icon === 'function' ? consoleNav.icon : ServerIcon,
                 lucideIcon: consoleNav?.lucideIcon,
                 panelIcon: consoleNav?.panelIcon,
@@ -415,6 +456,7 @@ export function useGlobalSearchItems(open: boolean, query: string) {
                 subtitle: routeId,
                 href: `/webspace/${routeId}`,
                 category: 'webspaces',
+                module: 'web',
                 icon: consoleNav?.icon && typeof consoleNav.icon === 'function' ? consoleNav.icon : Globe,
                 lucideIcon: consoleNav?.lucideIcon,
                 panelIcon: consoleNav?.panelIcon,
@@ -432,6 +474,7 @@ export function useGlobalSearchItems(open: boolean, query: string) {
                 subtitle: vm.node_name ?? vm.pve_node,
                 href: `/vds/${vm.id}`,
                 category: 'vms',
+                module: 'vds',
                 icon: vdsNav?.icon && typeof vdsNav.icon === 'function' ? vdsNav.icon : HardDrive,
                 lucideIcon: vdsNav?.lucideIcon,
                 panelIcon: vdsNav?.panelIcon,

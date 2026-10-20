@@ -15,8 +15,9 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useLayoutEffect } from 'react';
 import { usePathname } from 'next/navigation';
+import { ModuleRouteGuard } from '@/components/layout/ModuleRouteGuard';
 import Sidebar from '@/components/Sidebar';
 import Navbar from '@/components/Navbar';
 import { cn } from '@/lib/utils';
@@ -38,15 +39,15 @@ import { usePluginRoutes, getPluginPaths } from '@/hooks/usePluginRoutes';
 import { readSidebarCollapsed, subscribeSidebarCollapsed } from '@/lib/sidebarChrome';
 import { useSidebarPreferences } from '@/hooks/useSidebarPreferences';
 import { getShellContentInset } from '@/lib/sidebarLayout';
+import { useNavbarSticky } from '@/hooks/useNavbarSticky';
 
 export default function DashboardShell({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const [mobileOpen, setMobileOpen] = useState(false);
-    const [sidebarCollapsed, setSidebarCollapsed] = useState(() =>
-        typeof window === 'undefined' ? false : readSidebarCollapsed(),
-    );
+    // Expanded on the first render (matches the server), stored choice applied before paint.
+    const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
-    useEffect(() => {
+    useLayoutEffect(() => {
         setSidebarCollapsed(readSidebarCollapsed());
         return subscribeSidebarCollapsed(setSidebarCollapsed);
     }, []);
@@ -94,9 +95,10 @@ export default function DashboardShell({ children }: { children: React.ReactNode
     const useFullBleedLayout = isFullWidthMode || isImmersiveRoute;
 
     const pathSegments = (pathname || '').split('/').filter(Boolean);
-    const isServerConsoleHome = pathSegments.length === 2 && pathSegments[0] === 'server' && Boolean(pathSegments[1]);
-    const isWebSpaceConsoleHome =
-        pathSegments.length === 2 && pathSegments[0] === 'webspace' && Boolean(pathSegments[1]);
+    // Every page of one server (or WebSpace) uses the console's width, so switching tabs never
+    // changes the page width.
+    const isServerOrWebSpacePage =
+        pathSegments.length >= 2 && (pathSegments[0] === 'server' || pathSegments[0] === 'webspace');
     const isTicketDetailPage =
         pathSegments.length === 3 &&
         (pathSegments[0] === 'admin' || pathSegments[0] === 'dashboard') &&
@@ -106,6 +108,7 @@ export default function DashboardShell({ children }: { children: React.ReactNode
     const { navbarHoverReveal } = useNavbarHoverReveal();
     const { chromeLayout } = useChromeLayout();
     const { sidebarPosition, dockDisplay, dockSize } = useSidebarPreferences();
+    const { navbarSticky } = useNavbarSticky();
     const navbarHoverDockActive = navbarHoverReveal && chromeLayout === 'modern';
 
     return (
@@ -126,7 +129,12 @@ export default function DashboardShell({ children }: { children: React.ReactNode
                         <GlobalSearchDialog />
                         <PanelDebugConsole />
                         <div
-                            className='motion-content flex min-h-0 flex-1 flex-col overflow-hidden'
+                            className={cn(
+                                'motion-content flex min-h-0 flex-1 flex-col',
+                                navbarSticky
+                                    ? 'overflow-clip'
+                                    : 'custom-scrollbar overflow-x-hidden overflow-y-auto overscroll-y-contain',
+                            )}
                             data-fp-dashboard-shell
                         >
                             <div
@@ -165,7 +173,12 @@ export default function DashboardShell({ children }: { children: React.ReactNode
                                             'fp-shell-main flex min-h-0 flex-1 flex-col',
                                             useFullBleedLayout
                                                 ? 'overflow-hidden p-0'
-                                                : 'custom-scrollbar overflow-x-hidden overflow-y-auto overscroll-y-contain px-3 py-5 sm:px-6 sm:py-6 lg:px-8',
+                                                : cn(
+                                                      'px-3 py-5 sm:px-6 sm:py-6 lg:px-8',
+                                                      navbarSticky
+                                                          ? 'custom-scrollbar overflow-x-hidden overflow-y-auto overscroll-y-contain'
+                                                          : 'overflow-visible',
+                                                  ),
                                         )}
                                     >
                                         <div
@@ -173,7 +186,7 @@ export default function DashboardShell({ children }: { children: React.ReactNode
                                                 'flex w-full flex-col',
                                                 useFullBleedLayout ? 'h-full min-h-0 flex-1' : 'min-h-full flex-1',
                                                 !useFullBleedLayout &&
-                                                    (isServerConsoleHome || isWebSpaceConsoleHome
+                                                    (isServerOrWebSpacePage
                                                         ? 'mx-auto max-w-[min(100rem,calc(100vw-1.5rem))] sm:max-w-[min(100rem,calc(100vw-2rem))]'
                                                         : isTicketDetailPage
                                                           ? 'mx-auto max-w-[min(112rem,calc(100vw-1.5rem))] sm:max-w-[min(112rem,calc(100vw-2rem))]'
@@ -185,7 +198,9 @@ export default function DashboardShell({ children }: { children: React.ReactNode
                                                     <AdminOpenTicketsBanner className='mb-5 shrink-0' />
                                                 )}
                                             </PluginSlot>
-                                            <PluginPageOverrideGate>{children}</PluginPageOverrideGate>
+                                            <ModuleRouteGuard>
+                                                <PluginPageOverrideGate>{children}</PluginPageOverrideGate>
+                                            </ModuleRouteGuard>
                                             {!useFullBleedLayout ? (
                                                 <footer className='border-border/40 mt-6 shrink-0 border-t pt-4 pb-2'>
                                                     <ConfiguredLinks variant='compact' />

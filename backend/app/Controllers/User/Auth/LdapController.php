@@ -25,6 +25,7 @@ use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
 use App\Helpers\LdapAuthenticator;
 use App\CloudFlare\CloudFlareRealIP;
+use App\Helpers\AccountLockoutHelper;
 use App\Helpers\EmailDomainValidator;
 use App\Plugins\Events\Events\AuthEvent;
 use Symfony\Component\HttpFoundation\Request;
@@ -73,7 +74,7 @@ class LdapController
 
         // Turnstile validation
         if ($config->getSetting(ConfigInterface::TURNSTILE_ENABLED, 'false') == 'true') {
-            if (!isset($data['turnstile_token']) || trim($data['turnstile_token']) === '') {
+            if (!isset($data['turnstile_token']) || !is_scalar($data['turnstile_token']) || trim((string) $data['turnstile_token']) === '') {
                 return ApiResponse::error('Captcha token is required', 'CAPTCHA_TOKEN_REQUIRED');
             }
             if (!\App\Helpers\CaptchaHelper::validate($data['turnstile_token'], CloudFlareRealIP::getRealIP())) {
@@ -97,9 +98,13 @@ class LdapController
             return ApiResponse::error('Missing required fields: ' . implode(', ', $missingFields), 'MISSING_REQUIRED_FIELDS');
         }
 
-        $providerUuid = trim($data['provider_uuid']);
-        $username = trim($data['username']);
-        $password = $data['password']; // Don't trim password
+        if (!is_scalar($data['provider_uuid']) || !is_scalar($data['username']) || !is_scalar($data['password'])) {
+            return ApiResponse::error('Provider UUID, username, and password must be strings', 'INVALID_DATA');
+        }
+
+        $providerUuid = trim((string) $data['provider_uuid']);
+        $username = trim((string) $data['username']);
+        $password = (string) $data['password']; // Don't trim password
 
         // Validate data
         if (empty($providerUuid) || empty($username) || empty($password)) {
@@ -114,6 +119,15 @@ class LdapController
 
         if (($provider['enabled'] ?? 'false') !== 'true') {
             return ApiResponse::error('LDAP provider is disabled', 'PROVIDER_DISABLED', 403);
+        }
+
+        // FP-14: per-account throttle/lockout for LDAP logins, exactly like the
+        // password login (the route rate limit is not enough, it can be bypassed
+        // by rotating IPs). Never denies the account owner, it only delays.
+        $lockoutId = 'ldap-login:' . $providerUuid . ':' . strtolower($username);
+        $throttleDelay = AccountLockoutHelper::getEscalatingDelaySeconds($lockoutId);
+        if ($throttleDelay > 0) {
+            sleep($throttleDelay);
         }
 
         // Authenticate against LDAP
@@ -136,11 +150,16 @@ class LdapController
                 );
             }
 
-            return ApiResponse::error(
-                'LDAP authentication failed: ' . ($ldap->getLastError() ?? 'Unknown error'),
-                'LDAP_AUTH_FAILED',
-                401
+            // Count the failure (soft throttle, no hard lockout) and keep the
+            // details out of the response: it must not be distinguishable from
+            // "user exists, wrong password" (account enumeration).
+            AccountLockoutHelper::recordFailure($lockoutId, hardLock: false);
+            $app->getLogger()->warning(
+                'LDAP authentication failed for provider ' . $provider['name'] . ' (user "' . $username . '"): '
+                . ($ldap->getLastError() ?? 'Unknown error')
             );
+
+            return ApiResponse::error('Invalid username or password', 'INVALID_CREDENTIALS', 401);
         }
 
         // Check if user exists in database
@@ -149,11 +168,16 @@ class LdapController
         if (!$userInfo) {
             // Auto-provision user if enabled
             if (($provider['auto_provision'] ?? 'false') !== 'true') {
-                return ApiResponse::error(
-                    'User not found and auto-provisioning is disabled',
-                    'USER_NOT_FOUND_NO_AUTO_PROVISION',
-                    403
+                // LDAP credentials were valid but there is no panel account and
+                // auto-provisioning is off. Answer exactly like a failed login so
+                // the response cannot be used to enumerate LDAP users.
+                AccountLockoutHelper::recordFailure($lockoutId, hardLock: false);
+                $app->getLogger()->warning(
+                    'LDAP login rejected: no panel account for DN "' . $ldapUser['dn'] . '" (provider '
+                    . $provider['name'] . ') and auto-provisioning is disabled'
                 );
+
+                return ApiResponse::error('Invalid username or password', 'INVALID_CREDENTIALS', 401);
             }
 
             // Create new user
@@ -171,7 +195,7 @@ class LdapController
         // Check if user is banned
         if ($userInfo['banned'] == 'true') {
             global $eventManager;
-            if (isset($eventManager) && $eventManager !== null) {
+            if ($eventManager !== null) {
                 $eventManager->emit(
                     AuthEvent::onAuthLoginFailed(),
                     [
@@ -184,6 +208,9 @@ class LdapController
 
             return ApiResponse::error('User is banned', 'USER_BANNED', 401);
         }
+
+        // Successful LDAP login: clear the failure counter for this account.
+        AccountLockoutHelper::clear($lockoutId);
 
         // Complete login using the shared method from LoginController
         $loginController = new LoginController();

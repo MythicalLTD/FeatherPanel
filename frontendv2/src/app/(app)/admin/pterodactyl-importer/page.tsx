@@ -15,12 +15,20 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { AdminPageTips } from '@/components/admin/AdminPageTips';
 import { getApiErrorMessage } from '@/lib/api-errors';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import axios from 'axios';
+import { useRouter } from 'next/navigation';
+import { useSettings } from '@/contexts/SettingsContext';
+import {
+    getPterodactylImporterVisibility,
+    rememberPterodactylImporterRequirements,
+    type PterodactylImporterVisibility,
+} from '@/hooks/usePterodactylImporterVisibility';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Button } from '@/components/featherui/Button';
@@ -46,6 +54,9 @@ import {
     Key,
     BookOpen,
     MessageCircle,
+    Eye,
+    EyeOff,
+    Info,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -93,6 +104,28 @@ interface SingleApiClientResponse {
 
 export default function PterodactylImporterPage() {
     const { t, translations } = useTranslation();
+    const router = useRouter();
+    const { settings, refetch: refetchSettings } = useSettings();
+    const visibility = getPterodactylImporterVisibility(settings?.pterodactyl_importer_visibility);
+    const [savingVisibility, setSavingVisibility] = useState(false);
+
+    const setVisibility = async (value: PterodactylImporterVisibility) => {
+        setSavingVisibility(true);
+        try {
+            await axios.patch('/api/admin/settings', { pterodactyl_importer_visibility: value });
+            await refetchSettings();
+            if (value === 'hidden') {
+                toast.success(t('admin.pterodactyl_importer.visibility.hidden_toast'));
+                router.push('/admin');
+            } else {
+                toast.success(t('admin.pterodactyl_importer.visibility.shown_toast'));
+            }
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.pterodactyl_importer.visibility.failed'));
+        } finally {
+            setSavingVisibility(false);
+        }
+    };
 
     const getTranslationObject = (key: string): Record<string, string> => {
         const keys = key.split('.');
@@ -146,6 +179,7 @@ export default function PterodactylImporterPage() {
             const response = await axios.get<PrerequisitesResponse>('/api/admin/pterodactyl-importer/prerequisites');
             if (response.data.success && response.data.data) {
                 setPrerequisites(response.data.data);
+                rememberPterodactylImporterRequirements(Boolean(response.data.data.panel_clean));
             } else {
                 toast.error(t('admin.pterodactyl_importer.prerequisites.failed'));
             }
@@ -266,7 +300,70 @@ export default function PterodactylImporterPage() {
                 title={t('admin.pterodactyl_importer.title')}
                 description={t('admin.pterodactyl_importer.description')}
                 icon={Database}
+                actions={
+                    visibility !== 'hidden' ? (
+                        <Button
+                            variant='glass'
+                            onClick={() => setVisibility('hidden')}
+                            disabled={savingVisibility}
+                            className='gap-2'
+                        >
+                            <EyeOff className='h-4 w-4' />
+                            {t('admin.pterodactyl_importer.visibility.hide')}
+                        </Button>
+                    ) : undefined
+                }
             />
+
+            {visibility === 'hidden' ? (
+                <div className='fp-surface flex flex-col gap-3 rounded-xl border p-4 sm:flex-row sm:items-center sm:justify-between'>
+                    <div className='flex items-start gap-3'>
+                        <Info className='text-primary mt-0.5 h-5 w-5 shrink-0' />
+                        <div className='space-y-0.5'>
+                            <p className='text-sm font-medium'>
+                                {t('admin.pterodactyl_importer.visibility.hidden_title')}
+                            </p>
+                            <p className='text-muted-foreground text-sm'>
+                                {t('admin.pterodactyl_importer.visibility.hidden_description')}
+                            </p>
+                        </div>
+                    </div>
+                    <Button
+                        variant='outline'
+                        size='sm'
+                        onClick={() => setVisibility('auto')}
+                        disabled={savingVisibility}
+                        className='shrink-0 gap-2'
+                    >
+                        <Eye className='h-4 w-4' />
+                        {t('admin.pterodactyl_importer.visibility.show_again')}
+                    </Button>
+                </div>
+            ) : visibility === 'auto' && prerequisites && !prerequisites.panel_clean ? (
+                <div className='fp-surface flex flex-col gap-3 rounded-xl border p-4 sm:flex-row sm:items-center sm:justify-between'>
+                    <div className='flex items-start gap-3'>
+                        <Info className='text-primary mt-0.5 h-5 w-5 shrink-0' />
+                        <div className='space-y-0.5'>
+                            <p className='text-sm font-medium'>
+                                {t('admin.pterodactyl_importer.visibility.auto_title')}
+                            </p>
+                            <p className='text-muted-foreground text-sm'>
+                                {t('admin.pterodactyl_importer.visibility.auto_description')}
+                            </p>
+                        </div>
+                    </div>
+                    <Button
+                        variant='outline'
+                        size='sm'
+                        onClick={() => setVisibility('always')}
+                        disabled={savingVisibility}
+                        className='shrink-0 gap-2'
+                    >
+                        <Eye className='h-4 w-4' />
+                        {t('admin.pterodactyl_importer.visibility.always_show')}
+                    </Button>
+                </div>
+            ) : null}
 
             <WidgetRenderer widgets={getWidgets('admin-pterodactyl-importer', 'after-header')} />
 
@@ -386,13 +483,13 @@ export default function PterodactylImporterPage() {
                                     ].map((item) => (
                                         <div
                                             key={item.key}
-                                            className='bg-card/50 hover:bg-card/80 flex items-center justify-between rounded-lg border border-white/5 box-decoration-clone p-3 transition-all'
+                                            className='bg-card/50 hover:bg-card/80 flex items-center justify-between rounded-lg border border-[var(--fp-surface-border)] box-decoration-clone p-3 transition-all'
                                         >
                                             <span className='text-sm font-medium'>
                                                 {t(`admin.pterodactyl_importer.prerequisites.items.${item.key}`)}
                                             </span>
                                             <div className='flex items-center gap-3'>
-                                                <span className='text-muted-foreground rounded bg-white/5 px-2 py-0.5 font-mono text-xs'>
+                                                <span className='text-muted-foreground bg-muted rounded px-2 py-0.5 font-mono text-xs'>
                                                     {item.count}
                                                 </span>
                                                 {item.passed ? (
@@ -404,7 +501,7 @@ export default function PterodactylImporterPage() {
                                         </div>
                                     ))}
 
-                                    <div className='bg-card/50 hover:bg-card/80 flex items-center justify-between rounded-lg border border-white/5 box-decoration-clone p-3 transition-all sm:col-span-2'>
+                                    <div className='bg-card/50 hover:bg-card/80 flex items-center justify-between rounded-lg border border-[var(--fp-surface-border)] box-decoration-clone p-3 transition-all sm:col-span-2'>
                                         <span className='text-sm font-medium'>
                                             {t('admin.pterodactyl_importer.prerequisites.items.panel_status')}
                                         </span>
@@ -502,20 +599,20 @@ export default function PterodactylImporterPage() {
                                         className='border-primary/20'
                                     >
                                         <div className='space-y-6'>
-                                            <div className='rounded-xl border border-white/10 bg-black/50 p-4'>
+                                            <div className='fp-surface-inset rounded-xl border p-4'>
                                                 <code className='font-mono text-sm text-green-400'>
                                                     feathercli config setup
                                                 </code>
                                             </div>
 
                                             <div className='grid gap-4 sm:grid-cols-2'>
-                                                <div className='space-y-1 rounded-lg border border-white/5 bg-white/5 p-3'>
+                                                <div className='fp-surface-inset space-y-1 rounded-lg border p-3'>
                                                     <span className='text-muted-foreground text-xs font-medium uppercase'>
                                                         {t('admin.pterodactyl_importer.cli.step2.panel_url')}
                                                     </span>
                                                     <div className='font-mono text-sm break-all'>{panelUrl}</div>
                                                 </div>
-                                                <div className='space-y-1 rounded-lg border border-white/5 bg-white/5 p-3'>
+                                                <div className='fp-surface-inset space-y-1 rounded-lg border p-3'>
                                                     <span className='text-muted-foreground text-xs font-medium uppercase'>
                                                         {t('admin.pterodactyl_importer.cli.step2.api_key')}
                                                     </span>
@@ -532,7 +629,7 @@ export default function PterodactylImporterPage() {
                                                 <p className='text-muted-foreground text-sm'>
                                                     {t('admin.pterodactyl_importer.cli.step4.description')}
                                                 </p>
-                                                <div className='rounded-xl border border-white/10 bg-black/50 p-4'>
+                                                <div className='fp-surface-inset rounded-xl border p-4'>
                                                     <code className='font-mono text-sm text-green-400'>
                                                         feathercli migrate
                                                     </code>
@@ -557,7 +654,7 @@ export default function PterodactylImporterPage() {
                                 href='https://docs.mythical.systems/docs/featherpanel/migration'
                                 target='_blank'
                                 rel='noopener noreferrer'
-                                className='flex items-center gap-3 rounded-lg border border-transparent p-3 transition-colors hover:border-white/10 hover:bg-white/5'
+                                className='flex items-center gap-3 rounded-lg border border-transparent p-3 transition-colors hover:border-[var(--fp-surface-border)] hover:bg-white/5'
                             >
                                 <div className='bg-primary/10 text-primary rounded-lg p-2'>
                                     <BookOpen className='h-5 w-5' />
@@ -576,7 +673,7 @@ export default function PterodactylImporterPage() {
                                 href='https://discord.mythical.systems'
                                 target='_blank'
                                 rel='noopener noreferrer'
-                                className='flex items-center gap-3 rounded-lg border border-transparent p-3 transition-colors hover:border-white/10 hover:bg-white/5'
+                                className='flex items-center gap-3 rounded-lg border border-transparent p-3 transition-colors hover:border-[var(--fp-surface-border)] hover:bg-white/5'
                             >
                                 <div className='rounded-lg bg-[#5865F2]/10 p-2 text-[#5865F2]'>
                                     <MessageCircle className='h-5 w-5' />
@@ -608,7 +705,7 @@ export default function PterodactylImporterPage() {
                                 ),
                             )}
                         </ul>
-                        <div className='mt-4 rounded-lg border border-amber-500/20 bg-amber-500/10 p-3 text-xs text-amber-500/90'>
+                        <div className='mt-4 rounded-lg border border-amber-500/25 bg-amber-500/[0.06] p-3 text-xs text-amber-500/90'>
                             {t('admin.pterodactyl_importer.info.footer')}
                         </div>
                     </PageCard>
@@ -640,7 +737,7 @@ export default function PterodactylImporterPage() {
                                 {t('admin.pterodactyl_importer.create_key.help_text')}
                             </p>
                         </div>
-                        <div className='rounded-lg border border-amber-500/30 bg-amber-500/10 p-3'>
+                        <div className='rounded-lg border border-amber-500/25 bg-amber-500/[0.06] p-3'>
                             <div className='flex items-start gap-2'>
                                 <AlertTriangle className='mt-0.5 h-4 w-4 shrink-0 text-amber-500' />
                                 <div className='text-xs text-amber-500/90'>
@@ -673,6 +770,8 @@ export default function PterodactylImporterPage() {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
+            <AdminPageTips page='pterodactyl-importer' />
 
             <WidgetRenderer widgets={getWidgets('admin-pterodactyl-importer', 'bottom-of-page')} />
         </div>

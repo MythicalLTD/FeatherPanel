@@ -23,6 +23,7 @@ import { SettingToggleCard } from '@/components/admin/SettingToggleCard';
 import { Label } from '@/components/ui/label';
 import { Settings, Search, UserCircle } from 'lucide-react';
 import { StepProps, User } from './types';
+import { Sensitive } from '@/components/common/Sensitive';
 
 interface Step1Props extends StepProps {
     owners: User[];
@@ -63,7 +64,7 @@ export function Step1CoreDetails({
                         <Input
                             value={formData.name}
                             onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
-                            placeholder='My Server'
+                            placeholder={t('ui.admin.servers.create.step1CoreDetails.myServer')}
                             className='bg-muted/30 h-11'
                         />
                         <p className='text-muted-foreground text-xs'>{t('admin.servers.form.name_help')}</p>
@@ -74,7 +75,7 @@ export function Step1CoreDetails({
                         <Input
                             value={formData.description}
                             onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
-                            placeholder='A brief description'
+                            placeholder={t('ui.admin.servers.create.step1CoreDetails.aBriefDescription')}
                             className='bg-muted/30 h-11'
                         />
                         <p className='text-muted-foreground text-xs'>{t('admin.servers.form.description_help')}</p>
@@ -104,7 +105,9 @@ export function Step1CoreDetails({
                                         <span className='text-foreground font-medium'>
                                             {selectedEntities.owner.username}
                                         </span>
-                                        <span className='text-muted-foreground'>({selectedEntities.owner.email})</span>
+                                        <span className='text-muted-foreground'>
+                                            (<Sensitive>{selectedEntities.owner.email}</Sensitive>)
+                                        </span>
                                     </div>
                                 ) : (
                                     <span className='text-muted-foreground'>

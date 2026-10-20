@@ -20,13 +20,18 @@ namespace App;
 use RateLimit\Rate;
 use App\Chat\Database;
 use App\Helpers\XChaCha20;
+use App\Helpers\ModuleGate;
+use App\Routing\RouteCache;
 use Random\RandomException;
 use App\Helpers\ApiResponse;
 use App\Config\ConfigFactory;
 use App\Logger\LoggerFactory;
+use App\Runtime\WorkerRestart;
 use App\Config\ConfigInterface;
 use App\Plugins\ObsoleteAddons;
+use App\Runtime\RequestContext;
 use App\Helpers\RateLimitConfig;
+use App\Runtime\RequestLifecycle;
 use App\Middleware\AuthMiddleware;
 use App\Telemetry\SentryTelemetry;
 use App\Middleware\AdminMiddleware;
@@ -36,22 +41,64 @@ use Symfony\Component\Routing\Route;
 use App\Plugins\Events\Events\AppEvent;
 use App\Middleware\FeatherQuilldMiddleware;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\Routing\RequestContext;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\RouteCollection;
 use Symfony\Component\Routing\Matcher\UrlMatcher;
+use Symfony\Component\Routing\Matcher\CompiledUrlMatcher;
+use Symfony\Component\Routing\Matcher\UrlMatcherInterface;
+use App\Services\Wings\Exceptions\WingsConnectionException;
+use Symfony\Component\Routing\RequestContext as RoutingContext;
 use Symfony\Component\Routing\Exception\MethodNotAllowedException;
 use Symfony\Component\Routing\Exception\ResourceNotFoundException;
+use Symfony\Component\HttpFoundation\Exception\BadRequestException;
+use Symfony\Component\Routing\Matcher\Dumper\CompiledUrlMatcherDumper;
 
 class App
 {
+    /** Seconds a connection may sit idle between requests before it is pinged. */
+    private const CONNECTION_CHECK_IDLE_SECONDS = 2.0;
+
     public static App $instance;
     public Database $db;
     public RouteCollection $routes;
     public array $middleware = [];
     private ?\Redis $redisConnection = null;
+    private bool $redisAvailable = false;
+    private float $redisRetryAt = 0.0;
+    private float $redisRetryDelay = 5.0;
 
-    public function __construct(bool $softBoot, bool $isCron = false, bool $isCli = false)
+    /** Whether the HTTP boot (database, plugin kernels, routes) completed. */
+    private bool $httpBooted = false;
+    private ?\Throwable $bootError = null;
+    private int $handledRequests = 0;
+    private array | false | null $compiledRoutes = null;
+    private int $compiledRouteCount = 0;
+
+    /**
+     * Route cache state (see App\Routing\RouteCache): false = not usable in
+     * this process, null = not loaded yet.
+     *
+     * @var array{files: list<string>, compiled: array}|false|null
+     */
+    private array | false | null $routeCache = null;
+
+    /** @var list<string>|null route files of this boot, in registration order */
+    private ?array $routeFiles = null;
+
+    /** @var array<string, RouteCollection> routes of single route files, loaded on demand */
+    private array $routeFileCollections = [];
+
+    /**
+     * Boot the application.
+     *
+     * @param bool $softBoot only load the environment (no database, no router)
+     * @param bool $isCron boot for cron jobs (database, no plugins, no router)
+     * @param bool $isCli boot for CLI commands and tests (database only)
+     * @param bool $dispatch handle the current request right away (classic entry
+     *                       points); the FrankenPHP worker boots once with false and
+     *                       calls handle() for every request instead
+     */
+    public function __construct(bool $softBoot, bool $isCron = false, bool $isCli = false, bool $dispatch = true)
     {
         /**
          * Load the environment variables.
@@ -82,13 +129,7 @@ class App
 
         // If running in test mode, skip Redis and plugin manager, just init DB
         if ($isCli) {
-            $this->db = new Database(
-                (string) self::env('DATABASE_HOST', '127.0.0.1'),
-                (string) self::env('DATABASE_DATABASE', ''),
-                (string) self::env('DATABASE_USER', ''),
-                (string) self::env('DATABASE_PASSWORD', ''),
-                (int) self::env('DATABASE_PORT', '3306'),
-            );
+            $this->connectDatabase();
 
             return;
         }
@@ -96,34 +137,48 @@ class App
         /**
          * Redis.
          */
-        $redis = new FastChat\Redis();
-        if (!$redis->testConnection()) {
-            if (!defined('REDIS_ENABLED')) {
-                define('REDIS_ENABLED', false);
-            }
-            $this->redisConnection = null;
-        } else {
-            if (!defined('REDIS_ENABLED')) {
-                define('REDIS_ENABLED', true);
-            }
-            // Initialize Redis connection for rate limiting
-            try {
-                $this->redisConnection = new \Redis();
-                $host = $_ENV['REDIS_HOST'] ?? '127.0.0.1';
-                $port = (int) ($_ENV['REDIS_PORT'] ?? 6379);
-                $password = $_ENV['REDIS_PASSWORD'] ?? null;
+        $this->connectRedis();
 
-                if ($password) {
-                    $this->redisConnection->connect($host, $port);
-                    $this->redisConnection->auth($password);
-                } else {
-                    $this->redisConnection->connect($host, $port);
-                }
+        if ($isCron) {
+            try {
+                $this->connectDatabase();
             } catch (\Exception $e) {
-                self::getLogger()->error('Failed to initialize Redis connection for rate limiting: ' . $e->getMessage());
-                $this->redisConnection = null;
+                SentryTelemetry::captureException($e);
+                self::getLogger()->error('Database connection failed: ' . $e->getMessage(), false);
+                echo json_encode([
+                    'status' => 'error',
+                    'message' => 'Database connection failed',
+                    'exception' => $e->getMessage(),
+                    'success' => false,
+                    'error_code' => 'DATABASE_CONNECTION_FAILED',
+                    'error_message' => 'Database connection failed',
+                ]);
+                exit(1);
             }
-            $redis = $this->redisConnection;
+
+            return;
+        }
+
+        $this->bootHttp();
+
+        if ($dispatch) {
+            $this->handle();
+        }
+    }
+
+    /**
+     * Connect the database, load the plugin kernels and register the routes.
+     *
+     * Idempotent: once it succeeded it returns right away. When the database was
+     * unreachable it can be called again later (a FrankenPHP worker retries on
+     * the next request instead of dying).
+     *
+     * @return bool true when the application is ready to route requests
+     */
+    public function bootHttp(): bool
+    {
+        if ($this->httpBooted) {
+            return true;
         }
 
         /**
@@ -137,44 +192,27 @@ class App
          * Database Connection.
          */
         try {
-            $this->db = new Database(
-                (string) self::env('DATABASE_HOST', '127.0.0.1'),
-                (string) self::env('DATABASE_DATABASE', ''),
-                (string) self::env('DATABASE_USER', ''),
-                (string) self::env('DATABASE_PASSWORD', ''),
-                (int) self::env('DATABASE_PORT', '3306'),
-            );
+            $this->connectDatabase();
         } catch (\Exception $e) {
+            $this->bootError = $e;
             SentryTelemetry::captureException($e);
             self::getLogger()->error('Database connection failed: ' . $e->getMessage(), false);
-            http_response_code(500);
-            header('Content-Type: application/json');
-            header('Cache-Control: no-cache, private');
-            echo json_encode([
-                'status' => 'error',
-                'message' => 'Database connection failed',
-                'exception' => $e->getMessage(),
-                'success' => false,
-                'error_code' => 'DATABASE_CONNECTION_FAILED',
-                'error_message' => 'Database connection failed',
-            ]);
-            exit;
+
+            return false;
         }
 
         /**
          * Initialize the plugin manager.
          */
         if (!defined('CRON_MODE')) {
-            if (isset($pluginManager) && $pluginManager !== null) {
+            if (isset($pluginManager)) {
                 $pluginManager->loadKernel();
             } else {
                 self::getLogger()->warning('Plugin manager was not initialized. Skipping kernel load.');
             }
-            define('LOGGER', $this->getLogger());
-        }
-
-        if ($isCron) {
-            return;
+            if (!defined('LOGGER')) {
+                define('LOGGER', $this->getLogger());
+            }
         }
 
         // Force PHP's default timezone to UTC for the entire request.
@@ -192,15 +230,69 @@ class App
         // frontend, where it belongs. Storage is always UTC.
         date_default_timezone_set('UTC');
 
-        $this->routes = new RouteCollection();
-        $this->registerApiRoutes($this->routes);
-        $eventManager->emit(
-            AppEvent::onRouterReady(),
-            [
-                'router' => $this->routes,
-            ]
-        );
-        $this->dispatchSymfonyRouter();
+        // With the route cache the full collection is only built when
+        // something asks for it (a plugin listening to onRouterReady that
+        // touches the router, or code reading App::$routes); requests are
+        // matched against the compiled cache instead.
+        $this->routeFiles = null;
+        $this->routeFileCollections = [];
+        $this->routeCache = RouteCache::isEnabled() ? null : false;
+        if ($this->routeCache === null) {
+            $this->routes = self::lazyRouteCollection(function (RouteCollection $routes): void {
+                $this->registerApiRoutes($routes);
+            });
+        } else {
+            $this->routes = new RouteCollection();
+            $this->registerApiRoutes($this->routes);
+        }
+        if (isset($eventManager)) {
+            $eventManager->emit(
+                AppEvent::onRouterReady(),
+                [
+                    'router' => $this->routes,
+                ]
+            );
+        }
+
+        $this->compiledRoutes = null;
+        $this->bootError = null;
+        $this->httpBooted = true;
+
+        return true;
+    }
+
+    /**
+     * Handle one HTTP request: route it, send the response and run the
+     * per-request cleanup. Used by public/index.php (once per process) and by
+     * the FrankenPHP worker (once per request).
+     *
+     * @param Request|null $request the request, built from the superglobals when null
+     * @param float|null $startTime microtime(true) at which the request started
+     */
+    public function handle(?Request $request = null, ?float $startTime = null): Response
+    {
+        RequestContext::begin($startTime);
+        if (!defined('REQUEST_ID')) {
+            // Backwards compatibility for plugins; core code uses RequestContext::id().
+            define('REQUEST_ID', RequestContext::id());
+        }
+        RequestLifecycle::reset();
+
+        $response = $this->dispatch($request ?? Request::createFromGlobals());
+        $response->send();
+
+        RequestLifecycle::terminate($response->getStatusCode());
+
+        return $response;
+    }
+
+    /**
+     * Whether Redis is reachable right now (re-evaluated between requests,
+     * unlike the REDIS_ENABLED constant which keeps its boot-time value).
+     */
+    public function isRedisEnabled(): bool
+    {
+        return $this->redisAvailable && $this->redisConnection !== null;
     }
 
     /**
@@ -210,23 +302,38 @@ class App
      */
     public function registerApiRoutes(RouteCollection $routes): void
     {
-        // Load core application routes
+        foreach ($this->getRouteFiles() as $file) {
+            $this->registerRouteFile($routes, $file);
+        }
+    }
+
+    /**
+     * Every route file in registration order: the core routes, then the routes
+     * of each addon (backend/storage/addons/<addon>/Routes/).
+     *
+     * @return list<string>
+     */
+    public function getRouteFiles(): array
+    {
+        if ($this->routeFiles !== null) {
+            return $this->routeFiles;
+        }
+
+        $files = [];
+
+        // Core application routes
         $routesDir = __DIR__ . '/routes';
         $iterator = new \RecursiveIteratorIterator(
             new \RecursiveDirectoryIterator($routesDir, \FilesystemIterator::SKIP_DOTS),
             \RecursiveIteratorIterator::SELF_FIRST
         );
-
         foreach ($iterator as $file) {
             if ($file->isFile() && $file->getExtension() === 'php') {
-                $register = require $file->getPathname();
-                if (is_callable($register)) {
-                    $register($routes);
-                }
+                $files[] = $file->getPathname();
             }
         }
 
-        // Load plugin routes from backend/storage/addons/*/Routes/
+        // Plugin routes from backend/storage/addons/*/Routes/
         $addonsDir = __DIR__ . '/../storage/addons';
         if (is_dir($addonsDir)) {
             $addonIdentifiers = [];
@@ -264,35 +371,67 @@ class App
 
                                     continue;
                                 }
-                                try {
-                                    $register = require $file->getPathname();
-                                    if (is_callable($register)) {
-                                        $register($routes);
-                                    }
-                                } catch (\Throwable $e) {
-                                    self::getLogger()->error('Failed to load plugin routes from ' . $file->getPathname() . ': ' . $e->getMessage());
-                                }
+                                $files[] = $file->getPathname();
                             }
                         }
                     }
                 }
             }
         }
+
+        return $this->routeFiles = $files;
+    }
+
+    /**
+     * Run one route file against a collection. A broken plugin route file is
+     * logged and skipped; a broken core route file is a bug and throws.
+     */
+    public function registerRouteFile(RouteCollection $routes, string $file): void
+    {
+        $isCore = str_starts_with($file, __DIR__ . '/routes');
+        try {
+            $register = require $file;
+            if (is_callable($register)) {
+                $register($routes);
+            }
+        } catch (\Throwable $e) {
+            if ($isCore) {
+                throw $e;
+            }
+            self::getLogger()->error('Failed to load plugin routes from ' . $file . ': ' . $e->getMessage());
+        }
     }
 
     /**
      * Dispatch the request using Symfony Routing and handle middleware.
+     *
+     * @deprecated use handle(), which also runs the per-request lifecycle hooks
      */
     public function dispatchSymfonyRouter(): void
     {
-        $request = Request::createFromGlobals();
-        $context = new RequestContext();
+        $this->handle();
+    }
+
+    /**
+     * Route a request through the middleware stack and return the response
+     * without sending it.
+     */
+    public function dispatch(Request $request): Response
+    {
+        if (!$this->bootHttp() || !$this->ensureConnections()) {
+            $response = $this->databaseUnavailableResponse();
+            $response->headers->set('X-Request-ID', RequestContext::id());
+
+            return $response;
+        }
+
+        ++$this->handledRequests;
+        $context = new RoutingContext();
         $context->fromRequest($request);
-        $matcher = new UrlMatcher($this->routes, $context);
 
         try {
-            $parameters = $matcher->match($request->getPathInfo());
-            SentryTelemetry::startRequest($request, $this->routes->get($parameters['_route'])->getPath());
+            [$parameters, $routePath] = $this->matchRoute($context, $request->getPathInfo());
+            SentryTelemetry::startRequest($request, $routePath);
             $controller = $parameters['_controller'];
             unset($parameters['_controller'], $parameters['_route']);
 
@@ -305,6 +444,15 @@ class App
                 } else {
                     $request->attributes->set($key, $value);
                 }
+            }
+
+            // Disabled panel modules refuse their API before any controller runs.
+            $moduleRefusal = ModuleGate::check($request->getPathInfo());
+            if ($moduleRefusal !== null) {
+                $moduleRefusal->headers->set('X-Request-ID', RequestContext::id());
+                SentryTelemetry::finishRequest($moduleRefusal->getStatusCode());
+
+                return $moduleRefusal;
             }
 
             // Per-route middleware support
@@ -346,35 +494,52 @@ class App
                 $response = new Response($response);
             }
         } catch (ResourceNotFoundException $e) {
-            // Log all registered routes for debugging
-            $allRoutes = [];
-            foreach ($this->routes as $name => $route) {
-                $allRoutes[] = $route->getPath();
-            }
             $response = ApiResponse::error('The api route does not exist! [' . $request->getPathInfo() . ']', 'API_ROUTE_NOT_FOUND', 404, null);
         } catch (MethodNotAllowedException $e) {
             $response = ApiResponse::error('Method not allowed for this route. Allowed: ' . implode(', ', $e->getAllowedMethods()), 'METHOD_NOT_ALLOWED', 405, null);
-        } catch (\Throwable $e) {
-            $eventId = SentryTelemetry::captureException($e);
-            self::getLogger()->error(
-                'Exception in router: [' . get_class($e) . '] ' .
-                'Message: ' . $e->getMessage() .
-                ' Code: ' . $e->getCode() .
-                ' File: ' . $e->getFile() .
-                ' Line: ' . $e->getLine() .
-                ' Trace: ' . $e->getTraceAsString(),
-                false
-            );
-            $response = ApiResponse::error('Internal server error', 'INTERNAL_SERVER_ERROR', 500, [
-                'request_id' => defined('REQUEST_ID') ? REQUEST_ID : null,
-                'event_id' => $eventId,
+        } catch (BadRequestException $e) {
+            // Malformed client input (e.g. ?search[]=x where a scalar is expected) is a 400, not a server error.
+            $response = ApiResponse::error('Invalid request: ' . $e->getMessage(), 'INVALID_REQUEST', 400, null);
+        } catch (WingsConnectionException $e) {
+            // An offline or unreachable node is an infrastructure state, not a panel bug: answer 502
+            // with a stable code instead of a generic 500, and keep it out of the error tracker.
+            self::getLogger()->warning('Node unreachable on ' . $request->getPathInfo() . ': ' . $e->getMessage());
+            $response = ApiResponse::error('Failed to reach the node', 'DAEMON_UNREACHABLE', 502, [
+                'request_id' => RequestContext::id(),
             ]);
+        } catch (\Throwable $e) {
+            // Controllers sometimes wrap Guzzle/cURL failures in plain Exception/Error. Treat those
+            // as node-down instead of a panel 500 so the UI can show a clear message.
+            if (self::isLikelyNodeUnreachableError($e)) {
+                self::getLogger()->warning('Node unreachable on ' . $request->getPathInfo() . ': ' . $e->getMessage());
+                $response = ApiResponse::error('Failed to reach the node', 'DAEMON_UNREACHABLE', 502, [
+                    'request_id' => RequestContext::id(),
+                ]);
+            } else {
+                $eventId = SentryTelemetry::captureException($e);
+                self::getLogger()->error(
+                    'Exception in router: [' . get_class($e) . '] ' .
+                    'Message: ' . $e->getMessage() .
+                    ' Code: ' . $e->getCode() .
+                    ' File: ' . $e->getFile() .
+                    ' Line: ' . $e->getLine() .
+                    ' Trace: ' . $e->getTraceAsString(),
+                    false
+                );
+                $response = ApiResponse::error('Internal server error', 'INTERNAL_SERVER_ERROR', 500, [
+                    'request_id' => RequestContext::id(),
+                    'event_id' => $eventId,
+                ]);
+            }
         }
-        if (defined('REQUEST_ID')) {
-            $response->headers->set('X-Request-ID', REQUEST_ID);
-        }
+        $response->headers->set('X-Request-ID', RequestContext::id());
         SentryTelemetry::finishRequest($response->getStatusCode());
-        $response->send();
+
+        if ($response->getStatusCode() < 400) {
+            WorkerRestart::requestAfterAdminChange($request);
+        }
+
+        return $response;
     }
 
     /**
@@ -699,7 +864,7 @@ class App
     /**
      * Register a FeatherQuilld remote route (web hosting daemons only).
      *
-     * Uses FeatherQuilldMiddleware — game node (FeatherWings) tokens are rejected.
+     * Uses FeatherQuilldMiddleware - game node (FeatherWings) tokens are rejected.
      *
      * @param RouteCollection $routes The Symfony RouteCollection instance to add the route to
      * @param string $name The name of the route
@@ -755,12 +920,10 @@ class App
                 $dotenv = \Dotenv\Dotenv::createUnsafeImmutable(__DIR__ . '/../storage/config');
                 $dotenv->safeLoad();
             } else {
-                echo 'No .env file found';
-                exit;
+                throw new \RuntimeException('No .env file found');
             }
-        } catch (\Exception $e) {
-            echo $e->getMessage();
-            exit;
+        } catch (\Dotenv\Exception\ExceptionInterface $e) {
+            throw new \RuntimeException('Failed to load the .env file: ' . $e->getMessage(), 0, $e);
         }
     }
 
@@ -865,6 +1028,9 @@ class App
             // Clean up backup file after successful write
             unlink($backupFile);
 
+            // Workers read the .env file once at boot.
+            WorkerRestart::request('env:' . $key);
+
             return true;
         } catch (\Exception $e) {
             // Restore from backup if an exception occurs
@@ -936,8 +1102,8 @@ class App
             $code = str_replace('+', '', $code);
 
             return str_replace('/', '', $code);
-        } catch (RandomException) {
-            $this->getLogger()->error('Failed to generate code: ' . $code);
+        } catch (RandomException $e) {
+            $this->getLogger()->error('Failed to generate code: ' . $e->getMessage());
 
             return '';
         }
@@ -974,7 +1140,7 @@ class App
 
     public function getEnvValue(string $key): string
     {
-        return $_ENV[$key];
+        return (string) self::env($key, '');
     }
 
     public function encryptValue(string $value): string
@@ -1238,6 +1404,372 @@ class App
             [], // schemes
             $methods
         ));
+    }
+
+    /**
+     * Match a path to a route.
+     *
+     * @return array{0: array<string, mixed>, 1: string} the route parameters and the route path
+     */
+    private function matchRoute(RoutingContext $context, string $path): array
+    {
+        $cache = $this->getRouteCache();
+        if ($cache !== null) {
+            $parameters = (new CompiledUrlMatcher($cache['compiled'], $context))->match($path);
+            $resolved = $this->resolveCachedRoute($parameters, $cache['files']);
+            if ($resolved !== null) {
+                return $resolved;
+            }
+
+            // The route file no longer defines the cached route: stop trusting the cache in this process.
+            self::getLogger()->warning('Route cache is out of date for route ' . ($parameters['_route'] ?? '?') . ', using the full route collection.');
+            $this->routeCache = false;
+        }
+
+        $parameters = $this->getUrlMatcher($context)->match($path);
+
+        return [$parameters, (string) $this->routes->get($parameters['_route'])?->getPath()];
+    }
+
+    /**
+     * The compiled route cache, or null when this process uses the full route collection.
+     *
+     * @return array{files: list<string>, compiled: array}|null
+     */
+    private function getRouteCache(): ?array
+    {
+        if ($this->routeCache === false) {
+            return null;
+        }
+        if (!self::isUninitializedLazyObject($this->routes)) {
+            // A plugin listening to onRouterReady (or other code) used the
+            // full collection; it may have changed it, so match against it.
+            $this->routeCache = false;
+
+            return null;
+        }
+        if (is_array($this->routeCache)) {
+            return $this->routeCache;
+        }
+
+        $files = $this->getRouteFiles();
+        $fingerprint = RouteCache::fingerprint($files, defined('APP_VERSION') ? (string) APP_VERSION : '');
+        $store = RouteCache::default();
+
+        $cache = $store->load($fingerprint);
+        if ($cache === null) {
+            try {
+                $cache = $this->buildRouteCache($store, $fingerprint, $files);
+            } catch (\Throwable $e) {
+                self::getLogger()->warning('Building the route cache failed, using the full route collection: ' . $e->getMessage());
+                $cache = null;
+            }
+        }
+
+        $this->routeCache = $cache ?? false;
+
+        return $cache;
+    }
+
+    /**
+     * Register every route file, remember which file registered which route
+     * and write the compiled cache.
+     *
+     * @param list<string> $files
+     *
+     * @return array{files: list<string>, compiled: array}|null
+     */
+    private function buildRouteCache(RouteCache $store, string $fingerprint, array $files): ?array
+    {
+        $routes = new RouteCollection();
+        $sources = [];
+        foreach ($files as $index => $file) {
+            $fileRoutes = new RouteCollection();
+            $this->registerRouteFile($fileRoutes, $file);
+            foreach (array_keys($fileRoutes->all()) as $name) {
+                $sources[$name] = $index;
+            }
+            $routes->addCollection($fileRoutes);
+        }
+
+        // Route files are loaded one at a time when matching, so the result
+        // must not depend on what other files registered before (a file that
+        // removes or reads another file's routes). Compare with a normal build.
+        $reference = new RouteCollection();
+        $this->registerApiRoutes($reference);
+        if (self::routeSignature($reference) !== self::routeSignature($routes)) {
+            self::getLogger()->warning('Route files depend on each other, the route cache is disabled.');
+
+            return null;
+        }
+
+        return $store->build($fingerprint, $routes, $files, $sources);
+    }
+
+    /**
+     * @return list<string>
+     */
+    private static function routeSignature(RouteCollection $routes): array
+    {
+        $signature = [];
+        foreach ($routes->all() as $name => $route) {
+            $signature[] = $name . ' ' . implode('|', $route->getMethods()) . ' ' . $route->getHost() . $route->getPath();
+        }
+
+        return $signature;
+    }
+
+    /**
+     * Turn a match from the compiled cache into the parameters of the real
+     * route: its controller and middleware come from its route file, loaded
+     * once per process.
+     *
+     * @param array<string, mixed> $parameters
+     * @param list<string> $files
+     *
+     * @return array{0: array<string, mixed>, 1: string}|null null when the route file does not define the route
+     */
+    private function resolveCachedRoute(array $parameters, array $files): ?array
+    {
+        $index = $parameters[RouteCache::SOURCE_KEY] ?? null;
+        $name = $parameters['_route'] ?? null;
+        if (!is_int($index) || !isset($files[$index]) || !is_string($name)) {
+            return null;
+        }
+
+        $file = $files[$index];
+        if (!isset($this->routeFileCollections[$file])) {
+            $collection = new RouteCollection();
+            $this->registerRouteFile($collection, $file);
+            $this->routeFileCollections[$file] = $collection;
+        }
+        $route = $this->routeFileCollections[$file]->get($name);
+        if ($route === null) {
+            return null;
+        }
+
+        unset($parameters[RouteCache::SOURCE_KEY]);
+        // Same merge as Symfony's matchers: matched values win over defaults.
+        $resolved = $route->getDefaults();
+        foreach ($parameters as $key => $value) {
+            if ($value !== null) {
+                $resolved[$key] = $value;
+            }
+        }
+
+        return [$resolved, $route->getPath()];
+    }
+
+    /**
+     * A RouteCollection that registers the routes the first time it is used.
+     *
+     * @param \Closure(RouteCollection): void $initializer
+     */
+    private static function lazyRouteCollection(\Closure $initializer): RouteCollection
+    {
+        return (new \ReflectionClass(RouteCollection::class))->newLazyGhost($initializer);
+    }
+
+    private static function isUninitializedLazyObject(object $object): bool
+    {
+        return (new \ReflectionClass($object))->isUninitializedLazyObject($object);
+    }
+
+    /**
+     * The URL matcher for the registered routes.
+     *
+     * A process that serves more than one request (FrankenPHP worker) compiles
+     * the route collection once, which makes matching much cheaper than the
+     * linear UrlMatcher. A single-request process (classic mode) skips the
+     * compilation because it would cost more than it saves.
+     */
+    private function getUrlMatcher(RoutingContext $context): UrlMatcherInterface
+    {
+        if ($this->handledRequests > 1 && $this->compiledRoutes !== false) {
+            $routeCount = $this->routes->count();
+            if ($this->compiledRoutes === null || $this->compiledRouteCount !== $routeCount) {
+                try {
+                    $this->compiledRoutes = (new CompiledUrlMatcherDumper($this->routes))->getCompiledRoutes();
+                    $this->compiledRouteCount = $routeCount;
+                } catch (\Throwable $e) {
+                    self::getLogger()->warning('Route compilation failed, using the uncompiled matcher: ' . $e->getMessage());
+                    $this->compiledRoutes = false;
+                }
+            }
+            if (is_array($this->compiledRoutes)) {
+                return new CompiledUrlMatcher($this->compiledRoutes, $context);
+            }
+        }
+
+        return new UrlMatcher($this->routes, $context);
+    }
+
+    /**
+     * Make sure the database and Redis connections survived the idle time
+     * since the previous request (database or Redis restarts, wait_timeout).
+     * Only processes that already served a request check, so classic mode
+     * never pays for it.
+     *
+     * @return bool false when the database is unreachable
+     */
+    private function ensureConnections(): bool
+    {
+        $idle = Database::secondsSinceLastRequest();
+        if ($idle === null || ($idle < self::CONNECTION_CHECK_IDLE_SECONDS && !Database::lastRequestFailed())) {
+            return true;
+        }
+
+        Database::dropDeadSharedConnection();
+        try {
+            $this->db->ensureConnected();
+        } catch (\Exception $e) {
+            self::getLogger()->error('Database reconnect failed: ' . $e->getMessage(), false);
+            $this->bootError = $e;
+
+            return false;
+        }
+
+        $this->ensureRedis();
+
+        return true;
+    }
+
+    /**
+     * The response returned while the database is unreachable.
+     */
+    /**
+     * True when a thrown error is almost certainly "node / Wings unreachable"
+     * rather than an application bug (avoids a misleading Internal server error).
+     */
+    private static function isLikelyNodeUnreachableError(\Throwable $e): bool
+    {
+        if ($e instanceof WingsConnectionException) {
+            return true;
+        }
+
+        if ($e instanceof \GuzzleHttp\Exception\ConnectException) {
+            return true;
+        }
+
+        $needle = strtolower($e->getMessage());
+        if ($needle === '') {
+            return false;
+        }
+
+        return str_contains($needle, 'connection failed')
+            || str_contains($needle, 'could not connect')
+            || str_contains($needle, 'failed to connect')
+            || str_contains($needle, 'connection refused')
+            || str_contains($needle, 'network is unreachable')
+            || str_contains($needle, 'name or service not known')
+            || str_contains($needle, 'nodename nor servname')
+            || str_contains($needle, 'curl error 7')
+            || str_contains($needle, 'curl error 28')
+            || str_contains($needle, 'curl error 35')
+            || str_contains($needle, 'operation timed out')
+            || str_contains($needle, 'all retry attempts failed')
+            || str_contains($needle, 'wings connection unavailable')
+            || str_contains($needle, 'failed to reach the node');
+    }
+
+    private function databaseUnavailableResponse(): Response
+    {
+        return new Response(
+            (string) json_encode([
+                'status' => 'error',
+                'message' => 'Database connection failed',
+                'exception' => $this->bootError?->getMessage() ?? 'Database connection failed',
+                'success' => false,
+                'error_code' => 'DATABASE_CONNECTION_FAILED',
+                'error_message' => 'Database connection failed',
+            ]),
+            500,
+            [
+                'Content-Type' => 'application/json',
+                'Cache-Control' => 'no-cache, private',
+            ]
+        );
+    }
+
+    /**
+     * Connect (or reconnect) the application database.
+     */
+    private function connectDatabase(): void
+    {
+        $this->db = new Database(
+            (string) self::env('DATABASE_HOST', '127.0.0.1'),
+            (string) self::env('DATABASE_DATABASE', ''),
+            (string) self::env('DATABASE_USER', ''),
+            (string) self::env('DATABASE_PASSWORD', ''),
+            (int) self::env('DATABASE_PORT', '3306'),
+        );
+    }
+
+    /**
+     * Connect Redis (used for rate limiting and, optionally, the cache).
+     */
+    private function connectRedis(): void
+    {
+        $this->redisConnection = null;
+        $this->redisAvailable = false;
+
+        $host = (string) self::env('REDIS_HOST', '127.0.0.1');
+        $port = (int) self::env('REDIS_PORT', '6379');
+        $password = self::env('REDIS_PASSWORD', null);
+
+        if (class_exists(\Redis::class)) {
+            try {
+                $connection = new \Redis();
+                if ($connection->connect($host, $port, 2.0)) {
+                    if ($password !== null && $password !== '' && $connection->auth($password) === false) {
+                        throw new \RuntimeException('Redis authentication failed');
+                    }
+                    $this->redisConnection = $connection;
+                    $this->redisAvailable = true;
+                }
+            } catch (\Throwable $e) {
+                self::getLogger()->error('Failed to connect to Redis: ' . $e->getMessage());
+                $this->redisConnection = null;
+            }
+        } else {
+            $this->redisAvailable = (new FastChat\Redis())->testConnection();
+        }
+
+        if (!defined('REDIS_ENABLED')) {
+            // Backwards compatibility: boot-time value only, see isRedisEnabled().
+            define('REDIS_ENABLED', $this->redisAvailable);
+        }
+
+        if ($this->redisAvailable) {
+            $this->redisRetryDelay = 5.0;
+        } else {
+            $this->redisRetryAt = microtime(true) + $this->redisRetryDelay;
+            $this->redisRetryDelay = min(60.0, $this->redisRetryDelay * 2);
+        }
+    }
+
+    /**
+     * Ping Redis and reconnect after a Redis restart, retrying an unreachable
+     * Redis with a growing back-off so requests do not wait on connect timeouts.
+     */
+    private function ensureRedis(): void
+    {
+        if ($this->redisConnection !== null) {
+            try {
+                $this->redisConnection->ping();
+
+                return;
+            } catch (\Throwable) {
+                $this->redisConnection = null;
+                $this->redisAvailable = false;
+                $this->redisRetryAt = 0.0;
+                $this->redisRetryDelay = 5.0;
+            }
+        }
+
+        if (class_exists(\Redis::class) && microtime(true) >= $this->redisRetryAt) {
+            $this->connectRedis();
+        }
     }
 
     /**

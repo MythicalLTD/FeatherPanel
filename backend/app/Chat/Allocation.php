@@ -21,6 +21,9 @@ use App\App;
 
 class Allocation
 {
+    /** Longest note a server user can keep on an allocation (matches the column size). */
+    public const SERVER_NOTES_MAX_LENGTH = 255;
+
     private static string $table = 'featherpanel_allocations';
 
     /**
@@ -524,6 +527,13 @@ class Allocation
             return false;
         }
 
+        if (isset($data['server_id'])) {
+            // The server's own note does not follow the allocation to another server. MySQL applies
+            // SET clauses left to right, so compare against the old server_id first.
+            array_unshift($set, '`server_notes` = IF(`server_id` <=> :server_id_before, `server_notes`, NULL)');
+            $params['server_id_before'] = $data['server_id'];
+        }
+
         $sql = 'UPDATE ' . self::$table . ' SET ' . implode(', ', $set) . ' WHERE id = :id';
         $pdo = Database::getPdoConnection();
         $stmt = $pdo->prepare($sql);
@@ -538,13 +548,34 @@ class Allocation
     }
 
     /**
+     * Set or clear the note a server's users keep on one of its allocations.
+     * Only touches the row while it still belongs to that server.
+     */
+    public static function updateServerNotes(int $allocationId, int $serverId, ?string $notes): bool
+    {
+        $pdo = Database::getPdoConnection();
+        $stmt = $pdo->prepare(
+            'UPDATE ' . self::$table . ' SET server_notes = :server_notes WHERE id = :id AND server_id = :server_id'
+        );
+        $stmt->bindValue(':id', $allocationId, \PDO::PARAM_INT);
+        $stmt->bindValue(':server_id', $serverId, \PDO::PARAM_INT);
+        if ($notes === null) {
+            $stmt->bindValue(':server_notes', null, \PDO::PARAM_NULL);
+        } else {
+            $stmt->bindValue(':server_notes', $notes);
+        }
+
+        return $stmt->execute();
+    }
+
+    /**
      * Assign allocation to a server.
      */
     public static function assignToServer(int $allocationId, int $serverId, ?\PDO $pdo = null): bool
     {
         $pdo ??= Database::getPdoConnection();
         $stmt = $pdo->prepare(
-            'UPDATE ' . self::$table . ' SET server_id = :server_id WHERE id = :id AND server_id IS NULL'
+            'UPDATE ' . self::$table . ' SET server_id = :server_id, server_notes = NULL WHERE id = :id AND server_id IS NULL'
         );
         if (
             !$stmt->execute([
@@ -564,7 +595,7 @@ class Allocation
     public static function unassignFromServer(int $allocationId, ?\PDO $pdo = null): bool
     {
         $pdo ??= Database::getPdoConnection();
-        $stmt = $pdo->prepare('UPDATE ' . self::$table . ' SET server_id = NULL WHERE id = :id');
+        $stmt = $pdo->prepare('UPDATE ' . self::$table . ' SET server_id = NULL, server_notes = NULL WHERE id = :id');
 
         return $stmt->execute(['id' => $allocationId]);
     }
@@ -590,7 +621,7 @@ class Allocation
 
         $pdo = Database::getPdoConnection();
         $placeholders = implode(',', array_fill(0, count($allocationIds), '?'));
-        $stmt = $pdo->prepare('UPDATE ' . self::$table . ' SET server_id = NULL WHERE id IN (' . $placeholders . ')');
+        $stmt = $pdo->prepare('UPDATE ' . self::$table . ' SET server_id = NULL, server_notes = NULL WHERE id IN (' . $placeholders . ')');
 
         return $stmt->execute(array_values($allocationIds));
     }
@@ -617,7 +648,7 @@ class Allocation
 
         $pdo = Database::getPdoConnection();
         $placeholders = implode(',', array_fill(0, count($allocationIds), '?'));
-        $stmt = $pdo->prepare('UPDATE ' . self::$table . ' SET server_id = ? WHERE id IN (' . $placeholders . ') AND server_id IS NULL');
+        $stmt = $pdo->prepare('UPDATE ' . self::$table . ' SET server_id = ?, server_notes = NULL WHERE id IN (' . $placeholders . ') AND server_id IS NULL');
 
         $params = array_merge([$serverId], array_values($allocationIds));
 
@@ -1004,7 +1035,7 @@ class Allocation
     public static function unassignAllByServerId(int $serverId, ?\PDO $pdo = null): bool
     {
         $pdo ??= Database::getPdoConnection();
-        $stmt = $pdo->prepare('UPDATE ' . self::$table . ' SET server_id = NULL WHERE server_id = :server_id');
+        $stmt = $pdo->prepare('UPDATE ' . self::$table . ' SET server_id = NULL, server_notes = NULL WHERE server_id = :server_id');
 
         return $stmt->execute(['server_id' => $serverId]);
     }
@@ -1019,7 +1050,7 @@ class Allocation
         // Update allocations where server_id is set but the server does not exist
         $sql = 'UPDATE ' . self::$table . ' a 
                 LEFT JOIN featherpanel_servers s ON a.server_id = s.id 
-                SET a.server_id = NULL 
+                SET a.server_id = NULL, a.server_notes = NULL 
                 WHERE a.server_id IS NOT NULL AND s.id IS NULL';
 
         $stmt = $pdo->prepare($sql);

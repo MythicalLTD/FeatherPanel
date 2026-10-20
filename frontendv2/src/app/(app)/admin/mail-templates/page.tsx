@@ -15,16 +15,16 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { TipCard } from '@/components/featherui/TipCard';
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
-import { PageCard } from '@/components/featherui/PageCard';
-import { ResourceCard } from '@/components/featherui/ResourceCard';
+import { ResourceCard, ResourceTable } from '@/components/featherui/ResourceCard';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
-import { EmptyState } from '@/components/featherui/EmptyState';
+import { ListEmptyState } from '@/components/featherui/ListEmptyState';
 import { Label } from '@/components/ui/label';
 import { FeatherIDE } from '@/components/featherui/FeatherIDE';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -49,6 +49,9 @@ import { toast } from 'sonner';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { usePersistedListFilters } from '@/hooks/usePersistedListFilters';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
+import { useFormBaseline } from '@/hooks/useFormBaseline';
+import { useDiscardConfirm } from '@/hooks/useUnsavedChangesGuard';
+import { ListPagination } from '@/components/featherui/ListPagination';
 
 interface MailTemplate {
     id: number;
@@ -69,6 +72,17 @@ interface Pagination {
     to: number;
 }
 
+function stripHtmlTags(input: string): string {
+    if (!input) return '';
+    let sanitized = input;
+    let previous: string;
+    do {
+        previous = sanitized;
+        sanitized = sanitized.replace(/<[^>]*>/g, '');
+    } while (sanitized !== previous);
+    return sanitized;
+}
+
 const MAIL_TEMPLATES_LIST_FILTERS_KEY = 'featherpanel_admin_mail_templates_filters_v1';
 const MAIL_TEMPLATES_LIST_FILTERS_DEFAULTS = {
     searchQuery: '',
@@ -80,7 +94,7 @@ export default function MailTemplatesPage() {
     const { t } = useTranslation();
     const [loading, setLoading] = useState(true);
     const [templates, setTemplates] = useState<MailTemplate[]>([]);
-    const { filters, patchFilters, hydrated } = usePersistedListFilters(
+    const { filters, patchFilters, hydrated, resetFilters, isFiltered } = usePersistedListFilters(
         MAIL_TEMPLATES_LIST_FILTERS_KEY,
         MAIL_TEMPLATES_LIST_FILTERS_DEFAULTS,
     );
@@ -102,6 +116,11 @@ export default function MailTemplatesPage() {
 
     const [selectedTemplate, setSelectedTemplate] = useState<MailTemplate | null>(null);
     const [formData, setFormData] = useState({ name: '', subject: '', body: '' });
+    const { dirty: templateFormDirty, commit: commitTemplateForm } = useFormBaseline(formData);
+    const guardClose = useDiscardConfirm(
+        (createOpen || editOpen) && templateFormDirty,
+        t('common.unsavedChanges.leaveConfirm'),
+    );
     const [massEmailData, setMassEmailData] = useState({ subject: '', body: '' });
     const [testEmailData, setTestEmailData] = useState({ email: '', subject: '', body: '' });
 
@@ -252,13 +271,17 @@ export default function MailTemplatesPage() {
 
     const openCreate = () => {
         setSelectedTemplate(null);
-        setFormData({ name: '', subject: '', body: '' });
+        const empty = { name: '', subject: '', body: '' };
+        setFormData(empty);
+        commitTemplateForm(empty);
         setCreateOpen(true);
     };
 
     const openEdit = (template: MailTemplate) => {
         setSelectedTemplate(template);
-        setFormData({ name: template.name, subject: template.subject, body: template.body });
+        const loaded = { name: template.name, subject: template.subject, body: template.body };
+        setFormData(loaded);
+        commitTemplateForm(loaded);
         setEditOpen(true);
     };
 
@@ -294,7 +317,7 @@ export default function MailTemplatesPage() {
 
             <WidgetRenderer widgets={getWidgets('admin-mail-templates', 'after-header')} />
 
-            <div className='bg-card/40 flex flex-col items-center gap-4 rounded-2xl p-4 shadow-sm backdrop-blur-md sm:flex-row'>
+            <div className='fp-surface flex flex-col items-center gap-4 rounded-2xl border p-4 sm:flex-row'>
                 <div className='group relative w-full flex-1'>
                     <Search className='text-muted-foreground group-focus-within:text-primary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transition-colors' />
                     <Input
@@ -309,38 +332,19 @@ export default function MailTemplatesPage() {
             <WidgetRenderer widgets={getWidgets('admin-mail-templates', 'before-list')} />
 
             {pagination.total > pageSize && !loading && (
-                <div className='border-border bg-card/50 mb-4 flex items-center justify-between gap-4 rounded-xl border px-4 py-3'>
-                    <Button
-                        variant='outline'
-                        size='sm'
-                        disabled={page === 1}
-                        onClick={() => patchFilters({ page: page - 1 })}
-                        className='gap-1.5'
-                    >
-                        <ChevronLeft className='h-4 w-4' />
-                        {t('common.previous')}
-                    </Button>
-                    <span className='text-sm font-medium'>
-                        {page} / {totalPages}
-                    </span>
-                    <Button
-                        variant='outline'
-                        size='sm'
-                        disabled={page === totalPages}
-                        onClick={() => patchFilters({ page: page + 1 })}
-                        className='gap-1.5'
-                    >
-                        {t('common.next')}
-                        <ChevronRight className='h-4 w-4' />
-                    </Button>
-                </div>
+                <ListPagination
+                    page={page}
+                    totalPages={totalPages}
+                    onPageChange={(nextPage) => patchFilters({ page: nextPage })}
+                    className='mb-4'
+                />
             )}
 
             {loading ? (
                 <TableSkeleton count={5} />
             ) : templates.length > 0 ? (
                 <>
-                    <div className='grid grid-cols-1 gap-4'>
+                    <ResourceTable>
                         {templates.map((template) => (
                             <ResourceCard
                                 key={template.id}
@@ -392,14 +396,14 @@ export default function MailTemplatesPage() {
                                         <div className='flex items-center gap-2 truncate'>
                                             <FileText className='h-3 w-3 shrink-0 opacity-50' />
                                             <span className='truncate italic opacity-70'>
-                                                {template.body.replace(/<[^>]*>?/gm, '').substring(0, 100)}...
+                                                {stripHtmlTags(template.body).substring(0, 100)}...
                                             </span>
                                         </div>
                                     </div>
                                 }
                             />
                         ))}
-                    </div>
+                    </ResourceTable>
 
                     {pagination.total > pageSize && (
                         <div className='mt-8 flex items-center justify-center gap-2'>
@@ -426,38 +430,40 @@ export default function MailTemplatesPage() {
                     )}
                 </>
             ) : (
-                <EmptyState
-                    title={t('admin.mail_templates.no_results')}
-                    description={t('admin.mail_templates.subtitle')}
+                <ListEmptyState
                     icon={Mail}
+                    title={t('emptyStates.mailTemplates.title')}
+                    description={t('emptyStates.mailTemplates.description')}
                     action={
                         <Button onClick={openCreate}>
                             <Plus className='mr-2 h-4 w-4' />
                             {t('admin.mail_templates.create')}
                         </Button>
                     }
+                    filtered={isFiltered}
+                    onClearFilters={resetFilters}
                 />
             )}
 
             <div className='border-border/50 grid grid-cols-1 gap-6 border-t pt-6 md:grid-cols-2 lg:grid-cols-3'>
-                <PageCard title={t('admin.mail_templates.help.what_is.title')} icon={FileText}>
+                <TipCard title={t('admin.mail_templates.help.what_is.title')} icon={FileText}>
                     <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.mail_templates.help.what_is.description')}
                     </p>
-                </PageCard>
-                <PageCard title={t('admin.mail_templates.help.mass_email.title')} icon={Send}>
+                </TipCard>
+                <TipCard title={t('admin.mail_templates.help.mass_email.title')} icon={Send}>
                     <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.mail_templates.help.mass_email.description')}
                     </p>
-                </PageCard>
-                <PageCard title={t('admin.mail_templates.help.legal.title')} icon={Scale}>
+                </TipCard>
+                <TipCard title={t('admin.mail_templates.help.legal.title')} icon={Scale}>
                     <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.mail_templates.help.legal.description')}
                     </p>
-                </PageCard>
+                </TipCard>
             </div>
 
-            <Sheet open={createOpen} onOpenChange={setCreateOpen} className='max-w-7xl'>
+            <Sheet open={createOpen} onOpenChange={guardClose(setCreateOpen)} className='max-w-7xl'>
                 <div className='flex h-full flex-col space-y-6'>
                     <SheetHeader>
                         <SheetTitle>{t('admin.mail_templates.form.create_title')}</SheetTitle>
@@ -505,7 +511,7 @@ export default function MailTemplatesPage() {
                             <div className='flex flex-col space-y-2 lg:overflow-hidden'>
                                 <Label>
                                     {t('admin.mail_templates.form.preview_title', {
-                                        name: formData.name || 'Template',
+                                        name: formData.name || t('ui.admin.mailTemplates.template'),
                                     })}
                                 </Label>
                                 <div className='border-border/50 relative flex-1 overflow-hidden rounded-2xl border bg-white shadow-xl'>
@@ -526,11 +532,13 @@ export default function MailTemplatesPage() {
                 </div>
             </Sheet>
 
-            <Sheet open={editOpen} onOpenChange={setEditOpen} className='max-w-7xl'>
+            <Sheet open={editOpen} onOpenChange={guardClose(setEditOpen)} className='max-w-7xl'>
                 <div className='flex h-full flex-col space-y-6'>
                     <SheetHeader>
                         <SheetTitle>{t('admin.mail_templates.form.edit_title')}</SheetTitle>
-                        <SheetDescription>{t('admin.mail_templates.form.edit_description')}</SheetDescription>
+                        <SheetDescription>
+                            {t('admin.mail_templates.form.edit_description', { name: selectedTemplate?.name ?? '' })}
+                        </SheetDescription>
                     </SheetHeader>
                     <form
                         onSubmit={handleUpdate}
@@ -574,7 +582,7 @@ export default function MailTemplatesPage() {
                             <div className='flex flex-col space-y-2 lg:overflow-hidden'>
                                 <Label>
                                     {t('admin.mail_templates.form.preview_title', {
-                                        name: formData.name || 'Template',
+                                        name: formData.name || t('ui.admin.mailTemplates.template'),
                                     })}
                                 </Label>
                                 <div className='border-border/50 relative flex-1 overflow-hidden rounded-2xl border bg-white shadow-xl'>
@@ -705,6 +713,7 @@ export default function MailTemplatesPage() {
                                     id='test-email'
                                     type='email'
                                     placeholder='admin@example.com'
+                                    data-fp-sensitive=''
                                     value={testEmailData.email}
                                     onChange={(e) => setTestEmailData({ ...testEmailData, email: e.target.value })}
                                     required

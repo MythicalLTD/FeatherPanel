@@ -173,9 +173,22 @@ export default function AdminWebSpaceDetailPage() {
     const forceSync = async () => {
         setBusy('sync');
         try {
-            const { data } = await axios.post(`/api/admin/webspaces/${uuid}/sync`);
-            if (data?.data?.webspace) setSpace(data.data.webspace);
-            toast.success(t('admin.webSpaces.messages.sync_ok'));
+            const { data } = await axios.post(`/api/admin/webspaces/${uuid}/sync`, {
+                start_on_completion: true,
+            });
+            if (data?.data?.webspace) {
+                const ws = data.data.webspace as WebSpace;
+                setSpace(ws);
+                if (data.data.created && (ws.status === 'installing' || data.data.installing)) {
+                    router.push(`/admin/webspaces/${uuid}/install`);
+                    return;
+                }
+            }
+            toast.success(
+                data?.data?.created
+                    ? t('admin.webSpaces.messages.sync_created')
+                    : t('admin.webSpaces.messages.sync_ok'),
+            );
         } catch (error) {
             toast.error(getApiErrorMessage(error, t, 'admin.webSpaces.messages.sync_failed'));
         } finally {

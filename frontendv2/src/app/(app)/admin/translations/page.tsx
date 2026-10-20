@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { TipCard, TipGrid } from '@/components/featherui/TipCard';
 import { APP_MONO_FONT_STACK } from '@/lib/mono-font';
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -24,8 +25,7 @@ import { getApiErrorMessage } from '@/lib/api-errors';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
-import { PageCard } from '@/components/featherui/PageCard';
-import { ResourceCard } from '@/components/featherui/ResourceCard';
+import { ResourceCard, ResourceTable } from '@/components/featherui/ResourceCard';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
 import { EmptyState } from '@/components/featherui/EmptyState';
 import { Sheet, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from '@/components/ui/sheet';
@@ -55,6 +55,7 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { useDiscardConfirm } from '@/hooks/useUnsavedChangesGuard';
 
 interface TranslationFile {
     code: string;
@@ -78,7 +79,11 @@ export default function TranslationsPage() {
     const [createOpen, setCreateOpen] = useState(false);
     const [selectedLang, setSelectedLang] = useState<string | null>(null);
     const [editingContent, setEditingContent] = useState('');
-    const [, setOriginalContent] = useState('');
+    const [originalContent, setOriginalContent] = useState('');
+    const guardEditClose = useDiscardConfirm(
+        editOpen && editingContent !== originalContent,
+        t('common.unsavedChanges.leaveConfirm'),
+    );
 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isImporting, setIsImporting] = useState(false);
@@ -325,19 +330,21 @@ export default function TranslationsPage() {
                             {t('admin.translations.create')}
                         </Button>
                         <DropdownMenu>
-                            <DropdownMenuTrigger className='focus-visible:ring-ring text-foreground relative inline-flex h-11 items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-white/5 px-6 text-sm font-bold whitespace-nowrap backdrop-blur-sm transition-all hover:bg-white/10 focus-visible:ring-1 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50'>
+                            <DropdownMenuTrigger className='focus-visible:ring-ring text-foreground relative inline-flex h-11 items-center justify-center overflow-hidden rounded-2xl border border-[var(--fp-surface-border)] bg-white/5 px-6 text-sm font-bold whitespace-nowrap backdrop-blur-sm transition-all hover:bg-white/10 focus-visible:ring-1 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50'>
                                 <MoreHorizontal className='mr-2 h-4 w-4' />
-                                Actions
+                                {t('common.actions')}
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align='end' className='w-64'>
                                 <DropdownMenuItem onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
                                     <Upload className='mr-2 h-4 w-4' />
-                                    {isUploading ? 'Uploading...' : t('admin.translations.upload')}
+                                    {isUploading
+                                        ? t('ui.admin.translations.uploading')
+                                        : t('admin.translations.upload')}
                                 </DropdownMenuItem>
                                 {!hasEnglishTranslations && (
                                     <DropdownMenuItem onClick={handleImportDefault} disabled={isImporting}>
                                         <Upload className='mr-2 h-4 w-4' />
-                                        {isImporting ? 'Importing...' : t('admin.translations.import_default')}
+                                        {isImporting ? t('common.importing') : t('admin.translations.import_default')}
                                     </DropdownMenuItem>
                                 )}
                                 <DropdownMenuItem
@@ -354,7 +361,7 @@ export default function TranslationsPage() {
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => router.push('/admin/feathercloud/translations')}>
                                     <Globe className='mr-2 h-4 w-4' />
-                                    Mythic Translate install
+                                    {t('ui.admin.translations.mythicTranslateInstall')}
                                 </DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>
@@ -364,7 +371,7 @@ export default function TranslationsPage() {
 
             <WidgetRenderer widgets={getWidgets('admin-translations', 'after-header')} />
 
-            <div className='bg-card/40 flex flex-col items-center gap-4 rounded-2xl p-4 shadow-sm backdrop-blur-md sm:flex-row'>
+            <div className='fp-surface flex flex-col items-center gap-4 rounded-2xl border p-4 sm:flex-row'>
                 <div className='group relative w-full flex-1'>
                     <Search className='text-muted-foreground group-focus-within:text-primary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transition-colors' />
                     <Input
@@ -386,7 +393,7 @@ export default function TranslationsPage() {
                     action={<Button onClick={() => setCreateOpen(true)}>{t('admin.translations.create')}</Button>}
                 />
             ) : (
-                <div className='grid grid-cols-1 gap-4'>
+                <ResourceTable>
                     {translationFiles.map((file) => (
                         <ResourceCard
                             key={file.code}
@@ -399,12 +406,12 @@ export default function TranslationsPage() {
                                         {file.enabled ? (
                                             <>
                                                 <Check className='mr-1 inline h-3 w-3' />
-                                                Enabled
+                                                {t('common.enabled')}
                                             </>
                                         ) : (
                                             <>
                                                 <X className='mr-1 inline h-3 w-3' />
-                                                Disabled
+                                                {t('common.disabled')}
                                             </>
                                         )}
                                     </span>
@@ -430,7 +437,8 @@ export default function TranslationsPage() {
                                     {file.modified && (
                                         <div className='flex items-center gap-2'>
                                             <span className='text-xs opacity-50'>
-                                                Modified: {new Date(file.modified).toLocaleString()}
+                                                {t('ui.admin.translations.modified')}{' '}
+                                                {new Date(file.modified).toLocaleString()}
                                             </span>
                                         </div>
                                     )}
@@ -458,23 +466,23 @@ export default function TranslationsPage() {
                             }
                         />
                     ))}
-                </div>
+                </ResourceTable>
             )}
 
-            <div className='grid grid-cols-1 gap-6 pt-6 md:grid-cols-2'>
-                <PageCard title={t('admin.translations.help.what_is.title')} icon={Globe}>
+            <TipGrid>
+                <TipCard title={t('admin.translations.help.what_is.title')} icon={Globe}>
                     <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.translations.help.what_is.description')}
                     </p>
-                </PageCard>
-                <PageCard title={t('admin.translations.help.fallback.title')} icon={Globe}>
+                </TipCard>
+                <TipCard title={t('admin.translations.help.fallback.title')} icon={Globe}>
                     <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.translations.help.fallback.description')}
                     </p>
-                </PageCard>
-            </div>
+                </TipCard>
+            </TipGrid>
 
-            <Sheet open={editOpen} onOpenChange={setEditOpen} className='max-w-6xl'>
+            <Sheet open={editOpen} onOpenChange={guardEditClose(setEditOpen)} className='max-w-6xl'>
                 <div className='space-y-6'>
                     <SheetHeader>
                         <SheetTitle>{t('admin.translations.form.edit_title')}</SheetTitle>

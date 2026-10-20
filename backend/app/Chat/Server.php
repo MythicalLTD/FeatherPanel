@@ -25,9 +25,39 @@ use App\App;
 class Server
 {
     /**
+     * Status written when an installation (or reinstallation) did not complete successfully.
+     */
+    public const STATUS_INSTALL_FAILED = 'install_failed';
+
+    /**
+     * Status of a server whose install script is running (or was running when the daemon went away).
+     */
+    public const STATUS_INSTALLING = 'installing';
+
+    /**
+     * Every status that means "the last install did not complete". The legacy values were
+     * written by older panel versions and are still treated as failures.
+     *
+     * @var string[]
+     */
+    public const INSTALL_FAILED_STATUSES = [
+        self::STATUS_INSTALL_FAILED,
+        'installation_failed',
+        'reinstall_failed',
+    ];
+
+    /**
      * @var string The servers table name
      */
     private static string $table = 'featherpanel_servers';
+
+    /**
+     * Get the name of the table.
+     */
+    public static function getTableName(): string
+    {
+        return self::$table;
+    }
 
     /**
      * Create a new server.
@@ -551,6 +581,12 @@ class Server
             $sql .= ' WHERE ' . implode(' AND ', $where);
         }
 
+        // Security: only known columns may reach the ORDER BY clause.
+        if (!in_array($sortBy, ['id', 'name', 'created_at', 'updated_at'], true)) {
+            $sortBy = 'id';
+        }
+        $sortOrder = strtoupper($sortOrder) === 'DESC' ? 'DESC' : 'ASC';
+
         $sql .= " ORDER BY $sortBy $sortOrder";
         $offset = max(0, ($page - 1) * $limit);
         $sql .= ' LIMIT :limit OFFSET :offset';
@@ -602,7 +638,7 @@ class Server
 
                 return false;
             }
-            $set = implode(', ', array_map(fn ($f) => "$f = :$f", $fields));
+            $set = implode(', ', array_map(fn ($f) => "`$f` = :$f", $fields));
             $sql = 'UPDATE ' . self::$table . ' SET ' . $set . ' WHERE uuid = :uuid';
             $stmt = $pdo->prepare($sql);
             $data['uuid'] = $uuid;
@@ -648,7 +684,7 @@ class Server
 
                 return false;
             }
-            $set = implode(', ', array_map(fn ($f) => "$f = :$f", $fields));
+            $set = implode(', ', array_map(fn ($f) => "`$f` = :$f", $fields));
             $sql = 'UPDATE ' . self::$table . ' SET ' . $set . ' WHERE id = :id';
             $stmt = $pdo->prepare($sql);
             $data['id'] = $id;
@@ -895,7 +931,11 @@ class Server
     }
 
     /**
-     * Reset all server statuses to null.
+     * Reset server statuses for a node after the daemon (re)booted.
+     *
+     * Runtime states are cleared (the daemon reports fresh ones right after), but an install that
+     * was still running when the daemon went away can never complete, so it is marked as
+     * install_failed. Servers that already failed to install or are suspended keep their status.
      *
      * @return bool True if successful, false otherwise
      */
@@ -903,8 +943,22 @@ class Server
     {
         try {
             $pdo = Database::getPdoConnection();
-            $stmt = $pdo->prepare('UPDATE ' . self::$table . ' SET `status` = NULL WHERE node_id = :node_id');
+            $preserved = array_merge(self::INSTALL_FAILED_STATUSES, ['suspended']);
+            $placeholders = [];
+            foreach ($preserved as $i => $status) {
+                $placeholders[] = ':preserved_' . $i;
+            }
+
+            $stmt = $pdo->prepare(
+                'UPDATE ' . self::$table . ' SET `status` = CASE WHEN `status` = :installing THEN :install_failed ELSE NULL END'
+                . ' WHERE node_id = :node_id AND (`status` IS NULL OR `status` NOT IN (' . implode(', ', $placeholders) . '))'
+            );
+            $stmt->bindValue(':installing', self::STATUS_INSTALLING, \PDO::PARAM_STR);
+            $stmt->bindValue(':install_failed', self::STATUS_INSTALL_FAILED, \PDO::PARAM_STR);
             $stmt->bindValue(':node_id', $nodeId, \PDO::PARAM_INT);
+            foreach ($preserved as $i => $status) {
+                $stmt->bindValue(':preserved_' . $i, $status, \PDO::PARAM_STR);
+            }
 
             return $stmt->execute();
         } catch (\Exception $e) {
@@ -933,6 +987,39 @@ class Server
             return $stmt->execute();
         } catch (\Exception $e) {
             App::getInstance(true)->getLogger()->error('Failed to update server status: ' . $e->getMessage());
+
+            return false;
+        }
+    }
+
+    /**
+     * Mark a server as installing after a reinstall was accepted by the daemon.
+     *
+     * The update is skipped when the daemon already reported the install result after $since
+     * (installed_at is written by the install callback), so a fast install cannot be overwritten.
+     *
+     * @param int $serverId The server ID
+     * @param \DateTimeImmutable $since When the reinstall request was sent
+     *
+     * @return bool True if successful, false otherwise
+     */
+    public static function markInstalling(int $serverId, \DateTimeImmutable $since): bool
+    {
+        try {
+            $pdo = Database::getPdoConnection();
+            $stmt = $pdo->prepare(
+                'UPDATE ' . self::$table . ' SET `status` = :status'
+                . ' WHERE id = :server_id AND (`status` IS NULL OR `status` <> :suspended)'
+                . ' AND (`installed_at` IS NULL OR `installed_at` < :since)'
+            );
+            $stmt->bindValue(':status', self::STATUS_INSTALLING, \PDO::PARAM_STR);
+            $stmt->bindValue(':suspended', 'suspended', \PDO::PARAM_STR);
+            $stmt->bindValue(':since', $since->format('Y-m-d H:i:s'), \PDO::PARAM_STR);
+            $stmt->bindValue(':server_id', $serverId, \PDO::PARAM_INT);
+
+            return $stmt->execute();
+        } catch (\Exception $e) {
+            App::getInstance(true)->getLogger()->error('Failed to mark server as installing: ' . $e->getMessage());
 
             return false;
         }
@@ -972,8 +1059,11 @@ class Server
      */
     public static function count(array $conditions): int
     {
+        if (Database::unknownColumns(self::$table, $conditions) !== []) {
+            return 0;
+        }
         $pdo = Database::getPdoConnection();
-        $stmt = $pdo->prepare('SELECT COUNT(*) FROM ' . self::$table . ' WHERE ' . implode(' AND ', array_map(fn ($k) => "$k = :$k", array_keys($conditions))));
+        $stmt = $pdo->prepare('SELECT COUNT(*) FROM ' . self::$table . ' WHERE ' . implode(' AND ', array_map(fn ($k) => "`$k` = :$k", array_keys($conditions))));
         $stmt->execute($conditions);
 
         return (int) $stmt->fetchColumn();

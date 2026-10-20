@@ -16,6 +16,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import { useTranslation } from '@/contexts/TranslationContext';
+import { maskEndpoint } from '@/lib/ip-mask';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Input } from '@/components/featherui/Input';
 import { Label } from '@/components/ui/label';
@@ -35,6 +36,7 @@ import {
     Terminal,
 } from 'lucide-react';
 import { StepProps } from './types';
+import { Sensitive } from '@/components/common/Sensitive';
 
 export function Step6Review({ formData, setFormData, selectedEntities }: StepProps) {
     const { t } = useTranslation();
@@ -87,7 +89,7 @@ export function Step6Review({ formData, setFormData, selectedEntities }: StepPro
                                         {selectedEntities.owner?.username || noValue}
                                         {selectedEntities.owner?.email && (
                                             <span className='text-muted-foreground ml-1 text-sm'>
-                                                ({selectedEntities.owner.email})
+                                                (<Sensitive>{selectedEntities.owner.email}</Sensitive>)
                                             </span>
                                         )}
                                     </p>
@@ -130,9 +132,17 @@ export function Step6Review({ formData, setFormData, selectedEntities }: StepPro
                                     {t('admin.servers.form.wizard.review.allocation')}
                                 </span>
                                 <p className='font-medium'>
-                                    {selectedEntities.allocation
-                                        ? `${selectedEntities.allocation.ip}:${selectedEntities.allocation.port}`
-                                        : noValue}
+                                    {selectedEntities.allocation ? (
+                                        <Sensitive>
+                                            {maskEndpoint(
+                                                selectedEntities.allocation.ip,
+                                                selectedEntities.allocation.port,
+                                                false,
+                                            )}
+                                        </Sensitive>
+                                    ) : (
+                                        noValue
+                                    )}
                                 </p>
                             </div>
                         </div>

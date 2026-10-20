@@ -33,34 +33,25 @@ interface PageCardProps {
 
 const variantStyles = {
     default: {
-        bg: 'bg-card/50',
-        border: 'border-border/50',
-        iconBg: 'bg-primary/5',
-        iconBorder: 'border-primary/20',
+        surface: '',
+        accent: '',
+        iconTile: 'fp-icon-tile',
         iconColor: 'text-primary',
-        glow: 'bg-primary/5',
-        hoverBorder: 'group-hover:bg-primary/10',
         title: '',
     },
     danger: {
-        bg: 'bg-red-500/5',
-        border: 'border-red-500/10 hover:border-red-500/30',
-        iconBg: 'bg-red-500/10',
-        iconBorder: 'border-red-500/20',
-        iconColor: 'text-red-500',
-        glow: 'bg-red-500/5',
-        hoverBorder: 'group-hover:opacity-100',
-        title: 'text-red-500',
+        surface: '',
+        accent: 'via-red-500/40',
+        iconTile: 'bg-red-500/12 ring-1 ring-inset ring-red-500/25',
+        iconColor: 'text-red-600 dark:text-red-400',
+        title: 'text-red-600 dark:text-red-400',
     },
     warning: {
-        bg: 'bg-orange-500/5',
-        border: 'border-orange-500/10 hover:border-orange-500/30',
-        iconBg: 'bg-orange-500/10',
-        iconBorder: 'border-orange-500/20',
-        iconColor: 'text-orange-500',
-        glow: 'bg-orange-500/5',
-        hoverBorder: 'group-hover:opacity-100',
-        title: 'text-orange-500',
+        surface: '',
+        accent: 'via-amber-500/40',
+        iconTile: 'bg-amber-500/12 ring-1 ring-inset ring-amber-500/25',
+        iconColor: 'text-amber-600 dark:text-amber-400',
+        title: 'text-amber-700 dark:text-amber-400',
     },
 };
 
@@ -82,20 +73,27 @@ export function PageCard({
         <div
             id={id}
             className={cn(
-                'group relative space-y-6 overflow-visible rounded-2xl border p-8 backdrop-blur-sm transition-all',
-                styles.bg,
-                styles.border,
+                'fp-surface relative space-y-5 overflow-visible rounded-xl border p-4 sm:p-6',
+                styles.surface,
                 className,
             )}
         >
-            <div className='border-border/10 relative z-10 flex min-w-0 items-start justify-between gap-4 border-b pb-6'>
-                <div className='flex min-w-0 flex-1 items-center gap-4'>
+            {styles.accent && (
+                <div
+                    aria-hidden
+                    className={cn(
+                        'pointer-events-none absolute inset-x-6 top-0 h-px bg-linear-to-r from-transparent to-transparent',
+                        styles.accent,
+                    )}
+                />
+            )}
+            <div className='relative flex min-w-0 flex-wrap items-start justify-between gap-3 border-b border-[var(--fp-surface-border)] pb-4'>
+                <div className='flex min-w-48 flex-1 items-center gap-3'>
                     {(Icon || iconSrc) && (
                         <div
                             className={cn(
-                                'flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border p-2',
-                                styles.iconBg,
-                                styles.iconBorder,
+                                'flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg p-2',
+                                styles.iconTile,
                             )}
                         >
                             {iconSrc ? (
@@ -107,11 +105,11 @@ export function PageCard({
                         </div>
                     )}
                     <div className='min-w-0 flex-1 space-y-0.5'>
-                        <h2 className={cn('text-lg font-semibold tracking-tight', styles.title)} title={title}>
+                        <h2 className={cn('text-base font-semibold tracking-tight', styles.title)} title={title}>
                             <OverflowText>{title}</OverflowText>
                         </h2>
                         {description && (
-                            <p className='text-muted-foreground line-clamp-3 text-xs leading-relaxed font-normal break-words'>
+                            <p className='text-muted-foreground line-clamp-3 text-[13px] leading-snug break-words sm:text-sm'>
                                 {description}
                             </p>
                         )}
@@ -120,9 +118,9 @@ export function PageCard({
                 {action && <div className='shrink-0'>{action}</div>}
             </div>
 
-            <div className='relative z-10'>{children}</div>
+            <div className='relative'>{children}</div>
 
-            {footer && <div className='border-border/10 relative z-10 border-t pt-4'>{footer}</div>}
+            {footer && <div className='border-border/60 relative border-t pt-4'>{footer}</div>}
         </div>
     );
 }

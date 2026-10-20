@@ -29,6 +29,7 @@ use App\Config\ConfigInterface;
 use App\Helpers\WebAuthnHelper;
 use App\Helpers\PermissionHelper;
 use Webauthn\PublicKeyCredential;
+use App\Helpers\PasswordResetTokenHelper;
 use App\Helpers\TwoFactorChallengeHelper;
 use Webauthn\PublicKeyCredentialDescriptor;
 use Webauthn\PublicKeyCredentialParameters;
@@ -571,7 +572,7 @@ class PasskeyController
             return ApiResponse::error('User is banned', 'USER_BANNED');
         }
         $requiresEmailVerification = $config->getSetting(ConfigInterface::REGISTRATION_REQUIRE_EMAIL_VERIFICATION, 'false') === 'true';
-        $isEmailVerified = !isset($userInfo['mail_verify']) || $userInfo['mail_verify'] === null || trim((string) $userInfo['mail_verify']) === '';
+        $isEmailVerified = PasswordResetTokenHelper::isEmailVerified($userInfo['mail_verify'] ?? null);
         if ($requiresEmailVerification && !$isEmailVerified) {
             return ApiResponse::error('Email verification is required before login. Please verify your email first.', 'EMAIL_NOT_VERIFIED', 403);
         }

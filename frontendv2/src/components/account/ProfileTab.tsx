@@ -15,19 +15,20 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useSession } from '@/contexts/SessionContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { Description, Field, Fieldset, Label } from '@headlessui/react';
 import { Button } from '@/components/featherui/Button';
+import { UnsavedChangesBar } from '@/components/featherui/UnsavedChangesBar';
 import { Input } from '@/components/featherui/Input';
 import { Textarea } from '@/components/featherui/Textarea';
 import axios from 'axios';
 import { toast } from 'sonner';
 import { Captcha } from '@/components/Captcha';
-import { cn, isEnabled } from '@/lib/utils';
+import { cn, isEnabled, isEnabledUnlessExplicitlyFalse } from '@/lib/utils';
 import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 
 interface FormData {
@@ -62,11 +63,11 @@ export default function ProfileTab() {
     const [turnstileToken, setTurnstileToken] = useState('');
     const [turnstileKey, setTurnstileKey] = useState(0);
 
-    const allowAvatarChange = settings?.user_allow_avatar_change ?? true;
-    const allowUsernameChange = settings?.user_allow_username_change ?? true;
-    const allowEmailChange = settings?.user_allow_email_change ?? true;
-    const allowFirstNameChange = settings?.user_allow_first_name_change ?? true;
-    const allowLastNameChange = settings?.user_allow_last_name_change ?? true;
+    const allowAvatarChange = isEnabledUnlessExplicitlyFalse(settings?.user_allow_avatar_change);
+    const allowUsernameChange = isEnabledUnlessExplicitlyFalse(settings?.user_allow_username_change);
+    const allowEmailChange = isEnabledUnlessExplicitlyFalse(settings?.user_allow_email_change);
+    const allowFirstNameChange = isEnabledUnlessExplicitlyFalse(settings?.user_allow_first_name_change);
+    const allowLastNameChange = isEnabledUnlessExplicitlyFalse(settings?.user_allow_last_name_change);
 
     useEffect(() => {
         if (user) {
@@ -82,6 +83,18 @@ export default function ProfileTab() {
             setLoading(false);
         }
     }, [user]);
+
+    const formRef = useRef<HTMLFormElement>(null);
+    const unsaved =
+        Boolean(user) &&
+        !loading &&
+        (Boolean(avatarFile) ||
+            formData.password !== '' ||
+            formData.username !== (user?.username || '') ||
+            formData.email !== (user?.email || '') ||
+            formData.first_name !== (user?.first_name || '') ||
+            formData.last_name !== (user?.last_name || '') ||
+            formData.ticket_signature !== (user?.ticket_signature || ''));
 
     const resetForm = () => {
         if (user) {
@@ -228,7 +241,7 @@ export default function ProfileTab() {
                 <p className='text-muted-foreground mt-1 text-sm'>{t('account.editProfileDescription')}</p>
             </div>
 
-            <form onSubmit={handleSubmit} className='space-y-6' data-fp-save-shortcut>
+            <form ref={formRef} onSubmit={handleSubmit} className='space-y-6' data-fp-save-shortcut>
                 <Fieldset className='space-y-6'>
                     <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
                         {allowUsernameChange && (
@@ -249,6 +262,7 @@ export default function ProfileTab() {
                                 <Label className='text-foreground text-sm font-medium'>{t('account.email')}</Label>
                                 <Input
                                     type='email'
+                                    data-fp-sensitive=''
                                     value={formData.email}
                                     onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
                                     disabled={isSubmitting}
@@ -307,7 +321,7 @@ export default function ProfileTab() {
                                     <div className='mt-3'>
                                         <Image
                                             src={formData.avatar}
-                                            alt='Avatar preview'
+                                            alt={t('ui.components.account.profileTab.avatarPreview')}
                                             width={80}
                                             height={80}
                                             className='border-primary/20 h-20 w-20 rounded-full border-2 object-cover'
@@ -378,6 +392,13 @@ export default function ProfileTab() {
                     </div>
                 </div>
             </form>
+
+            <UnsavedChangesBar
+                dirty={unsaved}
+                onSave={() => formRef.current?.requestSubmit()}
+                onDiscard={resetForm}
+                saving={isSubmitting || isUploadingAvatar}
+            />
         </div>
     );
 }

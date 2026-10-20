@@ -50,7 +50,8 @@ import { Select } from '@/components/ui/select-native';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { toast } from 'sonner';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent, TabsTrigger } from '@/components/ui/tabs';
+import { ScrollableTabsList } from '@/components/ui/scrollable-tabs-list';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import {
     AlertDialog,
@@ -80,6 +81,10 @@ import { useSettings } from '@/contexts/SettingsContext';
 import { useDateFormatOptions } from '@/contexts/PreferencesContext';
 import { formatDateTimeInTz, formatRelativeTime } from '@/lib/dateUtils';
 import { RoleBadge } from '@/components/RoleBadge';
+import { UnsavedChangesBar } from '@/components/featherui/UnsavedChangesBar';
+import { FormGroup } from '@/components/featherui/FormSection';
+import { useFormBaseline } from '@/hooks/useFormBaseline';
+import { Sensitive } from '@/components/common/Sensitive';
 
 interface UserRole {
     name: string;
@@ -246,6 +251,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
         password: '',
         webspace_limit: '0',
     });
+    const { dirty: unsaved, commit: commitForm, restore: restoreForm } = useFormBaseline(editForm);
 
     const fetchUser = async () => {
         setLoading(true);
@@ -276,7 +282,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                 console.error('Failed to fetch roles', e);
             }
 
-            setEditForm({
+            const loadedForm: EditForm = {
                 username: apiUser.username || '',
                 first_name: apiUser.first_name || '',
                 last_name: apiUser.last_name || '',
@@ -288,7 +294,9 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                         : undefined,
                 password: '',
                 webspace_limit: String(apiUser.webspace_limit ?? 0),
-            });
+            };
+            setEditForm(loadedForm);
+            commitForm(loadedForm);
 
             try {
                 const serversRes = await axios.get(`/api/admin/users/${resolvedParams.uuid}/servers`, {
@@ -361,8 +369,8 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
         }
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleSubmit = async (e?: React.FormEvent) => {
+        e?.preventDefault();
         if (!user) return;
 
         setSubmitting(true);
@@ -684,121 +692,138 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                 <div className='space-y-6 lg:col-span-2'>
                     <PageCard title={t('admin.users.edit.form.title')} icon={User} className='h-full'>
                         <form onSubmit={handleSubmit} className='space-y-6' data-fp-save-shortcut>
-                            <div>
-                                <Label htmlFor='edit-username'>{t('admin.users.edit.form.username')}</Label>
-                                <Input
-                                    id='edit-username'
-                                    value={editForm.username}
-                                    onChange={(e) => setEditForm({ ...editForm, username: e.target.value })}
-                                    placeholder={t('admin.users.create.form.username_placeholder')}
-                                    required
-                                    className='mt-2'
-                                />
-                            </div>
-
-                            <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
+                            <FormGroup
+                                title={t('admin.users.edit.groups.profile')}
+                                description={t('admin.users.edit.groups.profile_hint')}
+                            >
                                 <div>
-                                    <Label htmlFor='edit-firstname'>{t('admin.users.edit.form.first_name')}</Label>
+                                    <Label htmlFor='edit-username'>{t('admin.users.edit.form.username')}</Label>
                                     <Input
-                                        id='edit-firstname'
-                                        value={editForm.first_name}
-                                        onChange={(e) => setEditForm({ ...editForm, first_name: e.target.value })}
-                                        placeholder={t('admin.users.create.form.first_name_placeholder')}
+                                        id='edit-username'
+                                        value={editForm.username}
+                                        onChange={(e) => setEditForm({ ...editForm, username: e.target.value })}
+                                        placeholder={t('admin.users.create.form.username_placeholder')}
+                                        required
                                         className='mt-2'
                                     />
                                 </div>
+
+                                <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
+                                    <div>
+                                        <Label htmlFor='edit-firstname'>{t('admin.users.edit.form.first_name')}</Label>
+                                        <Input
+                                            id='edit-firstname'
+                                            value={editForm.first_name}
+                                            onChange={(e) => setEditForm({ ...editForm, first_name: e.target.value })}
+                                            placeholder={t('admin.users.create.form.first_name_placeholder')}
+                                            className='mt-2'
+                                        />
+                                    </div>
+                                    <div>
+                                        <Label htmlFor='edit-lastname'>{t('admin.users.edit.form.last_name')}</Label>
+                                        <Input
+                                            id='edit-lastname'
+                                            value={editForm.last_name}
+                                            onChange={(e) => setEditForm({ ...editForm, last_name: e.target.value })}
+                                            placeholder={t('admin.users.create.form.last_name_placeholder')}
+                                            className='mt-2'
+                                        />
+                                    </div>
+                                </div>
+
                                 <div>
-                                    <Label htmlFor='edit-lastname'>{t('admin.users.edit.form.last_name')}</Label>
+                                    <Label htmlFor='edit-email'>{t('admin.users.edit.form.email')}</Label>
                                     <Input
-                                        id='edit-lastname'
-                                        value={editForm.last_name}
-                                        onChange={(e) => setEditForm({ ...editForm, last_name: e.target.value })}
-                                        placeholder={t('admin.users.create.form.last_name_placeholder')}
+                                        id='edit-email'
+                                        type='email'
+                                        data-fp-sensitive=''
+                                        value={editForm.email}
+                                        onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                                        placeholder={t('admin.users.create.form.email_placeholder')}
+                                        required
                                         className='mt-2'
                                     />
                                 </div>
-                            </div>
+                            </FormGroup>
+                            <FormGroup
+                                title={t('admin.users.edit.groups.access')}
+                                description={t('admin.users.edit.groups.access_hint')}
+                            >
+                                <div>
+                                    <Label htmlFor='edit-role'>{t('admin.users.edit.form.role')}</Label>
+                                    <Select
+                                        id='edit-role'
+                                        value={editForm.role_id}
+                                        onChange={(e) => setEditForm({ ...editForm, role_id: e.target.value })}
+                                        required
+                                        className='mt-2 w-full'
+                                    >
+                                        <option value=''>{t('admin.users.create.form.select_role')}</option>
+                                        {availableRoles.map((role) => (
+                                            <option key={role.id} value={role.id}>
+                                                {role.display_name}
+                                            </option>
+                                        ))}
+                                    </Select>
+                                </div>
 
-                            <div>
-                                <Label htmlFor='edit-email'>{t('admin.users.edit.form.email')}</Label>
-                                <Input
-                                    id='edit-email'
-                                    type='email'
-                                    value={editForm.email}
-                                    onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
-                                    placeholder={t('admin.users.create.form.email_placeholder')}
-                                    required
-                                    className='mt-2'
-                                />
-                            </div>
+                                <div>
+                                    <Label htmlFor='edit-webspace-limit'>
+                                        {t('ui.admin.users.edit.webSpaceLimit')}
+                                    </Label>
+                                    <Input
+                                        id='edit-webspace-limit'
+                                        type='number'
+                                        min={0}
+                                        value={editForm.webspace_limit ?? '0'}
+                                        onChange={(e) => setEditForm({ ...editForm, webspace_limit: e.target.value })}
+                                        className='mt-2'
+                                    />
+                                    <p className='text-muted-foreground mt-1 text-xs'>
+                                        0 = unlimited self-service orders
+                                    </p>
+                                </div>
 
-                            <div>
-                                <Label htmlFor='edit-role'>{t('admin.users.edit.form.role')}</Label>
-                                <Select
-                                    id='edit-role'
-                                    value={editForm.role_id}
-                                    onChange={(e) => setEditForm({ ...editForm, role_id: e.target.value })}
-                                    required
-                                    className='mt-2 w-full'
-                                >
-                                    <option value=''>{t('admin.users.create.form.select_role')}</option>
-                                    {availableRoles.map((role) => (
-                                        <option key={role.id} value={role.id}>
-                                            {role.display_name}
-                                        </option>
-                                    ))}
-                                </Select>
-                            </div>
-
-                            <div>
-                                <Label htmlFor='edit-webspace-limit'>WebSpace limit</Label>
-                                <Input
-                                    id='edit-webspace-limit'
-                                    type='number'
-                                    min={0}
-                                    value={editForm.webspace_limit ?? '0'}
-                                    onChange={(e) => setEditForm({ ...editForm, webspace_limit: e.target.value })}
-                                    className='mt-2'
-                                />
-                                <p className='text-muted-foreground mt-1 text-xs'>0 = unlimited self-service orders</p>
-                            </div>
-
-                            <div>
-                                <Label htmlFor='edit-externalid'>{t('admin.users.edit.form.external_id')}</Label>
-                                <Input
-                                    id='edit-externalid'
-                                    type='number'
-                                    value={editForm.external_id ?? ''}
-                                    onChange={(e) =>
-                                        setEditForm({
-                                            ...editForm,
-                                            external_id: e.target.value === '' ? undefined : Number(e.target.value),
-                                        })
-                                    }
-                                    placeholder={t('admin.users.edit.form.external_id_help')}
-                                    className='mt-2'
-                                />
-                                <p className='text-muted-foreground mt-1.5 text-xs'>
-                                    {t('admin.users.edit.form.external_id_help')}
-                                </p>
-                            </div>
-
-                            <div>
-                                <Label htmlFor='edit-password'>{t('admin.users.edit.form.password')}</Label>
-                                <Input
-                                    id='edit-password'
-                                    type='password'
-                                    value={editForm.password}
-                                    onChange={(e) => setEditForm({ ...editForm, password: e.target.value })}
-                                    placeholder={t('admin.users.edit.form.password_placeholder')}
-                                    className='mt-2'
-                                />
-                                <p className='text-muted-foreground mt-1.5 text-xs'>
-                                    {t('admin.users.edit.form.password_help')}
-                                </p>
-                            </div>
-
-                            <div className='border-border/50 flex justify-end border-t pt-4'>
+                                <div>
+                                    <Label htmlFor='edit-externalid'>{t('admin.users.edit.form.external_id')}</Label>
+                                    <Input
+                                        id='edit-externalid'
+                                        type='number'
+                                        value={editForm.external_id ?? ''}
+                                        onChange={(e) =>
+                                            setEditForm({
+                                                ...editForm,
+                                                external_id: e.target.value === '' ? undefined : Number(e.target.value),
+                                            })
+                                        }
+                                        placeholder={t('admin.users.edit.form.external_id_help')}
+                                        className='mt-2'
+                                    />
+                                    <p className='text-muted-foreground mt-1.5 text-xs'>
+                                        {t('admin.users.edit.form.external_id_help')}
+                                    </p>
+                                </div>
+                            </FormGroup>
+                            <FormGroup
+                                title={t('admin.users.edit.groups.security')}
+                                description={t('admin.users.edit.groups.security_hint')}
+                            >
+                                <div>
+                                    <Label htmlFor='edit-password'>{t('admin.users.edit.form.password')}</Label>
+                                    <Input
+                                        id='edit-password'
+                                        type='password'
+                                        value={editForm.password}
+                                        onChange={(e) => setEditForm({ ...editForm, password: e.target.value })}
+                                        placeholder={t('admin.users.edit.form.password_placeholder')}
+                                        className='mt-2'
+                                    />
+                                    <p className='text-muted-foreground mt-1.5 text-xs'>
+                                        {t('admin.users.edit.form.password_help')}
+                                    </p>
+                                </div>
+                            </FormGroup>
+                            <div className='flex justify-end border-t border-[var(--fp-surface-border)] pt-4'>
                                 <Button type='submit' disabled={submitting}>
                                     {submitting ? (
                                         <>
@@ -823,8 +848,10 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                             <Avatar className='ring-background mb-4 h-24 w-24 shadow-lg ring-4'>
                                 <AvatarImage src={user.avatar} alt={user.username} />
                             </Avatar>
-                            <h2 className='text-xl font-bold'>{user.username}</h2>
-                            <p className='text-muted-foreground text-sm'>{user.email}</p>
+                            <h2 className='max-w-full text-center text-xl font-bold break-words'>{user.username}</h2>
+                            <p className='text-muted-foreground max-w-full text-center text-sm break-words'>
+                                <Sensitive>{user.email}</Sensitive>
+                            </p>
 
                             <div className='mt-4 flex flex-wrap justify-center gap-2'>
                                 {user.role ? (
@@ -856,7 +883,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                                         {t('admin.users.badges.oidc')}
                                     </Badge>
                                 ) : (
-                                    <Badge className='border-gray-500/20 bg-gray-500/10 text-gray-600'>
+                                    <Badge className='border-[var(--fp-surface-border)] bg-gray-500/10 text-gray-600'>
                                         {t('admin.users.badges.local')}
                                     </Badge>
                                 )}
@@ -864,41 +891,49 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                         </div>
 
                         <div className='border-border/50 space-y-3 border-t pt-4 text-sm'>
-                            <div className='flex justify-between'>
+                            <div className='flex min-w-0 items-start justify-between gap-4'>
                                 <span className='text-muted-foreground'>
                                     {t('admin.users.edit.account_info.user_id')}
                                 </span>
-                                <span className='font-mono'>{user.id}</span>
+                                <span className='min-w-0 text-right font-mono'>{user.id}</span>
                             </div>
-                            <div className='flex justify-between'>
+                            <div className='flex min-w-0 items-start justify-between gap-4'>
                                 <span className='text-muted-foreground'>{t('admin.users.edit.account_info.uuid')}</span>
-                                <span className='font-mono text-xs' title={user.uuid}>
+                                <span className='min-w-0 text-right font-mono text-xs break-all' title={user.uuid}>
                                     {user.uuid.substring(0, 8)}...
                                 </span>
                             </div>
-                            <div className='flex justify-between'>
+                            <div className='flex min-w-0 items-start justify-between gap-4'>
                                 <span className='text-muted-foreground'>
                                     {t('admin.users.edit.account_info.created')}
                                 </span>
-                                <span title={formatDateTimeInTz(user.created_at || user.first_seen, dateOpts)}>
+                                <span
+                                    className='min-w-0 text-right'
+                                    title={formatDateTimeInTz(user.created_at || user.first_seen, dateOpts)}
+                                >
                                     {formatDateTimeInTz(user.created_at || user.first_seen, dateOpts)}
                                 </span>
                             </div>
-                            <div className='flex justify-between'>
+                            <div className='flex min-w-0 items-start justify-between gap-4'>
                                 <span className='text-muted-foreground'>
                                     {t('admin.users.edit.account_info.last_seen')}
                                 </span>
-                                <span title={user.last_seen ? formatDateTimeInTz(user.last_seen, dateOpts) : undefined}>
+                                <span
+                                    className='min-w-0 text-right'
+                                    title={user.last_seen ? formatDateTimeInTz(user.last_seen, dateOpts) : undefined}
+                                >
                                     {user.last_seen ? formatRelativeTime(user.last_seen, dateOpts) : '-'}
                                 </span>
                             </div>
                             {user.last_ip && (
-                                <div className='flex items-center justify-between gap-2'>
+                                <div className='flex min-w-0 flex-wrap items-start justify-between gap-2'>
                                     <span className='text-muted-foreground'>
                                         {t('admin.users.edit.account_info.last_ip')}
                                     </span>
-                                    <div className='flex items-center gap-2'>
-                                        <span className='font-mono'>{user.last_ip}</span>
+                                    <div className='flex min-w-0 flex-1 flex-wrap items-center justify-end gap-2'>
+                                        <span className='min-w-0 text-right font-mono break-all'>
+                                            <Sensitive>{user.last_ip}</Sensitive>
+                                        </span>
                                         <Button
                                             type='button'
                                             variant='outline'
@@ -918,12 +953,14 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                                 </div>
                             )}
                             {user.first_ip && (
-                                <div className='flex items-center justify-between gap-2'>
+                                <div className='flex min-w-0 flex-wrap items-start justify-between gap-2'>
                                     <span className='text-muted-foreground'>
                                         {t('admin.users.edit.account_info.first_ip')}
                                     </span>
-                                    <div className='flex items-center gap-2'>
-                                        <span className='font-mono'>{user.first_ip}</span>
+                                    <div className='flex min-w-0 flex-1 flex-wrap items-center justify-end gap-2'>
+                                        <span className='min-w-0 text-right font-mono break-all'>
+                                            <Sensitive>{user.first_ip}</Sensitive>
+                                        </span>
                                         {user.first_ip !== user.last_ip ? (
                                             <Button
                                                 type='button'
@@ -945,19 +982,23 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                                 </div>
                             )}
                             {user.discord_oauth2_username && (
-                                <div className='border-border/50 mt-4 flex justify-between border-t pt-4'>
+                                <div className='border-border/50 mt-4 flex min-w-0 flex-wrap items-start justify-between gap-4 border-t pt-4'>
                                     <span className='text-muted-foreground'>
                                         {t('admin.users.edit.account_info.discord_user')}
                                     </span>
-                                    <span className='font-medium'>{user.discord_oauth2_username}</span>
+                                    <span className='min-w-0 text-right font-medium break-words'>
+                                        {user.discord_oauth2_username}
+                                    </span>
                                 </div>
                             )}
                             {user.discord_oauth2_id && (
-                                <div className='flex justify-between'>
+                                <div className='flex min-w-0 items-start justify-between gap-4'>
                                     <span className='text-muted-foreground'>
                                         {t('admin.users.edit.account_info.discord_id')}
                                     </span>
-                                    <span className='font-mono text-xs'>{user.discord_oauth2_id}</span>
+                                    <span className='min-w-0 text-right font-mono text-xs break-all'>
+                                        {user.discord_oauth2_id}
+                                    </span>
                                 </div>
                             )}
                         </div>
@@ -1048,8 +1089,8 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
             </div>
 
             <Tabs defaultValue='servers' className='w-full'>
-                <div className='mb-4 flex items-center justify-between'>
-                    <TabsList>
+                <div className='mb-4 flex min-w-0'>
+                    <ScrollableTabsList wrapperClassName='max-w-full'>
                         <TabsTrigger value='servers' className='gap-2'>
                             <ServerIcon className='h-4 w-4' />
                             {t('admin.users.edit.tabs.servers')}
@@ -1075,7 +1116,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                             <Mail className='h-4 w-4' />
                             {t('admin.users.edit.tabs.mails')}
                         </TabsTrigger>
-                    </TabsList>
+                    </ScrollableTabsList>
                 </div>
 
                 <TabsContent value='servers'>
@@ -1095,7 +1136,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                         <div className='overflow-x-auto'>
                             <table className='w-full text-sm'>
                                 <thead>
-                                    <tr className='border-b border-white/5 text-left'>
+                                    <tr className='border-b border-[var(--fp-surface-border)] text-left'>
                                         <th className='text-muted-foreground p-4 font-medium'>
                                             {t('admin.users.edit.servers.name')}
                                         </th>
@@ -1121,7 +1162,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                                         ownedServers.map((server) => (
                                             <tr
                                                 key={server.id}
-                                                className='border-b border-white/5 transition-colors last:border-0 hover:bg-white/5'
+                                                className='border-b border-[var(--fp-surface-border)] transition-colors last:border-0 hover:bg-white/5'
                                             >
                                                 <td className='p-4'>
                                                     <div className='font-medium'>{server.name}</div>
@@ -1175,7 +1216,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                         <div className='overflow-x-auto'>
                             <table className='w-full text-sm'>
                                 <thead>
-                                    <tr className='border-b border-white/5 text-left'>
+                                    <tr className='border-b border-[var(--fp-surface-border)] text-left'>
                                         <th className='text-muted-foreground p-4 font-medium'>
                                             {t('admin.users.edit.activities.name')}
                                         </th>
@@ -1201,11 +1242,13 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                                         user.activities.map((activity, index) => (
                                             <tr
                                                 key={index}
-                                                className='border-b border-white/5 transition-colors last:border-0 hover:bg-white/5'
+                                                className='border-b border-[var(--fp-surface-border)] transition-colors last:border-0 hover:bg-white/5'
                                             >
                                                 <td className='p-4 font-medium'>{activity.name}</td>
                                                 <td className='text-muted-foreground p-4'>{activity.context}</td>
-                                                <td className='p-4 font-mono text-xs'>{activity.ip_address}</td>
+                                                <td className='p-4 font-mono text-xs'>
+                                                    <Sensitive>{activity.ip_address}</Sensitive>
+                                                </td>
                                                 <td className='text-muted-foreground p-4'>
                                                     {formatDateTimeInTz(activity.created_at, dateOpts)}
                                                 </td>
@@ -1239,7 +1282,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                             {t('admin.users.edit.potential_alts.description')}
                         </p>
                         {altSourceIps.length > 0 && (
-                            <div className='mb-6 rounded-lg border border-white/5 bg-white/5 p-4'>
+                            <div className='fp-surface-inset mb-6 rounded-lg border p-4'>
                                 <p className='text-muted-foreground mb-2 text-xs font-bold tracking-wider uppercase'>
                                     {t('admin.users.edit.potential_alts.source_ips')}
                                 </p>
@@ -1253,7 +1296,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                             </div>
                         )}
                         {altSourceDevices.length > 0 && (
-                            <div className='mb-6 rounded-lg border border-white/5 bg-white/5 p-4'>
+                            <div className='fp-surface-inset mb-6 rounded-lg border p-4'>
                                 <p className='text-muted-foreground mb-2 text-xs font-bold tracking-wider uppercase'>
                                     {t('admin.users.edit.potential_alts.source_devices')}
                                 </p>
@@ -1269,7 +1312,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                         <div className='overflow-x-auto'>
                             <table className='w-full text-sm'>
                                 <thead>
-                                    <tr className='border-b border-white/5 text-left'>
+                                    <tr className='border-b border-[var(--fp-surface-border)] text-left'>
                                         <th className='text-muted-foreground p-4 font-medium'>
                                             {t('admin.users.edit.potential_alts.user')}
                                         </th>
@@ -1301,7 +1344,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                                         potentialAlts.map((alt) => (
                                             <tr
                                                 key={alt.uuid}
-                                                className='border-b border-white/5 transition-colors last:border-0 hover:bg-white/5'
+                                                className='border-b border-[var(--fp-surface-border)] transition-colors last:border-0 hover:bg-white/5'
                                             >
                                                 <td className='p-4'>
                                                     <div className='flex items-center gap-3'>
@@ -1311,7 +1354,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                                                         <div>
                                                             <div className='font-medium'>{alt.username}</div>
                                                             <div className='text-muted-foreground text-xs'>
-                                                                {alt.email}
+                                                                <Sensitive>{alt.email}</Sensitive>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -1442,7 +1485,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                         <div className='overflow-x-auto'>
                             <table className='w-full text-sm'>
                                 <thead>
-                                    <tr className='border-b border-white/5 text-left'>
+                                    <tr className='border-b border-[var(--fp-surface-border)] text-left'>
                                         <th className='text-muted-foreground p-4 font-medium'>
                                             {t('admin.users.edit.vds.hostname', { defaultValue: 'Hostname' })}
                                         </th>
@@ -1473,7 +1516,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                                         ownedVms.map((vm) => (
                                             <tr
                                                 key={vm.id}
-                                                className='border-b border-white/5 transition-colors last:border-0 hover:bg-white/5'
+                                                className='border-b border-[var(--fp-surface-border)] transition-colors last:border-0 hover:bg-white/5'
                                             >
                                                 <td className='p-4'>
                                                     <div className='font-medium'>{vm.hostname || `VM #${vm.id}`}</div>
@@ -1498,7 +1541,9 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                                                             : vm.status || t('vds.console.status.unknown')}
                                                     </Badge>
                                                 </td>
-                                                <td className='p-4 font-mono text-xs'>{vm.ip_address || '-'}</td>
+                                                <td className='p-4 font-mono text-xs'>
+                                                    {vm.ip_address ? <Sensitive>{vm.ip_address}</Sensitive> : '-'}
+                                                </td>
                                                 <td className='text-muted-foreground p-4'>
                                                     {vm.node_name || vm.pve_node || '-'}
                                                 </td>
@@ -1536,7 +1581,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                         <div className='overflow-x-auto'>
                             <table className='w-full text-sm'>
                                 <thead>
-                                    <tr className='border-b border-white/5 text-left'>
+                                    <tr className='border-b border-[var(--fp-surface-border)] text-left'>
                                         <th className='text-muted-foreground p-4 font-medium'>
                                             {t('admin.users.edit.mails.subject')}
                                         </th>
@@ -1562,7 +1607,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                                         user.mails.map((mail) => (
                                             <tr
                                                 key={mail.id}
-                                                className='border-b border-white/5 transition-colors last:border-0 hover:bg-white/5'
+                                                className='border-b border-[var(--fp-surface-border)] transition-colors last:border-0 hover:bg-white/5'
                                             >
                                                 <td className='p-4 font-medium'>{mail.subject}</td>
                                                 <td className='p-4'>
@@ -1651,7 +1696,13 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                             <Label htmlFor='send-email-recipient'>
                                 {t('admin.users.edit.actions.email.to', { defaultValue: 'To' })}
                             </Label>
-                            <Input id='send-email-recipient' value={user.email || ''} readOnly className='mt-2' />
+                            <Input
+                                id='send-email-recipient'
+                                data-fp-sensitive=''
+                                value={user.email || ''}
+                                readOnly
+                                className='mt-2'
+                            />
                         </div>
 
                         <div>
@@ -1800,6 +1851,16 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
             </AlertDialog>
 
             <WidgetRenderer widgets={getWidgets('admin-users-edit', 'bottom-of-page')} context={widgetContext} />
+
+            <UnsavedChangesBar
+                dirty={unsaved}
+                saving={submitting}
+                onSave={() => void handleSubmit()}
+                onDiscard={() => {
+                    const saved = restoreForm();
+                    if (saved) setEditForm(saved);
+                }}
+            />
         </div>
     );
 }

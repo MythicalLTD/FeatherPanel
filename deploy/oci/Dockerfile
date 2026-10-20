@@ -131,53 +131,27 @@ log_errors = On\n\
 error_log = /var/log/php_errors.log\n\
 allow_url_fopen = On\n\
 date.timezone = UTC\n\
+realpath_cache_size = 4096K\n\
+realpath_cache_ttl = 600\n\
 opcache.enable = 1\n\
-opcache.memory_consumption = 128\n\
-opcache.interned_strings_buffer = 8\n\
-opcache.max_accelerated_files = 4000\n\
+opcache.enable_cli = 0\n\
+opcache.memory_consumption = 256\n\
+opcache.interned_strings_buffer = 32\n\
+opcache.max_accelerated_files = 20000\n\
+opcache.validate_timestamps = 1\n\
 opcache.revalidate_freq = 2\n\
-opcache.fast_shutdown = 1' > /usr/local/etc/php/conf.d/custom.ini
+zend.assertions = -1' > /usr/local/etc/php/conf.d/custom.ini
 
 # Create backend directories
 RUN mkdir -p /var/www/html/storage/{logs,cache,uploads,temp,config,backups,addons,data} \
     /var/www/html/public/{attachments,translations,addons,components} \
     /var/log/cron /var/www/html/storage/cron
 
-# Backend Caddyfile (internal only - backend listens on :8080)
-COPY <<'EOF' /etc/caddy/backend.Caddyfile
-:8080 {
-    root * /var/www/html/public
-    encode zstd br gzip
-    header Server FeatherPanel
-
-    log {
-        output file /var/www/html/storage/logs/featherpanel-web.fplog {
-            roll_size 50mb
-            roll_keep 3
-        }
-        format console
-        level INFO
-    }
-
-    request_body {
-        max_size 250MB
-    }
-
-    @block_php path_regexp ^/(attachments|uploads|storage)/.*\.php$
-    handle @block_php {
-        respond 403
-    }
-
-    @dot_ht path_regexp /\.ht
-    handle @dot_ht {
-        respond 403
-    }
-
-    php_server {
-        try_files {path} index.php
-    }
-}
-EOF
+# Backend Caddyfile (internal only - backend listens on :8080). The same file as
+# backend/Caddyfile; SERVER_NAME / CADDY_ADMIN_ADDRESS are set on the supervisor
+# program so it does not clash with caddy-main on :80 / admin :2019.
+COPY backend/Caddyfile /etc/caddy/backend.Caddyfile
+COPY backend/caddy/ /etc/caddy/caddy/
 
 # Backend init script
 COPY <<'EOF' /usr/local/bin/backend-init.sh
@@ -445,7 +419,9 @@ COPY <<'EOF' /etc/caddy/Caddyfile
 }
 
 :80 {
-    encode zstd gzip
+    # SSE streams (chatbot, Mercure live updates) must not be buffered by the compressor
+    @compressible not path /api/user/chatbot/chat/stream /api/user/vds-chatbot/chat/stream /api/mercure
+    encode @compressible zstd gzip
 
     request_body {
         max_size 250MB
@@ -500,6 +476,12 @@ ENV REDIS_PASSWORD=featherpanel_redis
 ENV MARIADB_ROOT_PASSWORD=featherpanel_root
 ENV PANEL_DOCKER_DEPLOYMENT=true
 ENV TRUST_PROXY_HEADERS=true
+# FrankenPHP tuning (see backend/Caddyfile). Worker mode is the default; FRANKENPHP_WORKER=false for classic.
+ENV PHP_MEMORY_LIMIT=512M \
+    FRANKENPHP_MAX_THREADS=auto \
+    FRANKENPHP_MAX_WAIT_TIME=30s \
+    FRANKENPHP_WORKER=true \
+    FEATHERPANEL_WORKER_MAX_REQUESTS=1000
 
 # MariaDB init
 COPY <<'EOF' /docker-entrypoint-initdb.d/init.sql
@@ -779,6 +761,9 @@ RS1
 fi
 
 if [ "${ENABLE_BACKEND:-true}" = "true" ]; then
+# PHP mode (FRANKENPHP_WORKER, default true) and worker pool sizes, shared with backend/init.sh
+. /etc/caddy/caddy/frankenphp-env.sh
+mkdir -p /var/www/html/storage/caches/runtime && chmod 0777 /var/www/html/storage/caches/runtime
 cat >> "$SUPERVISOR_CONF" <<'SVCFILE'
 
 [program:backend-init]
@@ -802,8 +787,14 @@ stderr_logfile=/dev/stderr
 stderr_logfile_maxbytes=0
 autostart=true
 autorestart=true
+startsecs=5
+startretries=10
+stopwaitsecs=30
 priority=4
 SVCFILE
+cat >> "$SUPERVISOR_CONF" <<SVCENV
+environment=SERVER_NAME=":8080",CADDY_ADMIN_ADDRESS="localhost:2020",FEATHERPANEL_ROOT="/var/www/html",FEATHERPANEL_PHP_MODE="${FEATHERPANEL_PHP_MODE}",FEATHERPANEL_WORKERS="${FEATHERPANEL_WORKERS}",FEATHERPANEL_SLOW_WORKERS="${FEATHERPANEL_SLOW_WORKERS}",FEATHERPANEL_SLOW_MAX_THREADS="${FEATHERPANEL_SLOW_MAX_THREADS}"
+SVCENV
 fi
 
 if [ "${ENABLE_FRONTEND:-true}" = "true" ]; then
@@ -877,6 +868,9 @@ RUN chmod +x /usr/local/bin/generate-supervisord-conf.sh
 
 # Expose port 80
 EXPOSE 80
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=300s --retries=5 \
+    CMD [ "${ENABLE_BACKEND:-true}" != "true" ] || curl -fsS -o /dev/null http://127.0.0.1/api/system/health || exit 1
 
 # Data volume for persistence
 VOLUME ["/home/container/data"]

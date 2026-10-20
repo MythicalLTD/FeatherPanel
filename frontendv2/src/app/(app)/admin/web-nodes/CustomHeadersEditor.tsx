@@ -55,7 +55,7 @@ export function CustomHeadersEditor({ entries, onChange, error }: CustomHeadersE
             </div>
 
             {entries.length === 0 ? (
-                <div className='border-border/60 bg-card/20 rounded-2xl border border-dashed px-4 py-8 text-center'>
+                <div className='fp-surface rounded-2xl border border-dashed px-4 py-8 text-center'>
                     <p className='text-muted-foreground text-xs italic'>
                         {t('admin.webNodes.form.remote_custom_headers_empty')}
                     </p>

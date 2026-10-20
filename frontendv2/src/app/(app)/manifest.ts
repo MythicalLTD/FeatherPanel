@@ -34,7 +34,7 @@ export default async function manifest(): Promise<MetadataRoute.Manifest> {
     const data = await settingsApi.getPublicSettings();
     const settings = data?.settings;
 
-    const appName = settings?.app_name?.trim() || 'FeatherPanel';
+    const appName = settings?.app_name?.trim() || 'Panel';
     const shortName = (settings?.app_pwa_short_name?.trim() || appName).slice(0, 12);
     const description = settings?.app_pwa_description?.trim() || settings?.app_seo_description?.trim() || appName;
     const themeColor = settings?.app_pwa_theme_color?.trim() || '#000000';

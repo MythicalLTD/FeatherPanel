@@ -15,11 +15,13 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { AdminPageTips } from '@/components/admin/AdminPageTips';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
-import { Server, User, Lock, Mail, Hash, Users, Shield, Network, Database } from 'lucide-react';
+import { Server, User, Lock, Mail, Hash, Users, Shield, Network, Database, KeyRound, Plus } from 'lucide-react';
 import { PageHeader } from '@/components/featherui/PageHeader';
+import { ResourceCard, ResourceTable } from '@/components/featherui/ResourceCard';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
@@ -28,6 +30,7 @@ import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
+import { ListEmptyState } from '@/components/featherui/ListEmptyState';
 
 interface LdapProvider {
     uuid: string;
@@ -237,35 +240,44 @@ export default function LdapProvidersPage() {
                     {loading ? (
                         <div className='text-muted-foreground py-8 text-center'>{t('admin.ldapProviders.loading')}</div>
                     ) : providers.length === 0 ? (
-                        <div className='text-muted-foreground py-8 text-center'>
-                            {t('admin.ldapProviders.noProviders')}
-                        </div>
+                        <ListEmptyState
+                            icon={KeyRound}
+                            title={t('emptyStates.ldapProviders.title')}
+                            description={t('emptyStates.ldapProviders.description')}
+                            action={
+                                <Button onClick={handleCreateNew}>
+                                    <Plus className='mr-2 h-4 w-4' />
+                                    {t('admin.ldapProviders.createProvider')}
+                                </Button>
+                            }
+                            className='border-0 bg-transparent py-8'
+                        />
                     ) : (
-                        <div className='space-y-3'>
+                        <ResourceTable>
                             {providers.map((provider) => {
                                 const isEnabled = provider.enabled === 'true';
                                 const useTls = provider.use_tls === 'true';
                                 const useSsl = provider.use_ssl === 'true';
                                 const protocol = useSsl ? 'ldaps://' : 'ldap://';
                                 return (
-                                    <div
+                                    <ResourceCard
                                         key={provider.uuid}
-                                        className='border-border flex items-center justify-between rounded-lg border px-4 py-3'
-                                    >
-                                        <div>
-                                            <div className='flex items-center gap-2 font-medium'>
-                                                <Server className='text-primary h-4 w-4' />
-                                                <span>{provider.name}</span>
-                                            </div>
-                                            <div className='text-muted-foreground text-xs'>
-                                                {protocol}
-                                                {provider.host}:{provider.port}
-                                                {useTls && !useSsl && ' (TLS)'}
-                                            </div>
-                                            <div className='text-muted-foreground mt-0.5 text-xs'>
-                                                {t('admin.ldapProviders.baseDn')}: {provider.base_dn}
-                                            </div>
-                                            <div className='mt-1 flex items-center gap-2'>
+                                        icon={Server}
+                                        title={provider.name}
+                                        subtitle={
+                                            <>
+                                                <div className='text-muted-foreground text-xs'>
+                                                    {protocol}
+                                                    {provider.host}:{provider.port}
+                                                    {useTls && !useSsl && ' (TLS)'}
+                                                </div>
+                                                <div className='text-muted-foreground mt-0.5 text-xs'>
+                                                    {t('admin.ldapProviders.baseDn')}: {provider.base_dn}
+                                                </div>
+                                            </>
+                                        }
+                                        badges={
+                                            <>
                                                 <span
                                                     className={
                                                         'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ' +
@@ -283,75 +295,81 @@ export default function LdapProvidersPage() {
                                                         {t('admin.ldapProviders.autoProvision')}
                                                     </span>
                                                 )}
-                                            </div>
-                                        </div>
-                                        <div className='flex items-center gap-2'>
-                                            <Button
-                                                variant='outline'
-                                                size='sm'
-                                                onClick={() => handleTestConnection(provider)}
-                                                loading={testing}
-                                            >
-                                                {t('admin.ldapProviders.testConnection')}
-                                            </Button>
-                                            <Button variant='outline' size='sm' onClick={() => handleEdit(provider)}>
-                                                {t('admin.ldapProviders.edit')}
-                                            </Button>
-                                            <Button
-                                                variant='outline'
-                                                size='sm'
-                                                onClick={async () => {
-                                                    const next = isEnabled ? 'false' : 'true';
-                                                    try {
-                                                        const res = await fetch(
-                                                            `/api/admin/ldap/providers/${provider.uuid}`,
-                                                            {
-                                                                method: 'POST',
-                                                                headers: {
-                                                                    'Content-Type': 'application/json',
+                                            </>
+                                        }
+                                        actions={
+                                            <div className='flex items-center gap-2'>
+                                                <Button
+                                                    variant='outline'
+                                                    size='sm'
+                                                    onClick={() => handleTestConnection(provider)}
+                                                    loading={testing}
+                                                >
+                                                    {t('admin.ldapProviders.testConnection')}
+                                                </Button>
+                                                <Button
+                                                    variant='outline'
+                                                    size='sm'
+                                                    onClick={() => handleEdit(provider)}
+                                                >
+                                                    {t('admin.ldapProviders.edit')}
+                                                </Button>
+                                                <Button
+                                                    variant='outline'
+                                                    size='sm'
+                                                    onClick={async () => {
+                                                        const next = isEnabled ? 'false' : 'true';
+                                                        try {
+                                                            const res = await fetch(
+                                                                `/api/admin/ldap/providers/${provider.uuid}`,
+                                                                {
+                                                                    method: 'POST',
+                                                                    headers: {
+                                                                        'Content-Type': 'application/json',
+                                                                    },
+                                                                    body: JSON.stringify({ enabled: next }),
                                                                 },
-                                                                body: JSON.stringify({ enabled: next }),
-                                                            },
-                                                        );
-                                                        const json = await res.json();
-                                                        if (json.success) {
-                                                            fetchProviders();
-                                                        } else {
+                                                            );
+                                                            const json = await res.json();
+                                                            if (json.success) {
+                                                                fetchProviders();
+                                                            } else {
+                                                                toast.error(
+                                                                    getApiErrorMessageFromPayload(
+                                                                        json,
+                                                                        t,
+                                                                        'admin.ldapProviders.messages.toggle_failed',
+                                                                    ),
+                                                                );
+                                                            }
+                                                        } catch (error) {
                                                             toast.error(
-                                                                getApiErrorMessageFromPayload(
-                                                                    json,
+                                                                getApiErrorMessage(
+                                                                    error,
                                                                     t,
                                                                     'admin.ldapProviders.messages.toggle_failed',
                                                                 ),
                                                             );
                                                         }
-                                                    } catch (error) {
-                                                        toast.error(
-                                                            getApiErrorMessage(
-                                                                error,
-                                                                t,
-                                                                'admin.ldapProviders.messages.toggle_failed',
-                                                            ),
-                                                        );
-                                                    }
-                                                }}
-                                            >
-                                                {isEnabled
-                                                    ? t('admin.ldapProviders.disable')
-                                                    : t('admin.ldapProviders.enable')}
-                                            </Button>
-                                            <Button
-                                                variant='destructive'
-                                                size='sm'
-                                                onClick={() => handleDelete(provider)}
-                                            >
-                                                {t('admin.ldapProviders.delete')}
-                                            </Button>
-                                        </div>
-                                    </div>
+                                                    }}
+                                                >
+                                                    {isEnabled
+                                                        ? t('admin.ldapProviders.disable')
+                                                        : t('admin.ldapProviders.enable')}
+                                                </Button>
+                                                <Button
+                                                    variant='destructive'
+                                                    size='sm'
+                                                    onClick={() => handleDelete(provider)}
+                                                >
+                                                    {t('admin.ldapProviders.delete')}
+                                                </Button>
+                                            </div>
+                                        }
+                                    />
                                 );
                             })}
-                        </div>
+                        </ResourceTable>
                     )}
                 </PageCard>
 
@@ -771,6 +789,8 @@ export default function LdapProvidersPage() {
                     </PageCard>
                 )}
             </div>
+            <AdminPageTips page='ldap-providers' />
+
             <WidgetRenderer widgets={getWidgets('admin-ldap-providers', 'bottom-of-page')} />
         </>
     );

@@ -17,9 +17,11 @@
 
 namespace App\Middleware;
 
+use App\App;
 use App\Chat\User;
 use App\Chat\ApiClient;
 use App\Helpers\ApiResponse;
+use App\Config\ConfigInterface;
 use App\Helpers\IpAddressMatcher;
 use App\Helpers\UserDeviceTracker;
 use App\CloudFlare\CloudFlareRealIP;
@@ -59,9 +61,23 @@ class AuthMiddleware implements MiddlewareInterface
             $authHeader = $request->headers->get('Authorization');
             if ($authHeader && preg_match('/Bearer\s(\S+)/', $authHeader, $matches)) {
                 $publicKey = $matches[1];
+                $apiClient = null;
 
-                // Validate the API client using the public key
-                $apiClient = ApiClient::getApiClientByPublicKey($publicKey);
+                // FP-5: the public_key of an API client is not a secret (it is
+                // handed out in redirect URLs), so it must not be accepted as a
+                // Bearer credential. Only kept for legacy clients when an operator
+                // explicitly opts in via `api_clients_allow_public_key_auth`.
+                if (self::publicKeyAuthAllowed()) {
+                    $apiClient = ApiClient::getApiClientByPublicKey($publicKey);
+                    if ($apiClient !== null) {
+                        App::getInstance(true)->getLogger()->warning(
+                            'API client authenticated with its public_key (api_clients_allow_public_key_auth=true) - client: '
+                            . ($apiClient['uuid'] ?? $apiClient['id'] ?? 'unknown')
+                        );
+                    }
+                }
+
+                // Validate the API client using the private key
                 if ($apiClient == null) {
                     $apiClient = ApiClient::getApiClientByPrivateKey($publicKey);
                     if ($apiClient == null) {
@@ -115,6 +131,8 @@ class AuthMiddleware implements MiddlewareInterface
         $user = $request->attributes->get('user');
         if (is_array($user) && isset($user['uuid'])) {
             \App\Telemetry\SentryTelemetry::setUser((string) $user['uuid']);
+            // The row was just loaded: permission checks in this request reuse its role.
+            \App\Helpers\PermissionHelper::rememberUser($user);
         }
 
         return $next($request);
@@ -158,5 +176,22 @@ class AuthMiddleware implements MiddlewareInterface
     public static function isSessionAuth(Request $request): bool
     {
         return $request->attributes->get('auth_type') === 'session';
+    }
+
+    /**
+     * Whether an API client may still authenticate with its own public_key.
+     * Defaults to false; an operator can restore the legacy behaviour with a single
+     * config entry (`api_clients_allow_public_key_auth = true`).
+     */
+    private static function publicKeyAuthAllowed(): bool
+    {
+        try {
+            return App::getInstance(true)->getConfig()->getSetting(
+                ConfigInterface::API_CLIENTS_ALLOW_PUBLIC_KEY_AUTH,
+                'false'
+            ) === 'true';
+        } catch (\Throwable $e) {
+            return false;
+        }
     }
 }

@@ -19,6 +19,8 @@ import { useCallback, useEffect, useState } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { useHideServerIps } from '@/contexts/PreferencesContext';
+import { maskEndpoint, maskIpLike } from '@/lib/ip-mask';
 import { getApiErrorMessage } from '@/lib/api-errors';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Button } from '@/components/featherui/Button';
@@ -61,6 +63,7 @@ import {
 import { ApiNode, ApiAllocation } from '@/types/adminServerTypes';
 import type { ServerRuntimeInfo } from '@/types/server';
 import { supportsDaemonFeature } from '@/lib/daemonCapabilities';
+import { Sensitive } from '@/components/common/Sensitive';
 
 interface ActionsTabProps {
     serverId: string;
@@ -95,6 +98,7 @@ export function ActionsTab({
     onRefresh,
 }: ActionsTabProps) {
     const { t } = useTranslation();
+    const hideIps = useHideServerIps();
     const router = useRouter();
     const supportsReconcile = supportsDaemonFeature(nodeCapabilities, 'reconcile', daemonType);
     const [suspending, setSuspending] = useState(false);
@@ -634,9 +638,13 @@ export function ActionsTab({
                             }}
                         >
                             <span>
-                                {selectedNode
-                                    ? `${selectedNode.name} (${selectedNode.fqdn})`
-                                    : t('admin.servers.transfer.select_node')}
+                                {selectedNode ? (
+                                    <>
+                                        {selectedNode.name} (<Sensitive>{selectedNode.fqdn}</Sensitive>)
+                                    </>
+                                ) : (
+                                    t('admin.servers.transfer.select_node')
+                                )}
                             </span>
                             <ChevronRight className='h-4 w-4' />
                         </Button>
@@ -668,9 +676,13 @@ export function ActionsTab({
                                 }}
                             >
                                 <span>
-                                    {selectedAllocation
-                                        ? `${selectedAllocation.ip}:${selectedAllocation.port}`
-                                        : t('admin.servers.transfer.select_allocation')}
+                                    {selectedAllocation ? (
+                                        <Sensitive>
+                                            {maskEndpoint(selectedAllocation.ip, selectedAllocation.port, false)}
+                                        </Sensitive>
+                                    ) : (
+                                        t('admin.servers.transfer.select_allocation')
+                                    )}
                                 </span>
                                 <ChevronRight className='h-4 w-4' />
                             </Button>
@@ -723,7 +735,7 @@ export function ActionsTab({
                     <div className='relative'>
                         <Search className='text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2' />
                         <Input
-                            placeholder='Search nodes...'
+                            placeholder={t('ui.admin.servers.edit.actionsTab.searchNodes')}
                             className='pl-10'
                             value={nodeSearch}
                             onChange={(e) => {
@@ -749,7 +761,9 @@ export function ActionsTab({
                                     }}
                                 >
                                     <div className='font-medium'>{n.name}</div>
-                                    <div className='text-muted-foreground text-xs'>{n.fqdn}</div>
+                                    <div className='text-muted-foreground text-xs'>
+                                        <Sensitive>{n.fqdn}</Sensitive>
+                                    </div>
                                 </button>
                             ))
                         )}
@@ -773,7 +787,7 @@ export function ActionsTab({
                     <div className='relative'>
                         <Search className='text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2' />
                         <Input
-                            placeholder='Search allocations...'
+                            placeholder={t('ui.admin.servers.edit.actionsTab.searchAllocations')}
                             className='pl-10'
                             value={allocationSearch}
                             onChange={(e) => {
@@ -798,9 +812,12 @@ export function ActionsTab({
                                     }}
                                 >
                                     <div className='font-medium'>
-                                        {a.ip}:{a.port}
+                                        <Sensitive>{maskEndpoint(a.ip, a.port, false)}</Sensitive>
                                     </div>
-                                    <div className='text-muted-foreground text-xs'>{a.ip_alias || 'No Alias'}</div>
+                                    <div className='text-muted-foreground text-xs'>
+                                        {maskIpLike(a.ip_alias, hideIps) ||
+                                            t('ui.admin.servers.edit.actionsTab.noAlias')}
+                                    </div>
                                 </button>
                             ))
                         )}

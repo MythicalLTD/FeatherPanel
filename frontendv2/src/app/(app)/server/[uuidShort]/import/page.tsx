@@ -19,7 +19,7 @@ import * as React from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { DownloadCloud, Loader2, Clock, CheckCircle, XCircle, Plus, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/featherui/Button';
-import { PageHeader } from '@/components/featherui/PageHeader';
+import { ServerPageHeader } from '@/components/server/ServerPageHeader';
 import { EmptyState } from '@/components/featherui/EmptyState';
 import { ResourceCard } from '@/components/featherui/ResourceCard';
 import { useTranslation } from '@/contexts/TranslationContext';
@@ -138,9 +138,9 @@ export default function ServerImportPage() {
     }
 
     return (
-        <div className='space-y-8'>
+        <div className='space-y-6 pb-12'>
             <WidgetRenderer widgets={getWidgets('server-import', 'top-of-page')} />
-            <PageHeader
+            <ServerPageHeader
                 title={t('serverImport.title')}
                 description={t('serverImport.description')}
                 actions={

@@ -58,14 +58,12 @@ export function NetworkTab({
 
     return (
         <form onSubmit={onSave} data-fp-save-shortcut>
-            <PageCard title={t('admin.vmInstances.edit_tabs.network') ?? 'Network'} icon={Wifi}>
+            <PageCard title={t('admin.vmInstances.edit_tabs.network')} icon={Wifi}>
                 <div className='space-y-4'>
                     <p className='text-muted-foreground text-sm'>
                         {isLxc
-                            ? (t('admin.vmInstances.network_multi_hint') ??
-                              'Add or remove IPs (Proxmox net0, net1, …). Select IP from pool for each interface.')
-                            : (t('admin.vmInstances.network_multi_qemu_hint') ??
-                              'Add or remove IPs for this VM. FeatherPanel will keep net0/net1 interfaces and matching cloud-init ipconfig0/ipconfig1 entries aligned.')}
+                            ? t('admin.vmInstances.network_multi_hint')
+                            : t('admin.vmInstances.network_multi_qemu_hint')}
                     </p>
                     {networks
                         .filter((n) => !removedNetKeys.has(n.key))
@@ -85,8 +83,8 @@ export function NetworkTab({
                                         <span className='font-mono text-sm'>{n.key}</span>
                                         <p className='text-muted-foreground mt-1 text-[10px]'>
                                             {n.key === 'net0'
-                                                ? (t('admin.vmInstances.primary_ip') ?? 'Primary')
-                                                : (t('admin.vmInstances.secondary_ip') ?? 'Secondary')}
+                                                ? t('admin.vmInstances.primary_ip')
+                                                : t('admin.vmInstances.secondary_ip')}
                                         </p>
                                     </div>
                                     <div className='flex min-w-[180px] flex-col gap-1'>
@@ -110,7 +108,7 @@ export function NetworkTab({
                                                 )
                                             }
                                             options={ipOptions}
-                                            placeholder='Select IP…'
+                                            placeholder={t('ui.admin.vmInstances.edit.networkTab.selectIP')}
                                             buttonClassName='h-10'
                                         />
                                     </div>
@@ -161,7 +159,7 @@ export function NetworkTab({
                                         )
                                     }
                                     options={freeIps.map((ip) => ({ id: ip.id, name: ip.ip }))}
-                                    placeholder='Select IP…'
+                                    placeholder={t('ui.admin.vmInstances.edit.networkTab.selectIP')}
                                     buttonClassName='h-10'
                                 />
                             </div>
@@ -198,7 +196,7 @@ export function NetworkTab({
                         }}
                     >
                         <Plus className='mr-2 h-4 w-4' />
-                        {t('admin.vmInstances.add_ip') ?? 'Add IP'}
+                        {t('admin.vmInstances.add_ip')}
                     </Button>
                 </div>
             </PageCard>

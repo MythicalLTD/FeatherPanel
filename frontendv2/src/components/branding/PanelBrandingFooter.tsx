@@ -38,7 +38,7 @@ export function PanelBrandingFooter({ appName, className }: PanelBrandingFooterP
         return null;
     }
 
-    const displayName = appName ?? settings?.app_name ?? 'FeatherPanel';
+    const displayName = appName ?? settings?.app_name ?? 'Panel';
     const version = core?.version?.replace(/^v/i, '') ?? '';
 
     return (

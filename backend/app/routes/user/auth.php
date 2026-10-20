@@ -325,8 +325,8 @@ return function (RouteCollection $routes): void {
             return (new QrLoginController())->start($request);
         },
         ['POST'],
-        Rate::perMinute(10),
-        'user-auth-qr'
+        Rate::perMinute(30),
+        'user-auth-qr-start'
     );
 
     App::getInstance(true)->registerApiRoute(
@@ -338,7 +338,7 @@ return function (RouteCollection $routes): void {
         },
         ['POST'],
         Rate::perMinute(60),
-        'user-auth-qr'
+        'user-auth-qr-poll'
     );
 
     App::getInstance(true)->registerApiRoute(
@@ -349,8 +349,8 @@ return function (RouteCollection $routes): void {
             return (new QrLoginController())->exchange($request);
         },
         ['POST'],
-        Rate::perMinute(20),
-        'user-auth-qr'
+        Rate::perMinute(30),
+        'user-auth-qr-exchange'
     );
 
     App::getInstance(true)->registerAuthRoute(
@@ -362,7 +362,7 @@ return function (RouteCollection $routes): void {
         },
         ['GET'],
         Rate::perMinute(30),
-        'user-auth-qr'
+        'user-auth-qr-approval'
     );
 
     App::getInstance(true)->registerAuthRoute(
@@ -374,7 +374,7 @@ return function (RouteCollection $routes): void {
         },
         ['GET'],
         Rate::perMinute(30),
-        'user-auth-qr'
+        'user-auth-qr-approval'
     );
 
     App::getInstance(true)->registerAuthRoute(
@@ -385,8 +385,8 @@ return function (RouteCollection $routes): void {
             return (new QrLoginController())->approve($request, $args);
         },
         ['POST'],
-        Rate::perMinute(20),
-        'user-auth-qr'
+        Rate::perMinute(30),
+        'user-auth-qr-approval'
     );
 
     App::getInstance(true)->registerAuthRoute(
@@ -397,7 +397,7 @@ return function (RouteCollection $routes): void {
             return (new QrLoginController())->deny($request, $args);
         },
         ['POST'],
-        Rate::perMinute(20),
-        'user-auth-qr'
+        Rate::perMinute(30),
+        'user-auth-qr-approval'
     );
 };

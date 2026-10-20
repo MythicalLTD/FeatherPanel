@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { TipCard, TipGrid } from '@/components/featherui/TipCard';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
@@ -23,8 +24,7 @@ import { getApiErrorMessage } from '@/lib/api-errors';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
-import { PageCard } from '@/components/featherui/PageCard';
-import { ResourceCard, type ResourceBadge } from '@/components/featherui/ResourceCard';
+import { ResourceCard, ResourceTable, type ResourceBadge } from '@/components/featherui/ResourceCard';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
 import { EmptyState } from '@/components/featherui/EmptyState';
 import { usePersistedListFilters } from '@/hooks/usePersistedListFilters';
@@ -37,13 +37,12 @@ import {
     Trash2,
     Play,
     History,
-    ChevronLeft,
-    ChevronRight,
     RefreshCw,
     HelpCircle,
     CalendarClock,
     Shield,
 } from 'lucide-react';
+import { ListPagination } from '@/components/featherui/ListPagination';
 
 type Policy = {
     id: number;
@@ -147,7 +146,7 @@ export default function AdminBackupSchedulesPage() {
                 }
             />
 
-            <div className='bg-card/40 flex flex-col items-center gap-4 rounded-2xl p-4 shadow-sm backdrop-blur-md sm:flex-row'>
+            <div className='fp-surface flex flex-col items-center gap-4 rounded-2xl border p-4 sm:flex-row'>
                 <div className='group relative w-full flex-1'>
                     <Search className='text-muted-foreground group-focus-within:text-primary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transition-colors' />
                     <Input
@@ -160,31 +159,11 @@ export default function AdminBackupSchedulesPage() {
             </div>
 
             {totalPages > 1 && !loading && (
-                <div className='border-border bg-card/50 flex items-center justify-between gap-4 rounded-xl border px-4 py-3'>
-                    <Button
-                        variant='outline'
-                        size='sm'
-                        disabled={filters.page <= 1}
-                        onClick={() => patchFilters({ page: filters.page - 1 })}
-                        className='gap-1.5'
-                    >
-                        <ChevronLeft className='h-4 w-4' />
-                        {t('common.previous')}
-                    </Button>
-                    <span className='text-sm font-medium'>
-                        {filters.page} / {totalPages}
-                    </span>
-                    <Button
-                        variant='outline'
-                        size='sm'
-                        disabled={filters.page >= totalPages}
-                        onClick={() => patchFilters({ page: filters.page + 1 })}
-                        className='gap-1.5'
-                    >
-                        {t('common.next')}
-                        <ChevronRight className='h-4 w-4' />
-                    </Button>
-                </div>
+                <ListPagination
+                    page={filters.page}
+                    totalPages={totalPages}
+                    onPageChange={(nextPage) => patchFilters({ page: nextPage })}
+                />
             )}
 
             {loading ? (
@@ -202,7 +181,7 @@ export default function AdminBackupSchedulesPage() {
                     }
                 />
             ) : (
-                <div className='grid grid-cols-1 gap-4'>
+                <ResourceTable>
                     {policies.map((policy) => {
                         const badges: ResourceBadge[] = [
                             {
@@ -291,26 +270,26 @@ export default function AdminBackupSchedulesPage() {
                             />
                         );
                     })}
-                </div>
+                </ResourceTable>
             )}
 
-            <div className='grid gap-4 md:grid-cols-3'>
-                <PageCard title={t('adminBackupSchedules.help.schedules.title')} icon={CalendarClock}>
+            <TipGrid>
+                <TipCard title={t('adminBackupSchedules.help.schedules.title')} icon={CalendarClock}>
                     <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('adminBackupSchedules.help.schedules.body')}
                     </p>
-                </PageCard>
-                <PageCard title={t('adminBackupSchedules.help.retention.title')} icon={Shield}>
+                </TipCard>
+                <TipCard title={t('adminBackupSchedules.help.retention.title')} icon={Shield}>
                     <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('adminBackupSchedules.help.retention.body')}
                     </p>
-                </PageCard>
-                <PageCard title={t('adminBackupSchedules.help.tips.title')} icon={HelpCircle}>
+                </TipCard>
+                <TipCard title={t('adminBackupSchedules.help.tips.title')} icon={HelpCircle}>
                     <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('adminBackupSchedules.help.tips.body')}
                     </p>
-                </PageCard>
-            </div>
+                </TipCard>
+            </TipGrid>
         </div>
     );
 }

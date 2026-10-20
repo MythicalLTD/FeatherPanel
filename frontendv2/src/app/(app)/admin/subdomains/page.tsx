@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { AdminPageTips } from '@/components/admin/AdminPageTips';
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from '@/contexts/TranslationContext';
@@ -23,9 +24,9 @@ import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { PageCard } from '@/components/featherui/PageCard';
-import { ResourceCard } from '@/components/featherui/ResourceCard';
+import { ResourceCard, ResourceTable } from '@/components/featherui/ResourceCard';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
-import { EmptyState } from '@/components/featherui/EmptyState';
+import { ListEmptyState } from '@/components/featherui/ListEmptyState';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/featherui/Textarea';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -55,6 +56,7 @@ import axios from 'axios';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { usePersistedListFilters } from '@/hooks/usePersistedListFilters';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
+import { ListPagination } from '@/components/featherui/ListPagination';
 
 export interface SubdomainSpellMapping {
     spell_id: number;
@@ -162,7 +164,7 @@ export default function AdminSubdomainsPage() {
     const { fetchWidgets, getWidgets } = usePluginWidgets('admin-subdomains');
     const [loading, setLoading] = useState(true);
     const [domains, setDomains] = useState<SubdomainDomain[]>([]);
-    const { filters, patchFilters, hydrated } = usePersistedListFilters(
+    const { filters, patchFilters, hydrated, resetFilters, isFiltered } = usePersistedListFilters(
         SUBDOMAINS_LIST_FILTERS_KEY,
         SUBDOMAINS_LIST_FILTERS_DEFAULTS,
     );
@@ -364,12 +366,7 @@ export default function AdminSubdomainsPage() {
     };
 
     const handleDelete = async (domain: SubdomainDomain) => {
-        if (
-            !confirm(
-                `Are you sure you want to delete ${domain.domain}? This will NOT delete existing DNS records on Cloudflare but will remove them from the panel.`,
-            )
-        )
-            return;
+        if (!confirm(t('ui.admin.subdomains.confirmDeleteDomain', { domain: domain.domain }))) return;
         try {
             await axios.delete(`/api/admin/subdomains/${domain.uuid}`);
             toast.success(t('admin.subdomains.messages.domain_deleted'));
@@ -583,7 +580,7 @@ export default function AdminSubdomainsPage() {
                 </Alert>
             )}
 
-            <div className='bg-card/40 flex flex-col items-center gap-4 rounded-2xl p-4 shadow-sm backdrop-blur-md sm:flex-row'>
+            <div className='fp-surface flex flex-col items-center gap-4 rounded-2xl border p-4 sm:flex-row'>
                 <div className='group relative w-full flex-1'>
                     <Search className='text-muted-foreground group-focus-within:text-primary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transition-colors' />
                     <Input
@@ -602,33 +599,14 @@ export default function AdminSubdomainsPage() {
             ) : domains.length > 0 ? (
                 <>
                     {pagination.totalPages > 1 && (
-                        <div className='border-border bg-card/50 mb-4 flex items-center justify-between gap-4 rounded-xl border px-4 py-3'>
-                            <Button
-                                variant='outline'
-                                size='sm'
-                                disabled={page === 1}
-                                onClick={() => patchFilters({ page: page - 1 })}
-                                className='gap-1.5'
-                            >
-                                <ChevronLeft className='h-4 w-4' />
-                                {t('common.previous')}
-                            </Button>
-                            <span className='text-sm font-medium'>
-                                {page} / {pagination.totalPages}
-                            </span>
-                            <Button
-                                variant='outline'
-                                size='sm'
-                                disabled={page === pagination.totalPages}
-                                onClick={() => patchFilters({ page: page + 1 })}
-                                className='gap-1.5'
-                            >
-                                {t('common.next')}
-                                <ChevronRight className='h-4 w-4' />
-                            </Button>
-                        </div>
+                        <ListPagination
+                            page={page}
+                            totalPages={pagination.totalPages}
+                            onPageChange={(nextPage) => patchFilters({ page: nextPage })}
+                            className='mb-4'
+                        />
                     )}
-                    <div className='grid grid-cols-1 gap-4'>
+                    <ResourceTable>
                         <WidgetRenderer widgets={getWidgets('admin-subdomains', 'before-list')} />
                         {domains.map((domain) => (
                             <ResourceCard
@@ -648,7 +626,7 @@ export default function AdminSubdomainsPage() {
                                             : t('admin.subdomains.statusInactive'),
                                         className: Number(domain.is_active)
                                             ? 'bg-green-500/10 text-green-600 border-green-500/20'
-                                            : 'bg-zinc-500/10 text-zinc-600 border-zinc-500/20',
+                                            : 'bg-zinc-500/10 text-zinc-600 border-[var(--fp-surface-border)]',
                                     },
                                     {
                                         label: `${t('admin.subdomains.mappingsColumn')}: ${domain.spells?.length || 0}`,
@@ -695,7 +673,7 @@ export default function AdminSubdomainsPage() {
                                 }
                             />
                         ))}
-                    </div>
+                    </ResourceTable>
 
                     {pagination.totalPages > 1 && (
                         <div className='mt-8 flex items-center justify-center gap-2'>
@@ -722,16 +700,18 @@ export default function AdminSubdomainsPage() {
                     )}
                 </>
             ) : (
-                <EmptyState
-                    title={t('admin.subdomains.noSubdomains')}
-                    description={t('admin.subdomains.description')}
+                <ListEmptyState
                     icon={Globe}
+                    title={t('emptyStates.subdomains.title')}
+                    description={t('emptyStates.subdomains.description')}
                     action={
                         <Button onClick={openCreate}>
                             <Plus className='mr-2 h-4 w-4' />
                             {t('admin.subdomains.newDomain')}
                         </Button>
                     }
+                    filtered={isFiltered}
+                    onClearFilters={resetFilters}
                 />
             )}
 
@@ -760,6 +740,7 @@ export default function AdminSubdomainsPage() {
                                     <Input
                                         id='cf-key'
                                         type='password'
+                                        data-fp-sensitive=''
                                         value={settingsForm.cloudflare_api_key}
                                         onChange={(e) =>
                                             setSettingsForm({ ...settingsForm, cloudflare_api_key: e.target.value })
@@ -917,7 +898,7 @@ export default function AdminSubdomainsPage() {
 
                             <div className='bg-border/50 h-px' />
 
-                            <div className='bg-card/20 space-y-4 rounded-3xl border border-white/5 p-6 backdrop-blur-md'>
+                            <div className='fp-surface space-y-4 rounded-3xl border border-[var(--fp-surface-border)] p-6'>
                                 <div className='flex items-center justify-between'>
                                     <Label className='text-foreground/80 flex items-center gap-2 font-semibold'>
                                         <Cloud className='text-primary h-4 w-4' />
@@ -967,7 +948,7 @@ export default function AdminSubdomainsPage() {
                                     {domainForm.spells.map((mapping, idx) => (
                                         <div
                                             key={idx}
-                                            className='group/mapping rounded-3xl border border-white/5 bg-white/2 p-6 transition-all hover:border-white/10 hover:bg-white/4'
+                                            className='group/mapping rounded-3xl border border-[var(--fp-surface-border)] bg-white/2 p-6 transition-all hover:border-[var(--fp-surface-border)] hover:bg-white/4'
                                         >
                                             <div className='mb-6 flex items-start justify-between gap-4'>
                                                 <div className='flex-1'>
@@ -1055,7 +1036,7 @@ export default function AdminSubdomainsPage() {
                                         </div>
                                     ))}
                                     {domainForm.spells.length === 0 && (
-                                        <div className='rounded-3xl border border-dashed border-white/5 bg-white/1 py-12 text-center'>
+                                        <div className='rounded-3xl border border-dashed border-[var(--fp-surface-border)] bg-white/1 py-12 text-center'>
                                             <Zap className='text-muted-foreground/20 mx-auto mb-3 h-8 w-8' />
                                             <p className='text-muted-foreground/40 text-sm'>
                                                 {t('admin.subdomains.spellRequired')}
@@ -1103,7 +1084,7 @@ export default function AdminSubdomainsPage() {
                                                 </span>
                                                 <span className='flex items-center gap-1'>
                                                     <Server className='h-2 w-2' />
-                                                    Port: {entry.port || 'Auto'}
+                                                    {t('ui.admin.subdomains.port')} {entry.port || 'Auto'}
                                                 </span>
                                             </div>
                                         </div>
@@ -1122,6 +1103,8 @@ export default function AdminSubdomainsPage() {
                     </div>
                 </div>
             </Sheet>
+            <AdminPageTips page='subdomains' />
+
             <WidgetRenderer widgets={getWidgets('admin-subdomains', 'bottom-of-page')} />
         </div>
     );

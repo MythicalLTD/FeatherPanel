@@ -15,927 +15,1056 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { toast } from 'sonner';
-import { getApiErrorMessage } from '@/lib/api-errors';
-import { useState, useEffect, type ReactNode } from 'react';
-import {
-    Server,
-    Clock,
-    Eye,
-    EyeOff,
-    ChevronUp,
-    ChevronDown,
-    X,
-    RotateCcw,
-    ArrowLeftRight,
-    LayoutDashboard,
-} from 'lucide-react';
-import { useTranslation } from '@/contexts/TranslationContext';
-import { useSession } from '@/contexts/SessionContext';
-import { useDateFormatOptions } from '@/contexts/PreferencesContext';
-import { formatRelativeTime } from '@/lib/dateUtils';
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import axios from 'axios';
+import { BookOpen, Gamepad2, Globe, History, LayoutGrid, LifeBuoy, MonitorCog, Server, Settings2 } from 'lucide-react';
+
+import { useTranslation } from '@/contexts/TranslationContext';
+import { useSession } from '@/contexts/SessionContext';
+import { useSettings } from '@/contexts/SettingsContext';
+import { useDateFormatOptions } from '@/contexts/PreferencesContext';
+import { formatRelativeTime, parseApiDate } from '@/lib/dateUtils';
+import { getModuleStates } from '@/lib/modules';
+import { formatDisk, getServerCpuLimit, getServerDiskLimit, getServerMemoryLimit } from '@/lib/server-utils';
+import { cn, isEnabled } from '@/lib/utils';
+import { serversApi } from '@/lib/servers-api';
+import { vmsApi, type VmInstance } from '@/lib/vms-api';
 
 import type { Server as ServerData } from '@/types/server';
 import type { Activity } from '@/types/activity';
-import type { VmInstance } from '@/lib/vms-api';
+import type { DashboardWebSpace } from '@/components/webspace/WebSpaceCard';
 
-import { ServerCard } from '@/components/servers/ServerCard';
-import { VmCard } from '@/components/vms/VmCard';
-import { WebSpaceCard, type DashboardWebSpace } from '@/components/webspace/WebSpaceCard';
 import { ActivityFeed } from '@/components/dashboard/ActivityFeed';
 import { AnnouncementBanner } from '@/components/dashboard/AnnouncementBanner';
-import { TicketList } from '@/components/dashboard/TicketList';
+import { TicketList, type DashboardTicket } from '@/components/dashboard/TicketList';
 import { KnowledgeBaseList } from '@/components/dashboard/KnowledgeBaseList';
 import { DashboardRecentMails } from '@/components/dashboard/DashboardRecentMails';
-import { useSettings } from '@/contexts/SettingsContext';
-import { usePluginWidgets } from '@/hooks/usePluginWidgets';
-import { WidgetRenderer } from '@/components/server/WidgetRenderer';
-
-import { serversApi } from '@/lib/servers-api';
-import { vmsApi } from '@/lib/vms-api';
-import { useServersWebSocket } from '@/hooks/useServersWebSocket';
-import { RoleBadge } from '@/components/RoleBadge';
-import { cn } from '@/lib/utils';
-
-import { isEnabled } from '@/lib/utils';
-
+import { DashboardHero } from '@/components/dashboard/DashboardHero';
+import { DashboardServersSection } from '@/components/dashboard/DashboardServersSection';
+import { ArrangeBar, ArrangeFrame, ArrangePlaceholder, HiddenTray } from '@/components/dashboard/DashboardArrange';
 import {
-    useDashboardLayout,
-    type DashboardBlockId,
-    type DashboardLeftBlockId,
-    type DashboardRightBlockId,
-} from '@/hooks/useDashboardLayout';
+    ClockWidget,
+    HeatmapWidget,
+    NotesWidget,
+    PinnedServersWidget,
+    PlayersWidget,
+    QuickLinksWidget,
+    RecentServersWidget,
+    type HeatmapCell,
+} from '@/components/dashboard/DashboardExtraWidgets';
+import { TrendsWidget } from '@/components/dashboard/ResourceTrends';
+import { toSeries, useDashboardResourceHistory, type ServerTrendSeries } from '@/lib/resource-history';
+import {
+    DashboardAttention,
+    DashboardPanel,
+    DashboardStatTile,
+    type AttentionItem,
+} from '@/components/dashboard/DashboardOverview';
+import { DashboardVmRow, DashboardWebSpaceRow, serverRowStatus } from '@/components/dashboard/DashboardResourceRows';
+import {
+    BackupsWidget,
+    NetworkWidget,
+    QUICK_ACTION_ICONS,
+    QuickActionsWidget,
+    SchedulesWidget,
+    StatusWidget,
+    UptimeWidget,
+    UsageWidget,
+    type DashboardOverview,
+    type QuickAction,
+    type WebSpaceUsageFields,
+} from '@/components/dashboard/DashboardWidgets';
+import { DashboardCustomizeSheet, WIDGET_LABEL_KEYS } from '@/components/dashboard/DashboardCustomizeSheet';
+import { DashboardPackedGrid } from '@/components/dashboard/DashboardPackedGrid';
+import { RoleBadge } from '@/components/RoleBadge';
+import { WidgetRenderer } from '@/components/server/WidgetRenderer';
+import { usePluginWidgets } from '@/hooks/usePluginWidgets';
+import { useServersWebSocket, type ServerLiveData } from '@/hooks/useServersWebSocket';
 import { useFavoriteServerUuids } from '@/hooks/useFavoriteServerUuids';
+import {
+    stepWidgetSize,
+    useDashboardConfig,
+    type DashboardConfig,
+    type DashboardWidgetId,
+    type DashboardWidgetSize,
+} from '@/hooks/useDashboardConfig';
+import Permissions from '@/lib/permissions';
+import { getApiErrorMessage } from '@/lib/api-errors';
+import { toast } from 'sonner';
 
-type ResourceFilter = 'all' | 'servers' | 'vds' | 'webspaces';
+/** Rows shown per VDS / web space section; the rest is one click away on the full list. */
+const SECTION_LIMIT = 6;
+const RECENT_SERVERS_KEY = 'featherpanel_recent_servers_v1';
 
-type BlockChromeProps = {
-    blockId: DashboardBlockId;
-    isCustomizing: boolean;
-    hiddenBlocks: DashboardBlockId[];
-    onToggleHidden: (id: DashboardBlockId) => void;
-    children: ReactNode;
-    moveControls?: {
-        canUp: boolean;
-        canDown: boolean;
-        onUp: () => void;
-        onDown: () => void;
-    };
-    onRemoveFromLayout?: () => void;
-    removeLabel: string;
-    moveUpLabel: string;
-    moveDownLabel: string;
-};
-
-function DashboardBlockChrome({
-    blockId,
-    isCustomizing,
-    hiddenBlocks,
-    onToggleHidden,
-    children,
-    moveControls,
-    onRemoveFromLayout,
-    removeLabel,
-    moveUpLabel,
-    moveDownLabel,
-}: BlockChromeProps) {
-    const { t } = useTranslation();
-    const hidden = hiddenBlocks.includes(blockId);
-
-    return (
-        <div className='relative'>
-            {isCustomizing && (
-                <div className='absolute -top-2 -right-2 z-20 flex max-w-[min(100%,12rem)] flex-wrap items-center justify-end gap-1'>
-                    <button
-                        type='button'
-                        onClick={() => onToggleHidden(blockId)}
-                        title={hidden ? t('common.show') : t('common.hide')}
-                        className='bg-background border-border text-muted-foreground rounded-full border p-2 shadow-sm transition-transform hover:scale-105'
-                    >
-                        {hidden ? (
-                            <Eye className='h-3.5 w-3.5 sm:h-4 sm:w-4' />
-                        ) : (
-                            <EyeOff className='h-3.5 w-3.5 sm:h-4 sm:w-4' />
-                        )}
-                    </button>
-                    {moveControls && (
-                        <>
-                            <button
-                                type='button'
-                                disabled={!moveControls.canUp}
-                                onClick={moveControls.onUp}
-                                title={moveUpLabel}
-                                className='bg-background border-border text-muted-foreground rounded-full border p-2 shadow-sm transition-transform hover:scale-105 disabled:opacity-30 disabled:hover:scale-100'
-                            >
-                                <ChevronUp className='h-3.5 w-3.5 sm:h-4 sm:w-4' />
-                            </button>
-                            <button
-                                type='button'
-                                disabled={!moveControls.canDown}
-                                onClick={moveControls.onDown}
-                                title={moveDownLabel}
-                                className='bg-background border-border text-muted-foreground rounded-full border p-2 shadow-sm transition-transform hover:scale-105 disabled:opacity-30 disabled:hover:scale-100'
-                            >
-                                <ChevronDown className='h-3.5 w-3.5 sm:h-4 sm:w-4' />
-                            </button>
-                        </>
-                    )}
-                    {onRemoveFromLayout && (
-                        <button
-                            type='button'
-                            onClick={onRemoveFromLayout}
-                            title={removeLabel}
-                            className='bg-background border-destructive/40 text-destructive rounded-full border p-2 shadow-sm transition-transform hover:scale-105'
-                        >
-                            <X className='h-3.5 w-3.5 sm:h-4 sm:w-4' />
-                        </button>
-                    )}
-                </div>
-            )}
-            <div className={cn(hidden && isCustomizing && 'rounded-xl opacity-30 grayscale')}>{children}</div>
-        </div>
-    );
+/** Servers the user opened lately, newest first, from the console's history in this browser. */
+function readRecent(): { uuidShort: string; lastViewedAt?: string }[] {
+    try {
+        const raw = JSON.parse(window.localStorage.getItem(RECENT_SERVERS_KEY) || '[]') as unknown;
+        return Array.isArray(raw)
+            ? raw.filter((e): e is { uuidShort: string; lastViewedAt?: string } => typeof e?.uuidShort === 'string')
+            : [];
+    } catch {
+        return [];
+    }
 }
+const DAY_MS = 86_400_000;
+const EXPIRY_WARNING_DAYS = 7;
+const DISK_WARNING_PERCENT = 90;
+const OVERVIEW_REFRESH_MS = 30_000;
+
+function daysUntil(value?: string | null): number | null {
+    const date = parseApiDate(value);
+    if (!date) return null;
+    return Math.ceil((date.getTime() - Date.now()) / DAY_MS);
+}
+
+interface PlacedWidget {
+    id: DashboardWidgetId;
+    size: DashboardWidgetSize;
+    node: ReactNode;
+}
+
+/** Stat row columns per visible tile count, so the row always spans the full width. */
+const STAT_GRID: Record<number, string> = {
+    1: 'grid-cols-1',
+    2: 'grid-cols-2',
+    3: 'grid-cols-2 lg:grid-cols-3',
+    4: 'grid-cols-2 lg:grid-cols-4',
+};
 
 export default function DashboardPage() {
     const { t } = useTranslation();
-    const { user, isLoading: sessionLoading } = useSession();
-    const dateOpts = useDateFormatOptions();
-    const [allServers, setAllServers] = useState<ServerData[]>([]);
-    const [vms, setVms] = useState<VmInstance[]>([]);
-    const [webspaces, setWebspaces] = useState<DashboardWebSpace[]>([]);
-    const [serverTotal, setServerTotal] = useState(0);
-    const [vmTotal, setVmTotal] = useState(0);
-    const [webspaceTotal, setWebspaceTotal] = useState(0);
-    const [activities, setActivities] = useState<Activity[]>([]);
-    const [loadingServers, setLoadingServers] = useState(true);
-    const [loadingVms, setLoadingVms] = useState(true);
-    const [loadingWebspaces, setLoadingWebspaces] = useState(true);
-    const [loadingActivity, setLoadingActivity] = useState(true);
-    const [resourceFilter, setResourceFilter] = useState<ResourceFilter>('all');
+    const { user, isLoading: sessionLoading, hasPermission } = useSession();
     const { settings } = useSettings();
+    const dateOpts = useDateFormatOptions();
     const { fetchWidgets, getWidgets } = usePluginWidgets('dashboard');
+    const modules = getModuleStates(settings);
+    const ticketsEnabled = isEnabled(settings?.ticket_system_enabled);
+    const kbEnabled = isEnabled(settings?.knowledgebase_enabled);
 
-    const { serverLiveData, isServerConnected, connectServers, disconnectAll } = useServersWebSocket();
+    const [rawServers, setServers] = useState<ServerData[]>([]);
+    const [rawServerTotal, setServerTotal] = useState(0);
+    const [rawVms, setVms] = useState<VmInstance[]>([]);
+    const [rawVmTotal, setVmTotal] = useState(0);
+    const [rawWebspaces, setWebspaces] = useState<DashboardWebSpace[]>([]);
+    const [rawWebspaceTotal, setWebspaceTotal] = useState(0);
+    const [activities, setActivities] = useState<Activity[]>([]);
+    const [tickets, setTickets] = useState<DashboardTicket[]>([]);
+    const [ticketTotal, setTicketTotal] = useState(0);
+    const [overview, setOverview] = useState<DashboardOverview | null>(null);
+    const [loadingResources, setLoadingResources] = useState(true);
+    const [loadingActivity, setLoadingActivity] = useState(true);
+    const [loadingTickets, setLoadingTickets] = useState(true);
+    const [loadingOverview, setLoadingOverview] = useState(true);
+    const [customizeOpen, setCustomizeOpen] = useState(false);
+    const [arranging, setArranging] = useState(false);
+    const [arrangeSnapshot, setArrangeSnapshot] = useState<DashboardConfig | null>(null);
+    const [savingDefault, setSavingDefault] = useState(false);
 
+    // A disabled module's resources are left out (its API refuses anyway).
+    const servers = useMemo(() => (modules.game ? rawServers : []), [modules.game, rawServers]);
+    const vms = useMemo(() => (modules.vds ? rawVms : []), [modules.vds, rawVms]);
+    const webspaces = useMemo(() => (modules.web ? rawWebspaces : []), [modules.web, rawWebspaces]);
+    const serverTotal = modules.game ? rawServerTotal : 0;
+    const vmTotal = modules.vds ? rawVmTotal : 0;
+    const webspaceTotal = modules.web ? rawWebspaceTotal : 0;
+
+    const { serverLiveData, connectServers, disconnectAll } = useServersWebSocket();
     const { favoriteUuids, toggleFavorite, isFavorite } = useFavoriteServerUuids();
+    const dashboard = useDashboardConfig();
+    const { config } = dashboard;
+    const compact = config.density === 'compact';
 
-    const {
-        hidden,
-        hiddenPluginWidgets,
-        leftOrder,
-        rightOrder,
-        columnsReversed,
-        heroAtBottom,
-        toggleHidden,
-        toggleHiddenPluginWidget,
-        moveInLeft,
-        moveInRight,
-        removeFromLeft,
-        removeFromRight,
-        addToLeft,
-        addToRight,
-        toggleColumnsReversed,
-        toggleHeroAtBottom,
-        resetLayout,
-        isVisible,
-        leftAvailable,
-        rightAvailable,
-    } = useDashboardLayout();
+    const canViewOthers = hasPermission(Permissions.ADMIN_SERVERS_VIEW);
+    const canSaveDefault = hasPermission(Permissions.ADMIN_SETTINGS_EDIT);
 
-    const [isCustomizing, setIsCustomizing] = useState(false);
+    const startArranging = () => {
+        setArrangeSnapshot(config);
+        setArranging(true);
+    };
+    const cancelArranging = () => {
+        if (arrangeSnapshot) dashboard.replace(arrangeSnapshot);
+        setArranging(false);
+    };
+    const saveDefault = async () => {
+        setSavingDefault(true);
+        try {
+            await dashboard.saveAsPanelDefault(config);
+            toast.success(t('dashboard.arrange.saved_default'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'dashboard.arrange.save_default_failed'));
+        } finally {
+            setSavingDefault(false);
+        }
+    };
 
     const pluginWidgetProps = {
-        isCustomizing,
-        hiddenWidgets: hiddenPluginWidgets,
-        onToggleHidden: toggleHiddenPluginWidget,
+        isCustomizing: customizeOpen || arranging,
+        hiddenWidgets: config.hiddenPluginWidgets,
+        onToggleHidden: dashboard.toggleHiddenPluginWidget,
     };
 
     useEffect(() => {
         fetchWidgets();
-
-        const fetchData = async () => {
-            try {
-                // Fetch Servers
-                const serversResponse = await serversApi.getServers();
-                const serversArray = Array.isArray(serversResponse.servers) ? serversResponse.servers : [];
-
-                let orderedServers: ServerData[] = [];
-
-                try {
-                    if (typeof window !== 'undefined') {
-                        const STORAGE_KEY = 'featherpanel_recent_servers_v1';
-                        interface RecentEntry {
-                            uuidShort: string;
-                            lastViewedAt: string;
-                        }
-
-                        const raw = window.localStorage.getItem(STORAGE_KEY);
-                        if (raw) {
-                            const recent = JSON.parse(raw) as RecentEntry[];
-
-                            if (Array.isArray(recent) && recent.length > 0) {
-                                const byUuid = new Map<string, ServerData>();
-                                for (const s of serversArray) {
-                                    if (s?.uuidShort) {
-                                        byUuid.set(s.uuidShort, s);
-                                    }
-                                }
-
-                                orderedServers = recent
-                                    .map((entry) => byUuid.get(entry.uuidShort))
-                                    .filter((s): s is ServerData => Boolean(s));
-                            }
-                        }
-                    }
-                } catch (e) {
-                    console.error('Failed to load recent servers ordering', e);
-                    toast.error(getApiErrorMessage(e, t, 'common.error'));
-                }
-
-                if (orderedServers.length === 0) {
-                    orderedServers = serversArray;
-                }
-
-                setAllServers(orderedServers);
-                setServerTotal(
-                    typeof serversResponse.pagination?.total_records === 'number'
-                        ? serversResponse.pagination.total_records
-                        : serversArray.length,
-                );
-            } catch (err) {
-                console.error('Failed to fetch servers', err);
-            } finally {
-                setLoadingServers(false);
-            }
-
-            // Fetch VMs
-            try {
-                const vmsResponse = await vmsApi.getVms(1, 50);
-                const instances = vmsResponse.data?.instances;
-                if (Array.isArray(instances)) {
-                    setVms(instances.slice(0, 5));
-                    setVmTotal(
-                        typeof vmsResponse.data?.pagination?.total_records === 'number'
-                            ? vmsResponse.data.pagination.total_records
-                            : instances.length,
+        const load = async () => {
+            await Promise.allSettled([
+                serversApi.getServers(false, 1, 50).then((res) => {
+                    const list = Array.isArray(res.servers) ? res.servers : [];
+                    setServers(list);
+                    setServerTotal(
+                        typeof res.pagination?.total_records === 'number' ? res.pagination.total_records : list.length,
                     );
-                } else {
-                    setVmTotal(0);
-                }
-            } catch (err) {
-                console.error('Failed to fetch VMs', err);
-            } finally {
-                setLoadingVms(false);
-            }
-
-            try {
-                const { data } = await axios.get('/api/user/webspaces');
-                const list = Array.isArray(data?.data?.webspaces) ? (data.data.webspaces as DashboardWebSpace[]) : [];
-                setWebspaces(list.slice(0, 5));
-                setWebspaceTotal(
-                    typeof data?.data?.pagination?.total === 'number'
-                        ? data.data.pagination.total
-                        : typeof data?.data?.pagination?.total_records === 'number'
-                          ? data.data.pagination.total_records
-                          : list.length,
-                );
-            } catch (err) {
-                console.error('Failed to fetch WebSpaces', err);
-                setWebspaceTotal(0);
-            } finally {
-                setLoadingWebspaces(false);
-            }
-
-            // Fetch Activity
-            try {
-                const { data } = await axios.get('/api/user/activities?limit=5');
-                if (data.success && data.data) {
-                    setActivities(data.data.activities || []);
-                }
-            } catch (err) {
-                console.error('Failed to fetch activity', err);
-                toast.error(getApiErrorMessage(err, t, 'common.error'));
-            } finally {
-                setLoadingActivity(false);
-            }
+                }),
+                vmsApi.getVms(1, 50).then((res) => {
+                    const list = Array.isArray(res.data?.instances) ? res.data.instances : [];
+                    setVms(list);
+                    setVmTotal(
+                        typeof res.data?.pagination?.total_records === 'number'
+                            ? res.data.pagination.total_records
+                            : list.length,
+                    );
+                }),
+                axios.get('/api/user/webspaces').then(({ data }) => {
+                    const list = Array.isArray(data?.data?.webspaces)
+                        ? (data.data.webspaces as DashboardWebSpace[])
+                        : [];
+                    setWebspaces(list);
+                    const total = data?.data?.pagination?.total ?? data?.data?.pagination?.total_records;
+                    setWebspaceTotal(typeof total === 'number' ? total : list.length);
+                }),
+            ]);
+            setLoadingResources(false);
         };
+        void load();
 
-        fetchData();
+        axios
+            .get('/api/user/activities?limit=5')
+            .then(({ data }) => setActivities(data?.data?.activities || []))
+            .catch(() => setActivities([]))
+            .finally(() => setLoadingActivity(false));
 
-        return () => {
-            disconnectAll();
-        };
+        return () => disconnectAll();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
+    // Usage, status, backups and schedules for every server, refreshed while the tab is visible.
     useEffect(() => {
-        if (loadingServers) return;
-        const favSet = new Set(favoriteUuids);
-        const favoriteList = favoriteUuids
-            .map((u) => allServers.find((s) => s.uuid === u))
-            .filter((s): s is ServerData => Boolean(s));
-        const recent = allServers.filter((s) => !favSet.has(s.uuid)).slice(0, 5);
-        const ids = [...new Set([...favoriteList, ...recent].map((s) => s.uuidShort))];
-        if (ids.length === 0) return;
-        void connectServers(ids);
-    }, [loadingServers, allServers, favoriteUuids, connectServers]);
-
-    const getServerLiveStats = (server: ServerData) => {
-        const liveData = serverLiveData[server.uuidShort];
-        if (!liveData?.stats) return null;
-
-        return {
-            memory: liveData.stats.memoryUsage,
-            disk: liveData.stats.diskUsage,
-            cpu: liveData.stats.cpuUsage,
-            status: liveData.status || server.status,
+        if (!modules.game) {
+            setLoadingOverview(false);
+            return;
+        }
+        let cancelled = false;
+        const fetchOverview = async () => {
+            try {
+                const { data } = await axios.get('/api/user/dashboard/overview');
+                if (!cancelled && data?.success) setOverview(data.data as DashboardOverview);
+            } catch {
+                // Widgets fall back to the per-server data they already have.
+            } finally {
+                if (!cancelled) setLoadingOverview(false);
+            }
         };
-    };
+        void fetchOverview();
+        const timer = window.setInterval(() => {
+            if (document.visibilityState === 'visible') void fetchOverview();
+        }, OVERVIEW_REFRESH_MS);
+        return () => {
+            cancelled = true;
+            window.clearInterval(timer);
+        };
+    }, [modules.game]);
 
-    const formatDate = (dateString: string): string => formatRelativeTime(dateString, dateOpts);
+    // 24 hour history, only fetched when something on the dashboard shows it.
+    const wantsHistory =
+        modules.game &&
+        config.widgets.some((w) => w.id === 'trends' || (w.id === 'servers' && config.servers.view === 'grid'));
+    const { data: history, loading: loadingHistory } = useDashboardResourceHistory(wantsHistory);
+    const historyByShort = useMemo(() => {
+        const map = new Map<string, ServerTrendSeries>();
+        if (!history) return map;
+        for (const [uuidShort, points] of Object.entries(history.servers)) {
+            map.set(uuidShort, {
+                cpu: toSeries(points, history, 'cpu'),
+                memory: toSeries(points, history, 'memory'),
+            });
+        }
+        return map;
+    }, [history]);
+    const historyFor = useCallback((uuidShort: string) => historyByShort.get(uuidShort) ?? null, [historyByShort]);
+    const trendLimits = useMemo(() => {
+        const usage = overview?.servers.usage;
+        return {
+            cpu: usage && usage.unlimited.cpu === 0 ? usage.cpu_limit_percent : 0,
+            memory: usage && usage.unlimited.memory === 0 ? usage.memory_limit_bytes : 0,
+            disk: usage && usage.unlimited.disk === 0 ? usage.disk_limit_bytes : 0,
+        };
+    }, [overview]);
 
-    const BLOCK_LABEL_KEYS: Record<DashboardBlockId, string> = {
-        hero: 'dashboard.layout.block_labels.hero',
-        announcements: 'dashboard.layout.block_labels.announcements',
-        recent_mails: 'dashboard.layout.block_labels.recent_mails',
-        resources: 'dashboard.layout.block_labels.resources',
-        tickets: 'dashboard.layout.block_labels.tickets',
-        knowledgebase: 'dashboard.layout.block_labels.knowledgebase',
-        profile: 'dashboard.layout.block_labels.profile',
-        activity: 'dashboard.layout.block_labels.activity',
-    };
+    const fetchTickets = useCallback(async () => {
+        try {
+            const { data } = await axios.get('/api/user/tickets', { params: { limit: 5, page: 1, scope: 'mine' } });
+            setTickets(data?.data?.tickets || []);
+            setTicketTotal(data?.data?.pagination?.total_records ?? 0);
+        } catch {
+            setTickets([]);
+        } finally {
+            setLoadingTickets(false);
+        }
+    }, []);
 
     useEffect(() => {
-        if (loadingServers || loadingVms || loadingWebspaces) {
-            return;
+        if (!ticketsEnabled) return;
+        void fetchTickets();
+        const onReplied = () => void fetchTickets();
+        window.addEventListener('featherpanel:ticket-replied', onReplied);
+        return () => window.removeEventListener('featherpanel:ticket-replied', onReplied);
+    }, [ticketsEnabled, fetchTickets]);
+
+    /** Websocket data when connected, otherwise the last overview snapshot. */
+    const overviewByShort = useMemo(() => {
+        const map = new Map<string, ServerLiveData>();
+        for (const item of overview?.servers.items ?? []) {
+            if (item.status === 'unknown' || item.cpu === null) continue;
+            map.set(item.uuidShort, {
+                status: item.status,
+                stats: {
+                    cpuUsage: item.cpu ?? 0,
+                    memoryUsage: item.memory_bytes ?? 0,
+                    diskUsage: item.disk_bytes ?? 0,
+                    networkRx: item.rx_bytes ?? 0,
+                    networkTx: item.tx_bytes ?? 0,
+                    diskIoRead: 0,
+                    diskIoWrite: 0,
+                    state: item.status,
+                    uptime: item.uptime_ms ?? 0,
+                },
+                lastUpdate: null,
+            });
         }
-        const typeCount = [serverTotal > 0, vmTotal > 0, webspaceTotal > 0].filter(Boolean).length;
-        if (typeCount >= 2) {
-            return;
-        }
-        setResourceFilter('all');
-    }, [loadingServers, loadingVms, loadingWebspaces, serverTotal, vmTotal, webspaceTotal]);
+        return map;
+    }, [overview]);
 
-    const blockLabel = (id: DashboardBlockId) => t(BLOCK_LABEL_KEYS[id]);
-
-    const resourceTypeCount = [serverTotal > 0, vmTotal > 0, webspaceTotal > 0].filter(Boolean).length;
-    const showResourceFilterTabs = !loadingServers && !loadingVms && !loadingWebspaces && resourceTypeCount >= 2;
-
-    const resourceFilters = (
-        [
-            { id: 'all' as const, label: t('dashboard.resources.filter_all'), show: true },
-            {
-                id: 'servers' as const,
-                label: t('dashboard.resources.filter_servers'),
-                show: serverTotal > 0,
-            },
-            { id: 'vds' as const, label: t('dashboard.resources.filter_vms'), show: vmTotal > 0 },
-            {
-                id: 'webspaces' as const,
-                label: t('dashboard.resources.filter_webspaces'),
-                show: webspaceTotal > 0,
-            },
-        ] as const
-    ).filter((f) => f.show);
-
-    const resourcesSection = (
-        <div className='space-y-6'>
-            <WidgetRenderer widgets={getWidgets('dashboard', 'before-server-list')} {...pluginWidgetProps} />
-            <div className='space-y-3'>
-                <h2 className='truncate text-lg font-bold sm:text-xl'>{t('dashboard.resources.title')}</h2>
-                {showResourceFilterTabs ? (
-                    <div className='-mx-0.5 w-full min-w-0 overflow-x-auto overscroll-x-contain px-0.5 pb-0.5 sm:mx-0 sm:w-auto sm:overflow-visible sm:px-0'>
-                        <div className='bg-background/30 border-border/50 inline-flex w-max max-w-full items-center gap-0.5 rounded-lg border p-1 sm:flex sm:w-auto'>
-                            {resourceFilters.map((filter) => (
-                                <button
-                                    key={filter.id}
-                                    type='button'
-                                    onClick={() => setResourceFilter(filter.id)}
-                                    className={cn(
-                                        'shrink-0 rounded-md px-3 py-2 text-xs font-medium whitespace-nowrap transition-all sm:px-4 sm:text-sm',
-                                        resourceFilter === filter.id
-                                            ? 'bg-primary text-primary-foreground shadow-md'
-                                            : 'text-muted-foreground hover:text-foreground hover:bg-background/50',
-                                    )}
-                                >
-                                    {filter.label}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-                ) : null}
-            </div>
-
-            {loadingServers || loadingVms || loadingWebspaces ? (
-                <div className='space-y-2.5 py-1' aria-busy='true'>
-                    {[0, 1, 2].map((i) => (
-                        <div
-                            key={i}
-                            className='border-border/40 bg-card/40 h-[3.25rem] rounded-xl border'
-                            style={{ opacity: 1 - i * 0.18 }}
-                        />
-                    ))}
-                </div>
-            ) : (
-                <>
-                    {(() => {
-                        const favSet = new Set(favoriteUuids);
-                        const favoriteServerList = favoriteUuids
-                            .map((u) => allServers.find((s) => s.uuid === u))
-                            .filter((s): s is ServerData => Boolean(s));
-
-                        const showFavoriteBlock =
-                            (resourceFilter === 'all' || resourceFilter === 'servers') && favoriteServerList.length > 0;
-
-                        const displayServers =
-                            resourceFilter === 'all' || resourceFilter === 'servers'
-                                ? allServers.filter((s) => !favSet.has(s.uuid)).slice(0, 5)
-                                : [];
-                        const displayVms = resourceFilter === 'all' || resourceFilter === 'vds' ? vms : [];
-                        const displayWebspaces =
-                            resourceFilter === 'all' || resourceFilter === 'webspaces' ? webspaces : [];
-                        const otherResources = [
-                            ...displayServers.map((s) => ({ type: 'server' as const, data: s })),
-                            ...displayVms.map((v) => ({ type: 'vm' as const, data: v })),
-                            ...displayWebspaces.map((w) => ({ type: 'webspace' as const, data: w })),
-                        ];
-
-                        if (!showFavoriteBlock && otherResources.length === 0) {
-                            return (
-                                <div className='border-border/50 bg-card/50 rounded-xl border p-12 text-center backdrop-blur-xl'>
-                                    <Server className='text-muted-foreground/50 mx-auto mb-3 h-12 w-12' />
-                                    <p className='text-muted-foreground font-medium'>
-                                        {resourceFilter === 'all'
-                                            ? t('dashboard.resources.no_resources')
-                                            : resourceFilter === 'servers'
-                                              ? t('dashboard.resources.no_servers')
-                                              : resourceFilter === 'vds'
-                                                ? t('dashboard.resources.no_vms')
-                                                : t('dashboard.resources.no_webspaces')}
-                                    </p>
-                                    <p className='text-muted-foreground/70 mt-1 text-sm'>
-                                        {t('dashboard.resources.create_first')}
-                                    </p>
-                                </div>
-                            );
-                        }
-
-                        const serverCardProps = (s: ServerData) => ({
-                            server: s,
-                            layout: 'list' as const,
-                            serverUrl: `/server/${s.uuidShort}`,
-                            liveStats: getServerLiveStats(s),
-                            isConnected: isServerConnected(s.uuidShort),
-                            t,
-                            folders: [],
-                            onAssignFolder: () => {},
-                            onUnassignFolder: () => {},
-                            showFavoriteToggle: true,
-                            isFavorite: isFavorite(s.uuid),
-                            onToggleFavorite: () => toggleFavorite(s.uuid),
-                        });
-
-                        return (
-                            <div className='space-y-6'>
-                                {showFavoriteBlock ? (
-                                    <div className='space-y-3'>
-                                        <div className='flex min-w-0 items-center justify-between gap-3'>
-                                            <h3 className='text-foreground truncate text-sm font-semibold'>
-                                                {t('dashboard.favorite_servers.title')}
-                                            </h3>
-                                        </div>
-                                        <div className='stagger-children space-y-3'>
-                                            {favoriteServerList.map((s) => (
-                                                <div key={`fav-${s.uuid}`} className='stagger-child'>
-                                                    <ServerCard {...serverCardProps(s)} />
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                ) : null}
-                                {otherResources.length > 0 ? (
-                                    <div className='stagger-children space-y-4'>
-                                        {otherResources.map((resource, idx) => (
-                                            <div
-                                                key={`${resource.type}-${idx}-${
-                                                    resource.type === 'server'
-                                                        ? (resource.data as ServerData).uuid
-                                                        : resource.type === 'vm'
-                                                          ? (resource.data as VmInstance).id
-                                                          : (resource.data as DashboardWebSpace).uuid
-                                                }`}
-                                                className='stagger-child'
-                                            >
-                                                {resource.type === 'server' ? (
-                                                    <ServerCard {...serverCardProps(resource.data as ServerData)} />
-                                                ) : resource.type === 'vm' ? (
-                                                    <VmCard vm={resource.data as VmInstance} layout='list' />
-                                                ) : (
-                                                    <WebSpaceCard
-                                                        webspace={resource.data as DashboardWebSpace}
-                                                        layout='list'
-                                                        webspaceUrl={`/webspace/${(resource.data as DashboardWebSpace).uuidShort || (resource.data as DashboardWebSpace).uuid.slice(0, 8)}`}
-                                                        t={t}
-                                                    />
-                                                )}
-                                            </div>
-                                        ))}
-                                    </div>
-                                ) : null}
-                            </div>
-                        );
-                    })()}
-                </>
-            )}
-
-            <WidgetRenderer widgets={getWidgets('dashboard', 'after-server-list')} {...pluginWidgetProps} />
-        </div>
+    const liveFor = useCallback(
+        (server: ServerData) => serverLiveData[server.uuidShort] ?? overviewByShort.get(server.uuidShort),
+        [serverLiveData, overviewByShort],
     );
 
-    const heroHidden = hidden.includes('hero');
-
-    const heroSection = (
-        <div
-            className={cn(
-                'from-primary/10 via-primary/5 border-primary/20 relative overflow-hidden rounded-2xl border bg-linear-to-br to-transparent p-4 transition-[opacity,filter] sm:p-6 md:p-8',
-                isCustomizing && heroHidden && 'opacity-30 grayscale',
-            )}
-        >
-            <div className='relative z-10 flex flex-col gap-4 sm:gap-5'>
-                <div className='flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between lg:gap-6'>
-                    <div className='min-w-0 flex-1 space-y-2'>
-                        <h1 className='text-foreground text-2xl font-bold tracking-tight sm:text-3xl md:text-4xl'>
-                            {user ? (
-                                `${t('dashboard.welcome').replace(/!+\s*$/, '')}, ${user.first_name}!`
-                            ) : sessionLoading ? (
-                                <span className='inline-flex items-center gap-2'>
-                                    {t('dashboard.welcome').replace(/!+\s*$/, '')},
-                                    <span
-                                        className='bg-muted/50 inline-block h-7 w-28 animate-pulse rounded-md sm:h-8 sm:w-36'
-                                        aria-busy='true'
-                                    />
-                                </span>
-                            ) : (
-                                t('dashboard.welcome')
-                            )}
-                        </h1>
-                        <p className='text-muted-foreground max-w-2xl text-sm sm:text-base md:text-lg'>
-                            {t('dashboard.subtitle')}
-                        </p>
-                    </div>
-
-                    <div className='flex w-full flex-col gap-2 lg:w-auto lg:max-w-md lg:shrink-0 lg:items-end'>
-                        {isCustomizing && (
-                            <div className='flex w-full flex-wrap items-center justify-end gap-2'>
-                                <button
-                                    type='button'
-                                    onClick={() => toggleHidden('hero')}
-                                    title={heroHidden ? t('common.show') : t('common.hide')}
-                                    className='border-border/60 bg-background/70 text-muted-foreground hover:bg-background hover:text-foreground inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-2 text-xs font-medium shadow-sm'
-                                >
-                                    {heroHidden ? <Eye className='h-3.5 w-3.5' /> : <EyeOff className='h-3.5 w-3.5' />}
-                                    <span className='hidden sm:inline'>{t('dashboard.layout.block_labels.hero')}</span>
-                                </button>
-                                <button
-                                    type='button'
-                                    onClick={toggleColumnsReversed}
-                                    className='border-border/60 bg-background/70 text-muted-foreground hover:bg-background hover:text-foreground inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-2 text-xs font-medium shadow-sm'
-                                >
-                                    <ArrowLeftRight className='h-3.5 w-3.5 shrink-0' />
-                                    <span className='hidden sm:inline'>{t('dashboard.layout.swap_columns')}</span>
-                                </button>
-                                <button
-                                    type='button'
-                                    onClick={toggleHeroAtBottom}
-                                    className={cn(
-                                        'inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-2 text-xs font-medium shadow-sm transition-colors',
-                                        heroAtBottom
-                                            ? 'border-primary/40 bg-primary/15 text-foreground'
-                                            : 'border-border/60 bg-background/70 text-muted-foreground hover:bg-background hover:text-foreground',
-                                    )}
-                                >
-                                    {heroAtBottom ? t('dashboard.layout.hero_top') : t('dashboard.layout.hero_bottom')}
-                                </button>
-                                <button
-                                    type='button'
-                                    onClick={resetLayout}
-                                    title={t('dashboard.layout.reset')}
-                                    className='border-border/60 bg-background/70 text-muted-foreground hover:bg-background hover:text-foreground inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-2 text-xs font-medium shadow-sm'
-                                >
-                                    <RotateCcw className='h-3.5 w-3.5' />
-                                    <span className='hidden sm:inline'>{t('dashboard.layout.reset')}</span>
-                                </button>
-                            </div>
-                        )}
-                        <button
-                            type='button'
-                            onClick={() => setIsCustomizing(!isCustomizing)}
-                            className={cn(
-                                'inline-flex w-full items-center justify-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium shadow-sm transition-colors sm:w-auto lg:ml-auto',
-                                'border-primary/25 bg-background/65 text-foreground backdrop-blur-sm',
-                                'hover:bg-background/90 hover:border-primary/40',
-                                isCustomizing &&
-                                    'border-amber-500/45 bg-amber-500/10 text-amber-950 dark:border-amber-500/35 dark:text-amber-100',
-                            )}
-                        >
-                            <LayoutDashboard className='h-4 w-4 shrink-0' />
-                            <span>
-                                {isCustomizing
-                                    ? t('dashboard.layout.stop_customizing')
-                                    : t('dashboard.layout.customize_layout')}
-                            </span>
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <div className='bg-primary/5 pointer-events-none absolute top-0 right-0 z-0 h-64 w-64 rounded-full blur-3xl' />
-            <div className='bg-primary/5 pointer-events-none absolute bottom-0 left-0 z-0 h-48 w-48 rounded-full blur-3xl' />
-        </div>
+    const pinnedItems = useMemo(
+        () =>
+            favoriteUuids
+                .map((uuid) => servers.find((s) => s.uuid === uuid))
+                .filter((s): s is ServerData => Boolean(s))
+                .map((s) => ({ uuidShort: s.uuidShort, name: s.name, status: serverRowStatus(s, liveFor(s)) })),
+        [favoriteUuids, servers, liveFor],
     );
 
-    const profileBlock = user && (
-        <div className='border-border/50 bg-card/50 rounded-xl border p-6 backdrop-blur-xl'>
-            <div className='flex items-center gap-4'>
-                {user.avatar ? (
-                    <Image
-                        src={user.avatar}
-                        alt={`${user.first_name} ${user.last_name}`}
-                        width={64}
-                        height={64}
-                        unoptimized
-                        className='border-primary/20 h-16 w-16 rounded-full border-2 object-cover'
-                    />
-                ) : (
-                    <div className='from-primary/20 to-primary/10 border-primary/20 flex h-16 w-16 items-center justify-center rounded-full border-2 bg-linear-to-br'>
-                        <span className='text-primary text-2xl font-semibold'>
-                            {`${user.first_name?.[0] || ''}${user.last_name?.[0] || ''}`.toUpperCase()}
-                        </span>
-                    </div>
-                )}
-                <div className='min-w-0 flex-1'>
-                    <h2 className='text-foreground mb-1 truncate text-xl font-semibold'>
-                        {user.first_name} {user.last_name}
-                    </h2>
-                    {user.role && (
-                        <div className='mb-1'>
-                            <RoleBadge role={user.role} size='sm' className='font-semibold' />
-                        </div>
+    const recentItems = useMemo(() => {
+        if (servers.length === 0) return [];
+        return readRecent()
+            .map((entry) => {
+                const s = servers.find((x) => x.uuidShort === entry.uuidShort);
+                return s
+                    ? {
+                          uuidShort: s.uuidShort,
+                          name: s.name,
+                          status: serverRowStatus(s, liveFor(s)),
+                          viewedAt: entry.lastViewedAt,
+                      }
+                    : null;
+            })
+            .filter((x): x is NonNullable<typeof x> => x !== null)
+            .slice(0, 6);
+    }, [servers, liveFor]);
+
+    const heatmapCells = useMemo<HeatmapCell[]>(
+        () =>
+            servers.map((s) => {
+                const live = liveFor(s);
+                const stats = live?.stats;
+                const pct = (used: number | undefined, limit: number) =>
+                    stats && typeof used === 'number' && limit > 0 ? Math.min(100, (used / limit) * 100) : null;
+                return {
+                    uuidShort: s.uuidShort,
+                    name: s.name,
+                    status: serverRowStatus(s, live),
+                    cpu: pct(stats?.cpuUsage, getServerCpuLimit(s)),
+                    ram: pct(stats?.memoryUsage, getServerMemoryLimit(s)),
+                    disk: pct(stats?.diskUsage, getServerDiskLimit(s)),
+                };
+            }),
+        [servers, liveFor],
+    );
+
+    const serverStatusCounts = useMemo(() => {
+        let running = 0;
+        let known = 0;
+        for (const s of servers) {
+            const status = serverRowStatus(s, liveFor(s));
+            if (status === 'unknown') continue;
+            known++;
+            if (status === 'running' || status === 'starting') running++;
+        }
+        return { running, known };
+    }, [servers, liveFor]);
+
+    const attention = useMemo<AttentionItem[]>(() => {
+        const items: AttentionItem[] = [];
+        const expiry = (id: string, name: string, href: string, expiresAt?: string | null) => {
+            const days = daysUntil(expiresAt);
+            if (days === null || days > EXPIRY_WARNING_DAYS) return;
+            items.push({
+                id: `expiry-${id}`,
+                tone: days <= 1 ? 'danger' : 'warning',
+                title:
+                    days < 0
+                        ? t('dashboard.home.attention.expired', { name })
+                        : days <= 1
+                          ? t('dashboard.home.attention.expires_today', { name })
+                          : t('dashboard.home.attention.expires_in', { name, days: String(days) }),
+                description: t('dashboard.home.attention.expires_hint'),
+                href,
+            });
+        };
+
+        for (const s of servers) {
+            const href = `/server/${s.uuidShort}`;
+            const status = serverRowStatus(s, liveFor(s));
+            if (status === 'suspended') {
+                items.push({
+                    id: `suspended-${s.uuid}`,
+                    tone: 'danger',
+                    title: t('dashboard.home.attention.suspended', { name: s.name }),
+                    description: s.suspension_reason || t('dashboard.home.attention.suspended_hint'),
+                    href,
+                });
+                continue;
+            }
+            if (status === 'install_failed') {
+                items.push({
+                    id: `install-${s.uuid}`,
+                    tone: 'danger',
+                    title: t('dashboard.home.attention.install_failed', { name: s.name }),
+                    description: t('dashboard.home.attention.install_failed_hint'),
+                    href,
+                });
+            }
+            if (s.node?.maintenance_mode) {
+                items.push({
+                    id: `maintenance-${s.uuid}`,
+                    tone: 'info',
+                    title: t('dashboard.home.attention.maintenance', { name: s.name }),
+                    description: t('dashboard.home.attention.maintenance_hint'),
+                    href,
+                });
+            }
+            const disk = liveFor(s)?.stats?.diskUsage;
+            const diskLimit = getServerDiskLimit(s);
+            if (typeof disk === 'number' && diskLimit > 0 && (disk / diskLimit) * 100 >= DISK_WARNING_PERCENT) {
+                items.push({
+                    id: `disk-${s.uuid}`,
+                    tone: 'warning',
+                    title: t('dashboard.home.attention.disk_full', { name: s.name }),
+                    description: t('dashboard.home.attention.disk_full_hint', {
+                        used: formatDisk(disk),
+                        limit: formatDisk(diskLimit),
+                    }),
+                    href: `/server/${s.uuidShort}/files`,
+                });
+            }
+            expiry(s.uuid, s.name, href, s.expires_at);
+        }
+
+        for (const backup of overview?.backups ?? []) {
+            if (backup.state !== 'failed') continue;
+            const days = daysUntil(backup.completed_at);
+            if (days === null || days < -1) continue; // Only failures from the last day or so.
+            items.push({
+                id: `backup-${backup.uuid}`,
+                tone: 'warning',
+                title: t('dashboard.home.attention.backup_failed', { name: backup.server.name }),
+                description: backup.name,
+                href: `/server/${backup.server.uuidShort}/backups`,
+            });
+        }
+
+        for (const vm of vms) {
+            const href = `/vds/${vm.id}`;
+            if (vm.suspended === 1 || vm.status === 'suspended') {
+                items.push({
+                    id: `vm-suspended-${vm.id}`,
+                    tone: 'danger',
+                    title: t('dashboard.home.attention.suspended', { name: vm.hostname }),
+                    description: t('dashboard.home.attention.suspended_hint'),
+                    href,
+                });
+                continue;
+            }
+            expiry(`vm-${vm.id}`, vm.hostname, href, vm.expires_at);
+        }
+
+        for (const ws of webspaces) {
+            if (ws.suspended === 1 || ws.status === 'suspended') {
+                items.push({
+                    id: `ws-suspended-${ws.uuid}`,
+                    tone: 'danger',
+                    title: t('dashboard.home.attention.suspended', { name: ws.name }),
+                    description: t('dashboard.home.attention.suspended_hint'),
+                    href: `/webspace/${ws.uuidShort || ws.uuid.slice(0, 8)}`,
+                });
+            }
+        }
+
+        if (ticketsEnabled) {
+            for (const ticket of tickets) {
+                if (!ticket.has_unread_messages_since_last_reply) continue;
+                items.push({
+                    id: `ticket-${ticket.uuid}`,
+                    tone: 'info',
+                    title: t('dashboard.home.attention.ticket_reply', { id: String(ticket.id) }),
+                    description: ticket.title,
+                    href: `/dashboard/tickets/${ticket.uuid}`,
+                });
+            }
+        }
+        return items;
+    }, [servers, vms, webspaces, tickets, ticketsEnabled, overview, liveFor, t]);
+
+    const unreadTickets = tickets.filter((ticket) => ticket.has_unread_messages_since_last_reply).length;
+    const resourceTotal = serverTotal + vmTotal + webspaceTotal;
+
+    let statusLine: string | null = null;
+    let statusTone: 'neutral' | 'good' | 'warning' = 'neutral';
+    if (!loadingResources) {
+        const parts: string[] = [];
+        if (serverTotal > 0 && serverStatusCounts.known === servers.length && servers.length === serverTotal) {
+            parts.push(
+                t('dashboard.home.status.servers_running', {
+                    running: String(serverStatusCounts.running),
+                    total: String(serverTotal),
+                }),
+            );
+        }
+        if (attention.length > 0) {
+            parts.push(
+                attention.length === 1
+                    ? t('dashboard.home.status.attention_one')
+                    : t('dashboard.home.status.attention_many', { count: String(attention.length) }),
+            );
+            statusTone = 'warning';
+        } else if (resourceTotal > 0) {
+            parts.push(t('dashboard.home.status.all_good'));
+            statusTone = 'good';
+        } else {
+            parts.push(t('dashboard.home.status.empty'));
+        }
+        statusLine = parts.join(' · ');
+    }
+
+    // Widgets
+
+    const statTiles = [
+        modules.game &&
+            serverTotal > 0 && {
+                key: 'game' as const,
+                icon: Gamepad2,
+                label: t('dashboard.home.stats.game'),
+                value: String(serverTotal),
+                hint:
+                    serverTotal > 0 && serverStatusCounts.known === serverTotal
+                        ? t('dashboard.home.stats.running', { count: String(serverStatusCounts.running) })
+                        : undefined,
+                href: '/dashboard/servers',
+            },
+        modules.vds &&
+            vmTotal > 0 && {
+                key: 'vds' as const,
+                icon: MonitorCog,
+                label: t('dashboard.home.stats.vds'),
+                value: String(vmTotal),
+                hint:
+                    vmTotal > 0 && vms.length === vmTotal
+                        ? t('dashboard.home.stats.running', {
+                              count: String(vms.filter((vm) => vm.status === 'running').length),
+                          })
+                        : undefined,
+                href: '/dashboard/vms',
+            },
+        modules.web &&
+            webspaceTotal > 0 && {
+                key: 'web' as const,
+                icon: Globe,
+                label: t('dashboard.home.stats.web'),
+                value: String(webspaceTotal),
+                href: '/dashboard/webspaces',
+            },
+        ticketsEnabled && {
+            key: 'support' as const,
+            icon: LifeBuoy,
+            label: t('dashboard.home.stats.support'),
+            value: String(ticketTotal),
+            hint:
+                unreadTickets > 0
+                    ? t('dashboard.home.stats.new_replies', { count: String(unreadTickets) })
+                    : t('dashboard.home.stats.no_new_replies'),
+            tone: unreadTickets > 0 ? ('warning' as const) : ('default' as const),
+            href: '/dashboard/tickets',
+        },
+    ]
+        .filter(Boolean)
+        .filter((tile) => tile && config.statTiles.includes(tile.key)) as {
+        key: string;
+        icon: typeof Server;
+        label: string;
+        value: string;
+        hint?: string;
+        tone?: 'default' | 'warning';
+        href: string;
+    }[];
+
+    // Modules without resources get no tile; support stays as the way to ask for help.
+    const statsBlock = loadingResources ? (
+        <div className='grid grid-cols-2 gap-3 lg:grid-cols-4' aria-busy='true'>
+            {[0, 1, 2, 3].map((i) => (
+                <div key={i} className='fp-surface h-[6.25rem] animate-pulse rounded-xl border' />
+            ))}
+        </div>
+    ) : statTiles.length > 0 ? (
+        <div className={cn('grid', STAT_GRID[statTiles.length] ?? STAT_GRID[4], compact ? 'gap-2' : 'gap-3')}>
+            {statTiles.map(({ key, ...tile }, index) => (
+                <div
+                    key={key}
+                    className={cn(
+                        'grid min-w-0',
+                        // An odd tile left over in the two column phone/tablet grid takes the whole row.
+                        statTiles.length % 2 === 1 && index === statTiles.length - 1 && 'col-span-2 lg:col-span-1',
                     )}
-                    <p className='text-muted-foreground truncate text-sm'>@{user.username}</p>
+                >
+                    <DashboardStatTile {...tile} />
                 </div>
-            </div>
+            ))}
+        </div>
+    ) : null;
+
+    const attentionBlock =
+        attention.length > 0 ? (
+            <DashboardAttention
+                title={t('dashboard.home.attention.title')}
+                items={attention}
+                moreLabel={(count) => t('dashboard.home.attention.more', { count: String(count) })}
+            />
+        ) : null;
+
+    const sectionSkeleton = (
+        <div className='fp-surface space-y-2 rounded-xl border p-4' aria-busy='true'>
+            <div className='bg-muted h-4 w-32 animate-pulse rounded' />
+            {[0, 1, 2].map((i) => (
+                <div key={i} className='bg-muted/40 h-14 animate-pulse rounded-lg' style={{ opacity: 1 - i * 0.2 }} />
+            ))}
         </div>
     );
 
-    const activityBlock = (
-        <div className='border-border/50 bg-card/50 rounded-xl border p-6 backdrop-blur-xl'>
-            <div className='mb-6 flex items-center justify-between'>
-                <h2 className='text-lg font-bold'>{t('dashboard.activity.title')}</h2>
+    // Nothing to manage yet: one calm welcome card with a way forward instead of empty sections.
+    const resourceWidgetIds = config.widgets
+        .map((w) => w.id)
+        .filter((id) => id === 'servers' || id === 'vds' || id === 'webspaces');
+    const onboarding = (
+        <section className='fp-surface rounded-xl border p-6 text-center sm:p-8'>
+            <span className='fp-icon-tile mx-auto flex h-12 w-12 items-center justify-center rounded-xl'>
+                <Server className='h-6 w-6' aria-hidden />
+            </span>
+            <h2 className='mt-4 text-base font-semibold'>{t('dashboard.home.onboarding.title')}</h2>
+            <p className='text-muted-foreground mx-auto mt-1 max-w-md text-sm'>
+                {t('dashboard.home.onboarding.description')}
+            </p>
+            <div className='mt-5 flex flex-wrap justify-center gap-2'>
+                {ticketsEnabled && (
+                    <Link
+                        href='/dashboard/tickets/create'
+                        className='bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium'
+                    >
+                        <LifeBuoy className='h-4 w-4' aria-hidden />
+                        {t('dashboard.home.onboarding.contact')}
+                    </Link>
+                )}
+                {kbEnabled && (
+                    <Link
+                        href='/dashboard/knowledgebase'
+                        className='fp-surface hover:text-foreground inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium'
+                    >
+                        <BookOpen className='h-4 w-4' aria-hidden />
+                        {t('dashboard.home.onboarding.guides')}
+                    </Link>
+                )}
                 <Link
-                    href='/dashboard/account?tab=activity'
-                    className='text-primary hover:text-primary/80 text-xs font-medium transition-colors'
+                    href='/dashboard/account'
+                    className='fp-surface hover:text-foreground inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium'
                 >
-                    {t('dashboard.activity.view_all')} &rarr;
+                    <Settings2 className='h-4 w-4' aria-hidden />
+                    {t('dashboard.home.onboarding.account')}
                 </Link>
             </div>
-
-            {loadingActivity ? (
-                <div className='space-y-3 py-2' aria-busy='true'>
-                    {[0, 1, 2].map((i) => (
-                        <div key={i} className='flex items-start gap-3' style={{ opacity: 1 - i * 0.2 }}>
-                            <div className='bg-muted/40 mt-0.5 h-8 w-8 shrink-0 rounded-full' />
-                            <div className='min-w-0 flex-1 space-y-2 pt-1'>
-                                <div className='bg-muted/40 h-3 max-w-[12rem] rounded' style={{ width: '75%' }} />
-                                <div className='bg-muted/30 h-2.5 max-w-[8rem] rounded' style={{ width: '50%' }} />
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            ) : activities.length > 0 ? (
-                <ActivityFeed activities={activities} formatDate={formatDate} />
-            ) : (
-                <div className='py-8 text-center'>
-                    <Clock className='text-muted-foreground/50 mx-auto mb-3 h-10 w-10' />
-                    <p className='text-muted-foreground text-sm'>{t('dashboard.activity.no_activity')}</p>
-                </div>
-            )}
-        </div>
+        </section>
     );
 
-    const renderLeftBlock = (id: DashboardLeftBlockId) => {
-        const idx = leftOrder.indexOf(id);
-        const chromeProps = {
-            blockId: id as DashboardBlockId,
-            isCustomizing,
-            hiddenBlocks: hidden,
-            onToggleHidden: toggleHidden,
-            removeLabel: t('dashboard.layout.remove_block'),
-            moveUpLabel: t('dashboard.layout.move_up'),
-            moveDownLabel: t('dashboard.layout.move_down'),
-            moveControls: isCustomizing
-                ? {
-                      canUp: idx > 0,
-                      canDown: idx >= 0 && idx < leftOrder.length - 1,
-                      onUp: () => moveInLeft(id, -1),
-                      onDown: () => moveInLeft(id, 1),
-                  }
-                : undefined,
-            onRemoveFromLayout: isCustomizing ? () => removeFromLeft(id) : undefined,
-        };
+    const serversSize = config.widgets.find((w) => w.id === 'servers')?.size ?? 'medium';
+    const uptimeFor = useCallback(
+        (server: ServerData) => {
+            const item = overview?.servers.items.find((i) => i.uuidShort === server.uuidShort);
+            return item?.uptime_ms ?? liveFor(server)?.stats?.uptime ?? null;
+        },
+        [overview, liveFor],
+    );
+    const connectShown = useCallback((uuidShorts: string[]) => void connectServers(uuidShorts), [connectServers]);
+    const serversBlock =
+        serverTotal === 0 ? null : (
+            <DashboardServersSection
+                servers={servers}
+                total={serverTotal}
+                liveFor={liveFor}
+                uptimeFor={uptimeFor}
+                isFavorite={isFavorite}
+                toggleFavorite={toggleFavorite}
+                options={config.servers}
+                onOptionsChange={dashboard.updateServers}
+                canViewOthers={canViewOthers}
+                compact={compact}
+                wide={serversSize === 'full'}
+                connectServers={connectShown}
+                historyFor={historyFor}
+            />
+        );
 
+    const vdsBlock =
+        vmTotal > 0 ? (
+            <DashboardPanel
+                title={t('dashboard.home.sections.vds')}
+                icon={MonitorCog}
+                count={vmTotal}
+                action={{ label: t('dashboard.resources.view_all'), href: '/dashboard/vms' }}
+                flush
+            >
+                {vms.slice(0, SECTION_LIMIT).map((vm) => (
+                    <DashboardVmRow key={vm.id} vm={vm} compact={compact} />
+                ))}
+            </DashboardPanel>
+        ) : null;
+
+    const webspacesBlock =
+        webspaceTotal > 0 ? (
+            <DashboardPanel
+                title={t('dashboard.home.sections.web')}
+                icon={Globe}
+                count={webspaceTotal}
+                action={{ label: t('dashboard.resources.view_all'), href: '/dashboard/webspaces' }}
+                flush
+            >
+                {webspaces.slice(0, SECTION_LIMIT).map((ws) => (
+                    <DashboardWebSpaceRow key={ws.uuid} webspace={ws} compact={compact} />
+                ))}
+            </DashboardPanel>
+        ) : null;
+
+    const resourceBlock = (id: 'servers' | 'vds' | 'webspaces'): ReactNode => {
+        if (loadingResources) return id === resourceWidgetIds[0] ? sectionSkeleton : null;
+        if (resourceTotal === 0) return id === resourceWidgetIds[0] ? onboarding : null;
+        return id === 'servers' ? serversBlock : id === 'vds' ? vdsBlock : webspacesBlock;
+    };
+
+    const activityBlock = loadingActivity ? (
+        <div className='fp-surface space-y-2 rounded-xl border p-4' aria-busy='true'>
+            <div className='bg-muted h-4 w-28 animate-pulse rounded' />
+            {[0, 1, 2].map((i) => (
+                <div key={i} className='bg-muted/40 h-10 animate-pulse rounded-lg' />
+            ))}
+        </div>
+    ) : activities.length > 0 ? (
+        <DashboardPanel
+            title={t('dashboard.activity.title')}
+            icon={History}
+            action={{ label: t('dashboard.activity.view_all'), href: '/dashboard/account?tab=activity' }}
+        >
+            <ActivityFeed compact activities={activities} formatDate={(value) => formatRelativeTime(value, dateOpts)} />
+        </DashboardPanel>
+    ) : null;
+
+    const profileBlock = user ? (
+        <Link
+            href='/dashboard/account'
+            className='fp-surface fp-surface-interactive flex min-w-0 items-center gap-3 rounded-xl border p-4'
+        >
+            {user.avatar ? (
+                <Image
+                    src={user.avatar}
+                    alt=''
+                    width={48}
+                    height={48}
+                    unoptimized
+                    className='border-primary/20 h-12 w-12 rounded-full border object-cover'
+                />
+            ) : (
+                <span className='fp-icon-tile flex h-12 w-12 items-center justify-center rounded-full text-lg font-semibold'>
+                    {`${user.first_name?.[0] || ''}${user.last_name?.[0] || ''}`.toUpperCase()}
+                </span>
+            )}
+            <div className='min-w-0 flex-1'>
+                <p className='truncate font-semibold'>
+                    {user.first_name} {user.last_name}
+                </p>
+                <p className='text-muted-foreground truncate text-sm'>@{user.username}</p>
+            </div>
+            {user.role && <RoleBadge role={user.role} size='sm' />}
+        </Link>
+    ) : null;
+
+    const quickActions: QuickAction[] = [
+        serverTotal > 1 && {
+            key: 'servers',
+            label: t('dashboard.widgets.quick_actions.all_servers'),
+            href: '/dashboard/servers',
+            icon: QUICK_ACTION_ICONS.servers,
+        },
+        serverTotal > 0 && {
+            key: 'featheros',
+            label: t('featheros.nav_open', { name: `${settings?.app_name || 'Panel'} OS` }),
+            href: '/os',
+            icon: QUICK_ACTION_ICONS.os,
+            external: true,
+        },
+        ticketsEnabled && {
+            key: 'ticket',
+            label: t('dashboard.widgets.quick_actions.new_ticket'),
+            href: '/dashboard/tickets/create',
+            icon: QUICK_ACTION_ICONS.ticket,
+        },
+        kbEnabled && {
+            key: 'kb',
+            label: t('dashboard.widgets.quick_actions.guides'),
+            href: '/dashboard/knowledgebase',
+            icon: QUICK_ACTION_ICONS.knowledgebase,
+        },
+        {
+            key: 'account',
+            label: t('dashboard.widgets.quick_actions.account'),
+            href: '/dashboard/account',
+            icon: QUICK_ACTION_ICONS.account,
+        },
+        {
+            key: 'ssh',
+            label: t('dashboard.widgets.quick_actions.ssh_keys'),
+            href: '/dashboard/account?tab=ssh-keys',
+            icon: QUICK_ACTION_ICONS.ssh,
+        },
+        {
+            key: 'activity',
+            label: t('dashboard.widgets.quick_actions.activity'),
+            href: '/dashboard/account?tab=activity',
+            icon: QUICK_ACTION_ICONS.activity,
+        },
+    ].filter(Boolean) as QuickAction[];
+
+    const webspaceUsage = webspaces as unknown as WebSpaceUsageFields[];
+
+    /** Widgets that make sense on this panel (disabled modules and features are not offered). */
+    const availableWidgets = useMemo<DashboardWidgetId[]>(() => {
+        const ids: DashboardWidgetId[] = ['greeting', 'stats', 'attention'];
+        if (modules.game) ids.push('servers', 'pinned', 'recent');
+        if (modules.vds) ids.push('vds');
+        if (modules.web) ids.push('webspaces');
+        if (modules.game || modules.vds || modules.web) ids.push('usage');
+        if (modules.game)
+            ids.push('status', 'uptime', 'network', 'backups', 'schedules', 'players', 'heatmap', 'trends');
+        ids.push('quick_actions', 'announcements', 'activity', 'notes', 'quick_links', 'clock');
+        if (ticketsEnabled) ids.push('tickets');
+        if (kbEnabled) ids.push('knowledgebase');
+        if (modules.web) ids.push('recent_mails');
+        ids.push('profile');
+        return ids;
+    }, [modules.game, modules.vds, modules.web, ticketsEnabled, kbEnabled]);
+
+    const renderWidget = (id: DashboardWidgetId): ReactNode => {
         switch (id) {
-            case 'recent_mails':
+            case 'greeting':
                 return (
-                    <DashboardBlockChrome key={id} {...chromeProps}>
-                        <DashboardRecentMails />
-                    </DashboardBlockChrome>
+                    <DashboardHero
+                        panelName={settings?.app_name || 'Panel'}
+                        name={user ? user.first_name || user.username : sessionLoading ? null : ''}
+                        subtitle={statusLine ?? t('dashboard.hero.subtitle')}
+                        subtitleTone={statusTone}
+                        onArrange={arranging ? undefined : startArranging}
+                    />
                 );
+            case 'pinned':
+                return <PinnedServersWidget items={pinnedItems} />;
+            case 'recent':
+                return <RecentServersWidget items={recentItems} />;
+            case 'notes':
+                return <NotesWidget value={config.notes} onChange={(notes) => dashboard.update({ notes })} />;
+            case 'quick_links':
+                return (
+                    <QuickLinksWidget
+                        links={config.quickLinks}
+                        onChange={(quickLinks) => dashboard.update({ quickLinks })}
+                    />
+                );
+            case 'clock':
+                return <ClockWidget />;
+            case 'players':
+                return <PlayersWidget items={overview?.servers.items ?? []} loading={loadingOverview} />;
+            case 'heatmap':
+                return <HeatmapWidget cells={heatmapCells} loading={loadingResources} />;
+            case 'trends':
+                return <TrendsWidget history={history} loading={loadingHistory} limits={trendLimits} />;
+            case 'stats':
+                return statsBlock;
+            case 'attention':
+                return attentionBlock;
+            case 'servers':
+            case 'vds':
+            case 'webspaces':
+                return resourceBlock(id);
+            case 'usage':
+                return (
+                    <UsageWidget
+                        overview={overview}
+                        loading={loadingOverview || loadingResources}
+                        vms={vms}
+                        webspaces={webspaceUsage}
+                    />
+                );
+            case 'status':
+                return <StatusWidget overview={overview} loading={loadingOverview} />;
+            case 'uptime':
+                return <UptimeWidget overview={overview} loading={loadingOverview} />;
+            case 'network':
+                return <NetworkWidget overview={overview} loading={loadingOverview} webspaces={webspaceUsage} />;
+            case 'backups':
+                return <BackupsWidget overview={overview} loading={loadingOverview} />;
+            case 'schedules':
+                return <SchedulesWidget overview={overview} loading={loadingOverview} />;
+            case 'quick_actions':
+                return <QuickActionsWidget actions={quickActions} />;
             case 'announcements':
-                return (
-                    <DashboardBlockChrome key={id} {...chromeProps}>
-                        <AnnouncementBanner />
-                    </DashboardBlockChrome>
-                );
-            case 'resources':
-                return (
-                    <DashboardBlockChrome key={id} {...chromeProps}>
-                        {resourcesSection}
-                    </DashboardBlockChrome>
-                );
-            case 'tickets': {
-                const enabled = isEnabled(settings?.ticket_system_enabled);
-                if (!enabled && !isCustomizing) return null;
-                return (
-                    <DashboardBlockChrome key={id} {...chromeProps}>
-                        {enabled ? (
-                            <div className='space-y-6'>
-                                <TicketList t={t} />
-                            </div>
-                        ) : (
-                            <p className='text-muted-foreground border-border/60 rounded-lg border border-dashed p-4 text-sm'>
-                                {t('dashboard.layout.feature_disabled')}
-                            </p>
-                        )}
-                    </DashboardBlockChrome>
-                );
-            }
-            case 'knowledgebase': {
-                const enabled = isEnabled(settings?.knowledgebase_enabled);
-                if (!enabled && !isCustomizing) return null;
-                return (
-                    <DashboardBlockChrome key={id} {...chromeProps}>
-                        {enabled ? (
-                            <div className='space-y-6'>
-                                <KnowledgeBaseList t={t} />
-                            </div>
-                        ) : (
-                            <p className='text-muted-foreground border-border/60 rounded-lg border border-dashed p-4 text-sm'>
-                                {t('dashboard.layout.feature_disabled')}
-                            </p>
-                        )}
-                    </DashboardBlockChrome>
-                );
-            }
+                return <AnnouncementBanner compact />;
+            case 'activity':
+                return activityBlock;
+            case 'tickets':
+                return <TicketList t={t} tickets={tickets} loading={loadingTickets} />;
+            case 'knowledgebase':
+                return <KnowledgeBaseList t={t} />;
+            case 'recent_mails':
+                return <DashboardRecentMails />;
+            case 'profile':
+                return profileBlock;
             default:
                 return null;
         }
     };
 
-    const renderRightBlock = (id: DashboardRightBlockId) => {
-        const idx = rightOrder.indexOf(id);
-        const chromeProps = {
-            blockId: id as DashboardBlockId,
-            isCustomizing,
-            hiddenBlocks: hidden,
-            onToggleHidden: toggleHidden,
-            removeLabel: t('dashboard.layout.remove_block'),
-            moveUpLabel: t('dashboard.layout.move_up'),
-            moveDownLabel: t('dashboard.layout.move_down'),
-            moveControls: isCustomizing
-                ? {
-                      canUp: idx > 0,
-                      canDown: idx >= 0 && idx < rightOrder.length - 1,
-                      onUp: () => moveInRight(id, -1),
-                      onDown: () => moveInRight(id, 1),
-                  }
-                : undefined,
-            onRemoveFromLayout: isCustomizing ? () => removeFromRight(id) : undefined,
-        };
+    const visibleIds = config.widgets.map((w) => w.id).filter((id) => availableWidgets.includes(id));
 
-        if (id === 'profile') {
-            if (!user) return null;
-            return (
-                <DashboardBlockChrome key={id} {...chromeProps}>
-                    {profileBlock}
-                </DashboardBlockChrome>
-            );
-        }
-
-        return (
-            <DashboardBlockChrome key={id} {...chromeProps}>
-                {activityBlock}
-            </DashboardBlockChrome>
+    const moveBy = (id: DashboardWidgetId, direction: -1 | 1) => {
+        const at = visibleIds.indexOf(id);
+        const neighbour = visibleIds[at + direction];
+        if (!neighbour) return;
+        dashboard.moveWidget(
+            id,
+            config.widgets.findIndex((w) => w.id === neighbour),
         );
     };
 
-    const availablePanel =
-        isCustomizing && (leftAvailable.length > 0 || rightAvailable.length > 0) ? (
-            <div className='border-primary/30 bg-primary/5 space-y-3 rounded-xl border border-dashed p-4'>
-                <p className='text-foreground text-sm font-medium'>{t('dashboard.layout.available_widgets')}</p>
-                <div className='flex flex-wrap gap-2'>
-                    {leftAvailable.map((id) => (
-                        <button
-                            key={id}
-                            type='button'
-                            onClick={() => addToLeft(id)}
-                            className='bg-background border-border hover:border-primary/40 rounded-lg border px-3 py-1.5 text-xs transition-colors'
-                        >
-                            {blockLabel(id)} {t('dashboard.layout.add_to_main')}
-                        </button>
-                    ))}
-                    {rightAvailable.map((id) => (
-                        <button
-                            key={id}
-                            type='button'
-                            onClick={() => addToRight(id)}
-                            className='bg-background border-border hover:border-primary/40 rounded-lg border px-3 py-1.5 text-xs transition-colors'
-                        >
-                            {blockLabel(id)} {t('dashboard.layout.add_to_side')}
-                        </button>
-                    ))}
-                </div>
-            </div>
-        ) : null;
+    const dropOn = (targetId: DashboardWidgetId, draggedId: string, after: boolean) => {
+        const from = config.widgets.findIndex((w) => w.id === draggedId);
+        const target = config.widgets.findIndex((w) => w.id === targetId);
+        if (from < 0 || target < 0) return;
+        let to = after ? target + 1 : target;
+        if (from < to) to -= 1;
+        dashboard.moveWidget(draggedId as DashboardWidgetId, to);
+    };
 
-    const mainColumn = (
-        <div className={cn('space-y-6 md:space-y-8 lg:col-span-2', !columnsReversed ? 'lg:order-1' : 'lg:order-2')}>
-            {leftOrder.map((id) => {
-                const node = renderLeftBlock(id);
-                if (!node) return null;
-                return (
-                    <div
-                        key={id}
-                        className={cn(
-                            'transition-all duration-500',
-                            !isVisible(id as DashboardBlockId, isCustomizing) && 'hidden',
-                        )}
+    const placed: PlacedWidget[] = config.widgets
+        .filter((w) => availableWidgets.includes(w.id))
+        .map((w) => {
+            const node = renderWidget(w.id);
+            const empty = node === null || node === undefined || node === false;
+            if (!arranging) return { ...w, node: empty ? null : node };
+            const index = visibleIds.indexOf(w.id);
+            return {
+                ...w,
+                node: (
+                    <ArrangeFrame
+                        id={w.id}
+                        label={t(WIDGET_LABEL_KEYS[w.id])}
+                        size={w.size}
+                        canShrink={stepWidgetSize(w.id, w.size, -1) !== null}
+                        canGrow={stepWidgetSize(w.id, w.size, 1) !== null}
+                        isFirst={index === 0}
+                        isLast={index === visibleIds.length - 1}
+                        onMove={(direction) => moveBy(w.id, direction)}
+                        onResize={(direction) => dashboard.stepSize(w.id, direction)}
+                        onHide={() => dashboard.removeWidget(w.id)}
+                        onDropWidget={(dragged, after) => dropOn(w.id, dragged, after)}
                     >
-                        {node}
-                    </div>
-                );
-            })}
-        </div>
-    );
+                        {empty ? <ArrangePlaceholder /> : node}
+                    </ArrangeFrame>
+                ),
+            };
+        })
+        .filter((w) => w.node !== null);
 
-    const sideColumn = (
-        <div className={cn('space-y-8', !columnsReversed ? 'lg:order-2' : 'lg:order-1')}>
-            {rightOrder.map((id) => {
-                const node = renderRightBlock(id);
-                if (!node) return null;
-                return (
-                    <div
-                        key={id}
-                        className={cn(
-                            'transition-all duration-500',
-                            !isVisible(id as DashboardBlockId, isCustomizing) && 'hidden',
-                        )}
-                    >
-                        {node}
-                    </div>
-                );
-            })}
-        </div>
-    );
+    const hiddenItems = availableWidgets
+        .filter((id) => !config.widgets.some((w) => w.id === id))
+        .map((id) => ({ id, label: t(WIDGET_LABEL_KEYS[id]) }));
 
     return (
-        <div className='space-y-8'>
+        <div className={cn(compact ? 'space-y-3' : 'space-y-5')}>
             <WidgetRenderer widgets={getWidgets('dashboard', 'top-of-page')} {...pluginWidgetProps} />
 
-            {!heroAtBottom && (
-                <div className={cn('transition-all duration-500', !isVisible('hero', isCustomizing) && 'hidden')}>
-                    {heroSection}
+            {arranging && (
+                <ArrangeBar
+                    onOptions={() => setCustomizeOpen(true)}
+                    onReset={dashboard.reset}
+                    onSaveDefault={canSaveDefault ? () => void saveDefault() : undefined}
+                    savingDefault={savingDefault}
+                    onCancel={cancelArranging}
+                    onDone={() => setArranging(false)}
+                />
+            )}
+
+            <WidgetRenderer widgets={getWidgets('dashboard', 'before-server-list')} {...pluginWidgetProps} />
+
+            <DashboardPackedGrid
+                items={placed}
+                compact={compact}
+                mirrored={config.sideFirst}
+                className={dashboard.loaded ? undefined : 'opacity-0'}
+            />
+
+            {arranging ? (
+                <HiddenTray items={hiddenItems} onAdd={(id) => dashboard.addWidget(id as DashboardWidgetId)} />
+            ) : (
+                <div className='flex justify-end'>
+                    <button
+                        type='button'
+                        onClick={startArranging}
+                        className='text-muted-foreground hover:text-primary inline-flex items-center gap-1.5 text-xs font-medium transition-colors'
+                    >
+                        <LayoutGrid className='h-3.5 w-3.5' aria-hidden />
+                        {t('dashboard.arrange.open_long')}
+                    </button>
                 </div>
             )}
 
-            <div className='grid grid-cols-1 gap-4 md:gap-6 lg:grid-cols-3 lg:gap-8'>
-                {mainColumn}
-                {sideColumn}
-            </div>
-
-            {availablePanel}
-
-            {heroAtBottom && (
-                <div className={cn('transition-all duration-500', !isVisible('hero', isCustomizing) && 'hidden')}>
-                    {heroSection}
-                </div>
-            )}
-
+            <WidgetRenderer widgets={getWidgets('dashboard', 'after-server-list')} {...pluginWidgetProps} />
             <WidgetRenderer widgets={getWidgets('dashboard', 'bottom-of-page')} {...pluginWidgetProps} />
+
+            <DashboardCustomizeSheet
+                open={customizeOpen}
+                onOpenChange={setCustomizeOpen}
+                api={dashboard}
+                availableWidgets={availableWidgets}
+            />
         </div>
     );
 }

@@ -38,7 +38,7 @@ export function AuthPageHeader({
             {icon ? (
                 <div
                     className={cn(
-                        'bg-primary/12 text-primary ring-primary/15 mb-1 inline-flex h-12 w-12 items-center justify-center rounded-2xl ring-1 [&>svg]:h-6 [&>svg]:w-6',
+                        'fp-icon-tile mb-1 inline-flex h-12 w-12 items-center justify-center rounded-xl [&>svg]:h-6 [&>svg]:w-6',
                         align === 'center' && 'mx-auto',
                     )}
                 >
@@ -92,7 +92,7 @@ export function AuthAlert({
 }
 
 export function AuthPanel({ children, className }: { children: ReactNode; className?: string }) {
-    return <div className={cn('bg-card rounded-lg p-6 shadow-xl sm:p-8', className)}>{children}</div>;
+    return <div className={cn('fp-surface rounded-2xl border p-6 sm:p-8', className)}>{children}</div>;
 }
 
 export function AuthPage({
@@ -113,13 +113,10 @@ export function AuthPage({
 
 export function AuthDivider({ label }: { label: string }) {
     return (
-        <div className='relative py-0.5'>
-            <div className='absolute inset-0 flex items-center' aria-hidden>
-                <div className='border-border/70 w-full border-t' />
-            </div>
-            <div className='relative flex justify-center text-[10px] font-medium tracking-[0.14em] uppercase'>
-                <span className='bg-card/90 text-muted-foreground px-3'>{label}</span>
-            </div>
+        <div className='flex items-center gap-3 py-0.5'>
+            <span className='h-px flex-1 bg-[var(--fp-surface-border)]' aria-hidden />
+            <span className='text-muted-foreground text-xs'>{label}</span>
+            <span className='h-px flex-1 bg-[var(--fp-surface-border)]' aria-hidden />
         </div>
     );
 }
@@ -159,7 +156,7 @@ export function AuthFooterPrompt({
 export function AuthLoadingState({ label }: { label: string }) {
     return (
         <div className='flex flex-col items-center justify-center gap-3 py-14'>
-            <div className='border-border/60 bg-card/50 flex h-12 w-12 items-center justify-center rounded-2xl border'>
+            <div className='fp-icon-tile flex h-12 w-12 items-center justify-center rounded-xl'>
                 <Loader2 className='text-primary h-5 w-5 animate-spin' />
             </div>
             <p className='text-muted-foreground text-sm'>{label}</p>
@@ -212,14 +209,9 @@ export function AuthMetaGrid({ items }: { items: { label: string; value: ReactNo
             {items.map((item) => (
                 <div
                     key={item.label}
-                    className={cn(
-                        'border-border/60 bg-muted/25 rounded-xl border px-3.5 py-3',
-                        item.wide && 'sm:col-span-2',
-                    )}
+                    className={cn('fp-surface-inset rounded-xl border px-3.5 py-3', item.wide && 'sm:col-span-2')}
                 >
-                    <p className='text-muted-foreground text-[11px] font-medium tracking-wide uppercase'>
-                        {item.label}
-                    </p>
+                    <p className='text-muted-foreground text-xs'>{item.label}</p>
                     <div className='text-foreground mt-1 text-sm font-medium break-all'>{item.value}</div>
                 </div>
             ))}

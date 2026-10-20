@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { TipCard, TipGrid } from '@/components/featherui/TipCard';
 import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
@@ -22,15 +23,14 @@ import axios from 'axios';
 import { Plus, Search, Pencil, Trash2, Ticket as TicketIcon, Tags, Info, HelpCircle } from 'lucide-react';
 import Image from 'next/image';
 import { PageHeader } from '@/components/featherui/PageHeader';
-import { ResourceCard } from '@/components/featherui/ResourceCard';
+import { ResourceCard, ResourceTable } from '@/components/featherui/ResourceCard';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
-import { EmptyState } from '@/components/featherui/EmptyState';
+import { ListEmptyState } from '@/components/featherui/ListEmptyState';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { Sheet, SheetDescription, SheetHeader, SheetTitle, SheetFooter } from '@/components/ui/sheet';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { PageCard } from '@/components/featherui/PageCard';
 import { cn, resolveAttachmentUrl } from '@/lib/utils';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 
@@ -229,7 +229,7 @@ export default function TicketCategoriesPage() {
                     }
                 />
 
-                <div className='bg-card/40 flex flex-col items-center gap-4 rounded-2xl p-4 shadow-sm backdrop-blur-md sm:flex-row'>
+                <div className='fp-surface flex flex-col items-center gap-4 rounded-2xl border p-4 sm:flex-row'>
                     <div className='group relative w-full flex-1'>
                         <Search className='text-muted-foreground group-focus-within:text-primary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transition-colors' />
                         <Input
@@ -244,12 +244,10 @@ export default function TicketCategoriesPage() {
                 {loading ? (
                     <TableSkeleton count={5} />
                 ) : filteredCategories.length === 0 ? (
-                    <EmptyState
+                    <ListEmptyState
                         icon={Tags}
-                        title={t('admin.tickets.categories.no_results') || t('admin.tickets.no_results')}
-                        description={
-                            t('admin.tickets.categories.search_placeholder') || t('admin.tickets.search_placeholder')
-                        }
+                        title={t('emptyStates.ticketCategories.title')}
+                        description={t('emptyStates.ticketCategories.description')}
                         action={
                             <Button
                                 onClick={() => {
@@ -260,9 +258,11 @@ export default function TicketCategoriesPage() {
                                 {t('admin.tickets.categories.create')}
                             </Button>
                         }
+                        filtered={Boolean(search.trim())}
+                        onClearFilters={() => setSearch('')}
                     />
                 ) : (
-                    <div className='grid grid-cols-1 gap-4'>
+                    <ResourceTable>
                         {filteredCategories.map((category) => (
                             <ResourceCard
                                 key={category.id}
@@ -316,7 +316,7 @@ export default function TicketCategoriesPage() {
                                 }
                             />
                         ))}
-                    </div>
+                    </ResourceTable>
                 )}
 
                 <Sheet open={createOpen} onOpenChange={setCreateOpen}>
@@ -382,7 +382,7 @@ export default function TicketCategoriesPage() {
                                 <Input
                                     value={formData.open_hours}
                                     onChange={(e) => setFormData({ ...formData, open_hours: e.target.value })}
-                                    placeholder='Mon-Fri 9AM-5PM'
+                                    placeholder={t('ui.admin.tickets.categories.monFri9AM5PM')}
                                 />
                             </div>
                             <SheetFooter>
@@ -457,7 +457,7 @@ export default function TicketCategoriesPage() {
                                 <Input
                                     value={formData.open_hours}
                                     onChange={(e) => setFormData({ ...formData, open_hours: e.target.value })}
-                                    placeholder='Mon-Fri 9AM-5PM'
+                                    placeholder={t('ui.admin.tickets.categories.monFri9AM5PM')}
                                 />
                             </div>
                             <SheetFooter>
@@ -469,27 +469,23 @@ export default function TicketCategoriesPage() {
                     </div>
                 </Sheet>
 
-                <div className='grid grid-cols-1 gap-6 pt-10 md:grid-cols-3'>
-                    <PageCard title={t('admin.tickets.categories.help.managing.title')} icon={Tags}>
+                <TipGrid>
+                    <TipCard title={t('admin.tickets.categories.help.managing.title')} icon={Tags}>
                         <p className='text-muted-foreground text-sm leading-relaxed'>
                             {t('admin.tickets.categories.help.managing.description')}
                         </p>
-                    </PageCard>
-                    <PageCard title={t('admin.tickets.categories.help.emails.title')} icon={Info}>
+                    </TipCard>
+                    <TipCard title={t('admin.tickets.categories.help.emails.title')} icon={Info}>
                         <p className='text-muted-foreground text-sm leading-relaxed'>
                             {t('admin.tickets.categories.help.emails.description')}
                         </p>
-                    </PageCard>
-                    <PageCard
-                        title={t('admin.tickets.categories.help.icons.title')}
-                        icon={HelpCircle}
-                        variant='warning'
-                    >
+                    </TipCard>
+                    <TipCard title={t('admin.tickets.categories.help.icons.title')} icon={HelpCircle} variant='warning'>
                         <p className='text-muted-foreground text-sm leading-relaxed'>
                             {t('admin.tickets.categories.help.icons.description')}
                         </p>
-                    </PageCard>
-                </div>
+                    </TipCard>
+                </TipGrid>
             </div>
             <WidgetRenderer widgets={getWidgets('admin-tickets-categories', 'bottom-of-page')} />
         </>

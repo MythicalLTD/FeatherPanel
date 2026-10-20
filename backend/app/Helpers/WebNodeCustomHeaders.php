@@ -153,7 +153,7 @@ class WebNodeCustomHeaders
     }
 
     /**
-     * JSON for admin API — secret values are never returned.
+     * JSON for admin API - secret values are never returned.
      */
     public static function redactForAdmin(?string $raw): ?string
     {

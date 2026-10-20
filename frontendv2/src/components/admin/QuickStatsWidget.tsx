@@ -18,6 +18,20 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import Link from 'next/link';
 import { SkeletonLine } from './AdminWidgetLoading';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { useSettings } from '@/contexts/SettingsContext';
+import { getModuleForPath, getModuleStates } from '@/lib/modules';
+import { ModuleBadge } from '@/components/ui/module-badge';
+import { cn } from '@/lib/utils';
+
+/** Columns per visible tile count, so the row always spans the full width. */
+const STAT_GRID: Record<number, string> = {
+    1: 'grid-cols-1',
+    2: 'grid-cols-2',
+    3: 'grid-cols-2 sm:grid-cols-3',
+    4: 'grid-cols-2 lg:grid-cols-4',
+    5: 'grid-cols-2 sm:grid-cols-3 2xl:grid-cols-5',
+    6: 'grid-cols-2 sm:grid-cols-3 2xl:grid-cols-6',
+};
 
 interface QuickStatsWidgetProps {
     stats?: {
@@ -33,8 +47,10 @@ interface QuickStatsWidgetProps {
 
 export function QuickStatsWidget({ stats, loading }: QuickStatsWidgetProps) {
     const { t } = useTranslation();
+    const { settings } = useSettings();
+    const modules = getModuleStates(settings);
 
-    const items = [
+    const allItems = [
         {
             name: t('admin.stats.total_servers'),
             value: stats?.servers,
@@ -66,33 +82,39 @@ export function QuickStatsWidget({ stats, loading }: QuickStatsWidgetProps) {
             href: '/admin/vm-instances',
         },
     ];
+    const items = allItems
+        .map((item) => ({ ...item, module: getModuleForPath(item.href) }))
+        .filter((item) => !item.module || modules[item.module]);
 
     return (
-        <div className='border-border/50 bg-card/50 grid grid-cols-2 overflow-hidden rounded-2xl border backdrop-blur-sm sm:grid-cols-3 xl:grid-cols-6'>
-            {items.map((item) => (
+        <div className={cn('grid gap-3', STAT_GRID[items.length] ?? STAT_GRID[6])}>
+            {items.map((item, index) => (
                 <Link
                     key={item.href}
                     href={item.href}
-                    className='group border-border/30 hover:bg-primary/5 min-w-0 border-r border-b px-4 py-3 transition-colors sm:py-4'
+                    className={cn(
+                        'group fp-surface fp-surface-interactive min-w-0 rounded-xl border p-4',
+                        // An odd tile left over in the two column phone grid takes the whole row.
+                        items.length % 2 === 1 && index === items.length - 1 && 'col-span-2 sm:col-span-1',
+                    )}
                 >
-                    <div className='min-w-0 space-y-1.5'>
-                        <p className='text-muted-foreground group-hover:text-foreground text-xs leading-relaxed'>
-                            {item.name}
-                        </p>
-                        <p
-                            className='text-2xl font-semibold tracking-tight tabular-nums sm:text-3xl'
-                            aria-busy={loading}
-                        >
-                            {loading ? (
-                                <span className='flex h-9 items-center' role='status'>
-                                    <SkeletonLine className='h-7 w-12' />
-                                    <span className='sr-only'>{t('common.loading')}</span>
-                                </span>
-                            ) : (
-                                (item.value?.toLocaleString() ?? t('common.unknown'))
-                            )}
-                        </p>
-                    </div>
+                    <p className='text-muted-foreground group-hover:text-foreground flex min-w-0 items-center gap-1.5 text-xs'>
+                        <span className='truncate'>{item.name}</span>
+                        {item.module && <ModuleBadge module={item.module} />}
+                    </p>
+                    <p
+                        className='mt-1.5 text-2xl font-semibold tracking-tight tabular-nums sm:text-3xl'
+                        aria-busy={loading}
+                    >
+                        {loading ? (
+                            <span className='flex h-9 items-center' role='status'>
+                                <SkeletonLine className='h-7 w-12' />
+                                <span className='sr-only'>{t('common.loading')}</span>
+                            </span>
+                        ) : (
+                            (item.value?.toLocaleString() ?? t('common.unknown'))
+                        )}
+                    </p>
                 </Link>
             ))}
         </div>

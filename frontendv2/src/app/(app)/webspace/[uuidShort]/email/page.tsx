@@ -452,9 +452,9 @@ export default function WebSpaceEmailPage() {
                 <PageHeader
                     title={t('webSpaces.email.title')}
                     description={
-                        <div className='flex items-center gap-3'>
+                        <div className='flex flex-wrap items-center gap-x-3 gap-y-2'>
                             <span>{t('webSpaces.email.description')}</span>
-                            <span className='bg-primary/5 text-primary border-primary/20 rounded-full border px-3 py-1 text-[10px] font-black tracking-widest uppercase'>
+                            <span className='bg-primary/5 text-primary border-primary/20 rounded-full border px-3 py-1 text-[10px] font-black tracking-widest whitespace-nowrap uppercase'>
                                 {rows.length}
                                 {mailboxLimit > 0 ? ` / ${mailboxLimit}` : ''}
                             </span>
@@ -790,13 +790,13 @@ export default function WebSpaceEmailPage() {
                 )}
 
                 {dns?.client_settings && (
-                    <div className='border-border/50 bg-card/50 rounded-xl border p-4 backdrop-blur-xl'>
+                    <div className='fp-surface rounded-xl border p-4'>
                         <h3 className='mb-2 text-sm font-medium'>{t('webSpaces.email.clientSettings')}</h3>
                         <p className='text-muted-foreground font-mono text-xs'>
-                            IMAP {dns.client_settings.imap_host}:{dns.client_settings.imap_port} (
-                            {dns.client_settings.imap_encryption}){' · '}
-                            SMTP {dns.client_settings.smtp_host}:{dns.client_settings.smtp_port} (
-                            {dns.client_settings.smtp_encryption})
+                            {t('ui.webspace.email.iMAP')} {dns.client_settings.imap_host}:
+                            {dns.client_settings.imap_port} ({dns.client_settings.imap_encryption}){' · '}
+                            {t('ui.webspace.email.sMTP')} {dns.client_settings.smtp_host}:
+                            {dns.client_settings.smtp_port} ({dns.client_settings.smtp_encryption})
                         </p>
                     </div>
                 )}
@@ -807,10 +807,7 @@ export default function WebSpaceEmailPage() {
                         <p className='text-muted-foreground text-sm'>{t('webSpaces.email.deliverability.help')}</p>
                         <div className='grid grid-cols-1 gap-4'>
                             {deliverability.map((block) => (
-                                <div
-                                    key={block.domain}
-                                    className='border-border/50 bg-card/50 rounded-xl border p-4 backdrop-blur-xl'
-                                >
+                                <div key={block.domain} className='fp-surface rounded-xl border p-4'>
                                     <div className='mb-3 flex flex-wrap items-center justify-between gap-2'>
                                         <p className='font-mono text-sm font-medium'>{block.domain}</p>
                                         <span
@@ -868,10 +865,7 @@ export default function WebSpaceEmailPage() {
                         <h2 className='text-lg font-semibold'>{t('webSpaces.email.dnsChecklist')}</h2>
                         <div className='grid grid-cols-1 gap-4'>
                             {dns.domains.map((block) => (
-                                <div
-                                    key={block.domain}
-                                    className='border-border/50 bg-card/50 rounded-xl border p-4 backdrop-blur-xl'
-                                >
+                                <div key={block.domain} className='fp-surface rounded-xl border p-4'>
                                     <div className='mb-2 flex flex-wrap items-center justify-between gap-2'>
                                         <p className='font-mono text-sm font-medium'>{block.domain}</p>
                                         <div className='flex flex-wrap items-center gap-2'>
@@ -1123,12 +1117,18 @@ export default function WebSpaceEmailPage() {
                             )}
                             {viewingMailbox.imap_host && (
                                 <p>
-                                    IMAP {viewingMailbox.imap_host}:{viewingMailbox.imap_port}
+                                    {t('ui.webspace.email.iMAPImapHostImapPort', {
+                                        imap_host: String(viewingMailbox.imap_host),
+                                        imap_port: String(viewingMailbox.imap_port),
+                                    })}
                                 </p>
                             )}
                             {viewingMailbox.smtp_host && (
                                 <p>
-                                    SMTP {viewingMailbox.smtp_host}:{viewingMailbox.smtp_port}
+                                    {t('ui.webspace.email.sMTPSmtpHostSmtpPort', {
+                                        smtp_host: String(viewingMailbox.smtp_host),
+                                        smtp_port: String(viewingMailbox.smtp_port),
+                                    })}
                                 </p>
                             )}
                         </div>

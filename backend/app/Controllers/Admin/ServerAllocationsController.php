@@ -155,9 +155,10 @@ class ServerAllocationsController
             $data = json_decode($request->getContent(), true);
             $allocationId = $data['allocation_id'] ?? null;
 
-            if (!$allocationId) {
+            if (!$allocationId || !is_numeric($allocationId)) {
                 return ApiResponse::error('Allocation ID is required', 'MISSING_ALLOCATION_ID', 400);
             }
+            $allocationId = (int) $allocationId;
 
             // Get server details
             $server = Server::getServerById($serverId);
@@ -378,8 +379,6 @@ class ServerAllocationsController
                 return ApiResponse::error('Allocation not found', 'ALLOCATION_NOT_FOUND', 404);
             }
 
-            $previousPrimaryAllocationId = (int) ($server['allocation_id'] ?? 0);
-
             // Allocation can be used as primary if it is already on this server OR currently unassigned.
             // If unassigned, attach it first (respecting allocation limit). Never steal from another server.
             $allocationServerId = (int) ($allocation['server_id'] ?? 0);
@@ -401,26 +400,11 @@ class ServerAllocationsController
                 }
             }
 
-            // Update the server's primary allocation
+            // Update the server's primary allocation pointer only.
+            // Keep the previous primary assigned - "set primary" must not drop other allocations.
             $success = Server::updateServerById($serverId, ['allocation_id' => $allocationId]);
             if (!$success) {
                 return ApiResponse::error('Failed to set primary allocation', 'PRIMARY_ALLOCATION_UPDATE_FAILED', 500);
-            }
-
-            // "Replace" semantics for default allocation:
-            // once new primary is selected, detach previous primary if it was different.
-            if ($previousPrimaryAllocationId > 0 && $previousPrimaryAllocationId !== $allocationId) {
-                $previousPrimary = Allocation::getById($previousPrimaryAllocationId);
-                if ($previousPrimary && (int) ($previousPrimary['server_id'] ?? 0) === $serverId) {
-                    $unassigned = Allocation::unassignFromServer($previousPrimaryAllocationId);
-                    if (!$unassigned) {
-                        return ApiResponse::error(
-                            'Failed to unassign previous primary allocation',
-                            'PRIMARY_ALLOCATION_CLEANUP_FAILED',
-                            500
-                        );
-                    }
-                }
             }
 
             // Sync with Wings daemon

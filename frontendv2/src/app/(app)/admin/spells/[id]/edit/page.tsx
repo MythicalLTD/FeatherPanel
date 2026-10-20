@@ -26,7 +26,8 @@ import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { Textarea } from '@/components/featherui/Textarea';
 import { Select } from '@/components/ui/select-native';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent, TabsTrigger } from '@/components/ui/tabs';
+import { ScrollableTabsList } from '@/components/ui/scrollable-tabs-list';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
@@ -51,6 +52,8 @@ import { SpellInheritanceField } from '@/components/admin/SpellInheritanceField'
 import { SpellConfigField } from '@/components/admin/SpellConfigField';
 import { spellConfigPayload, spellConfigText } from '@/lib/spellConfig';
 import { isEnabled } from '@/lib/utils';
+import { UnsavedChangesBar } from '@/components/featherui/UnsavedChangesBar';
+import { useFormBaseline } from '@/hooks/useFormBaseline';
 
 interface Variable {
     id: number;
@@ -118,6 +121,11 @@ export default function EditSpellPage() {
     const [defaultDockerImage, setDefaultDockerImage] = useState('');
     const [features, setFeatures] = useState<string[]>([]);
     const [inheritFeatures, setInheritFeatures] = useState(false);
+    const {
+        dirty: unsaved,
+        markClean,
+        restore: restoreSaved,
+    } = useFormBaseline({ form, dockerImages, defaultDockerImage, features, inheritFeatures });
 
     const { fetchWidgets, getWidgets } = usePluginWidgets('admin-spells-edit');
 
@@ -180,12 +188,13 @@ export default function EditSpellPage() {
                 toast.error(getApiErrorMessage(error, t, 'admin.spells.messages.fetch_failed'));
                 router.push('/admin/spells');
             } finally {
+                markClean();
                 setLoading(false);
             }
         };
 
         fetchSpell();
-    }, [spellId, router, t]);
+    }, [spellId, router, t, markClean]);
 
     useEffect(() => {
         const fetchVariables = async () => {
@@ -400,14 +409,14 @@ export default function EditSpellPage() {
             <WidgetRenderer widgets={getWidgets('admin-spells-edit', 'after-header')} context={{ id: spellId }} />
 
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-                <TabsList className='grid w-full grid-cols-6'>
+                <ScrollableTabsList className='flex h-auto w-full md:grid md:grid-cols-6'>
                     <TabsTrigger value='general'>{t('admin.spells.tabs.general')}</TabsTrigger>
                     <TabsTrigger value='docker'>{t('admin.spells.tabs.docker')}</TabsTrigger>
                     <TabsTrigger value='features'>{t('admin.spells.tabs.features')}</TabsTrigger>
                     <TabsTrigger value='config'>{t('admin.spells.tabs.config')}</TabsTrigger>
                     <TabsTrigger value='script'>{t('admin.spells.tabs.script')}</TabsTrigger>
                     <TabsTrigger value='variables'>{t('admin.spells.tabs.variables')}</TabsTrigger>
-                </TabsList>
+                </ScrollableTabsList>
 
                 <TabsContent value='general' className='space-y-4'>
                     <PageCard title={t('admin.spells.form.basic_information')} icon={Sparkles}>
@@ -721,7 +730,7 @@ export default function EditSpellPage() {
                             footer={
                                 <div className='flex justify-end gap-2'>
                                     <Button size='sm' variant='outline' onClick={cancelVariableEdit}>
-                                        Cancel
+                                        {t('common.cancel')}
                                     </Button>
                                     <Button size='sm' onClick={submitVariable}>
                                         <Plus className='mr-2 h-4 w-4' />
@@ -737,7 +746,7 @@ export default function EditSpellPage() {
                                         <Input
                                             value={variableForm.name}
                                             onChange={(e) => setVariableForm({ ...variableForm, name: e.target.value })}
-                                            placeholder='Server Port'
+                                            placeholder={t('ui.admin.spells.edit.serverPort')}
                                         />
                                     </div>
                                     <div className='space-y-2'>
@@ -758,7 +767,7 @@ export default function EditSpellPage() {
                                         onChange={(e) =>
                                             setVariableForm({ ...variableForm, description: e.target.value })
                                         }
-                                        placeholder='The port that the server will run on'
+                                        placeholder={t('ui.admin.spells.edit.thePortThatTheServerWill')}
                                         rows={2}
                                     />
                                 </div>
@@ -868,7 +877,7 @@ export default function EditSpellPage() {
                                                         loading={deletingVariable}
                                                         onClick={() => deleteVariable(variable)}
                                                     >
-                                                        Confirm
+                                                        {t('common.confirm')}
                                                     </Button>
                                                     <Button
                                                         size='sm'
@@ -876,7 +885,7 @@ export default function EditSpellPage() {
                                                         disabled={deletingVariable}
                                                         onClick={() => setConfirmDeleteVariable(null)}
                                                     >
-                                                        Cancel
+                                                        {t('common.cancel')}
                                                     </Button>
                                                 </>
                                             ) : (
@@ -896,7 +905,7 @@ export default function EditSpellPage() {
                                     editingVariable?.id === variable.id && (
                                         <div className='flex justify-end gap-2'>
                                             <Button size='sm' variant='outline' onClick={cancelVariableEdit}>
-                                                Cancel
+                                                {t('common.cancel')}
                                             </Button>
                                             <Button size='sm' onClick={submitVariable}>
                                                 <Pencil className='mr-2 h-4 w-4' />
@@ -1043,13 +1052,17 @@ export default function EditSpellPage() {
                                         <div className='grid grid-cols-2 gap-4 text-sm'>
                                             <div className='space-y-2'>
                                                 <div className='flex justify-between'>
-                                                    <span className='text-muted-foreground'>Default Value:</span>
+                                                    <span className='text-muted-foreground'>
+                                                        {t('ui.admin.spells.edit.defaultValue')}
+                                                    </span>
                                                     <span className='font-mono text-xs'>
                                                         {variable.default_value || '-'}
                                                     </span>
                                                 </div>
                                                 <div className='flex justify-between'>
-                                                    <span className='text-muted-foreground'>Field Type:</span>
+                                                    <span className='text-muted-foreground'>
+                                                        {t('ui.admin.spells.edit.fieldType')}
+                                                    </span>
                                                     <Badge variant='outline' className='text-xs'>
                                                         {variable.field_type || 'text'}
                                                     </Badge>
@@ -1057,32 +1070,42 @@ export default function EditSpellPage() {
                                             </div>
                                             <div className='space-y-2'>
                                                 <div className='flex justify-between'>
-                                                    <span className='text-muted-foreground'>User Viewable:</span>
+                                                    <span className='text-muted-foreground'>
+                                                        {t('ui.admin.spells.edit.userViewable')}
+                                                    </span>
                                                     <Badge
                                                         variant={
                                                             isEnabled(variable.user_viewable) ? 'default' : 'secondary'
                                                         }
                                                         className='text-xs'
                                                     >
-                                                        {isEnabled(variable.user_viewable) ? 'Yes' : 'No'}
+                                                        {isEnabled(variable.user_viewable)
+                                                            ? t('common.yes')
+                                                            : t('common.no')}
                                                     </Badge>
                                                 </div>
                                                 <div className='flex justify-between'>
-                                                    <span className='text-muted-foreground'>User Editable:</span>
+                                                    <span className='text-muted-foreground'>
+                                                        {t('ui.admin.spells.edit.userEditable')}
+                                                    </span>
                                                     <Badge
                                                         variant={
                                                             isEnabled(variable.user_editable) ? 'default' : 'secondary'
                                                         }
                                                         className='text-xs'
                                                     >
-                                                        {isEnabled(variable.user_editable) ? 'Yes' : 'No'}
+                                                        {isEnabled(variable.user_editable)
+                                                            ? t('common.yes')
+                                                            : t('common.no')}
                                                     </Badge>
                                                 </div>
                                             </div>
                                         </div>
                                         {variable.rules && (
                                             <div className='border-t pt-2 text-sm'>
-                                                <span className='text-muted-foreground'>Validation Rules:</span>
+                                                <span className='text-muted-foreground'>
+                                                    {t('ui.admin.spells.edit.validationRules')}
+                                                </span>
                                                 <code className='bg-muted ml-2 rounded px-2 py-1 font-mono text-xs'>
                                                     {variable.rules}
                                                 </code>
@@ -1107,6 +1130,21 @@ export default function EditSpellPage() {
             </Tabs>
 
             <WidgetRenderer widgets={getWidgets('admin-spells-edit', 'bottom-of-page')} context={{ id: spellId }} />
+
+            <UnsavedChangesBar
+                dirty={unsaved}
+                saving={saving}
+                onSave={() => void handleSave()}
+                onDiscard={() => {
+                    const saved = restoreSaved();
+                    if (!saved) return;
+                    setForm(saved.form);
+                    setDockerImages(saved.dockerImages);
+                    setDefaultDockerImage(saved.defaultDockerImage);
+                    setFeatures(saved.features);
+                    setInheritFeatures(saved.inheritFeatures);
+                }}
+            />
         </div>
     );
 }

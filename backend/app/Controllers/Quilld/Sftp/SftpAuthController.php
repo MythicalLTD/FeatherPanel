@@ -62,7 +62,7 @@ class SftpAuthController
             $type = (string) $data['type'];
             $password = (string) $data['password'];
 
-            // Extra SFTP accounts (account_name.uuidShort) — password only.
+            // Extra SFTP accounts (account_name.uuidShort) - password only.
             if ($type === 'password') {
                 $extra = WebSpaceSftpAccount::authenticate((int) $space['id'], $parsed['username'], $password);
                 if ($extra !== null) {

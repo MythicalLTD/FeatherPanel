@@ -15,19 +15,22 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { AdminPageTips } from '@/components/admin/AdminPageTips';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { adminSettingsApi, OrganizedSettings, Setting } from '@/lib/admin-settings-api';
 import { useDemoMode } from '@/hooks/useDemoMode';
 import { PageHeader } from '@/components/featherui/PageHeader';
+import { UnsavedChangesBar } from '@/components/featherui/UnsavedChangesBar';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/featherui/Textarea';
 import { Switch } from '@/components/ui/switch';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Tabs, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { ScrollableTabsList } from '@/components/ui/scrollable-tabs-list';
 import { Select } from '@/components/ui/select-native';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
@@ -52,7 +55,10 @@ import {
     Link2,
     Lock,
     Smartphone,
+    Boxes,
+    Rocket,
 } from 'lucide-react';
+import { reopenSetup } from '@/lib/setup-wizard';
 import { copyToClipboard, cn } from '@/lib/utils';
 import { ImageAttachmentField } from '@/components/featherui/ImageAttachmentField';
 
@@ -81,6 +87,8 @@ const ADMIN_SETTING_DISPLAY_NAMES: Record<string, string> = {
     auth_show_qr_login: 'QR code login',
     auth_show_marketing_panel: 'Marketing panel (desktop)',
     auth_aside_image_url: 'Marketing panel image',
+    auth_template: 'Login page template',
+    auth_visual_preset: 'Login visual preset',
     auth_form_density: 'Form density',
     auth_secondary_layout: 'Alternate methods layout',
     auth_show_theme_customizer: 'Theme customizer on auth',
@@ -159,7 +167,7 @@ function SettingFieldRow({
         (currentSetting.type as string) === 'boolean'
     ) {
         return (
-            <div className='border-border/50 bg-card/30 hover:bg-card/50 flex flex-row items-center justify-between gap-4 rounded-2xl border p-4 transition-colors'>
+            <div className='fp-surface-inset hover:border-primary/25 flex flex-row items-center justify-between gap-4 rounded-xl border p-4 transition-colors'>
                 <div className='min-w-0 space-y-0.5 pr-2'>
                     <Label htmlFor={settingKey} className='text-base font-medium'>
                         {formattedName}
@@ -216,13 +224,13 @@ function SettingFieldRow({
                         if (translated !== optKey) {
                             label = translated;
                         } else if (opt === 'true') {
-                            label = 'Enabled';
+                            label = t('common.enabled');
                         } else if (opt === 'false') {
-                            label = 'Disabled';
+                            label = t('common.disabled');
                         } else if (opt === 'hard_limit') {
-                            label = 'Hard limit (block at max)';
+                            label = t('admin.settings.optionLabels.hardLimit');
                         } else if (opt === 'fifo_rolling') {
-                            label = 'FIFO rolling (drop oldest)';
+                            label = t('admin.settings.optionLabels.fifoRolling');
                         } else {
                             label = opt;
                         }
@@ -426,6 +434,15 @@ export default function SettingsPage() {
         }));
     };
 
+    const unsaved = Object.entries(settings).some(([key, setting]) => {
+        const initial = initialSettings[key];
+        return Boolean(initial) && String(initial.value) !== String(setting.value);
+    });
+
+    const handleDiscard = () => {
+        setSettings(JSON.parse(JSON.stringify(initialSettings)));
+    };
+
     const handleSave = async () => {
         setSaving(true);
         try {
@@ -519,6 +536,8 @@ export default function SettingsPage() {
                 return Search;
             case 'pwa':
                 return Smartphone;
+            case 'modules':
+                return Boxes;
             case 'advanced':
                 return Globe;
             default:
@@ -549,6 +568,22 @@ export default function SettingsPage() {
                 icon={Settings}
                 actions={
                     <div className='flex flex-wrap items-center justify-end gap-2'>
+                        <Button
+                            variant='outline'
+                            className='shrink-0'
+                            disabled={isDemo}
+                            onClick={async () => {
+                                try {
+                                    await reopenSetup();
+                                    router.push('/setup');
+                                } catch (error) {
+                                    toast.error(getApiErrorMessage(error, t, 'setup_wizard.errors.save'));
+                                }
+                            }}
+                        >
+                            <Rocket className='mr-2 h-4 w-4' />
+                            {t('setup_wizard.rerun')}
+                        </Button>
                         <Button variant='outline' onClick={handleUploadLogs} className='shrink-0' disabled={isDemo}>
                             <UploadCloud className='mr-2 h-4 w-4' />
                             {t('admin.settings.actions.upload_logs')}
@@ -567,7 +602,7 @@ export default function SettingsPage() {
 
             <WidgetRenderer widgets={getWidgets('admin-settings', 'after-header')} />
 
-            <div className='border-border/50 bg-card/40 relative rounded-2xl border p-1.5 shadow-sm'>
+            <div className='fp-surface relative rounded-2xl border p-1.5'>
                 <Search
                     className='text-muted-foreground pointer-events-none absolute top-1/2 left-4 h-4 w-4 -translate-y-1/2'
                     aria-hidden
@@ -599,8 +634,28 @@ export default function SettingsPage() {
                     orientation='vertical'
                     className='flex w-full flex-col gap-6 lg:flex-row lg:gap-8'
                 >
-                    <aside className='flex min-h-0 w-full shrink-0 flex-col gap-3 lg:w-72'>
-                        <TabsList className='bg-card/30 border-border/50 flex h-auto w-full max-w-full flex-row gap-1 overflow-x-auto rounded-2xl border p-2 lg:max-h-[calc(100vh-12rem)] lg:flex-col lg:overflow-x-visible lg:overflow-y-auto'>
+                    <aside className='flex min-h-0 w-full shrink-0 flex-col gap-3 lg:sticky lg:top-24 lg:w-72 lg:self-start'>
+                        <label className='sm:hidden'>
+                            <span className='sr-only'>{t('admin.settings.category_select')}</span>
+                            <select
+                                value={activeTab || categoryKeys[0]}
+                                onChange={(e) => handleCategoryChange(e.target.value)}
+                                className='fp-surface focus-visible:ring-ring h-11 w-full rounded-xl border px-3 text-sm outline-none focus-visible:ring-2'
+                            >
+                                {Object.entries(organizedSettings).map(([key, data]) => (
+                                    <option key={key} value={key}>
+                                        {data.category.name}
+                                        {searchTrimmed
+                                            ? ` (${categoryMatchCounts[key] ?? 0}/${Object.keys(data.settings).length})`
+                                            : ''}
+                                    </option>
+                                ))}
+                            </select>
+                        </label>
+                        <ScrollableTabsList
+                            wrapperClassName='hidden sm:block'
+                            className='fp-surface flex h-auto w-full flex-row gap-1 rounded-2xl border p-2 lg:max-h-[calc(100vh-12rem)] lg:flex-col lg:overflow-x-visible lg:overflow-y-auto'
+                        >
                             {Object.entries(organizedSettings).map(([key, data]) => {
                                 const Icon = getIconForCategory(key);
                                 const matchCount = categoryMatchCounts[key] ?? 0;
@@ -630,7 +685,7 @@ export default function SettingsPage() {
                                     </TabsTrigger>
                                 );
                             })}
-                        </TabsList>
+                        </ScrollableTabsList>
                     </aside>
 
                     <div className='min-w-0 flex-1 space-y-6'>
@@ -750,10 +805,10 @@ export default function SettingsPage() {
                                                                 </Button>
                                                             </div>
                                                         </div>
-                                                        <div className='rounded-xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-900/50 dark:bg-amber-950/20'>
+                                                        <div className='rounded-xl border border-amber-500/25 bg-amber-500/[0.06] p-4'>
                                                             <p className='font-mono text-xs text-amber-900 dark:text-amber-200'>
                                                                 <strong className='font-semibold'>
-                                                                    Troubleshooting:
+                                                                    {t('ui.admin.settings.troubleshooting')}
                                                                 </strong>{' '}
                                                                 {t('admin.settings.email_test.troubleshooting')}
                                                             </p>
@@ -867,7 +922,16 @@ export default function SettingsPage() {
                 </DialogContent>
             </Dialog>
 
+            <AdminPageTips page='settings' />
+
             <WidgetRenderer widgets={getWidgets('admin-settings', 'bottom-of-page')} />
+
+            <UnsavedChangesBar
+                dirty={unsaved}
+                onSave={() => void handleSave()}
+                onDiscard={handleDiscard}
+                saving={saving}
+            />
         </div>
     );
 }

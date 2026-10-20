@@ -97,6 +97,31 @@ return function (RouteCollection $routes): void {
         'user-server-allocations'
     );
 
+    // Set or clear the server users' note on an allocation
+    App::getInstance(true)->registerServerRoute(
+        $routes,
+        'session-server-allocation-notes',
+        '/api/user/servers/{uuidShort}/allocations/{allocationId}/notes',
+        function (Request $request, array $args) {
+            $uuidShort = $args['uuidShort'] ?? null;
+            $allocationId = $args['allocationId'] ?? null;
+            if (!$uuidShort || !$allocationId || !ctype_digit((string) $allocationId)) {
+                return ApiResponse::error('Missing or invalid UUID short or allocation ID', 'INVALID_PARAMETERS', 400);
+            }
+
+            $server = \App\Chat\Server::getServerByUuidShort($uuidShort);
+            if (!$server) {
+                return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
+            }
+
+            return (new \App\Controllers\User\Server\ServerAllocationController())->updateAllocationNotes($request, (int) $server['id'], (int) $allocationId);
+        },
+        'uuidShort',
+        ['PATCH'],
+        Rate::perMinute(20), // Default: Admin can override in ratelimit.json
+        'user-server-allocation-notes'
+    );
+
     // Get available allocations for selection
     App::getInstance(true)->registerServerRoute(
         $routes,

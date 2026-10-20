@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { AdminPageTips } from '@/components/admin/AdminPageTips';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useSettings } from '@/contexts/SettingsContext';
@@ -225,7 +226,9 @@ export default function CloudManagementPage() {
             const response = await axios.post('/api/admin/cloud/sync');
             const count = response.data?.data?.purchases_count;
             toast.success(
-                typeof count === 'number' ? `Synced ${count} purchase(s) from Mythic` : 'Synced with Mythic Cloud',
+                typeof count === 'number'
+                    ? `Synced ${count} purchase(s) from Mythic`
+                    : t('ui.admin.cloudManagement.syncedWithMythicCloud'),
             );
             await loadStatus();
         } catch (err) {
@@ -260,7 +263,7 @@ export default function CloudManagementPage() {
 
             {cloudDisabled ? (
                 <PageCard title={t('demo.cloud.title')} icon={AlertTriangle}>
-                    <div className='flex items-start gap-3 rounded-lg border border-amber-500/30 bg-amber-500/10 p-4 text-amber-950 dark:text-amber-50'>
+                    <div className='flex items-start gap-3 rounded-lg border border-amber-500/25 bg-amber-500/[0.06] p-4 text-amber-950 dark:text-amber-50'>
                         <AlertTriangle className='mt-0.5 h-5 w-5 shrink-0 text-amber-600 dark:text-amber-300' />
                         <p className='text-sm leading-relaxed'>{t('demo.cloud.description')}</p>
                     </div>
@@ -301,7 +304,9 @@ export default function CloudManagementPage() {
                                             )}
                                             {linkInfo.mythic_user_id && (
                                                 <span className='bg-muted text-muted-foreground rounded-md border px-2 py-1 font-mono text-xs'>
-                                                    Mythic ID {linkInfo.mythic_user_id}
+                                                    {t('ui.admin.cloudManagement.mythicIDMythicUserId', {
+                                                        mythic_user_id: String(linkInfo.mythic_user_id),
+                                                    })}
                                                 </span>
                                             )}
                                             {linkInfo.premium?.active ? (
@@ -329,13 +334,14 @@ export default function CloudManagementPage() {
                                         )}
                                         {linkInfo.has_access_keys === false && (
                                             <p className='mt-2 text-sm text-amber-600 dark:text-amber-400'>
-                                                Mythic→panel credentials (cloud_api_key/secret) were not stored. Mythic
-                                                may show Pending until you re-link or complete OAuth with those params.
+                                                {t('ui.admin.cloudManagement.mythicPanelCredentialsCloudApiKey')}
                                             </p>
                                         )}
                                         {linkInfo.last_synced_at && (
                                             <p className='text-muted-foreground mt-1 text-xs'>
-                                                Last sync: {linkInfo.last_synced_at}
+                                                {t('ui.admin.cloudManagement.lastSyncLastSyncedAt', {
+                                                    last_synced_at: String(linkInfo.last_synced_at),
+                                                })}
                                             </p>
                                         )}
                                     </div>
@@ -351,7 +357,7 @@ export default function CloudManagementPage() {
                                             ) : (
                                                 <RefreshCw className='mr-2 h-4 w-4' />
                                             )}
-                                            Sync now
+                                            {t('ui.admin.cloudManagement.syncNow')}
                                         </Button>
                                         <Button
                                             variant='outline'
@@ -380,7 +386,7 @@ export default function CloudManagementPage() {
                                         )}
                                         <Button variant='outline' size='sm' onClick={openMythicClouds}>
                                             <ExternalLink className='mr-2 h-4 w-4' />
-                                            Open Mythic Clouds
+                                            {t('ui.admin.cloudManagement.openMythicClouds')}
                                         </Button>
                                         <Button
                                             variant='outline'
@@ -536,6 +542,7 @@ export default function CloudManagementPage() {
                     </AlertDialog>
                 </>
             ) : null}
+            <AdminPageTips page='cloud-management' />
         </div>
     );
 }

@@ -24,6 +24,7 @@ use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
 use PragmaRX\Google2FA\Google2FA;
+use App\Middleware\AuthMiddleware;
 use App\CloudFlare\CloudFlareRealIP;
 use App\Helpers\SessionCookieHelper;
 use App\Helpers\AccountLockoutHelper;
@@ -109,7 +110,7 @@ class TwoFactorController
         }
         global $eventManager;
         if ($config->getSetting(ConfigInterface::TURNSTILE_ENABLED, 'false') == 'true') {
-            if (!isset($data['turnstile_token']) || trim($data['turnstile_token']) === '') {
+            if (!isset($data['turnstile_token']) || !is_scalar($data['turnstile_token']) || trim((string) $data['turnstile_token']) === '') {
                 return ApiResponse::error('Captcha token is required', 'CAPTCHA_TOKEN_REQUIRED');
             }
             if (!\App\Helpers\CaptchaHelper::validate($data['turnstile_token'], CloudFlareRealIP::getRealIP())) {
@@ -121,7 +122,7 @@ class TwoFactorController
         $requiredFields = ['code', 'secret'];
         $missingFields = [];
         foreach ($requiredFields as $field) {
-            if (!isset($data[$field]) || trim($data[$field]) === '') {
+            if (!isset($data[$field]) || !is_scalar($data[$field]) || trim((string) $data[$field]) === '') {
                 $missingFields[] = $field;
             }
         }
@@ -152,7 +153,10 @@ class TwoFactorController
             }
         }
 
-        $userInfo = User::getUserByRememberToken($_COOKIE['remember_token']);
+        $userInfo = AuthMiddleware::getCurrentUser($request);
+        if ($userInfo === null) {
+            return ApiResponse::error('You are not allowed to access this resource!', 'INVALID_ACCOUNT_TOKEN', 401);
+        }
 
         // Verify code
         $google2fa = new Google2FA();
@@ -183,7 +187,7 @@ class TwoFactorController
             );
         }
 
-        return ApiResponse::success($userInfo, 'Two factor authentication enabled', 200);
+        return ApiResponse::success(User::stripSensitiveFields($userInfo), 'Two factor authentication enabled', 200);
     }
 
     #[OA\Get(
@@ -207,7 +211,10 @@ class TwoFactorController
         $app = App::getInstance(true);
         $config = $app->getConfig();
         $data = json_decode($request->getContent(), true);
-        $userInfo = User::getUserByRememberToken($_COOKIE['remember_token']);
+        $userInfo = AuthMiddleware::getCurrentUser($request);
+        if ($userInfo === null) {
+            return ApiResponse::error('You are not allowed to access this resource!', 'INVALID_ACCOUNT_TOKEN', 401);
+        }
 
         if ($userInfo['two_fa_enabled'] == 'true') {
             return ApiResponse::error('Two factor authentication is enabled', 'TWO_FACTOR_AUTH_ENABLED');
@@ -280,7 +287,7 @@ class TwoFactorController
         $data = json_decode($request->getContent(), true);
 
         // Find user by email (from login step)
-        if (!isset($data['email']) || !isset($data['code'])) {
+        if (!isset($data['email']) || !isset($data['code']) || !is_string($data['email']) || !is_scalar($data['code'])) {
             return ApiResponse::error('Missing email or code', 'MISSING_REQUIRED_FIELDS');
         }
         $userInfo = User::getUserByEmail($data['email']);
@@ -310,7 +317,7 @@ class TwoFactorController
         }
 
         $google2fa = new Google2FA();
-        if (!$google2fa->verifyKey($userInfo['two_fa_key'], $data['code'])) {
+        if (!$google2fa->verifyKey($userInfo['two_fa_key'], (string) $data['code'])) {
             // Emit 2FA failed event
             global $eventManager;
             if (isset($eventManager) && $eventManager !== null) {
@@ -344,7 +351,7 @@ class TwoFactorController
             return ApiResponse::error('Remember token not set', 'REMEMBER_TOKEN_NOT_SET');
         }
         $userInfo['remember_token'] = $token;
-        SessionCookieHelper::set($token, time() + 60 * 60 * 24 * 30);
+        SessionCookieHelper::startSession($userInfo, $token, time() + 60 * 60 * 24 * 30);
         User::updateUser($userInfo['uuid'], ['last_ip' => CloudFlareRealIP::getRealIP()]);
 
         Activity::createActivity([
@@ -371,6 +378,6 @@ class TwoFactorController
             );
         }
 
-        return ApiResponse::success($userInfo, '2FA verified, user logged in', 200);
+        return ApiResponse::success(User::stripSensitiveFields($userInfo), '2FA verified, user logged in', 200);
     }
 }

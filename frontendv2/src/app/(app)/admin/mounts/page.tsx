@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { AdminPageTips } from '@/components/admin/AdminPageTips';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
@@ -24,9 +25,9 @@ import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { PageCard } from '@/components/featherui/PageCard';
-import { ResourceCard, type ResourceBadge } from '@/components/featherui/ResourceCard';
+import { ResourceCard, ResourceTable, type ResourceBadge } from '@/components/featherui/ResourceCard';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
-import { EmptyState } from '@/components/featherui/EmptyState';
+import { ListEmptyState } from '@/components/featherui/ListEmptyState';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/featherui/Textarea';
 import { Switch } from '@/components/ui/switch';
@@ -36,7 +37,9 @@ import { toast } from 'sonner';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { usePersistedListFilters } from '@/hooks/usePersistedListFilters';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
-import { HardDrive, Plus, Search, Pencil, Trash2, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
+import { HardDrive, Plus, Search, Pencil, Trash2, RefreshCw } from 'lucide-react';
+import { Sensitive } from '@/components/common/Sensitive';
+import { ListPagination } from '@/components/featherui/ListPagination';
 
 export interface AdminMount {
     id: number;
@@ -120,7 +123,7 @@ export default function AdminMountsPage() {
 
     const [loading, setLoading] = useState(true);
     const [mounts, setMounts] = useState<AdminMount[]>([]);
-    const { filters, patchFilters, hydrated } = usePersistedListFilters(
+    const { filters, patchFilters, hydrated, resetFilters, isFiltered } = usePersistedListFilters(
         MOUNTS_LIST_FILTERS_KEY,
         MOUNTS_LIST_FILTERS_DEFAULTS,
     );
@@ -417,7 +420,7 @@ export default function AdminMountsPage() {
 
             <WidgetRenderer widgets={getWidgets('admin-mounts', 'after-header')} />
 
-            <div className='bg-card/40 flex flex-col items-center gap-4 rounded-2xl p-4 shadow-sm backdrop-blur-md sm:flex-row'>
+            <div className='fp-surface flex flex-col items-center gap-4 rounded-2xl border p-4 sm:flex-row'>
                 <div className='group relative w-full flex-1'>
                     <Search className='text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2' />
                     <Input
@@ -430,47 +433,31 @@ export default function AdminMountsPage() {
             </div>
 
             {pagination.totalPages > 1 && !loading && (
-                <div className='border-border bg-card/50 flex items-center justify-between gap-4 rounded-xl border px-4 py-3'>
-                    <Button
-                        variant='outline'
-                        size='sm'
-                        disabled={page === 1}
-                        onClick={() => patchFilters({ page: page - 1 })}
-                    >
-                        <ChevronLeft className='mr-1 h-4 w-4' />
-                        {t('common.previous')}
-                    </Button>
-                    <span className='text-sm'>
-                        {page} / {pagination.totalPages}
-                    </span>
-                    <Button
-                        variant='outline'
-                        size='sm'
-                        disabled={page === pagination.totalPages}
-                        onClick={() => patchFilters({ page: page + 1 })}
-                    >
-                        {t('common.next')}
-                        <ChevronRight className='ml-1 h-4 w-4' />
-                    </Button>
-                </div>
+                <ListPagination
+                    page={page}
+                    totalPages={pagination.totalPages}
+                    onPageChange={(nextPage) => patchFilters({ page: nextPage })}
+                />
             )}
 
             {loading ? (
                 <TableSkeleton count={5} />
             ) : mounts.length === 0 ? (
-                <EmptyState
+                <ListEmptyState
                     icon={HardDrive}
-                    title={t('admin.mounts.no_results')}
-                    description={t('admin.mounts.description')}
+                    title={t('emptyStates.mounts.title')}
+                    description={t('emptyStates.mounts.description')}
                     action={
                         <Button onClick={openCreate}>
                             <Plus className='mr-2 h-4 w-4' />
                             {t('admin.mounts.create')}
                         </Button>
                     }
+                    filtered={isFiltered}
+                    onClearFilters={resetFilters}
                 />
             ) : (
-                <div className='grid grid-cols-1 gap-4'>
+                <ResourceTable>
                     {mounts.map((m) => {
                         const nodeTag =
                             m.node_ids.length === 0
@@ -493,7 +480,7 @@ export default function AdminMountsPage() {
                         if (!m.user_mountable) {
                             badges.push({
                                 label: t('admin.mounts.admin_only'),
-                                className: 'bg-zinc-500/10 text-zinc-600 border-zinc-500/20',
+                                className: 'bg-zinc-500/10 text-zinc-600 border-[var(--fp-surface-border)]',
                             });
                         }
                         return (
@@ -555,7 +542,7 @@ export default function AdminMountsPage() {
                             />
                         );
                     })}
-                </div>
+                </ResourceTable>
             )}
 
             <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
@@ -652,7 +639,7 @@ export default function AdminMountsPage() {
                                                 <span className='text-sm'>
                                                     <span className='font-medium'>{n.name}</span>
                                                     <span className='text-muted-foreground block text-xs'>
-                                                        {n.fqdn}
+                                                        <Sensitive>{n.fqdn}</Sensitive>
                                                     </span>
                                                 </span>
                                             </label>
@@ -704,6 +691,7 @@ export default function AdminMountsPage() {
                     </SheetFooter>
                 </SheetContent>
             </Sheet>
+            <AdminPageTips page='mounts' />
         </div>
     );
 }

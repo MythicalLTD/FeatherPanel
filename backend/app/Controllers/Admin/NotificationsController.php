@@ -18,6 +18,7 @@
 namespace App\Controllers\Admin;
 
 use App\Chat\Activity;
+use App\Chat\Database;
 use App\Chat\Notification;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
@@ -366,7 +367,7 @@ class NotificationsController
         $requiredFields = ['title', 'message_markdown', 'type'];
         $missingFields = [];
         foreach ($requiredFields as $field) {
-            if (!isset($data[$field]) || trim($data[$field]) === '') {
+            if (!isset($data[$field]) || !is_scalar($data[$field]) || trim((string) $data[$field]) === '') {
                 $missingFields[] = $field;
             }
         }
@@ -608,6 +609,14 @@ class NotificationsController
         }
 
         $oldNotification = $notification;
+        $unknownFields = Database::unknownColumns(Notification::getTableName(), $data);
+        if ($unknownFields !== []) {
+            return ApiResponse::error('Unknown field(s): ' . implode(', ', $unknownFields), 'UNKNOWN_FIELDS', 400);
+        }
+        if ($data === []) {
+            return ApiResponse::error('No data to update', 'NO_DATA', 400);
+        }
+
         $updated = Notification::updateNotification($id, $data);
 
         if (!$updated) {

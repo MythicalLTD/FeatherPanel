@@ -19,8 +19,10 @@ namespace App\Services\Chatbot\Tools;
 
 use App\App;
 use App\Chat\Server;
+use App\SubuserPermissions;
 use App\Chat\ServerDatabase;
 use App\Helpers\ServerGateway;
+use App\Helpers\SubuserPermissionChecker;
 
 /**
  * Tool to get database credentials for a server.
@@ -89,6 +91,14 @@ class GetDatabaseCredentialsTool implements ToolInterface
             ];
         }
 
+        // Same subuser permission as the REST database endpoints: without
+        // database.view_password the password is redacted, not returned in clear text.
+        $canViewPassword = SubuserPermissionChecker::hasPermission(
+            (int) $user['id'],
+            (int) $server['id'],
+            SubuserPermissions::DATABASE_VIEW_PASSWORD
+        );
+
         // Get databases for server
         $databases = ServerDatabase::getServerDatabasesWithDetailsByServerId((int) $server['id']);
 
@@ -99,7 +109,7 @@ class GetDatabaseCredentialsTool implements ToolInterface
                 'id' => (int) $db['id'],
                 'database_name' => $db['database'],
                 'username' => $db['username'],
-                'password' => $db['password'], // Include password as user requested credentials
+                'password' => $canViewPassword ? $db['password'] : '[REDACTED]',
                 'database_host' => $db['database_host'],
                 'database_port' => (int) $db['database_port'],
                 'database_type' => $db['database_type'],

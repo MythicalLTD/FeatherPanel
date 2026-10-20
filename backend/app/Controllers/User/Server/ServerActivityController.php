@@ -76,6 +76,26 @@ class ServerActivityController
     use CheckSubuserPermissionsTrait;
 
     /**
+     * Activity categories shown as filter chips, mapped to event name patterns (SQL LIKE).
+     * Covers panel events (snake_case) and daemon events (server:*, vm:*).
+     */
+    private const CATEGORY_PATTERNS = [
+        'console' => ['%console%', 'command_sent'],
+        'power' => ['%power%', 'server:power%'],
+        'files' => ['file%', 'files%', 'directory%', 'archive%', 'trash%', 'downloads%', 'pull_process%', 'server:file%'],
+        'sftp' => ['%sftp%'],
+        'backups' => ['backup%', 'full_backup%', 'server:backup%', 'vm:backup%', 'vm:restore%'],
+        'databases' => ['database%'],
+        'schedules' => ['schedule%'],
+        'tasks' => ['task%'],
+        'users' => ['subuser%', 'users_%', 'vm:subuser%', 'server:subuser%'],
+        'network' => ['allocation%', '%subdomain%', '%proxy%', '%firewall%', 'server:allocation%'],
+        'startup' => ['%variable%', 'server_script_run', '%startup%', '%spell%', '%docker_image%'],
+        'settings' => ['server_updated', '%settings%', 'vm:update', 'vm:hardware%', 'server:rename%'],
+        'reinstall' => ['%reinstall%', 'server_install%', 'server:installer%'],
+    ];
+
+    /**
      * Get activities for a specific server accessible by the user.
      */
     #[OA\Get(
@@ -158,7 +178,36 @@ class ServerActivityController
         // Get pagination parameters
         $page = max(1, (int) $request->query->get('page', 1));
         $perPage = max(1, min(100, (int) $request->query->get('per_page', 50)));
-        $search = $request->query->get('search', '');
+        $search = trim((string) $request->query->get('search', ''));
+
+        $filters = [];
+        $category = (string) $request->query->get('category', '');
+        if ($category !== '') {
+            if (!isset(self::CATEGORY_PATTERNS[$category])) {
+                return ApiResponse::error('Unknown activity category', 'INVALID_CATEGORY', 400);
+            }
+            $filters['event_patterns'] = self::CATEGORY_PATTERNS[$category];
+        }
+        $actor = (string) $request->query->get('user', '');
+        if ($actor === 'system') {
+            $filters['actor'] = 'system';
+        } elseif ($actor !== '') {
+            if (!ctype_digit($actor)) {
+                return ApiResponse::error('Invalid user filter', 'INVALID_USER_FILTER', 400);
+            }
+            $filters['actor'] = (int) $actor;
+        }
+        foreach (['from' => '00:00:00', 'to' => '23:59:59'] as $key => $time) {
+            $value = (string) $request->query->get($key, '');
+            if ($value === '') {
+                continue;
+            }
+            $date = \DateTimeImmutable::createFromFormat('!Y-m-d', $value, new \DateTimeZone('UTC'));
+            if ($date === false || $date->format('Y-m-d') !== $value) {
+                return ApiResponse::error('Invalid date, expected YYYY-MM-DD', 'INVALID_DATE', 400);
+            }
+            $filters[$key] = $value . ' ' . $time;
+        }
 
         // Get activities for specific server
         // Many daemon-generated rows have NULL user_id, so do not filter by user here
@@ -167,6 +216,7 @@ class ServerActivityController
             perPage: $perPage,
             search: $search,
             serverId: $serverId,
+            filters: $filters,
         );
 
         // Mask IPs if the setting is enabled
@@ -182,10 +232,15 @@ class ServerActivityController
             unset($activity);
         }
 
-        return ApiResponse::success([
+        $payload = [
             'activities' => $result,
             'pagination' => $result['pagination'],
-        ]);
+        ];
+        if ($request->query->getBoolean('include_actors')) {
+            $payload['actors'] = ServerActivity::getActorsForServer($serverId);
+        }
+
+        return ApiResponse::success($payload);
     }
 
     /**

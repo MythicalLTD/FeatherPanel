@@ -72,13 +72,13 @@ class PluginCssController
                 }
             }
 
-            $cssContent .= "\n/* ===== FeatherPanel: Start of Custom CSS ===== */\n";
+            $cssContent .= "\n/* FeatherPanel: Start of Custom CSS */\n";
             $cssContent .= "/* This section is reserved for user-defined or system-injected CSS. */\n";
             $cssContent .= App::getInstance(true)->getConfig()->getSetting(
                 ConfigInterface::CUSTOM_CSS,
                 "/* dummy css - does nothing */\n/* Feel free to override the 'custom_css' setting in your configuration. */"
             ) . "\n";
-            $cssContent .= "/* ===== FeatherPanel: End of Custom CSS ===== */\n";
+            $cssContent .= "/* FeatherPanel: End of Custom CSS */\n";
 
             $etag = '"' . hash('sha256', $cssContent) . '"';
             Cache::put($cacheKey, ['body' => $cssContent, 'etag' => $etag], 2);

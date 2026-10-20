@@ -22,7 +22,8 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { getApiErrorCode, getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Tabs, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { ScrollableTabsList } from '@/components/ui/scrollable-tabs-list';
 import { Sheet, SheetHeader, SheetTitle, SheetDescription, SheetContent } from '@/components/ui/sheet';
 import { Input } from '@/components/featherui/Input';
 import { toast } from 'sonner';
@@ -39,8 +40,6 @@ import {
     Zap,
     Search as SearchIcon,
     MapPin,
-    ChevronLeft,
-    ChevronRight,
     ArrowLeftRight,
 } from 'lucide-react';
 import { MassTransferServersDialog } from '@/components/admin/MassTransferServersDialog';
@@ -72,6 +71,10 @@ import {
     supportsDaemonFeature,
     type DaemonType,
 } from '@/lib/daemonCapabilities';
+import { UnsavedChangesBar } from '@/components/featherui/UnsavedChangesBar';
+import { useFormBaseline } from '@/hooks/useFormBaseline';
+import { NodeSetupChecklist } from './NodeSetupChecklist';
+import { ListPagination } from '@/components/featherui/ListPagination';
 
 export interface NodeForm {
     name: string;
@@ -156,6 +159,7 @@ export default function EditNodePage() {
         public_ip_v6: '',
         sftp_subdomain: '',
     });
+    const { dirty: unsaved, commit: commitForm, restore: restoreForm } = useFormBaseline(form);
 
     const [systemInfo, setSystemInfo] = useState<{
         data: SystemInfoResponse | null;
@@ -205,7 +209,7 @@ export default function EditNodePage() {
             }
 
             const daemonType = normalizeDaemonType(node.daemon_type);
-            setForm({
+            const loadedForm: NodeForm = {
                 name: node.name,
                 description: node.description || '',
                 fqdn: node.fqdn,
@@ -227,14 +231,16 @@ export default function EditNodePage() {
                 public_ip_v4: node.public_ip_v4 || '',
                 public_ip_v6: node.public_ip_v6 || '',
                 sftp_subdomain: node.sftp_subdomain || '',
-            });
+            };
+            setForm(loadedForm);
+            commitForm(loadedForm);
         } catch (error) {
             console.error('Error fetching node data:', error);
             toast.error(getApiErrorMessage(error, t, 'admin.node.messages.fetch_failed'));
         } finally {
             setLoading(false);
         }
-    }, [nodeId, router, t]);
+    }, [nodeId, router, t, commitForm]);
 
     const fetchSystemInfo = useCallback(async () => {
         setSystemInfo((prev) => ({ ...prev, loading: true, error: null }));
@@ -396,8 +402,8 @@ export default function EditNodePage() {
             : '';
         const yaml = `debug: false
 uuid: ${nodeData.uuid}
-token_id: ${nodeData.daemon_token_id}
-token: ${nodeData.daemon_token}
+token_id: ${nodeData.daemon_token_id ?? '<token_id>'}
+token: ${nodeData.daemon_token ?? '<token>'}
 api:
   host: 0.0.0.0
   port: ${form.daemonListen || 8443}
@@ -605,6 +611,8 @@ remote: '${typeof window !== 'undefined' ? window.location.origin : 'https://pan
                 context={{ id: nodeId as string }}
             />
 
+            <NodeSetupChecklist nodeId={nodeId as string} onOpenTab={setActiveTab} refreshKey={activeTab} />
+
             <div className='block'>
                 <Tabs
                     value={activeTab}
@@ -612,8 +620,8 @@ remote: '${typeof window !== 'undefined' ? window.location.origin : 'https://pan
                     orientation='vertical'
                     className='flex w-full flex-col gap-6 md:flex-row'
                 >
-                    <aside className='w-full shrink-0 overflow-x-auto pb-2 md:w-64 md:overflow-visible md:pb-0'>
-                        <TabsList className='bg-card/30 border-border/50 flex h-auto w-max flex-row gap-2 rounded-2xl border p-2 md:w-full md:flex-col md:gap-1'>
+                    <aside className='w-full shrink-0 md:sticky md:top-24 md:w-64 md:self-start'>
+                        <ScrollableTabsList className='fp-surface flex h-auto w-full flex-row gap-2 rounded-2xl border p-2 md:flex-col md:gap-1 md:overflow-visible'>
                             {tabs.map((tab) => {
                                 const Icon = tab.icon;
                                 return (
@@ -627,7 +635,7 @@ remote: '${typeof window !== 'undefined' ? window.location.origin : 'https://pan
                                     </TabsTrigger>
                                 );
                             })}
-                        </TabsList>
+                        </ScrollableTabsList>
                     </aside>
 
                     <div className='min-w-0 flex-1 space-y-6'>
@@ -806,41 +814,16 @@ remote: '${typeof window !== 'undefined' ? window.location.origin : 'https://pan
                         </div>
 
                         {locationPagination.total_pages > 1 && (
-                            <div className='border-border bg-muted/30 flex items-center justify-between gap-2 rounded-lg border px-3 py-2'>
-                                <Button
-                                    variant='outline'
-                                    size='sm'
-                                    disabled={!locationPagination.has_prev}
-                                    onClick={() =>
-                                        setLocationPagination((prev) => ({
-                                            ...prev,
-                                            current_page: prev.current_page - 1,
-                                        }))
-                                    }
-                                    className='h-8 gap-1'
-                                >
-                                    <ChevronLeft className='h-3 w-3' />
-                                    {t('common.previous')}
-                                </Button>
-                                <span className='text-xs font-medium'>
-                                    {locationPagination.current_page} / {locationPagination.total_pages}
-                                </span>
-                                <Button
-                                    variant='outline'
-                                    size='sm'
-                                    disabled={!locationPagination.has_next}
-                                    onClick={() =>
-                                        setLocationPagination((prev) => ({
-                                            ...prev,
-                                            current_page: prev.current_page + 1,
-                                        }))
-                                    }
-                                    className='h-8 gap-1'
-                                >
-                                    {t('common.next')}
-                                    <ChevronRight className='h-3 w-3' />
-                                </Button>
-                            </div>
+                            <ListPagination
+                                page={locationPagination.current_page}
+                                totalPages={locationPagination.total_pages}
+                                onPageChange={(nextPage) =>
+                                    setLocationPagination((prev) => ({
+                                        ...prev,
+                                        current_page: nextPage,
+                                    }))
+                                }
+                            />
                         )}
 
                         <div className='max-h-[calc(100vh-300px)] space-y-2 overflow-y-auto'>
@@ -942,6 +925,16 @@ remote: '${typeof window !== 'undefined' ? window.location.origin : 'https://pan
                     onOpenChange={setMassTransferOpen}
                 />
             ) : null}
+
+            <UnsavedChangesBar
+                dirty={unsaved}
+                saving={saving}
+                onSave={() => void handleSubmit()}
+                onDiscard={() => {
+                    const saved = restoreForm();
+                    if (saved) setForm(saved);
+                }}
+            />
         </div>
     );
 }

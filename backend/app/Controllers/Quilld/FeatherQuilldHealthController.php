@@ -24,7 +24,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * Panel health for FeatherQuilld daemons — GET /api/quilld-remote/health.
+ * Panel health for FeatherQuilld daemons - GET /api/quilld-remote/health.
  */
 class FeatherQuilldHealthController
 {

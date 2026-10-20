@@ -59,11 +59,11 @@ class Migrate extends App implements CommandBuilder
 
         try {
             MainApp::getInstance(true)->loadEnv();
-            $cliApp->send($cliApp->color3 . '&l⏳ Connecting to database... &r&7' . $_ENV['DATABASE_HOST'] . ':' . $_ENV['DATABASE_PORT']);
+            $cliApp->send($cliApp->color3 . '&l⏳ Connecting to database... &r&7' . (string) MainApp::env('DATABASE_HOST', '127.0.0.1') . ':' . (int) MainApp::env('DATABASE_PORT', '3306'));
 
-            $db = new Database($_ENV['DATABASE_HOST'], $_ENV['DATABASE_DATABASE'], $_ENV['DATABASE_USER'], $_ENV['DATABASE_PASSWORD'], $_ENV['DATABASE_PORT']);
+            $db = new Database((string) MainApp::env('DATABASE_HOST', '127.0.0.1'), (string) MainApp::env('DATABASE_DATABASE', ''), (string) MainApp::env('DATABASE_USER', ''), (string) MainApp::env('DATABASE_PASSWORD', ''), (int) MainApp::env('DATABASE_PORT', '3306'));
 
-            // --- Fix duplicate settings before running migrations that add unique constraints ---
+            // Fix duplicate settings before running migrations that add unique constraints
             $pdo = $db->getPdo();
             $tableExists = $pdo->query("SHOW TABLES LIKE 'featherpanel_settings'")->rowCount() > 0;
             if ($tableExists) {
@@ -76,7 +76,7 @@ class Migrate extends App implements CommandBuilder
                     $cliApp->send('&a&l✅ No duplicate settings found');
                 }
             }
-            // --- End fix ---
+            // End fix
         } catch (\Exception $e) {
             $cliApp->send('&c&l❌ Database Connection Failed: &r' . $e->getMessage());
             exit(1);

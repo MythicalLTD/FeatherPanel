@@ -33,7 +33,7 @@ import {
 } from '@/components/webspace/WebSpaceInfoCards';
 import { WebSpaceTerminalPanel } from '@/components/webspace/WebSpaceTerminalPanel';
 import { WebSpaceHealthBanners } from '@/components/webspace/WebSpaceSetupChecklist';
-import ServerPerformance from '@/components/server/ServerPerformance';
+import ServerPerformance from '@/components/server/ServerPerformanceLazy';
 import { Card, CardContent } from '@/components/ui/card';
 import type { QuilldStats } from '@/hooks/useQuilldWebSocket';
 import type { WebSpaceAccessUrls } from '@/lib/webspace-urls';
@@ -343,7 +343,7 @@ export default function WebSpaceConsolePage() {
             <WebSpaceHealthBanners util={mergedUtil} space={space} />
 
             {(transfer?.phase === 'running' || space.status === 'transferring') && (
-                <div className='border-border/50 bg-card/50 rounded-xl border px-4 py-3 text-sm backdrop-blur-xl'>
+                <div className='fp-surface rounded-xl border px-4 py-3 text-sm'>
                     <p className='font-medium'>{t('webSpaces.overview.transferInProgress')}</p>
                     <p className='text-muted-foreground mt-1'>
                         {transfer?.message || t('webSpaces.overview.transferInProgressHelp')}

@@ -62,12 +62,7 @@ class ServerMiddleware implements MiddlewareInterface
         $server = $this->getServerByUuid($serverUuid);
 
         if (!$server) {
-            return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404, [
-                'serverUuid' => $serverUuid,
-                'server' => $server,
-                'user' => $user,
-                'request' => $request,
-            ]);
+            return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404, []);
         }
 
         // Owner, subuser, or admin server permissions (checked once inside ServerGateway)
@@ -106,10 +101,6 @@ class ServerMiddleware implements MiddlewareInterface
         try {
             return $this->getServerByShortUuid($serverUuid);
         } catch (\Exception $e) {
-            App::getInstance(true)->getLogger()->warning('Error getting server by UUID: ' . $e->getMessage());
-
-            return null;
-        } catch (\PDOException $e) {
             App::getInstance(true)->getLogger()->warning('Error getting server by UUID: ' . $e->getMessage());
 
             return null;

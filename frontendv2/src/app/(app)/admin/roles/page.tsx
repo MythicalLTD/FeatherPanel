@@ -15,39 +15,28 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { AdminPageTips } from '@/components/admin/AdminPageTips';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { getApiErrorMessage } from '@/lib/api-errors';
 import { useSession } from '@/contexts/SessionContext';
-import {
-    Shield,
-    Plus,
-    Trash2,
-    Search,
-    ChevronLeft,
-    ChevronRight,
-    KeyRound,
-    AlertCircle,
-    Copy,
-    Users,
-    Pencil,
-} from 'lucide-react';
+import { Shield, Plus, Trash2, Search, KeyRound, Copy, Users, Pencil } from 'lucide-react';
 import { PageHeader } from '@/components/featherui/PageHeader';
-import { EmptyState } from '@/components/featherui/EmptyState';
+import { ListEmptyState } from '@/components/featherui/ListEmptyState';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
-import { PageCard } from '@/components/featherui/PageCard';
+import { DataTable, RowActionsMenu } from '@/components/featherui/DataTable';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { usePersistedListFilters } from '@/hooks/usePersistedListFilters';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
-import { cn } from '@/lib/utils';
 import { RoleBadge, RoleIconAvatar } from '@/components/RoleBadge';
 import { isDefaultRole, type Role } from '@/lib/role-utils';
+import { ListPagination } from '@/components/featherui/ListPagination';
 
 interface Pagination {
     page: number;
@@ -73,7 +62,7 @@ export default function RolesPage() {
     const [roles, setRoles] = useState<Role[]>([]);
     const [permissionCounts, setPermissionCounts] = useState<Record<number, number>>({});
     const [loading, setLoading] = useState(true);
-    const { filters, patchFilters, hydrated } = usePersistedListFilters(
+    const { filters, patchFilters, hydrated, resetFilters, isFiltered } = usePersistedListFilters(
         ROLES_LIST_FILTERS_KEY,
         ROLES_LIST_FILTERS_DEFAULTS,
     );
@@ -238,7 +227,7 @@ export default function RolesPage() {
 
             <WidgetRenderer widgets={getWidgets('admin-roles', 'after-header')} />
 
-            <div className='bg-card/50 border-border flex flex-col items-center gap-4 rounded-2xl border p-4 shadow-sm backdrop-blur-md sm:flex-row'>
+            <div className='fp-surface flex flex-col items-center gap-4 rounded-2xl border p-4 sm:flex-row'>
                 <div className='group relative w-full flex-1'>
                     <Search className='text-muted-foreground group-focus-within:text-primary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transition-colors' />
                     <Input
@@ -257,184 +246,153 @@ export default function RolesPage() {
             </div>
 
             {pagination.totalPages > 1 && !loading && (
-                <div className='border-border bg-card/50 mb-4 flex items-center justify-between gap-4 rounded-xl border px-4 py-3'>
-                    <Button
-                        variant='outline'
-                        size='sm'
-                        disabled={page === 1}
-                        onClick={() => patchFilters({ page: page - 1 })}
-                        className='gap-1.5'
-                    >
-                        <ChevronLeft className='h-4 w-4' />
-                        {t('common.previous')}
-                    </Button>
-                    <span className='text-sm font-medium'>
-                        {page} / {pagination.totalPages}
-                    </span>
-                    <Button
-                        variant='outline'
-                        size='sm'
-                        disabled={page === pagination.totalPages}
-                        onClick={() => patchFilters({ page: page + 1 })}
-                        className='gap-1.5'
-                    >
-                        {t('common.next')}
-                        <ChevronRight className='h-4 w-4' />
-                    </Button>
-                </div>
+                <ListPagination
+                    page={page}
+                    totalPages={pagination.totalPages}
+                    onPageChange={(nextPage) => patchFilters({ page: nextPage })}
+                    className='mb-4'
+                />
             )}
 
             {loading ? (
                 <TableSkeleton count={6} />
             ) : roles.length === 0 ? (
-                <EmptyState
+                <ListEmptyState
                     icon={Shield}
-                    title={t('admin.roles.no_results')}
-                    description={t('admin.roles.search_placeholder')}
+                    title={t('emptyStates.roles.title')}
+                    description={t('emptyStates.roles.description')}
                     action={
                         <Button onClick={() => router.push('/admin/roles/create')}>{t('admin.roles.create')}</Button>
                     }
+                    filtered={isFiltered}
+                    onClearFilters={resetFilters}
                 />
             ) : (
-                <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3'>
+                <>
                     <WidgetRenderer widgets={getWidgets('admin-roles', 'before-list')} />
-                    {roles.map((role) => {
-                        const permCount = permissionCounts[role.id];
-                        const isYours = user?.role_id === role.id;
-
-                        return (
-                            <div
-                                key={role.id}
-                                className={cn(
-                                    'group bg-card/50 border-border/70 relative flex flex-col overflow-hidden rounded-2xl border shadow-sm backdrop-blur-sm transition-all hover:-translate-y-0.5 hover:shadow-md',
-                                    isYours && 'ring-primary/30 ring-2',
-                                )}
-                                style={{ borderColor: `${role.color}44` }}
-                            >
-                                <div className='h-1.5 w-full' style={{ backgroundColor: role.color }} />
-
-                                <button
-                                    type='button'
-                                    onClick={() => router.push(`/admin/roles/${role.id}/edit`)}
-                                    className='flex flex-1 flex-col p-5 text-left'
-                                >
-                                    <div className='flex items-start gap-3'>
+                    <DataTable
+                        rows={roles}
+                        rowKey={(role) => role.id}
+                        onRowClick={(role) => router.push(`/admin/roles/${role.id}/edit`)}
+                        columns={[
+                            {
+                                key: 'role',
+                                header: t('admin.roles.table.role'),
+                                className: 'w-[34%]',
+                                cell: (role) => (
+                                    <div className='flex min-w-0 items-center gap-3'>
                                         <RoleIconAvatar
                                             role={role}
-                                            className='h-11 w-11'
-                                            iconClassName='h-5 w-5'
+                                            className='h-9 w-9'
+                                            iconClassName='h-4 w-4'
                                             fallbackIcon={Shield}
                                         />
-                                        <div className='min-w-0 flex-1'>
-                                            <div className='flex flex-wrap items-center gap-2'>
-                                                <h3 className='truncate text-base font-semibold'>
-                                                    {role.display_name}
-                                                </h3>
-                                                <RoleBadge role={role} variant='solid' className='text-[10px]' />
-                                                {isYours && (
+                                        <div className='min-w-0'>
+                                            <div className='flex items-center gap-2'>
+                                                <span className='truncate font-medium'>{role.display_name}</span>
+                                                {user?.role_id === role.id ? (
                                                     <Badge variant='secondary' className='text-[10px]'>
                                                         {t('admin.roles.labels.your_role')}
                                                     </Badge>
-                                                )}
+                                                ) : null}
                                             </div>
-                                            <p className='text-muted-foreground mt-0.5 font-mono text-xs'>
+                                            <div className='text-muted-foreground truncate font-mono text-xs'>
                                                 {role.name}
-                                            </p>
+                                            </div>
                                         </div>
                                     </div>
-
-                                    <div className='mt-4 flex flex-wrap items-center gap-2'>
-                                        <Badge variant='outline' className='gap-1 font-normal'>
-                                            <KeyRound className='h-3 w-3' />
-                                            {permCount !== undefined
-                                                ? t('admin.roles.stats.permission_count', { count: String(permCount) })
-                                                : '...'}
-                                        </Badge>
-                                        <span className='text-muted-foreground text-xs'>
-                                            {new Date(role.created_at).toLocaleDateString()}
-                                        </span>
+                                ),
+                            },
+                            {
+                                key: 'badge',
+                                header: t('admin.roles.table.badge'),
+                                cell: (role) => <RoleBadge role={role} variant='solid' className='text-[10px]' />,
+                            },
+                            {
+                                key: 'permissions',
+                                header: t('admin.roles.table.permissions'),
+                                className: 'text-muted-foreground text-xs',
+                                cell: (role) => (
+                                    <span className='inline-flex items-center gap-1.5'>
+                                        <KeyRound className='h-3.5 w-3.5' />
+                                        {permissionCounts[role.id] !== undefined
+                                            ? t('admin.roles.stats.permission_count', {
+                                                  count: String(permissionCounts[role.id]),
+                                              })
+                                            : '...'}
+                                    </span>
+                                ),
+                            },
+                            {
+                                key: 'created',
+                                header: t('admin.roles.table.created'),
+                                className: 'text-muted-foreground text-xs whitespace-nowrap',
+                                cell: (role) => new Date(role.created_at).toLocaleDateString(),
+                            },
+                        ]}
+                        mobileCard={(role) => (
+                            <div className='space-y-2.5'>
+                                <div className='flex items-center gap-3'>
+                                    <RoleIconAvatar
+                                        role={role}
+                                        className='h-9 w-9'
+                                        iconClassName='h-4 w-4'
+                                        fallbackIcon={Shield}
+                                    />
+                                    <div className='min-w-0'>
+                                        <div className='truncate font-medium'>{role.display_name}</div>
+                                        <div className='text-muted-foreground truncate font-mono text-xs'>
+                                            {role.name}
+                                        </div>
                                     </div>
-                                </button>
-
-                                <div className='border-border/50 flex items-center gap-1 border-t px-3 py-2'>
-                                    <Button
-                                        size='sm'
-                                        variant='ghost'
-                                        className='h-8 flex-1 text-xs'
-                                        onClick={() => router.push(`/admin/roles/${role.id}/edit`)}
-                                    >
-                                        <Pencil className='mr-1.5 h-3.5 w-3.5' />
-                                        {t('common.edit')}
-                                    </Button>
-                                    <Button
-                                        size='sm'
-                                        variant='ghost'
-                                        className='h-8 flex-1 text-xs'
-                                        onClick={() => handleDuplicate(role)}
-                                        disabled={isSubmitting}
-                                    >
-                                        <Copy className='mr-1.5 h-3.5 w-3.5' />
-                                        {t('admin.roles.actions.duplicate')}
-                                    </Button>
-                                    <Button
-                                        size='sm'
-                                        variant='ghost'
-                                        className='text-destructive hover:text-destructive hover:bg-destructive/10 h-8 px-2'
-                                        onClick={() => handleDelete(role.id)}
-                                        disabled={isSubmitting || isDefaultRole(role.id)}
-                                    >
-                                        <Trash2 className='h-3.5 w-3.5' />
-                                    </Button>
+                                </div>
+                                <div className='flex flex-wrap items-center gap-2'>
+                                    <RoleBadge role={role} variant='solid' className='text-[10px]' />
+                                    {permissionCounts[role.id] !== undefined ? (
+                                        <span className='text-muted-foreground text-xs'>
+                                            {t('admin.roles.stats.permission_count', {
+                                                count: String(permissionCounts[role.id]),
+                                            })}
+                                        </span>
+                                    ) : null}
                                 </div>
                             </div>
-                        );
-                    })}
-                </div>
+                        )}
+                        actions={(role) => (
+                            <RowActionsMenu
+                                items={[
+                                    { label: t('common.edit'), icon: Pencil, href: `/admin/roles/${role.id}/edit` },
+                                    {
+                                        label: t('admin.roles.actions.duplicate'),
+                                        icon: Copy,
+                                        disabled: isSubmitting,
+                                        onClick: () => handleDuplicate(role),
+                                    },
+                                    {
+                                        label: t('common.delete'),
+                                        icon: Trash2,
+                                        destructive: true,
+                                        separated: true,
+                                        disabled: isSubmitting || isDefaultRole(role.id),
+                                        onClick: () => handleDelete(role.id),
+                                    },
+                                ]}
+                            />
+                        )}
+                    />
+                </>
             )}
 
             {pagination.totalPages > 1 && (
-                <div className='mt-8 flex items-center justify-center gap-2'>
-                    <Button
-                        variant='outline'
-                        size='icon'
-                        disabled={page === 1}
-                        onClick={() => patchFilters({ page: page - 1 })}
-                    >
-                        <ChevronLeft className='h-4 w-4' />
-                    </Button>
-                    <span className='text-sm font-medium'>
-                        {page} / {pagination.totalPages}
-                    </span>
-                    <Button
-                        variant='outline'
-                        size='icon'
-                        disabled={page === pagination.totalPages}
-                        onClick={() => patchFilters({ page: page + 1 })}
-                    >
-                        <ChevronRight className='h-4 w-4' />
-                    </Button>
-                </div>
+                <ListPagination
+                    page={page}
+                    totalPages={pagination.totalPages}
+                    onPageChange={(nextPage) => patchFilters({ page: nextPage })}
+                    className='mt-4'
+                />
             )}
 
-            <div className='grid grid-cols-1 gap-6 pt-6 md:grid-cols-2 lg:grid-cols-3'>
-                <PageCard title={t('admin.roles.help.managing.title')} icon={Shield}>
-                    <p className='text-muted-foreground text-sm leading-relaxed'>
-                        {t('admin.roles.help.managing.description')}
-                    </p>
-                </PageCard>
-                <PageCard title={t('admin.roles.help.permissions.title')} icon={AlertCircle}>
-                    <p className='text-muted-foreground text-sm leading-relaxed'>
-                        {t('admin.roles.help.permissions.description')}
-                    </p>
-                </PageCard>
-                <PageCard title={t('admin.roles.help.security.title')} icon={KeyRound} variant='danger'>
-                    <ul className='text-muted-foreground list-inside list-disc space-y-1 text-sm'>
-                        <li>{t('admin.roles.help.security.item1')}</li>
-                        <li>{t('admin.roles.help.security.item2')}</li>
-                        <li>{t('admin.roles.help.security.item3')}</li>
-                    </ul>
-                </PageCard>
-            </div>
+            <AdminPageTips page='roles' />
 
             <WidgetRenderer widgets={getWidgets('admin-roles', 'bottom-of-page')} />
         </div>

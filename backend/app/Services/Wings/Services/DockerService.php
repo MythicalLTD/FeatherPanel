@@ -175,8 +175,11 @@ class DockerService
 
         $units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'];
         $base = log($bytes, 1024);
-        $pow = floor($base);
+        $pow = (int) floor($base);
         $value = $bytes / pow(1024, $pow);
+
+        // Ensure $pow is a valid index for $units
+        $pow = min($pow, count($units) - 1);
 
         return round($value, $precision) . ' ' . $units[$pow];
     }

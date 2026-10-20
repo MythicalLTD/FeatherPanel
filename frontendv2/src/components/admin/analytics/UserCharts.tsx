@@ -44,7 +44,7 @@ interface SimplePieChartProps {
 
 export function SimplePieChart({ title, description, data }: SimplePieChartProps) {
     return (
-        <Card className='border-border/50 bg-card/50 col-span-1 shadow-sm backdrop-blur-sm'>
+        <Card className='fp-surface col-span-1 border'>
             <CardHeader>
                 <CardTitle>{title}</CardTitle>
                 <CardDescription>{description}</CardDescription>
@@ -91,7 +91,7 @@ interface TrendChartProps {
 
 export function TrendChart({ title, description, data }: TrendChartProps) {
     return (
-        <Card className='border-border/50 bg-card/50 col-span-1 shadow-sm backdrop-blur-sm lg:col-span-2'>
+        <Card className='fp-surface col-span-1 border lg:col-span-2'>
             <CardHeader>
                 <CardTitle>{title}</CardTitle>
                 <CardDescription>{description}</CardDescription>
@@ -128,7 +128,7 @@ interface GrowthBarChartProps {
 export function GrowthBarChart({ title, description, data }: GrowthBarChartProps) {
     const { t } = useTranslation();
     return (
-        <Card className='border-border/50 bg-card/50 col-span-1 shadow-sm backdrop-blur-sm lg:col-span-2'>
+        <Card className='fp-surface col-span-1 border lg:col-span-2'>
             <CardHeader>
                 <CardTitle>{title}</CardTitle>
                 <CardDescription>{description}</CardDescription>

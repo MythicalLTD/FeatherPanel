@@ -202,7 +202,7 @@ export default function LanguageAnalyticsPage() {
                                     cy='50%'
                                     labelLine={false}
                                     label={({ name, value }: { name?: string; value?: number }) =>
-                                        `${name || 'Unknown'}: ${value || 0}`
+                                        `${name || t('common.unknown')}: ${value || 0}`
                                     }
                                     outerRadius={100}
                                     fill='#8884d8'

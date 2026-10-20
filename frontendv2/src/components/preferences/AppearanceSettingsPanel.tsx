@@ -39,7 +39,7 @@ import { FormSection } from '@/components/featherui/FormSection';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Input } from '@/components/featherui/Input';
 import { useTheme } from '@/contexts/ThemeContext';
-import type { BackgroundImageFit } from '@/contexts/ThemeContext';
+import { UI_DENSITIES, UI_SCALES, type BackgroundImageFit } from '@/contexts/ThemeContext';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { usePluginUi } from '@/contexts/PluginUiContext';
@@ -47,6 +47,8 @@ import { useNavbarHoverReveal } from '@/hooks/useNavbarHoverReveal';
 import { useNavbarSticky } from '@/hooks/useNavbarSticky';
 import { useChromeLayout } from '@/hooks/useChromeLayout';
 import { useSidebarPreferences } from '@/hooks/useSidebarPreferences';
+import { useFeatherOsSidebarShortcut } from '@/hooks/useFeatherOsSidebarShortcut';
+import { isModuleEnabled } from '@/lib/modules';
 import { BACKGROUND_ANIMATED_VARIANTS, type BackgroundAnimatedVariant } from '@/lib/background-variants';
 import { STATIC_BACKGROUND_PREVIEWS } from '@/lib/background-previews';
 import { fontsByCategory, type AppFontCategory } from '@/lib/app-fonts';
@@ -55,6 +57,7 @@ import { formatCustomAccent, getCustomAccentHex, isCustomAccent } from '@/lib/ac
 import { isRtlLocale } from '@/lib/locale-flags';
 import LocaleFlag from '@/components/preferences/LocaleFlag';
 import { cn } from '@/lib/utils';
+import { safeCssUrl } from '@/lib/safe-css-url';
 
 const PREFERENCES_PATH = '/dashboard/preferences';
 
@@ -155,14 +158,15 @@ function SegmentButton({
     return (
         <button
             type='button'
+            aria-pressed={active}
             disabled={disabled}
             onClick={onClick}
             className={cn(
-                'border-border/60 bg-muted/20 flex min-h-11 w-full items-center justify-center gap-1.5 rounded-xl border px-3 py-2.5 text-sm font-medium transition-all',
-                active && 'border-primary bg-primary/15 text-primary',
-                !active &&
-                    !disabled &&
-                    'text-muted-foreground hover:border-primary/30 hover:bg-accent/40 hover:text-foreground',
+                'flex min-h-11 w-full items-center justify-center gap-1.5 rounded-xl border px-3 py-2.5 text-sm font-medium transition-colors',
+                active
+                    ? 'border-primary/40 bg-primary/10 text-primary'
+                    : 'border-border/60 bg-background/40 text-muted-foreground',
+                !active && !disabled && 'hover:border-border hover:bg-muted/50 hover:text-foreground',
                 disabled && 'cursor-not-allowed opacity-50',
                 className,
             )}
@@ -270,7 +274,7 @@ function MotionOptionCard({
                 'flex flex-col gap-2 rounded-2xl border p-5 text-left transition-all',
                 active
                     ? 'border-primary bg-primary/10'
-                    : 'border-border/50 bg-card/40 hover:border-primary/30 hover:bg-card/70',
+                    : 'border-border/60 bg-background/40 hover:border-primary/30 hover:bg-muted/50',
             )}
         >
             <div className='flex items-center justify-between gap-2'>
@@ -312,7 +316,7 @@ function LanguageOptionCard({
                 'group relative flex items-center gap-3 rounded-2xl border p-4 text-left transition-all',
                 active
                     ? 'border-primary bg-primary/10'
-                    : 'border-border/50 bg-card/40 hover:border-primary/30 hover:bg-card/70',
+                    : 'border-border/60 bg-background/40 hover:border-primary/30 hover:bg-muted/50',
                 disabled && 'cursor-not-allowed opacity-50',
             )}
         >
@@ -349,6 +353,10 @@ export default function AppearanceSettingsPanel() {
         setFontFamily,
         motionLevel,
         setMotionLevel,
+        density,
+        setDensity,
+        uiScale,
+        setUiScale,
         toggleTheme,
         mounted,
         backgroundType,
@@ -371,9 +379,11 @@ export default function AppearanceSettingsPanel() {
     const { navbarSticky, setNavbarSticky } = useNavbarSticky();
     const { chromeLayout, setChromeLayout } = useChromeLayout();
     const sidebar = useSidebarPreferences();
+    const { showOsInSidebar, setShowOsInSidebar } = useFeatherOsSidebarShortcut();
     const { packs: uiPacks, uiPackId, setUiPackId } = usePluginUi();
     const { t, availableLanguages, setLocale, locale, isLocaleLocked } = useTranslation();
     const { settings } = useSettings();
+    const gameModuleEnabled = isModuleEnabled(settings, 'game');
 
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -383,6 +393,7 @@ export default function AppearanceSettingsPanel() {
     const [imageUrl, setImageUrl] = useState(backgroundImage);
     const [customAccentHex, setCustomAccentHex] = useState('#7c3aed');
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const navRef = useRef<HTMLElement>(null);
 
     const sectionParam = searchParams.get('section');
     const section: AppearanceSection =
@@ -399,6 +410,18 @@ export default function AppearanceSettingsPanel() {
     const setSection = (next: AppearanceSection) => {
         router.replace(`${PREFERENCES_PATH}?section=${next}`, { scroll: false });
     };
+
+    // On phones the section tabs scroll horizontally; keep the active one in view.
+    useEffect(() => {
+        const nav = navRef.current;
+        if (!nav || nav.scrollWidth <= nav.clientWidth) return;
+        const el = nav.querySelector<HTMLElement>('[aria-current="page"]');
+        if (!el) return;
+        const left = el.offsetLeft - nav.offsetLeft;
+        if (left < nav.scrollLeft || left + el.offsetWidth > nav.scrollLeft + nav.clientWidth) {
+            nav.scrollTo({ left: Math.max(0, left - 16), behavior: 'smooth' });
+        }
+    }, [section, mounted]);
 
     useEffect(() => {
         setImageUrl(backgroundImage);
@@ -452,7 +475,10 @@ export default function AppearanceSettingsPanel() {
 
     return (
         <div className='grid gap-6 lg:grid-cols-[minmax(0,220px)_1fr]'>
-            <nav className='flex gap-2 overflow-x-auto lg:flex-col lg:overflow-visible'>
+            <nav
+                ref={navRef}
+                className='fp-surface flex gap-1 self-start overflow-x-auto rounded-2xl border p-2 lg:sticky lg:top-24 lg:flex-col lg:overflow-visible'
+            >
                 {NAV_ITEMS.map((item) => {
                     const Icon = item.icon;
                     const active = section === item.id;
@@ -460,12 +486,13 @@ export default function AppearanceSettingsPanel() {
                         <button
                             key={item.id}
                             type='button'
+                            aria-current={active ? 'page' : undefined}
                             onClick={() => setSection(item.id)}
                             className={cn(
                                 'flex shrink-0 items-center gap-2.5 rounded-xl border px-3.5 py-2.5 text-left transition-colors lg:w-full',
                                 active
-                                    ? 'border-primary/40 bg-primary/10 text-primary'
-                                    : 'border-border/40 bg-card/40 text-muted-foreground hover:bg-accent/40 hover:text-foreground',
+                                    ? 'border-primary/15 bg-primary/10 text-primary'
+                                    : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground border-transparent',
                             )}
                         >
                             <Icon className='h-4 w-4 shrink-0' aria-hidden />
@@ -481,7 +508,7 @@ export default function AppearanceSettingsPanel() {
                 {/* THEME */}
                 {section === 'theme' && (
                     <div className='space-y-6'>
-                        <FormSection>
+                        <FormSection variant='inset'>
                             <SegmentGroup label={t('appearance.theme.modeTitle')} columns={2}>
                                 <SegmentButton
                                     active={theme === 'dark'}
@@ -503,7 +530,7 @@ export default function AppearanceSettingsPanel() {
                         </FormSection>
 
                         {(themePacks.length > 1 || uiPacks.length > 0) && (
-                            <FormSection className='space-y-4'>
+                            <FormSection variant='inset' className='space-y-4'>
                                 {themePacks.length > 1 && (
                                     <div>
                                         <p className='text-foreground mb-1 text-sm font-semibold'>
@@ -523,7 +550,7 @@ export default function AppearanceSettingsPanel() {
                                                         'rounded-xl border px-3.5 py-3 text-left transition-colors',
                                                         themePackId === pack.id
                                                             ? 'border-primary/40 bg-primary/10'
-                                                            : 'border-border/40 bg-card/40 hover:bg-accent/40',
+                                                            : 'border-border/60 bg-background/40 hover:bg-muted/50',
                                                         isThemePackLocked && 'cursor-not-allowed opacity-50',
                                                     )}
                                                 >
@@ -558,7 +585,7 @@ export default function AppearanceSettingsPanel() {
                                                     'rounded-xl border px-3.5 py-3 text-left transition-colors',
                                                     uiPackId === 'none' || !uiPackId
                                                         ? 'border-primary/40 bg-primary/10'
-                                                        : 'border-border/40 bg-card/40 hover:bg-accent/40',
+                                                        : 'border-border/60 bg-background/40 hover:bg-muted/50',
                                                     isUiPackLocked && 'cursor-not-allowed opacity-50',
                                                 )}
                                             >
@@ -576,7 +603,7 @@ export default function AppearanceSettingsPanel() {
                                                         'rounded-xl border px-3.5 py-3 text-left transition-colors',
                                                         uiPackId === pack.id
                                                             ? 'border-primary/40 bg-primary/10'
-                                                            : 'border-border/40 bg-card/40 hover:bg-accent/40',
+                                                            : 'border-border/60 bg-background/40 hover:bg-muted/50',
                                                         isUiPackLocked && 'cursor-not-allowed opacity-50',
                                                     )}
                                                 >
@@ -597,7 +624,7 @@ export default function AppearanceSettingsPanel() {
                             </FormSection>
                         )}
 
-                        <FormSection>
+                        <FormSection variant='inset'>
                             <p className='text-foreground mb-4 text-sm font-semibold'>{t('appearance.accentColor')}</p>
                             <div className='grid grid-cols-5 gap-3 sm:grid-cols-8 lg:grid-cols-10'>
                                 {ACCENT_PRESET_IDS.map((presetId) => {
@@ -638,7 +665,7 @@ export default function AppearanceSettingsPanel() {
                             </div>
                         </FormSection>
 
-                        <FormSection className='space-y-4'>
+                        <FormSection variant='inset' className='space-y-4'>
                             <div>
                                 <p className='text-foreground text-sm font-semibold'>
                                     {t('appearance.customAccent.title')}
@@ -706,7 +733,7 @@ export default function AppearanceSettingsPanel() {
                 {section === 'background' && (
                     <div className='space-y-6'>
                         {isBackgroundDisabled ? (
-                            <FormSection className='border-amber-500/20 bg-amber-500/5'>
+                            <FormSection variant='inset' className='border-amber-500/20 bg-amber-500/5'>
                                 <p className='text-foreground text-sm font-medium'>
                                     {theme === 'light'
                                         ? t('appearance.background.notAvailableInLight')
@@ -779,13 +806,13 @@ export default function AppearanceSettingsPanel() {
                                 )}
 
                                 {backgroundTab === 'custom' && (
-                                    <FormSection className='space-y-5'>
+                                    <FormSection variant='inset' className='space-y-5'>
                                         <StaticPreviewTile
                                             active={backgroundType === 'image'}
                                             onClick={() => setBackgroundType('image')}
                                             preview={
-                                                backgroundImage && !backgroundImage.startsWith('#')
-                                                    ? `url(${backgroundImage}) center/cover`
+                                                backgroundImage && safeCssUrl(backgroundImage)
+                                                    ? `${safeCssUrl(backgroundImage)} center/cover`
                                                     : undefined
                                             }
                                             label={t('appearance.background.customImage')}
@@ -859,7 +886,7 @@ export default function AppearanceSettingsPanel() {
                                     </FormSection>
                                 )}
 
-                                <FormSection className='space-y-6'>
+                                <FormSection variant='inset' className='space-y-6'>
                                     <SegmentGroup label={t('appearance.background.backdropBlur')} columns={3}>
                                         {BLUR_STEPS.map((px) => (
                                             <SegmentButton
@@ -908,6 +935,17 @@ export default function AppearanceSettingsPanel() {
                 {/* TYPOGRAPHY */}
                 {section === 'typography' && (
                     <div className='space-y-5'>
+                        <SegmentGroup
+                            label={t('appearance.uiScale.title')}
+                            hint={t('appearance.uiScale.hint')}
+                            columns={4}
+                        >
+                            {UI_SCALES.map((scale) => (
+                                <SegmentButton key={scale} active={uiScale === scale} onClick={() => setUiScale(scale)}>
+                                    {t(`appearance.uiScale.${scale}`)}
+                                </SegmentButton>
+                            ))}
+                        </SegmentGroup>
                         <SegmentGroup label={t('appearance.fontCategoriesTitle')} columns={3}>
                             {(['sans', 'serif', 'mono'] as AppFontCategory[]).map((cat) => (
                                 <SegmentButton
@@ -926,7 +964,7 @@ export default function AppearanceSettingsPanel() {
                                     type='button'
                                     onClick={() => setFontFamily(font.value)}
                                     className={cn(
-                                        'border-border/60 bg-card/50 hover:border-primary/40 flex flex-col rounded-2xl border p-4 text-left transition-all',
+                                        'border-border/60 bg-background/40 hover:border-primary/40 flex flex-col rounded-xl border p-4 text-left transition-colors',
                                         fontFamily === font.value && 'border-primary bg-primary/10',
                                     )}
                                 >
@@ -964,7 +1002,22 @@ export default function AppearanceSettingsPanel() {
                 {/* LAYOUT */}
                 {section === 'layout' && (
                     <div>
-                        <FormSection className='space-y-6'>
+                        <FormSection variant='inset' className='space-y-6'>
+                            <SegmentGroup
+                                label={t('appearance.density.title')}
+                                hint={t('appearance.density.hint')}
+                                columns={3}
+                            >
+                                {UI_DENSITIES.map((value) => (
+                                    <SegmentButton
+                                        key={value}
+                                        active={density === value}
+                                        onClick={() => setDensity(value)}
+                                    >
+                                        {t(`appearance.density.${value}`)}
+                                    </SegmentButton>
+                                ))}
+                            </SegmentGroup>
                             <SegmentGroup label={t('appearance.chromeLayout.title')} columns={2}>
                                 <SegmentButton
                                     active={chromeLayout === 'modern'}
@@ -1012,7 +1065,7 @@ export default function AppearanceSettingsPanel() {
                 {/* SIDEBAR */}
                 {section === 'sidebar' && (
                     <div>
-                        <FormSection className='space-y-6'>
+                        <FormSection variant='inset' className='space-y-6'>
                             <SegmentGroup label={t('appearance.sidebar.positionTitle')} columns={3}>
                                 <SegmentButton
                                     active={sidebar.sidebarPosition === 'left'}
@@ -1172,6 +1225,20 @@ export default function AppearanceSettingsPanel() {
                                     {t('appearance.sidebar.iconLibraryPhosphor')}
                                 </SegmentButton>
                             </SegmentGroup>
+                            {gameModuleEnabled && (
+                                <SegmentGroup
+                                    label={t('appearance.sidebar.osShortcutTitle')}
+                                    hint={t('appearance.sidebar.osShortcutHint')}
+                                    columns={2}
+                                >
+                                    <SegmentButton active={showOsInSidebar} onClick={() => setShowOsInSidebar(true)}>
+                                        {t('appearance.sidebar.osShortcutShow')}
+                                    </SegmentButton>
+                                    <SegmentButton active={!showOsInSidebar} onClick={() => setShowOsInSidebar(false)}>
+                                        {t('appearance.sidebar.osShortcutHide')}
+                                    </SegmentButton>
+                                </SegmentGroup>
+                            )}
                         </FormSection>
                     </div>
                 )}
@@ -1209,13 +1276,13 @@ export default function AppearanceSettingsPanel() {
                 {section === 'language' && (
                     <div className='space-y-4'>
                         {isLocaleLocked && (
-                            <FormSection className='border-amber-500/20 bg-amber-500/5'>
+                            <FormSection variant='inset' className='border-amber-500/20 bg-amber-500/5'>
                                 <p className='text-foreground text-sm font-medium'>
                                     {t('appearance.languageLockedByAdmin')}
                                 </p>
                             </FormSection>
                         )}
-                        <FormSection>
+                        <FormSection variant='inset'>
                             <div className='mb-4 flex items-start gap-3'>
                                 <div className='bg-primary/10 text-primary flex h-10 w-10 shrink-0 items-center justify-center rounded-xl'>
                                     <Globe className='h-5 w-5' aria-hidden />

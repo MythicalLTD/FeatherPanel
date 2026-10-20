@@ -468,7 +468,7 @@ class ServerLifecycleHookController
     }
 
     /**
-     * Container Shell runs arbitrary commands in the container — require control.console
+     * Container Shell runs arbitrary commands in the container - require control.console
      * (same gate as schedule/Task container_shell paths).
      */
     private function requireConsolePermissionForShellTask(Request $request, array $server, string $taskType): ?Response

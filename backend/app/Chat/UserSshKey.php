@@ -276,6 +276,12 @@ class UserSshKey
             $sql .= ' WHERE ' . implode(' AND ', $where);
         }
 
+        // Security: only known columns may reach the ORDER BY clause.
+        if (!in_array($sortBy, ['id', 'name', 'created_at', 'updated_at'], true)) {
+            $sortBy = 'created_at';
+        }
+        $sortOrder = strtoupper($sortOrder) === 'ASC' ? 'ASC' : 'DESC';
+
         $sql .= " ORDER BY $sortBy $sortOrder";
         $offset = max(0, ($page - 1) * $limit);
         $sql .= ' LIMIT :limit OFFSET :offset';
@@ -344,8 +350,12 @@ class UserSshKey
             }
 
             $pdo = Database::getPdoConnection();
+            $data = Database::filterColumns(self::$table, $data);
+            if ($data === []) {
+                return false;
+            }
             $fields = array_keys($data);
-            $setClause = implode(', ', array_map(fn ($f) => $f . ' = :' . $f, $fields));
+            $setClause = implode(', ', array_map(fn ($f) => '`' . $f . '` = :' . $f, $fields));
             $sql = 'UPDATE ' . self::$table . ' SET ' . $setClause . ' WHERE id = :id';
             $data['id'] = $id;
             $stmt = $pdo->prepare($sql);

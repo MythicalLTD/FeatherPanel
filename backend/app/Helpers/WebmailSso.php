@@ -114,7 +114,7 @@ final class WebmailSso
     {
         $secret = self::ensurePanelSecret();
 
-        // Legacy path was web-readable via nginx try_files — delete if present.
+        // Legacy path was web-readable via nginx try_files - delete if present.
         $legacyPublic = dirname(__DIR__, 2) . '/public/webmail/sso.secret';
         if (is_file($legacyPublic)) {
             @unlink($legacyPublic);

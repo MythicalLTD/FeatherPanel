@@ -92,9 +92,9 @@ export function BannedIpsEditor({
         const sanitized = entries.map((entry) => ({
             ip: entry.ip.trim(),
             created: entry.created.trim(),
-            source: entry.source.trim() || '(Unknown)',
+            source: entry.source.trim() || t('ui.components.server.files.editors.bannedIpsEditor.unknown'),
             expires: entry.expires.trim() || 'forever',
-            reason: entry.reason.trim() || 'Banned by an operator.',
+            reason: entry.reason.trim() || t('ui.components.server.files.editors.bannedIpsEditor.bannedByAnOperator'),
         }));
         onSave(`${JSON.stringify(sanitized, null, 4)}\n`);
     };
@@ -108,7 +108,7 @@ export function BannedIpsEditor({
     };
 
     return (
-        <Card className='bg-card/50 border-border/50 flex flex-col overflow-hidden rounded-2xl border shadow-sm backdrop-blur-sm'>
+        <Card className='fp-surface flex flex-col overflow-hidden rounded-xl border'>
             <CardHeader className='border-border/10 shrink-0 border-b pb-6'>
                 <div className='flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between'>
                     <div className='space-y-2'>
@@ -159,6 +159,7 @@ export function BannedIpsEditor({
                                     </label>
                                     <Input
                                         type='text'
+                                        data-fp-sensitive=''
                                         value={entry.ip}
                                         onChange={(e) => updateEntry(index, 'ip', e.target.value)}
                                         readOnly={readonly}
@@ -197,7 +198,7 @@ export function BannedIpsEditor({
                                         value={entry.source}
                                         onChange={(e) => updateEntry(index, 'source', e.target.value)}
                                         readOnly={readonly}
-                                        placeholder='(Unknown)'
+                                        placeholder={t('ui.components.server.files.editors.bannedIpsEditor.unknown')}
                                     />
                                 </div>
                             </div>

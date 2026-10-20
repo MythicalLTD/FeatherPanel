@@ -199,6 +199,8 @@ interface ConfigInterface
     public const AUTH_SHOW_QR_LOGIN = 'auth_show_qr_login';
     public const AUTH_SHOW_MARKETING_PANEL = 'auth_show_marketing_panel';
     public const AUTH_ASIDE_IMAGE_URL = 'auth_aside_image_url';
+    public const AUTH_TEMPLATE = 'auth_template';
+    public const AUTH_VISUAL_PRESET = 'auth_visual_preset';
     public const AUTH_FORM_DENSITY = 'auth_form_density';
     public const AUTH_SECONDARY_LAYOUT = 'auth_secondary_layout';
     public const AUTH_SHOW_THEME_CUSTOMIZER = 'auth_show_theme_customizer';
@@ -252,6 +254,18 @@ interface ConfigInterface
     public const OIDC_ALLOWED_GROUP_CLAIM = 'oidc_allowed_group_claim';
     public const OIDC_ALLOWED_GROUP_VALUE = 'oidc_allowed_group_value';
     public const OIDC_DISABLE_LOCAL_LOGIN = 'oidc_disable_local_login';
+
+    /**
+     * API clients: legacy compatibility switch.
+     *
+     * When true an API client may also authenticate with its own `public_key` as a
+     * Bearer token (old behaviour). The public key is not a secret (it is printed
+     * in redirect URLs for Calagopus compatible integrations), which is why this is
+     * off by default and only exists to rescue a badly configured legacy client.
+     * Only private keys are accepted by default; the public_key redirect URL is not
+     * affected by this switch.
+     */
+    public const API_CLIENTS_ALLOW_PUBLIC_KEY_AUTH = 'api_clients_allow_public_key_auth';
 
     /**
      * Servers Related Configs.
@@ -462,6 +476,25 @@ interface ConfigInterface
      * Knowledgebase Settings.
      */
     public const KNOWLEDGEBASE_ENABLED = 'knowledgebase_enabled';
+
+    /**
+     * Panel modules. Each one can be switched off by an admin; missing values mean enabled.
+     */
+    public const MODULE_GAME_ENABLED = 'module_game_enabled';
+    public const MODULE_WEB_ENABLED = 'module_web_enabled';
+    public const MODULE_VDS_ENABLED = 'module_vds_enabled';
+
+    /**
+     * First-install setup wizard. 'true' once an admin finished or the install was upgraded.
+     * Missing means a fresh install that still needs the wizard.
+     */
+    public const SETUP_COMPLETED = 'setup_completed';
+
+    /**
+     * Pterodactyl importer visibility: auto (listed while the panel still meets the import
+     * requirements), always, or hidden (dismissed by an admin).
+     */
+    public const PTERODACTYL_IMPORTER_VISIBILITY = 'pterodactyl_importer_visibility';
     public const KNOWLEDGEBASE_PUBLIC_ENABLED = 'knowledgebase_public_enabled';
     public const KNOWLEDGEBASE_SHOW_CATEGORIES = 'knowledgebase_show_categories';
     public const KNOWLEDGEBASE_SHOW_ARTICLES = 'knowledgebase_show_articles';

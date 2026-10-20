@@ -285,9 +285,7 @@ export async function deleteConversation(conversationId: number): Promise<void> 
     }
 }
 
-// ---------------------------------------------------------------------------
 // VDS Chatbot API functions
-// ---------------------------------------------------------------------------
 
 /**
  * Send a chat message to the VDS AI assistant

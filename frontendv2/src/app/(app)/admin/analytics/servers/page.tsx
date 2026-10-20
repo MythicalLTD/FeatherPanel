@@ -285,7 +285,7 @@ export default function ServerAnalyticsPage() {
                             subtitle={t('admin.analytics.servers.total')}
                             description={t('admin.analytics.servers.active_servers')}
                             icon={Server}
-                            className='bg-card/50 shadow-none! backdrop-blur-sm'
+                            className='fp-surface border'
                         />
                         <ResourceCard
                             title={overview.running.toString()}
@@ -294,7 +294,7 @@ export default function ServerAnalyticsPage() {
                                 percentage: String(overview.percentage_running),
                             })}
                             icon={Cpu}
-                            className='bg-card/50 shadow-none! backdrop-blur-sm'
+                            className='fp-surface border'
                         />
                         <ResourceCard
                             title={overview.suspended.toString()}
@@ -303,14 +303,14 @@ export default function ServerAnalyticsPage() {
                                 percentage: String(overview.percentage_suspended),
                             })}
                             icon={Archive}
-                            className='bg-card/50 shadow-none! backdrop-blur-sm'
+                            className='fp-surface border'
                         />
                         <ResourceCard
                             title={overview.installing.toString()}
                             subtitle={t('admin.analytics.servers.installing')}
                             description={t('admin.analytics.servers.being_installed')}
                             icon={HardDrive}
-                            className='bg-card/50 shadow-none! backdrop-blur-sm'
+                            className='fp-surface border'
                         />
                     </div>
                 )}
@@ -325,7 +325,7 @@ export default function ServerAnalyticsPage() {
                                     count: String(backupStats.avg_backups_per_server),
                                 })}
                                 icon={Archive}
-                                className='bg-card/50 shadow-none! backdrop-blur-sm'
+                                className='fp-surface border'
                             />
                         )}
                         {scheduleStats && (
@@ -336,7 +336,7 @@ export default function ServerAnalyticsPage() {
                                     count: String(scheduleStats.avg_schedules_per_server),
                                 })}
                                 icon={Clock}
-                                className='bg-card/50 shadow-none! backdrop-blur-sm'
+                                className='fp-surface border'
                             />
                         )}
                         {subuserStats && (
@@ -347,7 +347,7 @@ export default function ServerAnalyticsPage() {
                                     count: String(subuserStats.avg_subusers_per_server),
                                 })}
                                 icon={Users}
-                                className='bg-card/50 shadow-none! backdrop-blur-sm'
+                                className='fp-surface border'
                             />
                         )}
                         {installationStats && (
@@ -358,7 +358,7 @@ export default function ServerAnalyticsPage() {
                                     minutes: String(installationStats.avg_installation_time_minutes),
                                 })}
                                 icon={Clock}
-                                className='bg-card/50 shadow-none! backdrop-blur-sm'
+                                className='fp-surface border'
                             />
                         )}
                     </div>
@@ -374,7 +374,7 @@ export default function ServerAnalyticsPage() {
                                     count: String(limitStats.avg_backup_limit),
                                 })}
                                 icon={HardDrive}
-                                className='bg-card/50 shadow-none! backdrop-blur-sm'
+                                className='fp-surface border'
                             />
                         )}
                         {configurationStats && (
@@ -385,7 +385,7 @@ export default function ServerAnalyticsPage() {
                                     count: String(configurationStats.oom_disabled),
                                 })}
                                 icon={Settings}
-                                className='bg-card/50 shadow-none! backdrop-blur-sm'
+                                className='fp-surface border'
                             />
                         )}
                         {variableStats && (
@@ -394,7 +394,7 @@ export default function ServerAnalyticsPage() {
                                 subtitle={t('admin.analytics.servers.server_variables')}
                                 description={t('admin.analytics.servers.custom_runtime_variables')}
                                 icon={ShieldAlert}
-                                className='bg-card/50 shadow-none! backdrop-blur-sm'
+                                className='fp-surface border'
                             />
                         )}
                         {serverActivityStats && (
@@ -403,7 +403,7 @@ export default function ServerAnalyticsPage() {
                                 subtitle={t('admin.analytics.servers.server_activity_events')}
                                 description={t('admin.analytics.servers.operational_events')}
                                 icon={Activity}
-                                className='bg-card/50 shadow-none! backdrop-blur-sm'
+                                className='fp-surface border'
                             />
                         )}
                     </div>

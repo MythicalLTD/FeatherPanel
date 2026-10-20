@@ -74,7 +74,7 @@ export function WipeAllDialog({ open, onOpenChange, uuid, onSuccess }: WipeAllDi
             onConfirm={handleWipe}
             loading={loading}
         >
-            <p className='rounded-xl border border-red-500/10 bg-red-500/5 p-4 text-sm leading-relaxed font-medium text-white/90'>
+            <p className='text-foreground rounded-xl border border-red-500/10 bg-red-500/5 p-4 text-sm leading-relaxed font-medium'>
                 {t('files.dialogs.wipe.confirmation')}
             </p>
         </ConfirmDialog>

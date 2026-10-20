@@ -68,6 +68,25 @@ return function (RouteCollection $routes): void {
         Rate::perMinute(30) // Default: Admin can override in ratelimit.json
     );
 
+    // Daemon-reported usage (works while the server is offline, unlike websocket stats).
+    App::getInstance(true)->registerServerRoute(
+        $routes,
+        'session-server-resources',
+        '/api/user/servers/{uuidShort}/resources',
+        function (Request $request, array $args) {
+            $uuidShort = $args['uuidShort'] ?? null;
+            if (!$uuidShort) {
+                return ApiResponse::error('Missing or invalid UUID short', 'INVALID_UUID_SHORT', 400);
+            }
+
+            return (new ServerUserController())->getServerResources($request, $uuidShort);
+        },
+        'uuidShort',
+        ['GET'],
+        Rate::perMinute(30),
+        'user-server-resources'
+    );
+
     // Rate limit: Admin can override in ratelimit.json, default is 10 per minute
     App::getInstance(true)->registerServerRoute(
         $routes,

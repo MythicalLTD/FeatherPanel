@@ -310,6 +310,12 @@ class Subuser
             $sql .= ' WHERE ' . implode(' AND ', $where);
         }
 
+        // Security: only known columns may reach the ORDER BY clause.
+        if (!in_array($sortBy, ['id', 'user_id', 'server_id', 'created_at'], true)) {
+            $sortBy = 'id';
+        }
+        $sortOrder = strtoupper($sortOrder) === 'DESC' ? 'DESC' : 'ASC';
+
         $sql .= " ORDER BY $sortBy $sortOrder";
         $offset = max(0, ($page - 1) * $limit);
         $sql .= ' LIMIT :limit OFFSET :offset';
@@ -388,7 +394,7 @@ class Subuser
 
                 return false;
             }
-            $set = implode(', ', array_map(fn ($f) => "$f = :$f", $fields));
+            $set = implode(', ', array_map(fn ($f) => "`$f` = :$f", $fields));
             $sql = 'UPDATE ' . self::$table . ' SET ' . $set . ' WHERE id = :id';
             $stmt = $pdo->prepare($sql);
             $data['id'] = $id;

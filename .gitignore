@@ -52,3 +52,8 @@ docs-site/
 backend/openapi.json
 Untitled
 .featherpanel.conf
+# Never commit real environment files again. The demo .env is tracked on
+# purpose for the dev stack; everything else belongs in .env.example files.
+.env
+.env.*
+!.env.example

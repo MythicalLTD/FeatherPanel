@@ -25,7 +25,8 @@ import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { Textarea } from '@/components/featherui/Textarea';
 import { Select } from '@/components/ui/select-native';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent, TabsTrigger } from '@/components/ui/tabs';
+import { ScrollableTabsList } from '@/components/ui/scrollable-tabs-list';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
@@ -37,6 +38,8 @@ import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { SpellInheritanceField } from '@/components/admin/SpellInheritanceField';
 import { SpellConfigField } from '@/components/admin/SpellConfigField';
 import { spellConfigPayload } from '@/lib/spellConfig';
+import { UnsavedChangesBar } from '@/components/featherui/UnsavedChangesBar';
+import { useFormBaseline } from '@/hooks/useFormBaseline';
 
 interface Realm {
     id: number;
@@ -76,6 +79,7 @@ export default function CreateSpellPage() {
         script_is_privileged: false,
         startup: '',
     });
+    const { dirty: unsaved, restore: restoreForm } = useFormBaseline(form, { trackFromStart: true });
 
     const [dockerImages, setDockerImages] = useState<{ name: string; value: string }[]>([]);
     const [defaultDockerImage, setDefaultDockerImage] = useState('');
@@ -206,13 +210,13 @@ export default function CreateSpellPage() {
             <WidgetRenderer widgets={getWidgets('admin-spells-create', 'after-header')} />
 
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-                <TabsList className='grid w-full grid-cols-5'>
+                <ScrollableTabsList className='flex h-auto w-full md:grid md:grid-cols-5'>
                     <TabsTrigger value='general'>{t('admin.spells.tabs.general')}</TabsTrigger>
                     <TabsTrigger value='docker'>{t('admin.spells.tabs.docker')}</TabsTrigger>
                     <TabsTrigger value='features'>{t('admin.spells.tabs.features')}</TabsTrigger>
                     <TabsTrigger value='config'>{t('admin.spells.tabs.config')}</TabsTrigger>
                     <TabsTrigger value='script'>{t('admin.spells.tabs.script')}</TabsTrigger>
-                </TabsList>
+                </ScrollableTabsList>
 
                 <TabsContent value='general' className='space-y-4'>
                     <PageCard title={t('admin.spells.form.basic_information')} icon={Sparkles}>
@@ -503,6 +507,17 @@ export default function CreateSpellPage() {
             </Tabs>
 
             <WidgetRenderer widgets={getWidgets('admin-spells-create', 'bottom-of-page')} />
+
+            <UnsavedChangesBar
+                dirty={unsaved}
+                saving={saving}
+                onSave={() => void handleCreate()}
+                onDiscard={() => {
+                    const saved = restoreForm();
+                    if (saved) setForm(saved);
+                }}
+                saveLabel={t('common.create')}
+            />
         </div>
     );
 }

@@ -147,6 +147,14 @@ use Symfony\Component\HttpFoundation\Response;
 ),]
 class SettingsController
 {
+    /** Settings whose value must be one of their declared options. */
+    private const STRICT_OPTION_SETTINGS = [
+        ConfigInterface::MODULE_GAME_ENABLED,
+        ConfigInterface::MODULE_WEB_ENABLED,
+        ConfigInterface::MODULE_VDS_ENABLED,
+        ConfigInterface::PTERODACTYL_IMPORTER_VISIBILITY,
+    ];
+
     private $app;
     private $settings;
     private $sensitiveSettings = [
@@ -207,6 +215,17 @@ class SettingsController
                 ConfigInterface::TEMP_FILES_API_TOKEN,
             ],
         ],
+        'modules' => [
+            'name' => 'Modules',
+            'description' => 'Turn whole panel modules on or off. A disabled module disappears from sidebars, dashboard and search, and its API refuses requests.',
+            'icon' => 'boxes',
+            'settings' => [
+                ConfigInterface::MODULE_GAME_ENABLED,
+                ConfigInterface::MODULE_WEB_ENABLED,
+                ConfigInterface::MODULE_VDS_ENABLED,
+                ConfigInterface::PTERODACTYL_IMPORTER_VISIBILITY,
+            ],
+        ],
         'links' => [
             'name' => 'Links',
             'description' => 'Public links shown across the panel footer (support, social media, legal)',
@@ -241,6 +260,8 @@ class SettingsController
                 ConfigInterface::AUTH_SSO_SUBHEADLINE,
                 ConfigInterface::AUTH_SHOW_MARKETING_PANEL,
                 ConfigInterface::AUTH_ASIDE_IMAGE_URL,
+                ConfigInterface::AUTH_TEMPLATE,
+                ConfigInterface::AUTH_VISUAL_PRESET,
                 ConfigInterface::AUTH_SHOW_QR_LOGIN,
                 ConfigInterface::AUTH_FORM_DENSITY,
                 ConfigInterface::AUTH_SECONDARY_LAYOUT,
@@ -477,6 +498,70 @@ class SettingsController
     {
         $this->app = App::getInstance(true);
         $this->settings = [
+            ConfigInterface::MODULE_GAME_ENABLED => [
+                'name' => ConfigInterface::MODULE_GAME_ENABLED,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::MODULE_GAME_ENABLED,
+                        'true',
+                    ),
+                'description' => 'Game servers module (Wings nodes, servers, spells and realms)',
+                'type' => 'select',
+                'required' => true,
+                'placeholder' => 'true',
+                'validation' => 'required|string|max:255',
+                'options' => ['true', 'false'],
+                'category' => 'modules',
+            ],
+            ConfigInterface::MODULE_WEB_ENABLED => [
+                'name' => ConfigInterface::MODULE_WEB_ENABLED,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::MODULE_WEB_ENABLED,
+                        'true',
+                    ),
+                'description' => 'Web hosting module (WebSpaces, web nodes, mail and DNS hosts)',
+                'type' => 'select',
+                'required' => true,
+                'placeholder' => 'true',
+                'validation' => 'required|string|max:255',
+                'options' => ['true', 'false'],
+                'category' => 'modules',
+            ],
+            ConfigInterface::MODULE_VDS_ENABLED => [
+                'name' => ConfigInterface::MODULE_VDS_ENABLED,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::MODULE_VDS_ENABLED,
+                        'true',
+                    ),
+                'description' => 'VDS module (virtual servers on Proxmox)',
+                'type' => 'select',
+                'required' => true,
+                'placeholder' => 'true',
+                'validation' => 'required|string|max:255',
+                'options' => ['true', 'false'],
+                'category' => 'modules',
+            ],
+            ConfigInterface::PTERODACTYL_IMPORTER_VISIBILITY => [
+                'name' => ConfigInterface::PTERODACTYL_IMPORTER_VISIBILITY,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::PTERODACTYL_IMPORTER_VISIBILITY,
+                        'auto',
+                    ),
+                'description' => 'When the Pterodactyl importer shows up in the admin sidebar and search',
+                'type' => 'select',
+                'required' => true,
+                'placeholder' => 'auto',
+                'validation' => 'required|string|in:auto,always,hidden',
+                'options' => ['auto', 'always', 'hidden'],
+                'category' => 'modules',
+            ],
             ConfigInterface::APP_NAME => [
                 'name' => ConfigInterface::APP_NAME,
                 'value' => $this->app
@@ -1655,6 +1740,32 @@ class SettingsController
                 'options' => [],
                 'category' => 'auth_page',
             ],
+            ConfigInterface::AUTH_TEMPLATE => [
+                'name' => ConfigInterface::AUTH_TEMPLATE,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::AUTH_TEMPLATE, 'split'),
+                'description' => 'Choose the login page template: split (form plus marketing panel), centered (focused form), or spotlight (form with a compact brand panel).',
+                'type' => 'select',
+                'required' => true,
+                'placeholder' => 'split',
+                'validation' => 'required|string|max:32',
+                'options' => ['split', 'centered', 'spotlight'],
+                'category' => 'auth_page',
+            ],
+            ConfigInterface::AUTH_VISUAL_PRESET => [
+                'name' => ConfigInterface::AUTH_VISUAL_PRESET,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::AUTH_VISUAL_PRESET, 'aurora'),
+                'description' => 'Choose the visual treatment for auth backgrounds and surfaces: aurora, glass, minimal, or contrast.',
+                'type' => 'select',
+                'required' => true,
+                'placeholder' => 'aurora',
+                'validation' => 'required|string|max:32',
+                'options' => ['aurora', 'glass', 'minimal', 'contrast'],
+                'category' => 'auth_page',
+            ],
             ConfigInterface::AUTH_SHOW_QR_LOGIN => [
                 'name' => ConfigInterface::AUTH_SHOW_QR_LOGIN,
                 'value' => $this->app
@@ -2559,7 +2670,7 @@ class SettingsController
                 'value' => $this->app
                     ->getConfig()
                     ->getSetting(ConfigInterface::SERVER_HIDE_IPS, 'false'),
-                'description' => 'Hide IP addresses in server activity logs and other views. When enabled, IPs will be masked with "***.***.***.***" to protect user privacy.',
+                'description' => 'Default for privacy mode. When true, IP addresses are masked in activity logs, and privacy mode (hides IPs, hosts, emails, keys and credentials in the panel) starts on for users who have not chosen a value. Each user can still switch it from the top bar.',
                 'type' => 'select',
                 'required' => true,
                 'placeholder' => 'false',
@@ -3621,7 +3732,7 @@ class SettingsController
     public function getSettingsByCategory(string $category): Response
     {
         if (!isset($this->settingsCategories[$category])) {
-            return ApiResponse::error('Category not found', 404);
+            return ApiResponse::error('Category not found', 'NOT_FOUND', 404);
         }
 
         $categorySettings = [];
@@ -3697,7 +3808,7 @@ class SettingsController
     public function show(Request $request, string $setting): Response
     {
         if (!isset($this->settings[$setting])) {
-            return ApiResponse::error('Setting not found', 404);
+            return ApiResponse::error('Setting not found', 'NOT_FOUND', 404);
         }
 
         // Emit event
@@ -3764,7 +3875,7 @@ class SettingsController
     ),]
     public function update(Request $request): Response
     {
-        // Demo panels may change settings — periodic wipe / reset restores defaults.
+        // Demo panels may change settings - periodic wipe / reset restores defaults.
 
         $raw = $request->getContent();
         $data = json_decode($raw ?? '', true);
@@ -3814,10 +3925,19 @@ class SettingsController
                 return ApiResponse::error('Telemetry must be enabled or disabled', 'INVALID_SETTING_VALUE', 400);
             }
 
+            // Module and importer switches only accept their listed options.
+            if (
+                in_array($setting, self::STRICT_OPTION_SETTINGS, true)
+                && !in_array($stringValue, $settingConfig['options'] ?? [], true)
+            ) {
+                return ApiResponse::error("Invalid value for {$setting}", 'INVALID_SETTING_VALUE', 400);
+            }
+
             // Basic validation (use normalized string so 0 / "false" are handled correctly)
             if ($settingConfig['required'] && $stringValue === '') {
                 return ApiResponse::error(
                     "Setting {$setting} is required",
+                    'BAD_REQUEST',
                     400,
                 );
             }
@@ -3830,6 +3950,7 @@ class SettingsController
             ) {
                 return ApiResponse::error(
                     "Setting {$setting} value is too long (max {$maxLength} characters)",
+                    'BAD_REQUEST',
                     400,
                 );
             }
@@ -3847,6 +3968,7 @@ class SettingsController
             } else {
                 return ApiResponse::error(
                     "Failed to update setting: {$setting}",
+                    'INTERNAL_SERVER_ERROR',
                     500,
                 );
             }
@@ -4296,8 +4418,8 @@ class SettingsController
             );
         }
 
-        $updaterUrl = trim((string) ($_ENV['DOCKER_UPDATER_URL'] ?? ''));
-        $updaterToken = trim((string) ($_ENV['DOCKER_UPDATER_TOKEN'] ?? ''));
+        $updaterUrl = trim((string) App::env('DOCKER_UPDATER_URL', ''));
+        $updaterToken = trim((string) App::env('DOCKER_UPDATER_TOKEN', ''));
 
         if ($updaterUrl === '' || $updaterToken === '') {
             return ApiResponse::error(
@@ -4444,7 +4566,7 @@ class SettingsController
 
     private function isDockerDeployment(): bool
     {
-        $flag = strtolower(trim((string) ($_ENV['PANEL_DOCKER_DEPLOYMENT'] ?? 'false')));
+        $flag = strtolower(trim((string) App::env('PANEL_DOCKER_DEPLOYMENT', 'false')));
 
         return in_array($flag, ['1', 'true', 'yes', 'on'], true);
     }

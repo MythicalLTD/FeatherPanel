@@ -202,7 +202,7 @@ export function ConfigurationTab({ form, setForm, errors }: ConfigurationTabProp
                                 setForm({ ...form, backupsProvider: e.target.value })
                             }
                         >
-                            <option value='local'>Local</option>
+                            <option value='local'>{t('ui.admin.webNodes.edit.configurationTab.local')}</option>
                             <option value='s3'>S3-compatible</option>
                             <option value='restic'>Restic</option>
                             <option value='pbs'>Proxmox Backup Server</option>
@@ -331,7 +331,7 @@ export function ConfigurationTab({ form, setForm, errors }: ConfigurationTabProp
                                     }
                                 />
                                 <p className='text-muted-foreground/70 text-xs italic'>
-                                    Leave blank on update to keep the current password.
+                                    {t('ui.admin.webNodes.edit.configurationTab.leaveBlankOnUpdateToKeep')}
                                 </p>
                             </div>
                             <div className='space-y-2'>
@@ -375,7 +375,7 @@ export function ConfigurationTab({ form, setForm, errors }: ConfigurationTabProp
                                     }
                                 />
                                 <p className='text-muted-foreground/70 text-xs italic'>
-                                    Leave blank on update to keep the current password.
+                                    {t('ui.admin.webNodes.edit.configurationTab.leaveBlankOnUpdateToKeep')}
                                 </p>
                             </div>
                             <div className='space-y-2'>

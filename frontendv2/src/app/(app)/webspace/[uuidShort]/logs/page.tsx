@@ -291,7 +291,7 @@ export default function WebSpaceLogsPage() {
                     }
                 />
 
-                <div className='border-border/50 bg-card/50 flex flex-wrap gap-2 rounded-xl border p-2 backdrop-blur-xl'>
+                <div className='fp-surface flex flex-wrap gap-2 rounded-xl border p-2'>
                     {tabs.map((item) => (
                         <button
                             key={item.id}
@@ -377,7 +377,7 @@ export default function WebSpaceLogsPage() {
                     )}
                 </div>
 
-                <div className='border-border/50 bg-card/50 rounded-xl border backdrop-blur-xl'>
+                <div className='fp-surface rounded-xl border'>
                     <div className='border-border/50 flex items-center justify-between border-b px-4 py-2'>
                         <p className='text-muted-foreground text-xs font-medium uppercase'>
                             {tabs.find((x) => x.id === tab)?.label}

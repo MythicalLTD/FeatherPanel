@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { AdminPageTips } from '@/components/admin/AdminPageTips';
 import { useState, useEffect, useCallback, type ReactNode, type ElementType } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -25,10 +26,9 @@ import { useDateFormatOptions } from '@/contexts/PreferencesContext';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
-import { ResourceCard, type ResourceBadge } from '@/components/featherui/ResourceCard';
+import { DataTable, RowActionsMenu, TableIdentity } from '@/components/featherui/DataTable';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
-import { EmptyState } from '@/components/featherui/EmptyState';
-import { PageCard } from '@/components/featherui/PageCard';
+import { ListEmptyState } from '@/components/featherui/ListEmptyState';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { usePersistedListFilters } from '@/hooks/usePersistedListFilters';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
@@ -39,8 +39,6 @@ import {
     Search,
     Pencil,
     Trash2,
-    ChevronLeft,
-    ChevronRight,
     Eye,
     ShieldCheck,
     ArrowLeftRight,
@@ -52,11 +50,9 @@ import {
     User,
     Layers,
     Gauge,
-    HelpCircle,
     AlertTriangle,
     Network,
     Terminal,
-    Clock,
 } from 'lucide-react';
 import { StatusBadge } from '@/components/servers/StatusBadge';
 import { displayStatus } from '@/lib/server-utils';
@@ -80,7 +76,11 @@ import { Dialog, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { TransferServerDialog } from '@/components/admin/TransferServerDialog';
-import { ServerPowerMenu, sendServerPowerAction } from '@/components/admin/ServerPowerMenu';
+import { ServerPowerMenu } from '@/components/admin/ServerPowerMenu';
+import { BulkSelectionRow, BulkServerActions } from '@/components/servers/BulkServerActions';
+import { Sensitive } from '@/components/common/Sensitive';
+import { useIpMask } from '@/hooks/useIpMask';
+import { ListPagination } from '@/components/featherui/ListPagination';
 
 function resolveAvatarSrc(avatar?: string): string | undefined {
     if (avatar && (avatar.startsWith('http') || avatar.startsWith('/'))) {
@@ -113,15 +113,78 @@ const SERVERS_LIST_FILTERS_DEFAULTS = {
     filterLocation: null as { id: number; name: string } | null,
 };
 
+const formatMemory = (mb: number) => {
+    if (mb === 0) return '∞';
+    if (mb >= 1024) return `${(mb / 1024).toFixed(1)} GB`;
+    return `${mb} MB`;
+};
+
+const formatDisk = (mb: number) => {
+    if (mb === 0) return '∞';
+    if (mb >= 1024) return `${(mb / 1024).toFixed(1)} GB`;
+    return `${mb} MB`;
+};
+
+const formatCpu = (cpu: number) => {
+    if (cpu === 0) return '∞';
+    return `${cpu}%`;
+};
+
+function ServerOwner({ server }: { server: ApiServer }) {
+    const { t } = useTranslation();
+    if (!server.owner) {
+        return <span className='text-muted-foreground text-xs'>{t('ui.admin.servers.system')}</span>;
+    }
+    const avatar = resolveAvatarSrc(server.owner.avatar);
+    return (
+        <div className='flex min-w-0 items-center gap-2'>
+            <Avatar className='h-6 w-6 shrink-0'>
+                {avatar && <AvatarImage src={avatar} alt={server.owner.username} />}
+            </Avatar>
+            {server.owner.uuid ? (
+                <Link
+                    href={`/admin/users/${server.owner.uuid}/edit`}
+                    onClick={(e) => e.stopPropagation()}
+                    className='text-foreground hover:text-primary truncate text-sm font-medium underline-offset-4 transition-colors hover:underline'
+                >
+                    {server.owner.username}
+                </Link>
+            ) : (
+                <span className='truncate text-sm font-medium'>{server.owner.username}</span>
+            )}
+        </div>
+    );
+}
+
+function ServerResources({ server }: { server: ApiServer }) {
+    return (
+        <div className='text-muted-foreground flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs whitespace-nowrap lg:flex-nowrap'>
+            <span className='inline-flex items-center gap-1'>
+                <Database className='h-3.5 w-3.5' />
+                {formatMemory(server.memory)}
+            </span>
+            <span className='inline-flex items-center gap-1'>
+                <Cpu className='h-3.5 w-3.5' />
+                {formatCpu(server.cpu)}
+            </span>
+            <span className='inline-flex items-center gap-1'>
+                <HardDrive className='h-3.5 w-3.5' />
+                {formatDisk(server.disk)}
+            </span>
+        </div>
+    );
+}
+
 export default function ServersPage() {
     const { t } = useTranslation();
+    const privacyMask = useIpMask();
     const dateOpts = useDateFormatOptions();
     const router = useRouter();
 
     const [loading, setLoading] = useState(true);
     const [servers, setServers] = useState<ApiServer[]>([]);
     const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
-    const { filters, patchFilters, resetFilters, hydrated } = usePersistedListFilters(
+    const { filters, patchFilters, resetFilters, hydrated, isFiltered } = usePersistedListFilters(
         SERVERS_LIST_FILTERS_KEY,
         SERVERS_LIST_FILTERS_DEFAULTS,
     );
@@ -186,8 +249,6 @@ export default function ServersPage() {
     const [spellsList, setSpellsList] = useState<{ id: number; name: string; description?: string }[]>([]);
     const [locationsList, setLocationsList] = useState<{ id: number; name: string; description?: string }[]>([]);
     const [selectedServerIds, setSelectedServerIds] = useState<number[]>([]);
-    const [bulkPowerLoading, setBulkPowerLoading] = useState(false);
-    const [confirmBulkKill, setConfirmBulkKill] = useState(false);
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -280,38 +341,11 @@ export default function ServersPage() {
 
     const selectedServers = servers.filter((server) => selectedServerIds.includes(server.id));
 
-    const handleBulkPowerAction = async (action: 'start' | 'stop' | 'restart' | 'kill') => {
-        if (selectedServers.length === 0) {
-            return;
-        }
-
-        setBulkPowerLoading(true);
-        try {
-            const results = await Promise.all(
-                selectedServers.map((server) =>
-                    sendServerPowerAction(server.uuidShort, action)
-                        .then(() => true)
-                        .catch(() => false),
-                ),
-            );
-
-            const successCount = results.filter(Boolean).length;
-
-            if (successCount === 0) {
-                toast.error(t('servers.bulk.error'));
-            } else if (successCount < selectedServers.length) {
-                toast.warning(t('servers.bulk.partialSuccess'));
-            } else {
-                toast.success(
-                    t('servers.bulk.success', {
-                        count: String(successCount),
-                    }),
-                );
-                clearSelection();
-            }
-        } finally {
-            setBulkPowerLoading(false);
-        }
+    const handleBulkFinished = (failedUuidShorts: string[]) => {
+        // Failed servers stay selected so they can be retried.
+        setSelectedServerIds(
+            servers.filter((server) => failedUuidShorts.includes(server.uuidShort)).map((server) => server.id),
+        );
     };
 
     const handleDelete = (server: ApiServer, hard: boolean = false) => {
@@ -397,23 +431,6 @@ export default function ServersPage() {
         }
     };
 
-    const formatMemory = (mb: number) => {
-        if (mb === 0) return '∞';
-        if (mb >= 1024) return `${(mb / 1024).toFixed(1)} GB`;
-        return `${mb} MB`;
-    };
-
-    const formatDisk = (mb: number) => {
-        if (mb === 0) return '∞';
-        if (mb >= 1024) return `${(mb / 1024).toFixed(1)} GB`;
-        return `${mb} MB`;
-    };
-
-    const formatCpu = (cpu: number) => {
-        if (cpu === 0) return '∞';
-        return `${cpu}%`;
-    };
-
     const formatBackupLimit = (limit: number | undefined) => {
         if (limit === undefined || limit === null) return '-';
         if (limit === 0) return t('admin.servers.form.disabled');
@@ -461,7 +478,7 @@ export default function ServersPage() {
 
             <WidgetRenderer widgets={getWidgets('admin-servers', 'after-header')} />
 
-            <div className='bg-card/50 border-border flex flex-col items-stretch gap-4 rounded-2xl border p-4 shadow-sm backdrop-blur-md'>
+            <div className='fp-surface flex flex-col items-stretch gap-4 rounded-2xl border p-4'>
                 <div className='group relative w-full flex-1'>
                     <Search className='text-muted-foreground group-focus-within:text-primary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transition-colors' />
                     <Input
@@ -472,11 +489,11 @@ export default function ServersPage() {
                     />
                 </div>
                 <div className='flex flex-col items-stretch justify-between gap-2 sm:flex-row sm:items-center'>
-                    <div className='flex flex-wrap items-center gap-2'>
+                    <div className='grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center'>
                         <Button
                             variant={filterOwner ? 'default' : 'outline'}
                             size='sm'
-                            className='h-9 text-xs'
+                            className='h-10 min-w-0 justify-start overflow-hidden text-xs sm:h-9 sm:justify-center'
                             onClick={() => {
                                 setIsOwnerFilterModalOpen(true);
                                 if (!ownerFilterResults.length) {
@@ -492,7 +509,7 @@ export default function ServersPage() {
                         <Button
                             variant={filterNode ? 'default' : 'outline'}
                             size='sm'
-                            className='h-9 text-xs'
+                            className='h-10 min-w-0 justify-start overflow-hidden text-xs sm:h-9 sm:justify-center'
                             onClick={() => {
                                 fetchNodes();
                                 setIsNodeFilterModalOpen(true);
@@ -506,7 +523,7 @@ export default function ServersPage() {
                         <Button
                             variant={filterRealm ? 'default' : 'outline'}
                             size='sm'
-                            className='h-9 text-xs'
+                            className='h-10 min-w-0 justify-start overflow-hidden text-xs sm:h-9 sm:justify-center'
                             onClick={() => {
                                 setIsRealmFilterModalOpen(true);
                             }}
@@ -519,7 +536,7 @@ export default function ServersPage() {
                         <Button
                             variant={filterSpell ? 'default' : 'outline'}
                             size='sm'
-                            className='h-9 text-xs'
+                            className='h-10 min-w-0 justify-start overflow-hidden text-xs sm:h-9 sm:justify-center'
                             onClick={() => {
                                 setIsSpellFilterModalOpen(true);
                                 if (!spellsList.length) {
@@ -541,7 +558,7 @@ export default function ServersPage() {
                         <Button
                             variant={filterLocation ? 'default' : 'outline'}
                             size='sm'
-                            className='h-9 text-xs'
+                            className='h-10 min-w-0 justify-start overflow-hidden text-xs sm:h-9 sm:justify-center'
                             onClick={() => {
                                 setIsLocationFilterModalOpen(true);
                                 if (!locationsList.length) {
@@ -562,13 +579,13 @@ export default function ServersPage() {
                         <Button
                             variant='ghost'
                             size='sm'
-                            className='h-9 text-xs'
+                            className='h-10 min-w-0 justify-start overflow-hidden text-xs sm:h-9 sm:justify-center'
                             onClick={() => patchFilters({ showAdvancedFilters: !showAdvancedFilters })}
                         >
                             {t('admin.servers.filters.advanced')}
                         </Button>
                     </div>
-                    <div className='flex items-center gap-2'>
+                    <div className='grid sm:flex sm:items-center sm:gap-2'>
                         <Select
                             value={`${sortBy}-${sortOrder}`}
                             onChange={(e) => {
@@ -578,7 +595,7 @@ export default function ServersPage() {
                                 ];
                                 patchFilters({ sortBy: field, sortOrder: order, page: 1 });
                             }}
-                            className='bg-background/50 border-border/50 h-11 w-55 rounded-xl text-sm'
+                            className='bg-background/50 border-border/50 h-11 w-full rounded-xl text-sm sm:w-55'
                         >
                             <option value='id-DESC'>{t('admin.servers.sort.newest')}</option>
                             <option value='id-ASC'>{t('admin.servers.sort.oldest')}</option>
@@ -636,323 +653,172 @@ export default function ServersPage() {
             {loading ? (
                 <TableSkeleton count={5} />
             ) : servers.length === 0 ? (
-                <EmptyState
+                <ListEmptyState
                     icon={Server}
-                    title={t('admin.servers.no_results')}
-                    description={t('admin.servers.search_placeholder')}
+                    title={t('emptyStates.servers.title')}
+                    description={t('emptyStates.servers.description')}
                     action={
                         <Button onClick={() => router.push('/admin/servers/create')}>
                             <Plus className='mr-2 h-4 w-4' />
                             {t('admin.servers.create')}
                         </Button>
                     }
+                    filtered={isFiltered}
+                    onClearFilters={resetFilters}
                 />
             ) : (
                 <>
-                    <div className='border-border bg-card/60 mb-4 flex flex-col items-start justify-between gap-3 rounded-xl border px-4 py-3 sm:flex-row sm:items-center'>
-                        <div className='flex items-center gap-2 text-sm'>
-                            <button
-                                type='button'
-                                onClick={selectAllVisible}
-                                className='text-primary text-xs font-medium hover:underline sm:text-sm'
-                            >
-                                {t('servers.bulk.selectAllPage')}
-                            </button>
-                            <span className='text-muted-foreground text-xs sm:text-sm'>
-                                {selectedServers.length > 0
-                                    ? t('servers.bulk.selectedCount', {
-                                          count: String(selectedServers.length),
-                                      })
-                                    : t('servers.bulk.noSelection')}
-                            </span>
-                            {selectedServers.length > 0 && (
-                                <button
-                                    type='button'
-                                    onClick={clearSelection}
-                                    className='text-muted-foreground hover:text-foreground text-xs hover:underline sm:text-sm'
-                                >
-                                    {t('servers.bulk.clearSelection')}
-                                </button>
-                            )}
-                        </div>
-                        <div className='flex items-center gap-2'>
-                            <Button
-                                type='button'
-                                variant='outline'
-                                size='sm'
-                                onClick={() => handleBulkPowerAction('start')}
-                                disabled={selectedServers.length === 0 || bulkPowerLoading}
-                            >
-                                {t('servers.start')}
-                            </Button>
-                            <Button
-                                type='button'
-                                variant='outline'
-                                size='sm'
-                                onClick={() => handleBulkPowerAction('stop')}
-                                disabled={selectedServers.length === 0 || bulkPowerLoading}
-                            >
-                                {t('servers.stop')}
-                            </Button>
-                            <Button
-                                type='button'
-                                variant='outline'
-                                size='sm'
-                                onClick={() => handleBulkPowerAction('restart')}
-                                disabled={selectedServers.length === 0 || bulkPowerLoading}
-                            >
-                                {t('servers.restart')}
-                            </Button>
-                            <Button
-                                type='button'
-                                variant='outline'
-                                size='sm'
-                                className='text-destructive hover:text-destructive'
-                                onClick={() => setConfirmBulkKill(true)}
-                                disabled={selectedServers.length === 0 || bulkPowerLoading}
-                            >
-                                {t('servers.console.kill')}
-                            </Button>
-                        </div>
-                    </div>
-                    {pagination.totalPages > 1 && (
-                        <div className='border-border bg-card/50 mb-4 flex items-center justify-between gap-4 rounded-xl border px-4 py-3'>
-                            <Button
-                                variant='outline'
-                                size='sm'
-                                disabled={!pagination.hasPrev}
-                                onClick={() => patchFilters({ page: page - 1 })}
-                                className='gap-1.5'
-                            >
-                                <ChevronLeft className='h-4 w-4' />
-                                {t('common.previous')}
-                            </Button>
-                            <span className='text-sm font-medium'>
-                                {page} / {pagination.totalPages}
-                            </span>
-                            <Button
-                                variant='outline'
-                                size='sm'
-                                disabled={!pagination.hasNext}
-                                onClick={() => patchFilters({ page: page + 1 })}
-                                className='gap-1.5'
-                            >
-                                {t('common.next')}
-                                <ChevronRight className='h-4 w-4' />
-                            </Button>
-                        </div>
-                    )}
-                    <div className='grid grid-cols-1 gap-4'>
-                        {servers.map((server) => {
-                            const badges: ResourceBadge[] = [
-                                {
-                                    label: server.node?.name || 'Unknown Node',
-                                    className: 'bg-primary/10 text-primary border-primary/20',
-                                },
-                                {
-                                    label: server.uuidShort,
-                                    className: 'bg-muted/50 text-muted-foreground border-border/50 font-mono',
-                                },
-                            ];
-
-                            const ownerAvatarSrc = resolveAvatarSrc(server.owner?.avatar);
-                            const serverStatus = displayStatus(server as unknown as ServerType);
-                            return (
-                                <ResourceCard
-                                    key={server.id}
-                                    title={server.name}
-                                    subtitle={
-                                        server.owner ? (
-                                            <div className='flex items-center gap-2'>
-                                                <Avatar className='h-6 w-6 shrink-0'>
-                                                    {ownerAvatarSrc && (
-                                                        <AvatarImage src={ownerAvatarSrc} alt={server.owner.username} />
-                                                    )}
-                                                </Avatar>
-                                                {server.owner.uuid ? (
-                                                    <Link
-                                                        href={`/admin/users/${server.owner.uuid}/edit`}
-                                                        className='text-primary hover:text-primary/80 font-medium underline-offset-4 transition-colors hover:underline'
-                                                    >
-                                                        {server.owner.username}
-                                                    </Link>
-                                                ) : (
-                                                    <span className='text-foreground font-medium'>
-                                                        {server.owner.username}
-                                                    </span>
-                                                )}
-                                            </div>
-                                        ) : (
-                                            <span className='text-muted-foreground font-medium'>System</span>
-                                        )
-                                    }
-                                    icon={Server}
-                                    badges={badges}
-                                    description={
-                                        <div className='mt-2 flex flex-wrap items-center gap-4'>
-                                            <StatusBadge status={serverStatus} t={t} />
-                                            <div className='text-muted-foreground flex items-center gap-1.5 text-xs'>
-                                                <Database className='h-3.5 w-3.5' />
-                                                <span>{formatMemory(server.memory)}</span>
-                                            </div>
-                                            <div className='text-muted-foreground flex items-center gap-1.5 text-xs'>
-                                                <Cpu className='h-3.5 w-3.5' />
-                                                <span>{formatCpu(server.cpu)}</span>
-                                            </div>
-                                            <div className='text-muted-foreground flex items-center gap-1.5 text-xs'>
-                                                <HardDrive className='h-3.5 w-3.5' />
-                                                <span>{formatDisk(server.disk)}</span>
-                                            </div>
-                                            {server.owner?.last_seen && (
-                                                <div className='text-muted-foreground flex items-center gap-1.5 text-xs'>
-                                                    <Clock className='h-3.5 w-3.5' />
-                                                    <span>
-                                                        {t('admin.servers.owner_last_seen')}:{' '}
-                                                        <span
-                                                            title={
-                                                                server.owner.last_seen
-                                                                    ? formatDateTimeInTz(
-                                                                          server.owner.last_seen,
-                                                                          dateOpts,
-                                                                      )
-                                                                    : undefined
-                                                            }
-                                                        >
-                                                            {formatRelativeTime(server.owner.last_seen, dateOpts)}
-                                                        </span>
-                                                    </span>
-                                                </div>
-                                            )}
-                                        </div>
-                                    }
-                                    actions={
-                                        <div className='flex items-center gap-2'>
-                                            <Checkbox
-                                                checked={selectedServerIds.includes(server.id)}
-                                                onCheckedChange={() => toggleServerSelection(server.id)}
-                                                className='h-4 w-4'
-                                            />
-                                            <ServerPowerMenu
-                                                uuidShort={server.uuidShort}
-                                                serverName={server.name}
-                                                disabled={server.status === 'transferring'}
-                                            />
-                                            <Button
-                                                size='sm'
-                                                variant='ghost'
-                                                onClick={() => router.push(`/server/${server.uuidShort}`)}
-                                                title={t('admin.servers.details.view_console')}
-                                            >
-                                                <Terminal className='h-4 w-4' />
-                                            </Button>
-                                            <Button
-                                                size='sm'
-                                                variant='ghost'
-                                                onClick={() => handleView(server)}
-                                                title={t('admin.servers.actions.view')}
-                                            >
-                                                <Eye className='h-4 w-4' />
-                                            </Button>
-                                            <Button
-                                                size='sm'
-                                                variant='ghost'
-                                                onClick={() => router.push(`/admin/servers/${server.id}/edit`)}
-                                                title={t('admin.servers.actions.edit')}
-                                            >
-                                                <Pencil className='h-4 w-4' />
-                                            </Button>
-                                            {server.status === 'transferring' ? (
-                                                <Button
-                                                    size='sm'
-                                                    variant='ghost'
-                                                    className='text-amber-500 hover:bg-amber-500/10 hover:text-amber-600'
-                                                    onClick={() => handleCancelTransfer(server)}
-                                                    loading={cancellingTransferId === server.id}
-                                                    title={t('common.cancel')}
-                                                >
-                                                    <X className='h-4 w-4' />
-                                                </Button>
-                                            ) : (
-                                                <Button
-                                                    size='sm'
-                                                    variant='ghost'
-                                                    onClick={() => openTransferDialog(server)}
-                                                    title={t('admin.servers.actions.transfer')}
-                                                >
-                                                    <ArrowLeftRight className='h-4 w-4' />
-                                                </Button>
-                                            )}
-
-                                            <Button
-                                                size='sm'
-                                                variant='ghost'
-                                                className='text-destructive hover:text-destructive hover:bg-destructive/10'
-                                                onClick={() => handleDelete(server)}
-                                                title={t('admin.servers.actions.delete')}
-                                            >
-                                                <Trash2 className='h-4 w-4' />
-                                            </Button>
-                                        </div>
-                                    }
+                    <BulkSelectionRow
+                        className='mb-4'
+                        selectedCount={selectedServers.length}
+                        visibleCount={servers.length}
+                        onSelectAll={selectAllVisible}
+                        onClear={clearSelection}
+                    />
+                    <DataTable
+                        rows={servers}
+                        rowKey={(server) => server.id}
+                        onRowClick={(server) => router.push(`/admin/servers/${server.id}/edit`)}
+                        columns={[
+                            {
+                                key: 'select',
+                                header: null,
+                                className: 'w-10 pr-0',
+                                cell: (server) => (
+                                    <span onClick={(e) => e.stopPropagation()} className='inline-flex'>
+                                        <Checkbox
+                                            checked={selectedServerIds.includes(server.id)}
+                                            onCheckedChange={() => toggleServerSelection(server.id)}
+                                            className='h-4 w-4'
+                                        />
+                                    </span>
+                                ),
+                            },
+                            {
+                                key: 'server',
+                                header: t('admin.servers.table.server'),
+                                className: 'w-[26%]',
+                                cell: (server) => (
+                                    <TableIdentity
+                                        title={server.name}
+                                        subtitle={<span className='font-mono'>{server.uuidShort}</span>}
+                                        icon={Server}
+                                    />
+                                ),
+                            },
+                            {
+                                key: 'owner',
+                                header: t('admin.servers.table.owner'),
+                                cell: (server) => <ServerOwner server={server} />,
+                            },
+                            {
+                                key: 'node',
+                                header: t('admin.servers.table.node'),
+                                className: 'text-muted-foreground text-xs whitespace-nowrap',
+                                cell: (server) => server.node?.name || t('ui.admin.servers.unknownNode'),
+                            },
+                            {
+                                key: 'status',
+                                header: t('admin.servers.table.status'),
+                                cell: (server) => (
+                                    <StatusBadge status={displayStatus(server as unknown as ServerType)} t={t} />
+                                ),
+                            },
+                            {
+                                key: 'resources',
+                                header: t('admin.servers.table.resources'),
+                                className: 'hidden 2xl:table-cell',
+                                cell: (server) => <ServerResources server={server} />,
+                            },
+                        ]}
+                        mobileCard={(server) => (
+                            <div className='space-y-2.5'>
+                                <div className='flex items-start justify-between gap-3'>
+                                    <TableIdentity
+                                        title={server.name}
+                                        subtitle={<span className='font-mono'>{server.uuidShort}</span>}
+                                        icon={Server}
+                                    />
+                                    <span onClick={(e) => e.stopPropagation()} className='inline-flex pt-1'>
+                                        <Checkbox
+                                            checked={selectedServerIds.includes(server.id)}
+                                            onCheckedChange={() => toggleServerSelection(server.id)}
+                                            className='h-4 w-4'
+                                        />
+                                    </span>
+                                </div>
+                                <div className='flex flex-wrap items-center gap-3'>
+                                    <StatusBadge status={displayStatus(server as unknown as ServerType)} t={t} />
+                                    <ServerOwner server={server} />
+                                    <span className='text-muted-foreground text-xs'>
+                                        {server.node?.name || t('ui.admin.servers.unknownNode')}
+                                    </span>
+                                </div>
+                                <ServerResources server={server} />
+                            </div>
+                        )}
+                        actions={(server) => (
+                            <>
+                                <ServerPowerMenu
+                                    uuidShort={server.uuidShort}
+                                    serverName={server.name}
+                                    disabled={server.status === 'transferring'}
                                 />
-                            );
-                        })}
-                    </div>
+                                <Button
+                                    size='sm'
+                                    variant='ghost'
+                                    onClick={() => router.push(`/server/${server.uuidShort}`)}
+                                    title={t('admin.servers.details.view_console')}
+                                >
+                                    <Terminal className='h-4 w-4' />
+                                </Button>
+                                <RowActionsMenu
+                                    items={[
+                                        {
+                                            label: t('admin.servers.actions.view'),
+                                            icon: Eye,
+                                            onClick: () => handleView(server),
+                                        },
+                                        {
+                                            label: t('admin.servers.actions.edit'),
+                                            icon: Pencil,
+                                            href: `/admin/servers/${server.id}/edit`,
+                                        },
+                                        server.status === 'transferring'
+                                            ? {
+                                                  label: t('common.cancel'),
+                                                  icon: X,
+                                                  disabled: cancellingTransferId === server.id,
+                                                  onClick: () => handleCancelTransfer(server),
+                                              }
+                                            : {
+                                                  label: t('admin.servers.actions.transfer'),
+                                                  icon: ArrowLeftRight,
+                                                  onClick: () => openTransferDialog(server),
+                                              },
+                                        {
+                                            label: t('admin.servers.actions.delete'),
+                                            icon: Trash2,
+                                            destructive: true,
+                                            separated: true,
+                                            onClick: () => handleDelete(server),
+                                        },
+                                    ]}
+                                />
+                            </>
+                        )}
+                    />
 
                     {pagination.totalPages > 1 && (
-                        <div className='mt-8 flex items-center justify-center gap-2'>
-                            <Button
-                                variant='outline'
-                                size='icon'
-                                disabled={!pagination.hasPrev}
-                                onClick={() => patchFilters({ page: page - 1 })}
-                            >
-                                <ChevronLeft className='h-4 w-4' />
-                            </Button>
-                            <span className='text-sm font-medium'>
-                                {page} / {pagination.totalPages}
-                            </span>
-                            <Button
-                                variant='outline'
-                                size='icon'
-                                disabled={!pagination.hasNext}
-                                onClick={() => patchFilters({ page: page + 1 })}
-                            >
-                                <ChevronRight className='h-4 w-4' />
-                            </Button>
-                        </div>
+                        <ListPagination
+                            page={page}
+                            totalPages={pagination.totalPages}
+                            onPageChange={(nextPage) => patchFilters({ page: nextPage })}
+                            className='mt-4'
+                        />
                     )}
                 </>
             )}
-
-            <div className='grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3'>
-                <PageCard title={t('admin.servers.help.managing.title')} icon={Server}>
-                    <p className='text-muted-foreground text-sm leading-relaxed'>
-                        {t('admin.servers.help.managing.description')}
-                    </p>
-                </PageCard>
-                <PageCard title={t('admin.servers.help.relationships.title')} icon={Layers}>
-                    <p className='text-muted-foreground text-sm leading-relaxed'>
-                        {t('admin.servers.help.relationships.description')}
-                    </p>
-                </PageCard>
-                <PageCard title={t('admin.servers.help.resources.title')} icon={Gauge}>
-                    <p className='text-muted-foreground text-sm leading-relaxed'>
-                        {t('admin.servers.help.resources.description')}
-                    </p>
-                </PageCard>
-                <PageCard
-                    title={t('admin.servers.help.tips.title')}
-                    icon={HelpCircle}
-                    className='md:col-span-2 lg:col-span-3'
-                >
-                    <ul className='text-muted-foreground list-inside list-disc space-y-1 text-sm leading-relaxed'>
-                        <li>{t('admin.servers.help.tips.item1')}</li>
-                        <li>{t('admin.servers.help.tips.item2')}</li>
-                        <li>{t('admin.servers.help.tips.item3')}</li>
-                    </ul>
-                </PageCard>
-            </div>
 
             <Sheet open={isViewDrawerOpen} onOpenChange={setIsViewDrawerOpen}>
                 <SheetContent side='right' className='custom-scrollbar overflow-y-auto sm:max-w-2xl'>
@@ -1165,7 +1031,7 @@ export default function ServersPage() {
                                                         ? `/admin/users/${selectedServer.owner.uuid}/edit`
                                                         : undefined
                                                 }
-                                                detail={selectedServer?.owner?.email}
+                                                detail={privacyMask.text(selectedServer?.owner?.email)}
                                                 secondary={
                                                     selectedServer?.owner?.last_seen
                                                         ? `${t('admin.users.last_seen')}: ${formatRelativeTime(selectedServer.owner.last_seen, dateOpts)}`
@@ -1181,7 +1047,7 @@ export default function ServersPage() {
                                                 icon={Network}
                                                 title={t('admin.servers.details.labels.node')}
                                                 name={selectedServer?.node?.name}
-                                                detail={selectedServer?.node?.fqdn}
+                                                detail={privacyMask.text(selectedServer?.node?.fqdn)}
                                             />
                                             <RelationCard
                                                 icon={Layers}
@@ -1208,32 +1074,11 @@ export default function ServersPage() {
                 </SheetContent>
             </Sheet>
 
-            <AlertDialog open={confirmBulkKill} onOpenChange={setConfirmBulkKill}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>{t('servers.console.kill_confirm_title')}</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            {t('servers.bulk.kill_confirm_description', {
-                                count: String(selectedServers.length),
-                            })}
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel disabled={bulkPowerLoading}>{t('common.cancel')}</AlertDialogCancel>
-                        <AlertDialogAction
-                            onClick={(e) => {
-                                e.preventDefault();
-                                setConfirmBulkKill(false);
-                                void handleBulkPowerAction('kill');
-                            }}
-                            disabled={bulkPowerLoading}
-                            className='bg-destructive text-destructive-foreground hover:bg-destructive/90'
-                        >
-                            {t('servers.console.kill_confirm')}
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
+            <BulkServerActions
+                selected={selectedServers.map((server) => ({ uuidShort: server.uuidShort, name: server.name }))}
+                onClear={clearSelection}
+                onFinished={handleBulkFinished}
+            />
 
             <AlertDialog
                 open={confirmDeleteId !== null}
@@ -1353,7 +1198,9 @@ export default function ServersPage() {
                                     <div className='flex items-center justify-between'>
                                         <div>
                                             <p className='text-sm font-bold'>{user.username}</p>
-                                            <p className='text-muted-foreground text-xs'>{user.email}</p>
+                                            <p className='text-muted-foreground text-xs'>
+                                                <Sensitive>{user.email}</Sensitive>
+                                            </p>
                                         </div>
                                         {filterOwner?.id === user.id && (
                                             <ShieldCheck className='text-primary h-5 w-5' />
@@ -1433,7 +1280,9 @@ export default function ServersPage() {
                                     <div className='flex items-center justify-between'>
                                         <div>
                                             <p className='text-sm font-bold'>{node.name}</p>
-                                            <p className='text-muted-foreground text-xs'>{node.fqdn}</p>
+                                            <p className='text-muted-foreground text-xs'>
+                                                <Sensitive>{node.fqdn}</Sensitive>
+                                            </p>
                                         </div>
                                         {filterNode?.id === node.id && <ShieldCheck className='text-primary h-5 w-5' />}
                                     </div>
@@ -1818,6 +1667,7 @@ function RelationCard({
                     {secondary}
                 </p>
             )}
+            <AdminPageTips page='servers' />
         </div>
     );
 }

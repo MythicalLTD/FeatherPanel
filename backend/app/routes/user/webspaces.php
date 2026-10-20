@@ -683,7 +683,7 @@ return function (RouteCollection $routes): void {
         'user-webspaces'
     );
 
-    // --- Files ---
+    // Files
     App::getInstance(true)->registerAuthRoute(
         $routes,
         'user-webspaces-file-capabilities',
@@ -1202,7 +1202,7 @@ return function (RouteCollection $routes): void {
         'user-webspaces'
     );
 
-    // --- Subusers ---
+    // Subusers
     App::getInstance(true)->registerAuthRoute(
         $routes,
         'user-webspaces-users',

@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { TipCard, TipGrid } from '@/components/featherui/TipCard';
 import { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
@@ -31,10 +32,9 @@ import {
     ChevronUp,
     ChevronDown,
 } from 'lucide-react';
-import { PageCard } from '@/components/featherui/PageCard';
 import { PageHeader } from '@/components/featherui/PageHeader';
-import { ResourceCard } from '@/components/featherui/ResourceCard';
-import { EmptyState } from '@/components/featherui/EmptyState';
+import { ResourceCard, ResourceTable } from '@/components/featherui/ResourceCard';
+import { ListEmptyState } from '@/components/featherui/ListEmptyState';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
@@ -299,7 +299,7 @@ export default function TicketStatusesPage() {
                     }
                 />
 
-                <div className='bg-card/40 flex flex-col items-center gap-4 rounded-2xl p-4 shadow-sm backdrop-blur-md sm:flex-row'>
+                <div className='fp-surface flex flex-col items-center gap-4 rounded-2xl border p-4 sm:flex-row'>
                     <div className='group relative w-full flex-1'>
                         <Search className='text-muted-foreground group-focus-within:text-primary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transition-colors' />
                         <Input
@@ -314,10 +314,10 @@ export default function TicketStatusesPage() {
                 {loading ? (
                     <TableSkeleton count={3} />
                 ) : filteredStatuses.length === 0 ? (
-                    <EmptyState
+                    <ListEmptyState
                         icon={Activity}
-                        title={t('admin.tickets.statuses.no_results') || t('admin.tickets.no_results')}
-                        description={t('admin.tickets.statuses.search_placeholder')}
+                        title={t('emptyStates.ticketStatuses.title')}
+                        description={t('emptyStates.ticketStatuses.description')}
                         action={
                             <Button
                                 onClick={() => {
@@ -328,9 +328,11 @@ export default function TicketStatusesPage() {
                                 {t('admin.tickets.statuses.create')}
                             </Button>
                         }
+                        filtered={Boolean(searchQuery.trim())}
+                        onClearFilters={() => setSearchQuery('')}
                     />
                 ) : (
-                    <div className='grid grid-cols-1 gap-4'>
+                    <ResourceTable>
                         {filteredStatuses.map((status, index) => (
                             <ResourceCard
                                 key={status.id}
@@ -389,7 +391,7 @@ export default function TicketStatusesPage() {
                                 }
                             />
                         ))}
-                    </div>
+                    </ResourceTable>
                 )}
 
                 <Sheet open={createOpen} onOpenChange={setCreateOpen}>
@@ -430,23 +432,23 @@ export default function TicketStatusesPage() {
                     </div>
                 </Sheet>
 
-                <div className='grid grid-cols-1 gap-6 pt-10 md:grid-cols-2 lg:grid-cols-3'>
-                    <PageCard title={t('admin.tickets.statuses.help.workflow.title')} icon={GitBranch}>
+                <TipGrid>
+                    <TipCard title={t('admin.tickets.statuses.help.workflow.title')} icon={GitBranch}>
                         <p className='text-muted-foreground text-sm leading-relaxed'>
                             {t('admin.tickets.statuses.help.workflow.description')}
                         </p>
-                    </PageCard>
-                    <PageCard title={t('admin.tickets.statuses.help.tracking.title')} icon={Eye}>
+                    </TipCard>
+                    <TipCard title={t('admin.tickets.statuses.help.tracking.title')} icon={Eye}>
                         <p className='text-muted-foreground text-sm leading-relaxed'>
                             {t('admin.tickets.statuses.help.tracking.description')}
                         </p>
-                    </PageCard>
-                    <PageCard title={t('admin.tickets.statuses.help.states.title')} icon={Settings2} variant='danger'>
+                    </TipCard>
+                    <TipCard title={t('admin.tickets.statuses.help.states.title')} icon={Settings2} variant='danger'>
                         <p className='text-muted-foreground text-sm leading-relaxed'>
                             {t('admin.tickets.statuses.help.states.description')}
                         </p>
-                    </PageCard>
-                </div>
+                    </TipCard>
+                </TipGrid>
             </div>
             <WidgetRenderer widgets={getWidgets('admin-tickets-statuses', 'bottom-of-page')} />
         </>

@@ -15,15 +15,15 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { TipCard, TipGrid } from '@/components/featherui/TipCard';
 import { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { Flag, Plus, Pencil, Trash2, Search, Zap, Palette, AlertTriangle, ChevronUp, ChevronDown } from 'lucide-react';
-import { PageCard } from '@/components/featherui/PageCard';
 import { PageHeader } from '@/components/featherui/PageHeader';
-import { ResourceCard } from '@/components/featherui/ResourceCard';
-import { EmptyState } from '@/components/featherui/EmptyState';
+import { ResourceCard, ResourceTable } from '@/components/featherui/ResourceCard';
+import { ListEmptyState } from '@/components/featherui/ListEmptyState';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
@@ -268,7 +268,7 @@ export default function TicketPrioritiesPage() {
                     }
                 />
 
-                <div className='bg-card/40 flex flex-col items-center gap-4 rounded-2xl p-4 shadow-sm backdrop-blur-md sm:flex-row'>
+                <div className='fp-surface flex flex-col items-center gap-4 rounded-2xl border p-4 sm:flex-row'>
                     <div className='group relative w-full flex-1'>
                         <Search className='text-muted-foreground group-focus-within:text-primary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transition-colors' />
                         <Input
@@ -283,12 +283,10 @@ export default function TicketPrioritiesPage() {
                 {loading ? (
                     <TableSkeleton count={3} />
                 ) : filteredPriorities.length === 0 ? (
-                    <EmptyState
+                    <ListEmptyState
                         icon={Flag}
-                        title={t('admin.tickets.priorities.no_results') || t('admin.tickets.no_results')}
-                        description={
-                            t('admin.tickets.priorities.search_placeholder') || t('admin.tickets.search_placeholder')
-                        }
+                        title={t('emptyStates.ticketPriorities.title')}
+                        description={t('emptyStates.ticketPriorities.description')}
                         action={
                             <Button
                                 onClick={() => {
@@ -299,9 +297,11 @@ export default function TicketPrioritiesPage() {
                                 {t('admin.tickets.priorities.create')}
                             </Button>
                         }
+                        filtered={Boolean(searchQuery.trim())}
+                        onClearFilters={() => setSearchQuery('')}
                     />
                 ) : (
-                    <div className='grid grid-cols-1 gap-4'>
+                    <ResourceTable>
                         {filteredPriorities.map((priority, index) => (
                             <ResourceCard
                                 key={priority.id}
@@ -351,7 +351,7 @@ export default function TicketPrioritiesPage() {
                                 }
                             />
                         ))}
-                    </div>
+                    </ResourceTable>
                 )}
 
                 <Sheet open={createOpen} onOpenChange={setCreateOpen}>
@@ -390,18 +390,18 @@ export default function TicketPrioritiesPage() {
                     </div>
                 </Sheet>
 
-                <div className='grid grid-cols-1 gap-6 pt-10 md:grid-cols-2 lg:grid-cols-3'>
-                    <PageCard title={t('admin.tickets.priorities.help.levels.title')} icon={Zap}>
+                <TipGrid>
+                    <TipCard title={t('admin.tickets.priorities.help.levels.title')} icon={Zap}>
                         <p className='text-muted-foreground text-sm leading-relaxed'>
                             {t('admin.tickets.priorities.help.levels.description')}
                         </p>
-                    </PageCard>
-                    <PageCard title={t('admin.tickets.priorities.help.visuals.title')} icon={Palette}>
+                    </TipCard>
+                    <TipCard title={t('admin.tickets.priorities.help.visuals.title')} icon={Palette}>
                         <p className='text-muted-foreground text-sm leading-relaxed'>
                             {t('admin.tickets.priorities.help.visuals.description')}
                         </p>
-                    </PageCard>
-                    <PageCard
+                    </TipCard>
+                    <TipCard
                         title={t('admin.tickets.priorities.help.urgent.title')}
                         icon={AlertTriangle}
                         variant='danger'
@@ -409,8 +409,8 @@ export default function TicketPrioritiesPage() {
                         <p className='text-muted-foreground text-sm leading-relaxed'>
                             {t('admin.tickets.priorities.help.urgent.description')}
                         </p>
-                    </PageCard>
-                </div>
+                    </TipCard>
+                </TipGrid>
             </div>
             <WidgetRenderer widgets={getWidgets('admin-tickets-priorities', 'bottom-of-page')} />
         </>

@@ -22,19 +22,28 @@ import ThemeCustomizer from '@/components/layout/ThemeCustomizer';
 import { PanelBrandingFooter } from '@/components/branding/PanelBrandingFooter';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useSettings } from '@/contexts/SettingsContext';
-import { parseAuthFooterStyle } from '@/lib/authPageConfig';
+import { parseAuthFooterStyle, parseAuthTemplate, parseAuthVisualPreset } from '@/lib/authPageConfig';
 import { cn } from '@/lib/utils';
+import { useTranslation } from '@/contexts/TranslationContext';
+import { Gauge, ShieldCheck, Sparkles } from 'lucide-react';
 
 /** Kept so older call sites compile. */
 export function AuthAsideSlot({ children }: { children: ReactNode }) {
     return <>{children}</>;
 }
 
+const FEATURES = [
+    { icon: Gauge, key: 'auth.shell.feature_fast' },
+    { icon: ShieldCheck, key: 'auth.shell.feature_secure' },
+    { icon: Sparkles, key: 'auth.shell.feature_modern' },
+] as const;
+
 export default function AuthShell({ children }: { children: ReactNode }) {
     const { theme } = useTheme();
     const { settings } = useSettings();
+    const { t } = useTranslation();
 
-    const appName = settings?.app_name || 'FeatherPanel';
+    const appName = settings?.app_name || 'Panel';
     const logoUrl =
         theme === 'dark'
             ? settings?.app_logo_dark || settings?.app_logo_white || '/assets/logo.png'
@@ -42,16 +51,50 @@ export default function AuthShell({ children }: { children: ReactNode }) {
 
     const showThemeCustomizer = settings?.auth_show_theme_customizer !== 'false';
     const footerStyle = parseAuthFooterStyle(settings?.auth_footer_style);
+    const template = parseAuthTemplate(settings?.auth_template);
+    const visualPreset = parseAuthVisualPreset(settings?.auth_visual_preset);
+    const showMarketing = settings?.auth_show_marketing_panel !== 'false';
+    const showAside = showMarketing && template === 'split';
+    const showSpotlight = showMarketing && template === 'spotlight';
+    const asideTitle = settings?.auth_aside_title?.trim() || t('auth.shell.aside_title', { app: appName });
+    const tagline = settings?.auth_shell_tagline?.trim() || t('auth.shell.tagline');
+    const asideImage = settings?.auth_aside_image_url?.trim();
+
+    const brand = (
+        <Link
+            href='/'
+            className='focus-visible:ring-primary flex items-center gap-2.5 rounded-lg focus:outline-none focus-visible:ring-2'
+        >
+            <span className='fp-surface relative h-9 w-9 overflow-hidden rounded-xl border'>
+                <Image
+                    src={logoUrl}
+                    alt={appName}
+                    width={36}
+                    height={36}
+                    className='object-contain p-1'
+                    unoptimized
+                    priority
+                />
+            </span>
+            <span className='text-foreground text-base font-semibold tracking-tight'>{appName}</span>
+        </Link>
+    );
 
     return (
-        <div className='relative flex min-h-svh w-full flex-col'>
-            {/* Theme-aware atmosphere over whatever BackgroundWrapper provides */}
-            <div aria-hidden className='pointer-events-none absolute inset-0 overflow-hidden'>
-                <div className='from-primary/25 via-background/40 to-primary/10 absolute inset-0 bg-gradient-to-br' />
-                <div className='bg-primary/30 absolute top-[-18%] left-[8%] h-[28rem] w-[28rem] rounded-full blur-3xl' />
-                <div className='bg-primary/20 absolute right-[-12%] bottom-[-10%] h-[26rem] w-[26rem] rounded-full blur-3xl' />
-                <div className='bg-background/50 absolute inset-0 backdrop-blur-[2px]' />
-            </div>
+        <div
+            data-auth-preset={visualPreset}
+            className={cn(
+                'auth-shell relative flex min-h-svh w-full flex-col',
+                visualPreset === 'aurora' &&
+                    'bg-[radial-gradient(circle_at_18%_12%,hsl(var(--primary)/0.2),transparent_34%),radial-gradient(circle_at_82%_82%,hsl(var(--primary)/0.1),transparent_32%)]',
+                visualPreset === 'glass' &&
+                    'bg-[radial-gradient(circle_at_50%_0%,hsl(var(--primary)/0.16),transparent_42%)]',
+                visualPreset === 'contrast' &&
+                    'bg-[linear-gradient(135deg,hsl(var(--background)),hsl(var(--muted)/0.4))]',
+            )}
+        >
+            {/* Light scrim so the configured background stays visible but text keeps contrast. */}
+            <div aria-hidden className='bg-background/35 pointer-events-none absolute inset-0' />
 
             {showThemeCustomizer ? (
                 <div className='pointer-events-auto absolute top-3 right-3 z-50 sm:top-4 sm:right-4'>
@@ -59,47 +102,104 @@ export default function AuthShell({ children }: { children: ReactNode }) {
                 </div>
             ) : null}
 
-            <main className='relative z-10 flex min-h-svh w-full flex-1 flex-col'>
-                <div className='flex flex-1 flex-col px-4 py-5 sm:px-6 sm:py-8 md:py-10'>
-                    <div className='mx-auto flex w-full max-w-md flex-1 flex-col md:max-w-[52rem]'>
-                        <div className='mb-5 flex shrink-0 justify-center sm:mb-7'>
-                            <Link
-                                href='/'
-                                className='focus-visible:ring-primary focus-visible:ring-offset-background flex items-center gap-2.5 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2'
-                            >
-                                <div className='border-border/60 bg-card/90 relative h-8 w-8 overflow-hidden rounded-md border shadow-sm sm:h-9 sm:w-9'>
-                                    <Image
-                                        src={logoUrl}
-                                        alt={appName}
-                                        width={36}
-                                        height={36}
-                                        className='object-contain p-0.5'
-                                        unoptimized
-                                        priority
-                                    />
+            <main className='relative z-10 flex min-h-svh w-full flex-1'>
+                {showAside ? (
+                    <aside className='from-primary/10 hidden flex-1 flex-col justify-between bg-linear-to-br via-transparent to-transparent p-10 lg:flex xl:p-14'>
+                        {brand}
+                        <div className='max-w-xl space-y-6'>
+                            {asideImage ? (
+                                <div className='fp-surface overflow-hidden rounded-2xl border'>
+                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                    <img src={asideImage} alt='' className='aspect-[16/9] w-full object-cover' />
                                 </div>
-                                <span className='text-foreground text-[15px] font-semibold tracking-tight drop-shadow-sm sm:text-base'>
-                                    {appName}
-                                </span>
-                            </Link>
+                            ) : null}
+                            <div className='space-y-3'>
+                                <h2 className='text-foreground text-3xl leading-tight font-semibold tracking-tight xl:text-4xl'>
+                                    {asideTitle}
+                                </h2>
+                                <p className='text-muted-foreground max-w-md text-base leading-relaxed'>{tagline}</p>
+                            </div>
+                            {!asideImage ? (
+                                <ul className='grid gap-3'>
+                                    {FEATURES.map((f) => (
+                                        <li
+                                            key={f.key}
+                                            className='fp-surface flex items-center gap-3 rounded-xl border p-3'
+                                        >
+                                            <span className='fp-icon-tile flex h-9 w-9 shrink-0 items-center justify-center rounded-lg'>
+                                                <f.icon className='h-4 w-4' />
+                                            </span>
+                                            <span className='text-sm'>{t(f.key)}</span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            ) : null}
                         </div>
-
-                        {/* Mobile: top-align so long forms + keyboard don't trap content in a centered viewport */}
-                        <div className='flex flex-1 flex-col justify-start md:justify-center'>
-                            <div className='animate-fade-in-up relative w-full'>{children}</div>
-                        </div>
-
                         {footerStyle !== 'hidden' ? (
                             <PanelBrandingFooter
                                 appName={appName}
-                                className={cn(
-                                    'mx-auto mt-6 w-full max-w-md shrink-0 pb-2 text-center sm:mt-8',
-                                    footerStyle === 'minimal' && 'opacity-70',
-                                )}
+                                className={cn('text-left', footerStyle === 'minimal' && 'opacity-70')}
                             />
-                        ) : null}
+                        ) : (
+                            <span />
+                        )}
+                    </aside>
+                ) : null}
+
+                <section
+                    className={cn(
+                        'flex min-w-0 flex-1 flex-col px-4 py-5 sm:px-6 sm:py-8',
+                        showAside &&
+                            'lg:fp-chrome-surface lg:max-w-[50rem] lg:flex-none lg:border-l lg:px-10 xl:w-[50rem]',
+                        template === 'centered' && 'bg-background/40',
+                        template === 'spotlight' && 'from-primary/[0.06] bg-linear-to-b via-transparent to-transparent',
+                    )}
+                >
+                    <div className={cn('mb-6 flex shrink-0 justify-center', showAside && 'lg:hidden')}>{brand}</div>
+                    <div className='flex flex-1 flex-col justify-start md:justify-center'>
+                        <div className='animate-fade-in-up relative mx-auto w-full max-w-md md:max-w-[46rem]'>
+                            {showSpotlight ? (
+                                <div className='border-primary/20 bg-primary/[0.06] mb-5 rounded-2xl border p-5 sm:p-6'>
+                                    <div className='flex items-start gap-3'>
+                                        <span className='bg-primary/12 text-primary flex h-10 w-10 shrink-0 items-center justify-center rounded-xl'>
+                                            <Sparkles className='h-5 w-5' />
+                                        </span>
+                                        <div className='min-w-0'>
+                                            <h2 className='text-foreground text-lg font-semibold tracking-tight'>
+                                                {asideTitle}
+                                            </h2>
+                                            <p className='text-muted-foreground mt-1 text-sm leading-relaxed'>
+                                                {tagline}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div className='mt-4 flex flex-wrap gap-2'>
+                                        {FEATURES.map((feature) => (
+                                            <span
+                                                key={feature.key}
+                                                className='border-border/60 bg-background/55 text-muted-foreground inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs'
+                                            >
+                                                <feature.icon className='text-primary h-3.5 w-3.5' />
+                                                {t(feature.key)}
+                                            </span>
+                                        ))}
+                                    </div>
+                                </div>
+                            ) : null}
+                            {children}
+                        </div>
                     </div>
-                </div>
+                    {footerStyle !== 'hidden' ? (
+                        <PanelBrandingFooter
+                            appName={appName}
+                            className={cn(
+                                'mx-auto mt-6 w-full max-w-md shrink-0 pb-2 text-center sm:mt-8',
+                                footerStyle === 'minimal' && 'opacity-70',
+                                showAside && 'lg:hidden',
+                            )}
+                        />
+                    ) : null}
+                </section>
             </main>
         </div>
     );

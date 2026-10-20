@@ -27,6 +27,7 @@ import { Key, Plus, Trash2, Eye, Pencil, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import axios from 'axios';
 import { getApiErrorMessage } from '@/lib/api-errors';
+import { Sensitive } from '@/components/common/Sensitive';
 
 interface SshKey {
     id: number;
@@ -194,12 +195,12 @@ export default function SshKeysTab() {
 
     return (
         <div className='space-y-5'>
-            <div className='flex items-center justify-between'>
-                <div className='border-border/50 bg-muted/20 flex-1 rounded-xl border p-4'>
+            <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
+                <div className='border-border/50 bg-muted/20 min-w-0 flex-1 rounded-xl border p-4'>
                     <h3 className='text-foreground text-lg font-semibold'>{t('account.sshKeys.title')}</h3>
                     <p className='text-muted-foreground mt-1 text-sm'>{t('account.sshKeys.description')}</p>
                 </div>
-                <div className='ml-3 flex gap-2'>
+                <div className='flex flex-wrap gap-2 sm:ml-3 sm:shrink-0 sm:justify-end'>
                     <Button onClick={fetchKeys} variant='outline' size='sm'>
                         <RefreshCw className='mr-2 h-4 w-4' />
                         {t('account.sshKeys.refresh')}
@@ -236,10 +237,7 @@ export default function SshKeysTab() {
             ) : (
                 <div className='space-y-3'>
                     {filteredKeys.map((key) => (
-                        <div
-                            key={key.id}
-                            className='border-border/50 bg-card/50 rounded-lg border p-4 backdrop-blur-xl'
-                        >
+                        <div key={key.id} className='fp-surface-inset rounded-xl border p-4'>
                             <div className='mb-3 flex items-start justify-between'>
                                 <div className='flex-1'>
                                     <h4 className='text-foreground text-sm font-semibold'>{key.name}</h4>
@@ -378,7 +376,7 @@ export default function SshKeysTab() {
                             </span>
                             <div className='bg-muted custom-scrollbar mt-2 max-h-64 overflow-auto rounded-md p-3'>
                                 <pre className='font-mono text-xs break-all whitespace-pre-wrap'>
-                                    {selectedKey.public_key}
+                                    <Sensitive>{selectedKey.public_key}</Sensitive>
                                 </pre>
                             </div>
                         </div>

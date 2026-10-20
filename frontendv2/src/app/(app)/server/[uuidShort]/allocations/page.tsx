@@ -36,7 +36,7 @@ import {
 
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
-import { PageHeader } from '@/components/featherui/PageHeader';
+import { ServerPageHeader } from '@/components/server/ServerPageHeader';
 import { EmptyState } from '@/components/featherui/EmptyState';
 import { PageLoading } from '@/components/featherui/PageLoading';
 import { ResourceCard } from '@/components/featherui/ResourceCard';
@@ -58,6 +58,9 @@ import {
 import { Badge } from '@/components/ui/badge';
 
 import { useServerPermissions } from '@/hooks/useServerPermissions';
+import { useIpMask } from '@/hooks/useIpMask';
+import { IpVisibilityButton } from '@/components/common/IpVisibilityButton';
+import { AllocationNote } from '@/components/server/AllocationNote';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
@@ -65,6 +68,8 @@ import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { Server, AllocationItem, AllocationsResponse, AvailableAllocationsResponse } from '@/types/server';
 import { copyToClipboard, cn, isEnabled } from '@/lib/utils';
 import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
+import { Sensitive } from '@/components/common/Sensitive';
+import { maskEndpoint } from '@/lib/ip-mask';
 
 export default function ServerAllocationsPage() {
     const { t } = useTranslation();
@@ -86,6 +91,7 @@ export default function ServerAllocationsPage() {
     const [isAutoAllocating, setIsAutoAllocating] = useState(false);
 
     const { fetchWidgets, getWidgets } = usePluginWidgets('server-allocations');
+    const ipMask = useIpMask();
 
     useEffect(() => {
         fetchWidgets();
@@ -277,7 +283,8 @@ export default function ServerAllocationsPage() {
             alloc.ip.toLowerCase().includes(searchLower) ||
             alloc.port.toString().includes(searchLower) ||
             alloc.ip_alias?.toLowerCase().includes(searchLower) ||
-            alloc.notes?.toLowerCase().includes(searchLower)
+            alloc.notes?.toLowerCase().includes(searchLower) ||
+            alloc.server_notes?.toLowerCase().includes(searchLower)
         );
     });
 
@@ -302,14 +309,14 @@ export default function ServerAllocationsPage() {
     const showHeaderCreateActions = canCreate && allocations.length > 0;
 
     return (
-        <div key={pathname} className='space-y-8 pb-12'>
-            <PageHeader
+        <div key={pathname} className='space-y-6 pb-12'>
+            <ServerPageHeader
                 title={t('serverAllocations.title')}
                 description={
-                    <div className='flex items-center gap-3'>
+                    <div className='flex flex-wrap items-center gap-x-3 gap-y-2'>
                         <span>{t('serverAllocations.description')}</span>
                         {server && (
-                            <span className='bg-primary/5 text-primary border-primary/20 rounded-full border px-3 py-1 text-[10px] font-black tracking-widest uppercase'>
+                            <span className='bg-primary/5 text-primary border-primary/20 rounded-full border px-3 py-1 text-[10px] font-black tracking-widest whitespace-nowrap uppercase'>
                                 {server.current_allocations || allocations.length} /{' '}
                                 {server.allocation_limit === 0 ? '∞' : server.allocation_limit}
                             </span>
@@ -385,7 +392,7 @@ export default function ServerAllocationsPage() {
 
             <div className='space-y-6'>
                 <div className='flex items-center gap-4'>
-                    <div className='group relative flex-1'>
+                    <div className='group relative w-full min-w-0 flex-1'>
                         <Search className='text-muted-foreground group-focus-within:text-primary absolute top-1/2 left-4 h-5 w-5 -translate-y-1/2 transition-colors' />
                         <Input
                             placeholder={t('serverAllocations.searchAllocations')}
@@ -430,7 +437,7 @@ export default function ServerAllocationsPage() {
                                         : 'bg-card/40 border-border/60',
                                 )}
                                 iconClassName={cn(allocation.is_primary ? 'text-primary' : 'text-muted-foreground')}
-                                title={`${allocation.ip_alias || allocation.ip}:${allocation.port}`}
+                                title={ipMask.endpoint(allocation.ip_alias || allocation.ip, allocation.port)}
                                 badges={
                                     allocation.is_primary && (
                                         <Badge
@@ -444,25 +451,48 @@ export default function ServerAllocationsPage() {
                                 description={
                                     <div className='flex flex-wrap items-center gap-x-6 gap-y-2'>
                                         <div className='text-muted-foreground flex items-center gap-2 rounded-lg border border-white/5 bg-black/40 p-1 px-2'>
-                                            <span className='text-xs font-bold uppercase opacity-60'>IP</span>
-                                            <span className='text-foreground/80 font-mono text-sm font-bold'>
-                                                {allocation.ip}
+                                            <span className='text-xs font-bold uppercase opacity-60'>
+                                                {t('ui.server.allocations.iP')}
                                             </span>
+                                            <span className='text-foreground/80 font-mono text-sm font-bold'>
+                                                <Sensitive>{allocation.ip}</Sensitive>
+                                            </span>
+                                            <IpVisibilityButton className='-mr-1' />
                                         </div>
                                         <div className='text-muted-foreground flex items-center gap-2 rounded-lg border border-white/5 bg-black/40 p-1 px-2'>
-                                            <span className='text-xs font-bold uppercase opacity-60'>Port</span>
+                                            <span className='text-xs font-bold uppercase opacity-60'>
+                                                {t('ui.server.allocations.port')}
+                                            </span>
                                             <span className='text-foreground/80 font-mono text-sm font-bold'>
                                                 {allocation.port}
                                             </span>
                                         </div>
                                         {allocation.notes && (
-                                            <div className='text-muted-foreground flex items-center gap-2'>
+                                            <div
+                                                className='text-muted-foreground flex items-center gap-2'
+                                                title={t('serverAllocations.notes.adminNote')}
+                                            >
                                                 <div className='h-1 w-1 rounded-full bg-white/20' />
                                                 <span className='text-sm italic opacity-70'>
                                                     &quot;{allocation.notes}&quot;
                                                 </span>
                                             </div>
                                         )}
+                                        <div className='basis-full'>
+                                            <AllocationNote
+                                                uuidShort={uuidShort}
+                                                allocationId={allocation.id}
+                                                note={allocation.server_notes}
+                                                canEdit={canUpdate}
+                                                onSaved={(note) =>
+                                                    setAllocations((prev) =>
+                                                        prev.map((a) =>
+                                                            a.id === allocation.id ? { ...a, server_notes: note } : a,
+                                                        ),
+                                                    )
+                                                }
+                                            />
+                                        </div>
                                     </div>
                                 }
                                 actions={
@@ -479,7 +509,7 @@ export default function ServerAllocationsPage() {
 
                                         {!allocation.is_primary && (canUpdate || canDelete) && (
                                             <DropdownMenu>
-                                                <DropdownMenuTrigger className='bg-card/40 group-hover:bg-card/60 flex h-12 w-12 items-center justify-center rounded-xl border border-white/5 transition-all outline-none hover:bg-white/10'>
+                                                <DropdownMenuTrigger className='bg-card/40 group-hover:bg-card/60 border-border/50 hover:bg-muted/70 flex h-12 w-12 items-center justify-center rounded-xl border transition-all outline-none'>
                                                     <MoreVertical className='text-muted-foreground group-hover:text-primary h-6 w-6 transition-colors' />
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent
@@ -531,7 +561,7 @@ export default function ServerAllocationsPage() {
                 <WidgetRenderer widgets={getWidgets('server-allocations', 'allocation-bottom')} />
 
                 <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-                    <DialogContent className='bg-card/90 max-w-md overflow-hidden border-white/10 p-0 backdrop-blur-2xl sm:rounded-3xl'>
+                    <DialogContent className='max-w-md overflow-hidden p-0'>
                         <div className='space-y-6 p-6'>
                             <DialogHeader>
                                 <div className='flex items-center gap-4'>
@@ -552,7 +582,9 @@ export default function ServerAllocationsPage() {
                             <div className='rounded-2xl border border-red-500/20 bg-red-500/5 p-4 backdrop-blur-sm'>
                                 <div className='flex items-center justify-between font-mono text-sm'>
                                     <span>
-                                        {selectedAllocation?.ip}:{selectedAllocation?.port}
+                                        <Sensitive>
+                                            {maskEndpoint(selectedAllocation?.ip, selectedAllocation?.port, false)}
+                                        </Sensitive>
                                     </span>
                                 </div>
                             </div>
@@ -580,7 +612,7 @@ export default function ServerAllocationsPage() {
                 </Dialog>
 
                 <Dialog open={primaryDialogOpen} onOpenChange={setPrimaryDialogOpen}>
-                    <DialogContent className='bg-card/90 max-w-md overflow-hidden border-white/10 p-0 backdrop-blur-2xl sm:rounded-3xl'>
+                    <DialogContent className='max-w-md overflow-hidden p-0'>
                         <div className='space-y-6 p-6'>
                             <DialogHeader>
                                 <div className='flex items-center gap-4'>
@@ -600,10 +632,12 @@ export default function ServerAllocationsPage() {
 
                             <div className='bg-primary/10 border-primary/20 flex items-center justify-between rounded-2xl border p-4'>
                                 <span className='font-mono text-sm font-bold'>
-                                    {selectedAllocation?.ip}:{selectedAllocation?.port}
+                                    <Sensitive>
+                                        {maskEndpoint(selectedAllocation?.ip, selectedAllocation?.port, false)}
+                                    </Sensitive>
                                 </span>
                                 <Badge variant='outline' className='border-primary/50 text-primary bg-primary/10'>
-                                    New Primary
+                                    {t('ui.server.allocations.newPrimary')}
                                 </Badge>
                             </div>
 
@@ -629,7 +663,7 @@ export default function ServerAllocationsPage() {
                 </Dialog>
 
                 <Dialog open={assignDialogOpen} onOpenChange={setAssignDialogOpen}>
-                    <DialogContent className='bg-card/90 max-w-lg overflow-hidden border-white/10 p-0 backdrop-blur-2xl sm:rounded-3xl'>
+                    <DialogContent className='max-w-lg overflow-hidden p-0'>
                         <div className='space-y-6 p-6'>
                             <DialogHeader>
                                 <div className='flex items-center gap-4'>
@@ -653,7 +687,7 @@ export default function ServerAllocationsPage() {
                                         <Loader2 className='text-primary h-8 w-8 animate-spin opacity-50' />
                                     </div>
                                 ) : availableAllocations.length === 0 ? (
-                                    <div className='flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-white/10 py-12 text-center'>
+                                    <div className='border-border/60 flex flex-col items-center justify-center rounded-2xl border-2 border-dashed py-12 text-center'>
                                         <p className='text-muted-foreground font-medium'>
                                             {t('serverAllocations.noAvailableAllocations')}
                                         </p>
@@ -676,7 +710,7 @@ export default function ServerAllocationsPage() {
                                                         'flex h-10 w-10 items-center justify-center rounded-xl border transition-colors',
                                                         selectedAssignId === item.id
                                                             ? 'bg-primary/20 border-primary/30'
-                                                            : 'border-white/5 bg-white/5',
+                                                            : 'border-border/50 bg-muted/40',
                                                     )}
                                                 >
                                                     <Network
@@ -690,10 +724,12 @@ export default function ServerAllocationsPage() {
                                                 </div>
                                                 <div className='flex flex-col'>
                                                     <span className='font-mono text-sm font-bold tracking-tight'>
-                                                        {item.ip}:{item.port}
+                                                        <Sensitive>{maskEndpoint(item.ip, item.port, false)}</Sensitive>
                                                     </span>
                                                     <span className='text-muted-foreground text-xs font-medium tracking-wider uppercase'>
-                                                        {item.ip_alias || 'No Alias'}
+                                                        {item.ip_alias
+                                                            ? ipMask.ipLike(item.ip_alias)
+                                                            : t('ui.server.allocations.noAlias')}
                                                     </span>
                                                 </div>
                                             </div>

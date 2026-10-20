@@ -140,7 +140,7 @@ class FeatherZeroTrustController
         try {
             $data = json_decode($request->getContent(), true);
 
-            if (!isset($data['server_uuid'])) {
+            if (!isset($data['server_uuid']) || !is_string($data['server_uuid'])) {
                 return ApiResponse::error('Missing server_uuid parameter', 'MISSING_SERVER_UUID', 400);
             }
 
@@ -282,7 +282,7 @@ class FeatherZeroTrustController
             foreach ($serverUuids as $serverUuid) {
                 try {
                     // Get server information
-                    $server = Server::getServerByUuid($serverUuid);
+                    $server = is_string($serverUuid) ? Server::getServerByUuid($serverUuid) : null;
 
                     if (!$server) {
                         $results[] = [
@@ -386,9 +386,9 @@ class FeatherZeroTrustController
     public function getCronLogs(Request $request): Response
     {
         try {
-            $page = max(1, (int) $request->query->get('page', 1));
-            $limit = max(1, min(100, (int) $request->query->get('limit', 25)));
-            $status = $request->query->get('status');
+            $page = max(1, (int) self::scalarQuery($request, 'page', 1));
+            $limit = max(1, min(100, (int) self::scalarQuery($request, 'limit', 25)));
+            $status = self::scalarQuery($request, 'status');
             $offset = ($page - 1) * $limit;
 
             $logs = FeatherZeroTrustCronLog::getAll($limit, $offset, $status);
@@ -523,7 +523,7 @@ class FeatherZeroTrustController
             }
 
             $hashes = $data['hashes'];
-            $confirmedOnly = $data['confirmed_only'] ?? false;
+            $confirmedOnly = filter_var($data['confirmed_only'] ?? false, FILTER_VALIDATE_BOOLEAN);
 
             if (count($hashes) > 1000) {
                 return ApiResponse::error('Maximum 1000 hashes per request', 'TOO_MANY_HASHES', 400);
@@ -585,16 +585,20 @@ class FeatherZeroTrustController
         try {
             $data = json_decode($request->getContent(), true);
 
-            if (!isset($data['hash']) || empty($data['hash'])) {
+            if (!isset($data['hash']) || empty($data['hash']) || !is_string($data['hash'])) {
                 return ApiResponse::error('Missing hash field', 'MISSING_HASH', 400);
             }
 
-            if (!isset($data['file_name']) || empty($data['file_name'])) {
+            if (!isset($data['file_name']) || empty($data['file_name']) || !is_string($data['file_name'])) {
                 return ApiResponse::error('Missing file_name field', 'MISSING_FILE_NAME', 400);
             }
 
-            if (!isset($data['detection_type']) || empty($data['detection_type'])) {
+            if (!isset($data['detection_type']) || empty($data['detection_type']) || !is_string($data['detection_type'])) {
                 return ApiResponse::error('Missing detection_type field', 'MISSING_DETECTION_TYPE', 400);
+            }
+
+            if (isset($data['server_uuid']) && !is_string($data['server_uuid'])) {
+                return ApiResponse::error('server_uuid must be a string', 'INVALID_DATA_TYPE', 400);
             }
 
             // Validate hash format (should be SHA-256, 64 hex characters)
@@ -826,5 +830,15 @@ class FeatherZeroTrustController
         } catch (\Exception $e) {
             return ApiResponse::error('Failed to delete hash: ' . $e->getMessage(), 'DELETE_ERROR', 500);
         }
+    }
+
+    /**
+     * Read a query value as a scalar (arrays such as ?x[]=1 count as absent).
+     */
+    private static function scalarQuery(Request $request, string $key, mixed $default = null): mixed
+    {
+        $value = $request->query->all()[$key] ?? $default;
+
+        return is_scalar($value) ? $value : $default;
     }
 }

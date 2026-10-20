@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { AdminPageTips } from '@/components/admin/AdminPageTips';
 import React, { useEffect, useState, useCallback } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
@@ -32,6 +33,7 @@ import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { formatBytes } from '@/lib/format';
 import { NodeServersList, type NodeStatusServer } from '@/components/admin/NodeServersList';
+import { useIpMask } from '@/hooks/useIpMask';
 
 interface GlobalStats {
     total_nodes: number;
@@ -73,6 +75,7 @@ interface NodeStatus {
 
 export default function NodeStatusPage() {
     const { t } = useTranslation();
+    const privacyMask = useIpMask();
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [globalStats, setGlobalStats] = useState<GlobalStats | null>(null);
@@ -88,7 +91,17 @@ export default function NodeStatusPage() {
                 const res = await api.get('/admin/nodes/status/global');
                 if (res.data.success) {
                     setGlobalStats(res.data.data.global);
-                    setNodes(res.data.data.nodes);
+                    // Wings can answer with system info but no live metrics; treat that as "no data"
+                    // instead of crashing on the missing numbers.
+                    setNodes(
+                        (res.data.data.nodes as NodeStatus[]).map((node) => ({
+                            ...node,
+                            utilization:
+                                node.utilization && typeof node.utilization.cpu_percent === 'number'
+                                    ? node.utilization
+                                    : null,
+                        })),
+                    );
                 } else {
                     setError(getApiErrorMessageFromPayload(res.data, t, 'admin.nodes.error'));
                 }
@@ -174,13 +187,13 @@ export default function NodeStatusPage() {
                             title={globalStats.total_nodes.toString()}
                             subtitle={t('admin.nodes.total')}
                             icon={Server}
-                            className='bg-card/50 shadow-none! backdrop-blur-sm'
+                            className='fp-surface border'
                         />
                         <ResourceCard
                             title={globalStats.healthy_nodes.toString()}
                             subtitle={t('admin.nodes.healthy')}
                             icon={Check}
-                            className='bg-card/50 shadow-none! backdrop-blur-sm'
+                            className='fp-surface border'
                             iconClassName='text-green-500'
                             iconWrapperClassName='bg-green-500/10 border-green-500/20'
                         />
@@ -188,7 +201,7 @@ export default function NodeStatusPage() {
                             title={globalStats.unhealthy_nodes.toString()}
                             subtitle={t('admin.nodes.unhealthy')}
                             icon={AlertTriangle}
-                            className='bg-card/50 shadow-none! backdrop-blur-sm'
+                            className='fp-surface border'
                             iconClassName='text-red-500'
                             iconWrapperClassName='bg-red-500/10 border-red-500/20'
                         />
@@ -196,7 +209,7 @@ export default function NodeStatusPage() {
                             title={`${globalStats.avg_cpu_percent.toFixed(1)}%`}
                             subtitle={t('admin.nodes.avg_cpu')}
                             icon={Cpu}
-                            className='bg-card/50 shadow-none! backdrop-blur-sm'
+                            className='fp-surface border'
                         />
                     </div>
 
@@ -206,7 +219,7 @@ export default function NodeStatusPage() {
                         <PageCard
                             title={t('admin.nodes.memory_usage')}
                             icon={MemoryStick}
-                            className='bg-card/50 shadow-none! backdrop-blur-sm'
+                            className='fp-surface border'
                         >
                             <div className='space-y-4'>
                                 <div className='flex items-center justify-between text-sm'>
@@ -232,11 +245,7 @@ export default function NodeStatusPage() {
                                 </p>
                             </div>
                         </PageCard>
-                        <PageCard
-                            title={t('admin.nodes.disk_usage')}
-                            icon={HardDrive}
-                            className='bg-card/50 shadow-none! backdrop-blur-sm'
-                        >
+                        <PageCard title={t('admin.nodes.disk_usage')} icon={HardDrive} className='fp-surface border'>
                             <div className='space-y-4'>
                                 <div className='flex items-center justify-between text-sm'>
                                     <span className='text-muted-foreground'>{t('admin.nodes.used_total')}</span>
@@ -267,7 +276,7 @@ export default function NodeStatusPage() {
 
                     <div className='space-y-4'>
                         <h2 className='text-2xl font-bold tracking-tight'>{t('admin.nodes.individual_nodes')}</h2>
-                        <div className='grid gap-6 xl:grid-cols-2'>
+                        <div className='grid grid-cols-1 gap-6 xl:grid-cols-2'>
                             {nodes.length === 0 ? (
                                 <div className='col-span-2'>
                                     <EmptyState
@@ -281,9 +290,9 @@ export default function NodeStatusPage() {
                                     <PageCard
                                         key={node.id}
                                         title={node.name}
-                                        description={node.fqdn}
+                                        description={privacyMask.text(node.fqdn)}
                                         icon={Server}
-                                        className='bg-card/50 shadow-none! backdrop-blur-sm'
+                                        className='fp-surface border'
                                         variant={node.status === 'healthy' ? 'default' : 'danger'}
                                         action={
                                             <Badge variant={node.status === 'healthy' ? 'default' : 'destructive'}>
@@ -401,10 +410,11 @@ export default function NodeStatusPage() {
                                             ) : (
                                                 <Alert variant='destructive'>
                                                     <AlertTriangle className='h-4 w-4' />
-                                                    <div className='ml-2'>
+                                                    <div className='ml-2 min-w-0'>
                                                         <AlertTitle>{t('admin.nodes.offline')}</AlertTitle>
-                                                        <AlertDescription>
-                                                            {node.error || 'Cannot connect to Wings daemon'}
+                                                        <AlertDescription className='[overflow-wrap:anywhere]'>
+                                                            {node.error ||
+                                                                t('ui.admin.nodes.status.cannotConnectToWingsDaemon')}
                                                         </AlertDescription>
                                                     </div>
                                                 </Alert>
@@ -429,6 +439,8 @@ export default function NodeStatusPage() {
                     <WidgetRenderer widgets={getWidgets('admin-nodes-status', 'after-individual-nodes')} />
                 </>
             )}
+
+            <AdminPageTips page='nodes-status' />
 
             <WidgetRenderer widgets={getWidgets('admin-nodes-status', 'bottom-of-page')} />
         </div>

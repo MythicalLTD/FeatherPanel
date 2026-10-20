@@ -102,12 +102,12 @@ class CloudPluginsController
      *  2. You love poking around in code that isn't yours.
      *
      * Yes, .fpa files are literally password-protected ZIPs.
-     * No, this isn't Fort Knox—just a speed bump for script kiddies like you.
+     * No, this isn't Fort Knox-just a speed bump for script kiddies like you.
      *
      * If you're READING this, hats off: you're not just any skid, you're LEVEL 2.
      * Maybe even aspiring to the boss round of Skid Life.
      *
-     * If you insist on "borrowing"—try not to embarrass yourself by flexing this as your work.
+     * If you insist on "borrowing"-try not to embarrass yourself by flexing this as your work.
      * (Bonus points if you actually contribute instead of vandalize.)
      *
      * Now please enjoy your exclusive invite to the “Skid Hall of Fame.” 😉
@@ -274,7 +274,7 @@ class CloudPluginsController
                 'plugins' => $plugins,
             ], 'Previously installed plugins retrieved successfully', 200);
         } catch (\Exception $e) {
-            return ApiResponse::error('Failed to fetch previously installed plugins: ' . $e->getMessage(), 500);
+            return ApiResponse::error('Failed to fetch previously installed plugins: ' . $e->getMessage(), 'INTERNAL_SERVER_ERROR', 500);
         }
     }
 
@@ -2073,11 +2073,11 @@ class CloudPluginsController
 
             // Connect to database using env loaded by kernel
             $db = new Database(
-                $_ENV['DATABASE_HOST'] ?? '127.0.0.1',
-                $_ENV['DATABASE_DATABASE'] ?? '',
-                $_ENV['DATABASE_USER'] ?? '',
-                $_ENV['DATABASE_PASSWORD'] ?? '',
-                (int) ($_ENV['DATABASE_PORT'] ?? 3306)
+                App::env('DATABASE_HOST', '127.0.0.1'),
+                App::env('DATABASE_DATABASE', ''),
+                App::env('DATABASE_USER', ''),
+                App::env('DATABASE_PASSWORD', ''),
+                (int) App::env('DATABASE_PORT', '3306')
             );
             $pdo = $db->getPdo();
 

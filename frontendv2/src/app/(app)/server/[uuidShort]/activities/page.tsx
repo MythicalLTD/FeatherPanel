@@ -15,60 +15,59 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+'use client';
+
+import React, { useState, useEffect, useCallback, useRef, type ReactNode } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
-import { useDateFormatOptions } from '@/contexts/PreferencesContext';
+import { useDateFormatOptions, useHideServerIps } from '@/contexts/PreferencesContext';
+import { HIDDEN_IP_PLACEHOLDER, maskIpsInText } from '@/lib/ip-mask';
 import { formatDateTimeInTz, formatRelativeTime } from '@/lib/dateUtils';
 import { useServerPermissions } from '@/hooks/useServerPermissions';
 import { Dialog, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import {
     Activity,
-    RefreshCw,
-    Search,
-    X,
-    Eye,
-    Clock,
-    ChevronLeft,
-    ChevronRight,
     Archive,
-    FileText,
-    Server,
-    Database,
-    Users,
-    Play,
-    Pause,
-    RotateCcw,
-    Trash2,
-    Lock,
-    Unlock,
-    Copy,
     CalendarClock,
-    ListTodo,
-    Network,
+    ChevronRight,
+    Clock,
+    Copy,
+    Database,
+    Download,
     Edit,
-    User,
+    FileText,
     Globe,
+    HardDrive,
+    ListTodo,
     Loader2,
-    SlidersHorizontal,
-    MoreVertical,
+    Lock,
+    Network,
+    Pause,
+    Play,
+    PlayCircle,
+    Power,
+    RefreshCw,
+    RotateCcw,
+    Search,
+    Server,
+    Settings,
+    SquareTerminal,
+    Trash2,
+    Unlock,
+    User,
+    Users,
+    X,
+    type LucideIcon,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
-import { PageHeader } from '@/components/featherui/PageHeader';
 import { EmptyState } from '@/components/featherui/EmptyState';
-import { ResourceCard } from '@/components/featherui/ResourceCard';
+import { ListPagination } from '@/components/featherui/ListPagination';
+import { ServerPageHeader, ServerPageToolbar } from '@/components/server/ServerPageHeader';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
@@ -141,6 +140,18 @@ function shouldBlurIpMetadata(key: string, value: string): boolean {
 }
 
 function BlurredIp({ ip, className }: { ip: string; className?: string }) {
+    const hideIps = useHideServerIps();
+
+    // Hard mask for users who switched on "hide IP addresses": no hover reveal,
+    // so a screen recording cannot pick the value up again.
+    if (hideIps) {
+        return (
+            <span className={cn('text-muted-foreground font-mono text-xs font-bold opacity-70', className)}>
+                {HIDDEN_IP_PLACEHOLDER}
+            </span>
+        );
+    }
+
     return (
         <span
             className={cn(
@@ -153,6 +164,86 @@ function BlurredIp({ ip, className }: { ip: string; className?: string }) {
         </span>
     );
 }
+function CategoryChip({ active, onClick, children }: { active: boolean; onClick: () => void; children: ReactNode }) {
+    return (
+        <button
+            type='button'
+            aria-pressed={active}
+            onClick={onClick}
+            className={cn(
+                'inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full border px-3 text-xs font-medium whitespace-nowrap transition-colors',
+                active
+                    ? 'border-primary/50 bg-primary/15 text-primary'
+                    : 'border-border/60 bg-background/40 text-muted-foreground hover:text-foreground hover:border-border',
+            )}
+        >
+            {children}
+        </button>
+    );
+}
+
+const PAGE_SIZE = 20;
+
+const CATEGORIES: { id: string; icon: LucideIcon }[] = [
+    { id: 'console', icon: SquareTerminal },
+    { id: 'power', icon: Power },
+    { id: 'files', icon: FileText },
+    { id: 'sftp', icon: HardDrive },
+    { id: 'backups', icon: Archive },
+    { id: 'databases', icon: Database },
+    { id: 'schedules', icon: CalendarClock },
+    { id: 'tasks', icon: ListTodo },
+    { id: 'users', icon: Users },
+    { id: 'network', icon: Network },
+    { id: 'startup', icon: PlayCircle },
+    { id: 'settings', icon: Settings },
+    { id: 'reinstall', icon: RotateCcw },
+];
+
+/** Metadata keys worth surfacing on the row itself, in priority order. */
+const SUMMARY_KEYS = [
+    'command',
+    'files',
+    'file',
+    'path',
+    'filename',
+    'backup_name',
+    'name',
+    'database_name',
+    'database',
+    'schedule_name',
+    'email',
+    'subdomain',
+    'variable',
+    'allocation_port',
+    'port',
+] as const;
+
+function summarizeMetadata(metadata?: ActivityMetadata | null): string {
+    if (!metadata) return '';
+    for (const key of SUMMARY_KEYS) {
+        const value = metadata[key];
+        if (value === undefined || value === null || value === '') continue;
+        if (Array.isArray(value)) {
+            const strings = value.filter((v): v is string => typeof v === 'string');
+            if (strings.length) return strings.join(', ');
+            continue;
+        }
+        if (typeof value === 'string' || typeof value === 'number') return String(value);
+    }
+    return '';
+}
+
+type ActorOption = { id: number; username: string; avatar: string | null };
+
+const fieldClass =
+    'border-border/60 bg-background/60 focus-visible:ring-primary/40 h-10 rounded-lg border px-3 text-sm outline-none transition-colors focus-visible:ring-2';
+
+function csvCell(value: unknown): string {
+    const text =
+        value === null || value === undefined ? '' : typeof value === 'object' ? JSON.stringify(value) : String(value);
+    return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+}
 
 export default function ServerActivityPage() {
     const params = useParams();
@@ -160,22 +251,25 @@ export default function ServerActivityPage() {
     const router = useRouter();
     const { t } = useTranslation();
     const dateOpts = useDateFormatOptions();
+    const hideIps = useHideServerIps();
     const { hasPermission, loading: permissionsLoading } = useServerPermissions(uuidShort);
 
     const [loading, setLoading] = useState(true);
+    const [exporting, setExporting] = useState(false);
     const [activities, setActivities] = useState<ActivityItem[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
-    const [selectedEventFilter, setSelectedEventFilter] = useState('all');
-    const [pagination, setPagination] = useState({
-        current_page: 1,
-        per_page: 10,
-        total_records: 0,
-        total_pages: 1,
-        has_next: false,
-        has_prev: false,
-        from: 0,
-        to: 0,
+    const [debouncedSearch, setDebouncedSearch] = useState('');
+    const [category, setCategory] = useState('');
+    const [actor, setActor] = useState('');
+    const [fromDate, setFromDate] = useState('');
+    const [toDate, setToDate] = useState('');
+    const [page, setPage] = useState(1);
+    const [actors, setActors] = useState<{ users: ActorOption[]; has_system: boolean }>({
+        users: [],
+        has_system: false,
     });
+    const [pagination, setPagination] = useState({ total: 0, totalPages: 1 });
+    const actorsLoaded = useRef(false);
 
     const { fetchWidgets, getWidgets } = usePluginWidgets('server-activities');
 
@@ -186,79 +280,53 @@ export default function ServerActivityPage() {
     const [detailsOpen, setDetailsOpen] = useState(false);
     const [selectedItem, setSelectedItem] = useState<ActivityItem | null>(null);
 
+    useEffect(() => {
+        const timer = setTimeout(() => setDebouncedSearch(searchQuery.trim()), 400);
+        return () => clearTimeout(timer);
+    }, [searchQuery]);
+
+    const hasFilters = Boolean(debouncedSearch || category || actor || fromDate || toDate);
+
+    const buildQuery = useCallback(
+        (targetPage: number, perPage: number) => {
+            const query: Record<string, string | number> = { page: targetPage, per_page: perPage };
+            if (debouncedSearch) query.search = debouncedSearch;
+            if (category) query.category = category;
+            if (actor) query.user = actor;
+            if (fromDate) query.from = fromDate;
+            if (toDate) query.to = toDate;
+            return query;
+        },
+        [debouncedSearch, category, actor, fromDate, toDate],
+    );
+
     const fetchActivities = useCallback(
-        async (page = 1) => {
+        async (targetPage: number) => {
             try {
                 setLoading(true);
-                const queryParams: Record<string, string | number> = {
-                    page,
-                    per_page: 10,
-                };
-                if (searchQuery.trim()) {
-                    queryParams.search = searchQuery.trim();
-                }
-
-                const { data } = await axios.get(`/api/user/servers/${uuidShort}/activities`, { params: queryParams });
+                const query = buildQuery(targetPage, PAGE_SIZE);
+                if (!actorsLoaded.current) query.include_actors = 1;
+                const { data } = await axios.get(`/api/user/servers/${uuidShort}/activities`, { params: query });
 
                 if (!data.success) {
                     toast.error(getApiErrorMessageFromPayload(data, t, 'serverActivities.failedToFetch'));
                     return;
                 }
 
-                const apiItems: ActivityItem[] = (data.data.activities.data || data.data.activities || []).map(
-                    (item: ActivityItem) => ({
+                setActivities(
+                    (data.data.activities.data || data.data.activities || []).map((item: ActivityItem) => ({
                         ...item,
                         metadata: normalizeMetadata(item.metadata),
-                    }),
+                    })),
                 );
-
-                let filteredActivities = apiItems;
-
-                if (selectedEventFilter !== 'all') {
-                    filteredActivities = filteredActivities.filter((a) => {
-                        const eventLower = a.event.toLowerCase();
-                        switch (selectedEventFilter) {
-                            case 'backup':
-                                return eventLower.includes('backup');
-                            case 'power':
-                                return ['power', 'start', 'stop', 'restart', 'kill'].some((x) =>
-                                    eventLower.includes(x),
-                                );
-                            case 'file':
-                                return eventLower.includes('file') || eventLower.includes('download');
-                            case 'database':
-                                return eventLower.includes('database');
-                            case 'schedule':
-                                return eventLower.includes('schedule');
-                            case 'task':
-                                return eventLower.includes('task');
-                            case 'subuser':
-                                return eventLower.includes('subuser');
-                            case 'allocation':
-                                return eventLower.includes('allocation');
-                            case 'server':
-                                return eventLower.includes('server') && !eventLower.includes('subuser');
-                            default:
-                                return true;
-                        }
-                    });
+                if (data.data.actors) {
+                    actorsLoaded.current = true;
+                    setActors(data.data.actors);
                 }
-
-                setActivities(filteredActivities);
-
                 const p = data.data.pagination || {};
-                const totalPages = p.total_pages || p.last_page || 1;
-                const currentPage = p.current_page || 1;
-
                 setPagination({
-                    current_page: currentPage,
-                    per_page: p.per_page || 10,
-                    total_records: p.total || p.total_records || 0,
-                    total_pages: totalPages,
-                    has_next: currentPage < totalPages,
-                    has_prev: currentPage > 1,
-                    from: p.from || 0,
-                    to: p.to || 0,
+                    total: p.total || p.total_records || 0,
+                    totalPages: p.total_pages || p.last_page || 1,
                 });
             } catch (error) {
                 console.error(error);
@@ -267,28 +335,77 @@ export default function ServerActivityPage() {
                 setLoading(false);
             }
         },
-        [uuidShort, searchQuery, selectedEventFilter, t],
+        [uuidShort, buildQuery, t],
     );
 
     useEffect(() => {
-        const timer = setTimeout(() => {
-            fetchActivities(1);
-        }, 500);
-        return () => clearTimeout(timer);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [searchQuery, selectedEventFilter]);
-
-    useEffect(() => {
-        if (!permissionsLoading) {
-            if (!hasPermission('activity.read')) {
-                toast.error(t('serverActivities.noActivityPermission'));
-                router.push(`/server/${uuidShort}`);
-                return;
-            }
-            fetchActivities(1);
+        if (permissionsLoading) return;
+        if (!hasPermission('activity.read')) {
+            toast.error(t('serverActivities.noActivityPermission'));
+            router.push(`/server/${uuidShort}`);
+            return;
         }
+        fetchActivities(page);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [permissionsLoading]);
+    }, [permissionsLoading, fetchActivities, page]);
+
+    // Any filter change starts again from the first page.
+    useEffect(() => {
+        setPage(1);
+    }, [debouncedSearch, category, actor, fromDate, toDate]);
+
+    const clearFilters = () => {
+        setSearchQuery('');
+        setDebouncedSearch('');
+        setCategory('');
+        setActor('');
+        setFromDate('');
+        setToDate('');
+    };
+
+    const exportCsv = async () => {
+        try {
+            setExporting(true);
+            const rows: ActivityItem[] = [];
+            // Up to 1000 rows with the current filters, newest first.
+            for (let p = 1; p <= 10; p++) {
+                const { data } = await axios.get(`/api/user/servers/${uuidShort}/activities`, {
+                    params: buildQuery(p, 100),
+                });
+                if (!data.success) break;
+                const items: ActivityItem[] = data.data.activities.data || [];
+                rows.push(...items);
+                if (p >= (data.data.pagination?.total_pages || 1)) break;
+            }
+            const header = ['id', 'timestamp', 'event', 'user', 'ip', 'metadata'];
+            const lines = rows.map((row) =>
+                [
+                    row.id,
+                    row.timestamp,
+                    row.event,
+                    row.user?.username ?? t('serverActivities.details.system'),
+                    hideIps ? '' : row.ip,
+                    hideIps
+                        ? maskIpsInText(JSON.stringify(normalizeMetadata(row.metadata) ?? {}), true)
+                        : normalizeMetadata(row.metadata),
+                ]
+                    .map(csvCell)
+                    .join(','),
+            );
+            const blob = new Blob([[header.join(','), ...lines].join('\n')], { type: 'text/csv;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `activity-${uuidShort}.csv`;
+            link.click();
+            URL.revokeObjectURL(url);
+            toast.success(t('serverActivities.exported', { count: String(rows.length) }));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'serverActivities.failedToFetch'));
+        } finally {
+            setExporting(false);
+        }
+    };
 
     function normalizeMetadata(m: unknown): ActivityMetadata | undefined {
         if (m == null) return undefined;
@@ -305,7 +422,7 @@ export default function ServerActivityPage() {
 
     function formatEvent(event: string) {
         if (event === 'server:power.autostart') {
-            return 'Automatic Start (Node Reconnect)';
+            return t('serverActivities.autostartEvent');
         }
         return event
             .replace(/_/g, ' ')
@@ -316,54 +433,38 @@ export default function ServerActivityPage() {
             .join(' ');
     }
 
-    function getEventIcon(event: string) {
-        const eventLower = event.toLowerCase();
-        if (eventLower.includes('backup')) return Archive;
-        if (['power', 'start', 'play'].some((x) => eventLower.includes(x))) return Play;
-        if (['stop', 'kill'].some((x) => eventLower.includes(x))) return Pause;
-        if (eventLower.includes('restart')) return RotateCcw;
-        if (eventLower.includes('file') || eventLower.includes('download')) return FileText;
-        if (eventLower.includes('database')) return Database;
-        if (eventLower.includes('schedule')) return CalendarClock;
-        if (eventLower.includes('task')) return ListTodo;
-        if (['subuser', 'user'].some((x) => eventLower.includes(x))) return Users;
-        if (['allocation', 'network'].some((x) => eventLower.includes(x))) return Network;
-        if (['setting', 'updated', 'update'].some((x) => eventLower.includes(x))) return Edit;
-        if (['delete', 'deleted'].some((x) => eventLower.includes(x))) return Trash2;
-        if (eventLower.includes('lock')) return Lock;
-        if (eventLower.includes('unlock')) return Unlock;
+    function getEventIcon(event: string): LucideIcon {
+        const e = event.toLowerCase();
+        if (e.includes('console') || e === 'command_sent') return SquareTerminal;
+        if (e.includes('sftp')) return HardDrive;
+        if (e.includes('backup')) return Archive;
+        if (e.includes('restart') || e.includes('reinstall')) return RotateCcw;
+        if (['stop', 'kill'].some((x) => e.includes(x))) return Pause;
+        if (e.includes('power') || e.includes('start')) return Play;
+        if (e.includes('file') || e.includes('download') || e.includes('director') || e.includes('archive'))
+            return FileText;
+        if (e.includes('database')) return Database;
+        if (e.includes('schedule')) return CalendarClock;
+        if (e.includes('task')) return ListTodo;
+        if (e.includes('user')) return Users;
+        if (['allocation', 'subdomain', 'proxy', 'firewall'].some((x) => e.includes(x))) return Network;
+        if (e.includes('variable') || e.includes('startup')) return PlayCircle;
+        if (e.includes('delete')) return Trash2;
+        if (e.includes('unlock')) return Unlock;
+        if (e.includes('lock')) return Lock;
+        if (e.includes('update') || e.includes('setting')) return Edit;
         return Server;
     }
 
-    function getEventIconClass(event: string) {
-        const eventLower = event.toLowerCase();
-        if (eventLower.includes('backup')) return 'text-blue-500 bg-blue-500/10 border-blue-500/20';
-        if (['start', 'play'].some((x) => eventLower.includes(x)))
-            return 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20';
-        if (['stop', 'kill'].some((x) => eventLower.includes(x))) return 'text-red-500 bg-red-500/10 border-red-500/20';
-        if (eventLower.includes('restart')) return 'text-yellow-500 bg-yellow-500/10 border-yellow-500/20';
-        if (eventLower.includes('power')) return 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20';
-        if (eventLower.includes('file')) return 'text-orange-500 bg-orange-500/10 border-orange-500/20';
-        if (eventLower.includes('database')) return 'text-primary bg-primary/10 border-primary/20';
-        if (eventLower.includes('schedule')) return 'text-primary bg-primary/10 border-primary/20';
-        if (eventLower.includes('task')) return 'text-pink-500 bg-pink-500/10 border-pink-500/20';
-        if (['subuser', 'user'].some((x) => eventLower.includes(x)))
-            return 'text-cyan-500 bg-cyan-500/10 border-cyan-500/20';
-        if (eventLower.includes('allocation')) return 'text-teal-500 bg-teal-500/10 border-teal-500/20';
-        if (eventLower.includes('delete')) return 'text-red-500 bg-red-500/10 border-red-500/20';
-        if (eventLower.includes('lock')) return 'text-amber-500 bg-amber-500/10 border-amber-500/20';
-        if (eventLower.includes('unlock')) return 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20';
-        return 'text-primary bg-primary/10 border-primary/20';
-    }
-
-    function displayMessage(item: ActivityItem): string {
-        if (item.message) return item.message;
-        return formatEvent(item.event);
-    }
-
-    function formatItemTime(timestamp?: string) {
-        if (!timestamp) return '';
-        return formatRelativeTime(timestamp, dateOpts);
+    function getEventTone(event: string) {
+        const e = event.toLowerCase();
+        if (['stop', 'kill', 'delete', 'abort', 'wipe'].some((x) => e.includes(x))) return 'text-red-500 bg-red-500/10';
+        if (e.includes('restart') || e.includes('reinstall')) return 'text-amber-500 bg-amber-500/10';
+        if (e.includes('power') || e.includes('start') || e.includes('created') || e.includes('restored'))
+            return 'text-emerald-500 bg-emerald-500/10';
+        if (e.includes('backup')) return 'text-sky-500 bg-sky-500/10';
+        if (e.includes('console') || e === 'command_sent') return 'text-violet-500 bg-violet-500/10';
+        return 'text-primary bg-primary/10';
     }
 
     const detailsPairs =
@@ -375,31 +476,12 @@ export default function ServerActivityPage() {
             : [];
 
     const rawJson = selectedItem?.metadata ? JSON.stringify(selectedItem.metadata, null, 2) : '';
+    // Raw payload is shown in a <pre>: mask embedded addresses so the block
+    // cannot be read off a recording either.
+    const displayRawJson = maskIpsInText(rawJson, hideIps);
+    const today = new Date().toISOString().slice(0, 10);
 
-    const changePage = (newPage: number) => {
-        if (newPage >= 1 && newPage <= pagination.total_pages) {
-            setPagination((p) => ({ ...p, current_page: newPage }));
-            fetchActivities(newPage);
-        }
-    };
-
-    const filterOptions = [
-        { id: 'all', name: t('serverActivities.allEvents') },
-        { id: 'server', name: t('serverActivities.filterNames.server') },
-        { id: 'backup', name: t('serverActivities.filterNames.backup') },
-        { id: 'power', name: t('serverActivities.filterNames.power') },
-        { id: 'file', name: t('serverActivities.filterNames.file') },
-        { id: 'database', name: t('serverActivities.filterNames.database') },
-        { id: 'schedule', name: t('serverActivities.filterNames.schedule') },
-        { id: 'task', name: t('serverActivities.filterNames.task') },
-        { id: 'subuser', name: t('serverActivities.filterNames.subuser') },
-        { id: 'allocation', name: t('serverActivities.filterNames.allocation') },
-    ];
-
-    const selectedFilterLabel =
-        filterOptions.find((o) => o.id === selectedEventFilter)?.name ?? t('serverActivities.allEvents');
-
-    if (permissionsLoading || (loading && activities.length === 0)) {
+    if (permissionsLoading) {
         return (
             <div className='flex flex-col items-center justify-center py-24'>
                 <Loader2 className='text-primary h-12 w-12 animate-spin opacity-50' />
@@ -409,269 +491,231 @@ export default function ServerActivityPage() {
     }
 
     return (
-        <div className='space-y-8 pb-12'>
-            <PageHeader
+        <div className='space-y-6 pb-12'>
+            <ServerPageHeader
                 title={t('serverActivities.title')}
-                description={
-                    <div className='flex items-center gap-3'>
-                        <span>{t('serverActivities.description')}</span>
-                        <span className='bg-primary/5 text-primary border-primary/20 rounded-full border px-3 py-1 text-[10px] font-black tracking-widest uppercase'>
-                            {pagination.total_records} {t('serverActivities.events')}
-                        </span>
-                    </div>
-                }
+                description={t('serverActivities.description')}
                 actions={
-                    <div className='flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:gap-3'>
+                    <>
+                        <Button variant='glass' size='sm' onClick={() => fetchActivities(page)} disabled={loading}>
+                            <RefreshCw className={cn('mr-2 h-4 w-4', loading && 'animate-spin')} />
+                            {t('common.refresh')}
+                        </Button>
                         <Button
                             variant='glass'
-                            size='default'
-                            onClick={() => fetchActivities()}
-                            disabled={loading}
-                            aria-label={t('common.refresh')}
+                            size='sm'
+                            onClick={exportCsv}
+                            disabled={exporting || pagination.total === 0}
                         >
-                            <RefreshCw className={cn('h-5 w-5 sm:mr-2', loading && 'animate-spin')} />
-                            <span className='hidden sm:inline'>{t('common.refresh')}</span>
+                            {exporting ? (
+                                <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                            ) : (
+                                <Download className='mr-2 h-4 w-4' />
+                            )}
+                            {t('serverActivities.export')}
                         </Button>
-                    </div>
+                    </>
                 }
             />
 
             <WidgetRenderer widgets={getWidgets('server-activities', 'activity-top')} />
 
-            <div className='space-y-6'>
-                <div className='flex flex-col gap-4 sm:flex-row sm:items-center'>
-                    <div className='group relative flex-1'>
-                        <Search className='text-muted-foreground/80 group-focus-within:text-foreground absolute top-1/2 left-4 h-5 w-5 -translate-y-1/2 transition-colors' />
+            <ServerPageToolbar>
+                <div className='grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_12rem_auto]'>
+                    <div className='relative min-w-0 sm:col-span-2 lg:col-span-1'>
+                        <Search className='text-muted-foreground pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2' />
                         <Input
                             placeholder={t('serverActivities.searchPlaceholder')}
-                            className='h-14 pl-12 text-base'
+                            aria-label={t('serverActivities.searchPlaceholder')}
+                            className='h-10 pl-9 text-sm'
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
                     </div>
-                    <div className='flex shrink-0 items-center gap-2'>
-                        <DropdownMenu>
-                            <DropdownMenuTrigger className='border-border/40 bg-card/50 hover:bg-accent/50 flex h-14 min-w-48 items-center justify-between gap-3 rounded-xl border px-4 text-left font-medium backdrop-blur-sm transition-colors outline-none md:min-w-56'>
-                                <SlidersHorizontal className='text-muted-foreground h-5 w-5 shrink-0' />
-                                <span className='flex-1 truncate'>{selectedFilterLabel}</span>
-                                {(selectedEventFilter !== 'all' || searchQuery) && (
-                                    <span className='bg-primary h-2 w-2 shrink-0 rounded-full' aria-hidden />
-                                )}
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent
-                                align='end'
-                                className='bg-card/90 border-border/40 max-h-[min(60vh,400px)] w-64 overflow-y-auto rounded-2xl p-2 backdrop-blur-xl'
-                            >
-                                {filterOptions.map((option) => (
-                                    <DropdownMenuItem
-                                        key={option.id}
-                                        onClick={() => setSelectedEventFilter(option.id)}
-                                        className={cn(
-                                            'flex cursor-pointer items-center justify-between gap-3 rounded-xl p-3',
-                                            selectedEventFilter === option.id && 'bg-primary/10 text-primary',
-                                        )}
-                                    >
-                                        <span className='font-bold'>{option.name}</span>
-                                    </DropdownMenuItem>
-                                ))}
-                                {(searchQuery || selectedEventFilter !== 'all') && (
-                                    <>
-                                        <DropdownMenuSeparator className='bg-border/40 my-1' />
-                                        <DropdownMenuItem
-                                            onClick={() => {
-                                                setSearchQuery('');
-                                                setSelectedEventFilter('all');
-                                            }}
-                                            className='flex cursor-pointer items-center gap-3 rounded-xl p-3 text-red-500 focus:bg-red-500/10 focus:text-red-500'
-                                        >
-                                            <X className='h-4 w-4' />
-                                            <span className='font-bold'>{t('common.clear')}</span>
-                                        </DropdownMenuItem>
-                                    </>
-                                )}
-                            </DropdownMenuContent>
-                        </DropdownMenu>
-                        {(searchQuery || selectedEventFilter !== 'all') && (
-                            <Button
-                                variant='glass'
-                                size='icon'
-                                className='h-14 w-14 rounded-xl hover:border-red-500/50 hover:bg-red-500/10 hover:text-red-500'
-                                onClick={() => {
-                                    setSearchQuery('');
-                                    setSelectedEventFilter('all');
-                                }}
-                            >
-                                <X className='h-6 w-6' />
-                            </Button>
-                        )}
+                    <select
+                        aria-label={t('serverActivities.filters.user')}
+                        className={cn(fieldClass, 'min-w-0')}
+                        value={actor}
+                        onChange={(e) => setActor(e.target.value)}
+                    >
+                        <option value=''>{t('serverActivities.filters.allUsers')}</option>
+                        {actors.has_system && <option value='system'>{t('serverActivities.details.system')}</option>}
+                        {actors.users.map((u) => (
+                            <option key={u.id} value={String(u.id)}>
+                                {u.username}
+                            </option>
+                        ))}
+                    </select>
+                    <div className='flex min-w-0 items-center gap-2'>
+                        <input
+                            type='date'
+                            aria-label={t('serverActivities.filters.from')}
+                            className={cn(fieldClass, 'min-w-0 flex-1 lg:w-36 lg:flex-none')}
+                            value={fromDate}
+                            max={toDate || today}
+                            onChange={(e) => setFromDate(e.target.value)}
+                        />
+                        <span className='text-muted-foreground text-xs'>{t('serverActivities.filters.to')}</span>
+                        <input
+                            type='date'
+                            aria-label={t('serverActivities.filters.until')}
+                            className={cn(fieldClass, 'min-w-0 flex-1 lg:w-36 lg:flex-none')}
+                            value={toDate}
+                            min={fromDate || undefined}
+                            max={today}
+                            onChange={(e) => setToDate(e.target.value)}
+                        />
                     </div>
                 </div>
-
-                {pagination.total_records > pagination.per_page && (
-                    <div className='border-border bg-card/50 flex items-center justify-between gap-4 rounded-xl border px-4 py-3'>
-                        <Button
-                            variant='glass'
-                            size='sm'
-                            disabled={!pagination.has_prev || loading}
-                            onClick={() => changePage(pagination.current_page - 1)}
-                            className='gap-1.5'
-                        >
-                            <ChevronLeft className='h-4 w-4' />
-                            {t('common.previous')}
-                        </Button>
-                        <span className='text-sm font-medium'>
-                            {pagination.current_page} / {pagination.total_pages}
-                        </span>
-                        <Button
-                            variant='glass'
-                            size='sm'
-                            disabled={!pagination.has_next || loading}
-                            onClick={() => changePage(pagination.current_page + 1)}
-                            className='gap-1.5'
-                        >
-                            {t('common.next')}
-                            <ChevronRight className='h-4 w-4' />
-                        </Button>
+                <div className='flex items-center gap-2'>
+                    <div
+                        role='group'
+                        aria-label={t('serverActivities.filters.category')}
+                        className='-mx-1 flex min-w-0 flex-1 gap-1.5 overflow-x-auto px-1 pb-1 sm:flex-wrap sm:overflow-visible sm:pb-0'
+                    >
+                        <CategoryChip active={category === ''} onClick={() => setCategory('')}>
+                            {t('serverActivities.allEvents')}
+                        </CategoryChip>
+                        {CATEGORIES.map(({ id, icon: Icon }) => (
+                            <CategoryChip
+                                key={id}
+                                active={category === id}
+                                onClick={() => setCategory(category === id ? '' : id)}
+                            >
+                                <Icon className='h-3.5 w-3.5' />
+                                {t(`serverActivities.categories.${id}`)}
+                            </CategoryChip>
+                        ))}
                     </div>
-                )}
+                    {hasFilters && (
+                        <Button variant='ghost' size='sm' className='shrink-0' onClick={clearFilters}>
+                            <X className='mr-1 h-4 w-4' />
+                            {t('common.clear')}
+                        </Button>
+                    )}
+                </div>
+            </ServerPageToolbar>
 
-                {activities.length === 0 ? (
-                    <EmptyState
-                        title={t('serverActivities.noActivitiesFound')}
-                        description={
-                            searchQuery || selectedEventFilter !== 'all'
-                                ? t('serverActivities.noActivitiesSearchDescription')
-                                : t('serverActivities.noActivitiesDescription')
-                        }
-                        icon={Activity}
-                        action={
-                            searchQuery || selectedEventFilter !== 'all' ? (
-                                <Button
-                                    variant='glass'
-                                    size='default'
-                                    onClick={() => {
-                                        setSearchQuery('');
-                                        setSelectedEventFilter('all');
-                                    }}
-                                    className='h-14 rounded-xl px-10 text-lg'
-                                >
-                                    {t('common.clear')}
-                                </Button>
-                            ) : undefined
-                        }
-                    />
-                ) : (
-                    <div className='grid grid-cols-1 gap-4'>
-                        {activities.map((activity, index) => {
+            {!loading && activities.length === 0 ? (
+                <EmptyState
+                    title={t('serverActivities.noActivitiesFound')}
+                    description={
+                        hasFilters
+                            ? t('serverActivities.noActivitiesSearchDescription')
+                            : t('serverActivities.noActivitiesDescription')
+                    }
+                    icon={Activity}
+                    action={
+                        hasFilters ? (
+                            <Button variant='glass' onClick={clearFilters}>
+                                {t('common.clear')}
+                            </Button>
+                        ) : undefined
+                    }
+                />
+            ) : (
+                <div className='fp-surface overflow-hidden rounded-xl border'>
+                    <div className='text-muted-foreground border-border/60 flex items-center justify-between gap-2 border-b px-4 py-2.5 text-xs'>
+                        <span className='font-medium'>
+                            {t('serverActivities.eventCount', { count: String(pagination.total) })}
+                        </span>
+                        {loading && <Loader2 className='h-3.5 w-3.5 animate-spin' aria-hidden />}
+                    </div>
+                    <ul className={cn('divide-border/50 divide-y transition-opacity', loading && 'opacity-60')}>
+                        {activities.map((activity) => {
+                            const Icon = getEventIcon(activity.event);
+                            const summary = activity.message || summarizeMetadata(activity.metadata);
+                            const who = activity.user?.username || t('serverActivities.details.system');
                             return (
-                                <ResourceCard
-                                    key={activity.id}
-                                    style={{ animationDelay: `${index * 50}ms` }}
-                                    className='animate-in slide-in-from-bottom-2 fill-mode-both duration-500'
-                                    icon={getEventIcon(activity.event)}
-                                    iconWrapperClassName={getEventIconClass(activity.event)}
-                                    title={formatEvent(activity.event)}
-                                    badges={
-                                        <span className='bg-background/50 border-border/40 rounded-full border px-3 py-1 text-[10px] leading-none font-black tracking-widest uppercase'>
-                                            {activity.id}
+                                <li key={activity.id}>
+                                    <button
+                                        type='button'
+                                        onClick={() => {
+                                            setSelectedItem(activity);
+                                            setDetailsOpen(true);
+                                        }}
+                                        aria-label={`${formatEvent(activity.event)}, ${t('serverActivities.viewDetails')}`}
+                                        className='hover:bg-primary/5 focus-visible:bg-primary/5 flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors outline-none'
+                                    >
+                                        <span
+                                            className={cn(
+                                                'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg',
+                                                getEventTone(activity.event),
+                                            )}
+                                        >
+                                            <Icon className='h-4 w-4' />
                                         </span>
-                                    }
-                                    description={
-                                        <>
-                                            <p className='text-muted-foreground mb-2 line-clamp-1 w-full font-medium opacity-80 transition-opacity group-hover:opacity-100'>
-                                                {displayMessage(activity)}
-                                            </p>
-                                            <div className='border-border/10 flex w-full flex-wrap items-center gap-x-6 gap-y-2 border-t pt-1'>
-                                                <div className='text-muted-foreground flex items-center gap-2'>
-                                                    <User className='h-4 w-4 opacity-50' />
-                                                    <span className='text-sm font-bold tracking-tight uppercase'>
-                                                        {activity.user?.username ||
-                                                            t('serverActivities.details.system')}
+                                        <span className='min-w-0 flex-1'>
+                                            <span className='flex min-w-0 items-baseline gap-2'>
+                                                <span className='truncate text-sm font-medium'>
+                                                    {formatEvent(activity.event)}
+                                                </span>
+                                                <span className='text-muted-foreground hidden font-mono text-[11px] md:inline'>
+                                                    {activity.event}
+                                                </span>
+                                            </span>
+                                            <span className='text-muted-foreground flex min-w-0 items-center gap-1.5 text-xs'>
+                                                <span className='shrink-0 sm:hidden'>{who}</span>
+                                                {summary && <span className='shrink-0 sm:hidden'>·</span>}
+                                                {summary && (
+                                                    <span className='truncate font-mono'>
+                                                        {maskIpsInText(summary, hideIps)}
                                                     </span>
-                                                </div>
-                                                <div className='text-muted-foreground flex items-center gap-2'>
-                                                    <Clock className='h-4 w-4 opacity-50' />
-                                                    <span className='text-sm font-semibold'>
-                                                        {activity.timestamp ? formatItemTime(activity.timestamp) : '-'}
-                                                    </span>
-                                                </div>
-                                                {activity.ip && (
-                                                    <div className='text-muted-foreground flex items-center gap-2'>
-                                                        <Globe className='h-4 w-4 opacity-50' />
-                                                        <BlurredIp ip={activity.ip} />
-                                                    </div>
                                                 )}
-                                            </div>
-                                        </>
-                                    }
-                                    actions={
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger
-                                                className='group-hover:bg-primary/10 flex h-12 w-12 items-center justify-center rounded-xl transition-colors outline-none'
-                                                onClick={(e) => e.stopPropagation()}
-                                            >
-                                                <MoreVertical className='text-muted-foreground group-hover:text-primary h-6 w-6 transition-colors' />
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent
-                                                align='end'
-                                                className='bg-card/90 border-border/40 w-56 rounded-2xl p-2 backdrop-blur-xl'
-                                            >
-                                                <DropdownMenuItem
-                                                    onClick={() => {
-                                                        setSelectedItem(activity);
-                                                        setDetailsOpen(true);
-                                                    }}
-                                                    className='flex cursor-pointer items-center gap-3 rounded-xl p-3'
-                                                >
-                                                    <Eye className='text-primary h-4 w-4' />
-                                                    <span className='font-bold'>
-                                                        {t('serverActivities.viewDetails')}
-                                                    </span>
-                                                </DropdownMenuItem>
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
-                                    }
-                                />
+                                            </span>
+                                        </span>
+                                        <span className='hidden w-36 shrink-0 items-center gap-2 sm:flex'>
+                                            {activity.user?.avatar ? (
+                                                // eslint-disable-next-line @next/next/no-img-element
+                                                <img
+                                                    src={activity.user.avatar}
+                                                    alt=''
+                                                    className='h-5 w-5 rounded-full'
+                                                />
+                                            ) : (
+                                                <span className='bg-muted text-muted-foreground flex h-5 w-5 items-center justify-center rounded-full'>
+                                                    <User className='h-3 w-3' />
+                                                </span>
+                                            )}
+                                            <span className='truncate text-xs font-medium'>{who}</span>
+                                        </span>
+                                        {activity.ip && (
+                                            <span className='hidden w-28 shrink-0 lg:block'>
+                                                <BlurredIp ip={activity.ip} />
+                                            </span>
+                                        )}
+                                        <time
+                                            dateTime={activity.timestamp}
+                                            title={
+                                                activity.timestamp
+                                                    ? formatDateTimeInTz(activity.timestamp, dateOpts)
+                                                    : undefined
+                                            }
+                                            className='text-muted-foreground w-20 shrink-0 text-right text-xs tabular-nums sm:w-24'
+                                        >
+                                            {activity.timestamp
+                                                ? formatRelativeTime(activity.timestamp, dateOpts)
+                                                : '-'}
+                                        </time>
+                                        <ChevronRight className='text-muted-foreground/60 hidden h-4 w-4 shrink-0 sm:block' />
+                                    </button>
+                                </li>
                             );
                         })}
-                    </div>
-                )}
+                    </ul>
+                </div>
+            )}
 
-                {pagination.total_records > pagination.per_page && (
-                    <div className='border-border/40 flex items-center justify-between border-t px-6 py-8'>
-                        <p className='text-sm font-bold tracking-widest uppercase opacity-40'>
-                            {t('serverActivities.pagination.showing', {
-                                from: String(pagination.from),
-                                to: String(pagination.to),
-                                total: String(pagination.total_records),
-                            })}
-                        </p>
-                        <div className='flex items-center gap-3'>
-                            <Button
-                                variant='glass'
-                                size='sm'
-                                disabled={!pagination.has_prev || loading}
-                                onClick={() => changePage(pagination.current_page - 1)}
-                                className='h-10 w-10 rounded-xl p-0'
-                            >
-                                <ChevronLeft className='h-5 w-5' />
-                            </Button>
-                            <span className='bg-primary/5 text-primary border-primary/20 flex h-10 min-w-12 items-center justify-center rounded-xl border px-4 text-sm font-black'>
-                                {pagination.current_page} / {pagination.total_pages}
-                            </span>
-                            <Button
-                                variant='glass'
-                                size='sm'
-                                disabled={!pagination.has_next || loading}
-                                onClick={() => changePage(pagination.current_page + 1)}
-                                className='h-10 w-10 rounded-xl p-0'
-                            >
-                                <ChevronRight className='h-5 w-5' />
-                            </Button>
-                        </div>
-                    </div>
-                )}
-            </div>
+            {pagination.totalPages > 1 && (
+                <ListPagination
+                    page={page}
+                    totalPages={pagination.totalPages}
+                    totalItems={pagination.total}
+                    pageSize={PAGE_SIZE}
+                    disabled={loading}
+                    onPageChange={setPage}
+                />
+            )}
 
             <WidgetRenderer widgets={getWidgets('server-activities', 'activity-bottom')} />
 
@@ -771,11 +815,12 @@ export default function ServerActivityPage() {
                                                 <dd
                                                     className={cn(
                                                         'text-foreground font-mono text-sm break-all',
-                                                        shouldBlurIpMetadata(pair.key, pair.value) &&
+                                                        !hideIps &&
+                                                            shouldBlurIpMetadata(pair.key, pair.value) &&
                                                             'blur-sm transition-all duration-200 hover:blur-none',
                                                     )}
                                                 >
-                                                    {pair.value}
+                                                    {hideIps ? maskIpsInText(pair.value, true) : pair.value}
                                                 </dd>
                                             </div>
                                         ))}
@@ -803,7 +848,7 @@ export default function ServerActivityPage() {
                                     </Button>
                                 </div>
                                 <pre className='border-border/40 bg-background/80 text-muted-foreground custom-scrollbar max-h-56 overflow-auto rounded-xl border px-3 py-3 font-mono text-xs leading-relaxed'>
-                                    {rawJson || t('serverActivities.details.noMetadata')}
+                                    {displayRawJson || t('serverActivities.details.noMetadata')}
                                 </pre>
                             </div>
                         </div>

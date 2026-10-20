@@ -404,9 +404,12 @@ class ServerDatabaseController
         // Validate required fields
         $required = ['database_host_id', 'database_name'];
         foreach ($required as $field) {
-            if (!isset($body[$field]) || trim($body[$field]) === '') {
+            if (!isset($body[$field]) || !is_scalar($body[$field]) || trim((string) $body[$field]) === '') {
                 return ApiResponse::error("Missing required field: {$field}", 'MISSING_REQUIRED_FIELD', 400);
             }
+        }
+        if (isset($body['remote']) && !is_string($body['remote'])) {
+            return ApiResponse::error('Remote must be a string', 'INVALID_DATA_TYPE', 400);
         }
 
         // Get database host info
@@ -595,6 +598,9 @@ class ServerDatabaseController
         // Prepare update data
         $updateData = [];
         if (isset($body['remote'])) {
+            if (!is_string($body['remote'])) {
+                return ApiResponse::error('Remote must be a string', 'INVALID_DATA_TYPE', 400);
+            }
             $updateData['remote'] = $body['remote'];
         }
         if (isset($body['max_connections'])) {
@@ -1567,6 +1573,9 @@ class ServerDatabaseController
         }
 
         $body = json_decode($request->getContent(), true);
+        if (isset($body['query']) && !is_string($body['query'])) {
+            return ApiResponse::error('Query must be a string', 'INVALID_DATA_TYPE', 400);
+        }
         $query = trim($body['query'] ?? '');
         if ($query === '') {
             return ApiResponse::error('Missing query', 'MISSING_QUERY', 400);
@@ -1618,9 +1627,15 @@ class ServerDatabaseController
                     $columns[] = $meta['name'] ?? "col{$i}";
                 }
 
-                $allRows = $stmt->fetchAll(\PDO::FETCH_NUM);
-                $truncated = count($allRows) > 500;
-                $rows = $truncated ? array_slice($allRows, 0, 500) : $allRows;
+                $rows = [];
+                $truncated = false;
+                while (($row = $stmt->fetch(\PDO::FETCH_NUM)) !== false) {
+                    if (count($rows) >= 500) {
+                        $truncated = true;
+                        break;
+                    }
+                    $rows[] = $row;
+                }
 
                 return ApiResponse::success([
                     'type' => 'select',
@@ -1879,9 +1894,13 @@ class ServerDatabaseController
     {
         $characters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
         $randomString = '';
+        $max = strlen($characters) - 1;
 
         for ($i = 0; $i < $length; ++$i) {
-            $randomString .= $characters[mt_rand(0, strlen($characters) - 1)];
+            // Database usernames and passwords must come from a CSPRNG;
+            // mt_rand()'s output stream is predictable once enough values from
+            // the same request lifetime have been observed.
+            $randomString .= $characters[random_int(0, $max)];
         }
 
         return $randomString;

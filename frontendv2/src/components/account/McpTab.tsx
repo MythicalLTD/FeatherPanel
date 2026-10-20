@@ -38,13 +38,14 @@ function ConfigBlock({
     onCopy: () => void;
     copied: boolean;
 }) {
+    const { t } = useTranslation();
     return (
         <div className='border-border/60 bg-background/40 space-y-3 rounded-xl border p-4'>
             <div className='flex items-center justify-between gap-3'>
                 <h4 className='text-foreground text-sm font-semibold'>{title}</h4>
                 <Button type='button' variant='ghost' size='sm' onClick={onCopy} className='gap-1.5'>
                     {copied ? <Check className='h-3.5 w-3.5' /> : <Copy className='h-3.5 w-3.5' />}
-                    {copied ? 'Copied' : 'Copy'}
+                    {copied ? t('ui.components.account.mcpTab.copied') : t('common.copy')}
                 </Button>
             </div>
             <pre className='bg-muted/50 text-muted-foreground overflow-x-auto rounded-lg p-3 text-xs leading-relaxed whitespace-pre'>
@@ -155,7 +156,7 @@ export default function McpTab({}: McpTabProps) {
                 </Button>
             </div>
 
-            <div className='border-border/60 bg-card/40 space-y-3 rounded-2xl border p-5'>
+            <div className='fp-surface-inset space-y-3 rounded-xl border p-5'>
                 <p className='text-muted-foreground text-xs font-medium tracking-wide uppercase'>
                     {t('account.mcp.endpointLabel')}
                 </p>
@@ -187,7 +188,7 @@ export default function McpTab({}: McpTabProps) {
                 </ul>
             </div>
 
-            <div className='border-border/60 bg-card/40 space-y-3 rounded-2xl border p-5'>
+            <div className='fp-surface-inset space-y-3 rounded-xl border p-5'>
                 <h4 className='text-foreground text-sm font-semibold'>{t('account.mcp.claudeConnectorTitle')}</h4>
                 <p className='text-muted-foreground text-sm'>{t('account.mcp.claudeConnectorHelp')}</p>
                 <ol className='text-muted-foreground list-decimal space-y-2 pl-5 text-sm'>

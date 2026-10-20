@@ -21,11 +21,12 @@ import { Check, CircleX, LockKeyhole } from 'lucide-react';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { cn } from '@/lib/utils';
+import { useTranslation } from '@/contexts/TranslationContext';
 
 export function OAuthConsentShell({ children, className }: { children: ReactNode; className?: string }) {
     const { settings } = useSettings();
     const { theme } = useTheme();
-    const appName = settings?.app_name || 'FeatherPanel';
+    const appName = settings?.app_name || 'Panel';
     const logo =
         theme === 'dark'
             ? settings?.app_logo_dark || settings?.app_logo_white || '/assets/logo.png'
@@ -74,16 +75,7 @@ export function OAuthConsentShell({ children, className }: { children: ReactNode
 }
 
 function Panel({ children, className }: { children: ReactNode; className?: string }) {
-    return (
-        <section
-            className={cn(
-                'border-border/60 bg-card/90 rounded-2xl border p-5 shadow-2xl shadow-black/10 backdrop-blur-xl sm:p-7',
-                className,
-            )}
-        >
-            {children}
-        </section>
-    );
+    return <section className={cn('fp-surface rounded-2xl border p-5 sm:p-7', className)}>{children}</section>;
 }
 
 export function OAuthConsentButton({
@@ -143,6 +135,7 @@ export function OAuthConsentCard({
     submitting?: boolean;
     footer?: ReactNode;
 }) {
+    const { t } = useTranslation();
     return (
         <Panel>
             <div className='flex items-start gap-4'>
@@ -168,14 +161,15 @@ export function OAuthConsentCard({
 
             {signedInAs ? (
                 <div className='border-border/60 bg-background/40 text-muted-foreground mt-5 rounded-xl border px-3.5 py-3 text-sm'>
-                    Signed in as <span className='text-foreground font-medium'>{signedInAs}</span>
+                    {t('ui.components.auth.oAuthConsentCard.signedInAs')}{' '}
+                    <span className='text-foreground font-medium'>{signedInAs}</span>
                 </div>
             ) : null}
 
             {permissions.length > 0 ? (
                 <div className='border-border/60 bg-background/35 mt-5 rounded-xl border p-4'>
-                    <p className='text-muted-foreground mb-3 text-xs font-semibold tracking-wide uppercase'>
-                        This app can
+                    <p className='text-muted-foreground mb-3 text-xs font-medium'>
+                        {t('ui.components.auth.oAuthConsentCard.thisAppCan')}
                     </p>
                     <ul className='space-y-3'>
                         {permissions.map((item) => (

@@ -18,7 +18,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import { Fragment, useState, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { Dialog, Transition } from '@headlessui/react';
-import { X, ChevronRight, ChevronDown } from 'lucide-react';
+import { X, ChevronRight, ChevronDown, ArrowUpRight, Monitor } from 'lucide-react';
 import NextImage from 'next/image';
 import Link from 'next/link';
 import axios from 'axios';
@@ -27,9 +27,12 @@ import { useSettings } from '@/contexts/SettingsContext';
 import { useSession } from '@/contexts/SessionContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { cn, isEnabled } from '@/lib/utils';
+import { isModuleEnabled } from '@/lib/modules';
+import { ModuleBadge } from '@/components/ui/module-badge';
 import { useNavigation } from '@/hooks/useNavigation';
 import { useTranslation } from '@/contexts/TranslationContext';
 import type { NavigationItem } from '@/types/navigation';
+import type { AppSettings } from '@/types/settings';
 import { type ChromeLayout, useChromeLayout } from '@/hooks/useChromeLayout';
 import {
     type DockDisplay,
@@ -41,6 +44,7 @@ import {
     type SidebarTogglePlacement,
     useSidebarPreferences,
 } from '@/hooks/useSidebarPreferences';
+import { useFeatherOsSidebarShortcut } from '@/hooks/useFeatherOsSidebarShortcut';
 import { readSidebarCollapsed, subscribeSidebarCollapsed } from '@/lib/sidebarChrome';
 import { getDesktopSidebarPanelClass, getDesktopSidebarShellClass, getSidebarSurfaceClass } from '@/lib/sidebarLayout';
 import { runPluginJs } from '@/lib/run-plugin-js';
@@ -49,6 +53,7 @@ import { shouldShowVersion } from '@/lib/branding';
 import { SidebarBottomDock } from '@/components/sidebar/SidebarBottomDock';
 import { SidebarCollapseToggle } from '@/components/sidebar/SidebarCollapseToggle';
 import { SidebarCollapsedTooltipLayer, sidebarTooltipProps } from '@/components/sidebar/SidebarCollapsedTooltipLayer';
+import { compareNavGroups } from '@/lib/navigationGroups';
 
 interface SidebarProps {
     mobileOpen: boolean;
@@ -87,14 +92,7 @@ function SidebarContent({
 }: {
     mobile?: boolean;
     collapsed: boolean;
-    settings: {
-        app_name?: string;
-        app_version?: string;
-        app_logo_white?: string;
-        app_logo_dark?: string;
-        ticket_system_enabled?: string;
-        branding_show_version?: string;
-    } | null;
+    settings: AppSettings | null;
     pathname: string;
     router: ReturnType<typeof useRouter>;
     setMobileOpen: (open: boolean) => void;
@@ -255,6 +253,12 @@ function SidebarContent({
         (sidebarTogglePlacement === 'sidebar' || sidebarTogglePlacement === 'both') &&
         (!isBottomDock || sidebarTogglePlacement === 'both');
 
+    const gameEnabled = isModuleEnabled(settings, 'game');
+    const { showOsInSidebar } = useFeatherOsSidebarShortcut();
+    const isDashboardArea = pathname === '/dashboard' || pathname.startsWith('/dashboard/');
+    const showOsShortcut = gameEnabled && showOsInSidebar && isDashboardArea;
+    const osTitle = `${settings?.app_name || 'Panel'} OS`;
+
     if (isBottomDock) {
         return (
             <SidebarBottomDock
@@ -264,11 +268,12 @@ function SidebarContent({
                 sidebarGlow={sidebarGlow}
                 groupedItems={groupedItems}
                 logoUrl={logoUrl}
-                appName={settings?.app_name || 'FeatherPanel'}
+                appName={settings?.app_name || 'Panel'}
                 t={t}
                 isActive={isActive}
                 unreadTicketCount={unreadTicketCount}
                 adminOpenTicketCount={adminOpenTicketCount}
+                gameEnabled={showOsShortcut}
             />
         );
     }
@@ -314,23 +319,6 @@ function SidebarContent({
               ? 'h-5 w-5'
               : 'h-[18px] w-[18px]';
 
-    const groupOrder = [
-        'overview',
-        'management',
-        'files',
-        'networking',
-        'automation',
-        'configuration',
-        'feathercloud',
-        'users',
-        'tickets',
-        'infrastructure',
-        'content',
-        'system',
-        'support',
-        'plugins',
-    ];
-
     const sortedGroups = Object.keys(groupedItems).sort((a, b) => {
         const customIndex = (group: string) => {
             const indexes = groupedItems[group]
@@ -346,14 +334,7 @@ function SidebarContent({
             if (customA !== customB) return customA - customB;
         }
 
-        const indexA = groupOrder.indexOf(a.toLowerCase());
-        const indexB = groupOrder.indexOf(b.toLowerCase());
-
-        if (indexA !== -1 && indexB !== -1) return indexA - indexB;
-        if (indexA !== -1) return -1;
-        if (indexB !== -1) return 1;
-
-        return a.localeCompare(b);
+        return compareNavGroups(a, b);
     });
 
     const modernBrandInner = (
@@ -367,7 +348,7 @@ function SidebarContent({
             <div className='bg-background/40 ring-border/30 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ring-1'>
                 <NextImage
                     src={logoUrl}
-                    alt={settings?.app_name || 'FeatherPanel'}
+                    alt={settings?.app_name || 'Panel'}
                     width={40}
                     height={40}
                     className={cn('object-contain', collapsed && !mobile ? 'h-6 w-6' : 'h-7 w-7')}
@@ -378,7 +359,7 @@ function SidebarContent({
             {(!collapsed || mobile) && (
                 <div className='flex min-w-0 flex-col gap-0.5'>
                     <span className='text-foreground truncate text-sm font-semibold tracking-tight'>
-                        {settings?.app_name || 'FeatherPanel'}
+                        {settings?.app_name || 'Panel'}
                     </span>
                     {showVersion && (
                         <span className='border-primary/20 bg-primary/10 text-primary inline-flex w-fit items-center rounded-md border px-1.5 py-px text-[10px] font-semibold tracking-wider uppercase'>
@@ -400,7 +381,7 @@ function SidebarContent({
             <div className='flex h-10 w-10 shrink-0 items-center justify-center'>
                 <NextImage
                     src={logoUrl}
-                    alt={settings?.app_name || 'FeatherPanel'}
+                    alt={settings?.app_name || 'Panel'}
                     width={40}
                     height={40}
                     className='h-full w-full object-contain'
@@ -410,7 +391,7 @@ function SidebarContent({
 
             {(!collapsed || mobile) && (
                 <div className='flex min-w-0 flex-col gap-0.5'>
-                    <span className='truncate text-base font-semibold'>{settings?.app_name || 'FeatherPanel'}</span>
+                    <span className='truncate text-base font-semibold'>{settings?.app_name || 'Panel'}</span>
                     {showVersion && (
                         <span className='border-primary/20 bg-primary/10 text-primary inline-flex w-fit items-center rounded-md border px-2 py-0.5 text-[10px] font-medium'>
                             v{settings?.app_version || '1.0.0'}
@@ -435,7 +416,7 @@ function SidebarContent({
                         href='/dashboard'
                         prefetch={true}
                         className='focus-visible:ring-ring shrink-0 outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent'
-                        {...collapsedTip(settings?.app_name || 'FeatherPanel')}
+                        {...collapsedTip(settings?.app_name || 'Panel')}
                     >
                         {classicBrandInner}
                     </Link>
@@ -444,7 +425,7 @@ function SidebarContent({
                         href='/dashboard'
                         prefetch={true}
                         className='focus-visible:ring-ring block min-w-0 shrink-0 outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent'
-                        {...collapsedTip(settings?.app_name || 'FeatherPanel')}
+                        {...collapsedTip(settings?.app_name || 'Panel')}
                     >
                         {classicBrandInner}
                     </Link>
@@ -466,7 +447,7 @@ function SidebarContent({
                     <div className='bg-background/40 ring-primary/15 flex h-9 w-9 items-center justify-center rounded-xl ring-1'>
                         <NextImage
                             src={logoUrl}
-                            alt={settings?.app_name || 'FeatherPanel'}
+                            alt={settings?.app_name || 'Panel'}
                             width={32}
                             height={32}
                             className='h-6 w-6 object-contain'
@@ -482,7 +463,7 @@ function SidebarContent({
                         'focus-visible:ring-ring mx-2 mt-3 block min-w-0 shrink-0 rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent',
                         collapsed && 'mx-1.5 mt-2',
                     )}
-                    {...collapsedTip(settings?.app_name || 'FeatherPanel')}
+                    {...collapsedTip(settings?.app_name || 'Panel')}
                 >
                     {modernBrandInner}
                 </Link>
@@ -703,8 +684,13 @@ function SidebarContent({
                                                             <span className='truncate'>{item.name}</span>
                                                         )}
 
-                                                        {item.badge && (!collapsed || mobile) && (
-                                                            <span className={badgeClass}>{item.badge}</span>
+                                                        {item.module && (!collapsed || mobile) ? (
+                                                            <ModuleBadge module={item.module} className='ml-auto' />
+                                                        ) : (
+                                                            item.badge &&
+                                                            (!collapsed || mobile) && (
+                                                                <span className={badgeClass}>{item.badge}</span>
+                                                            )
                                                         )}
                                                         {isTicketsItem &&
                                                             unreadTicketCount > 0 &&
@@ -753,8 +739,13 @@ function SidebarContent({
                                                         {(!collapsed || mobile) && (
                                                             <span className='truncate'>{item.name}</span>
                                                         )}
-                                                        {item.badge && (!collapsed || mobile) && (
-                                                            <span className={badgeClass}>{item.badge}</span>
+                                                        {item.module && (!collapsed || mobile) ? (
+                                                            <ModuleBadge module={item.module} className='ml-auto' />
+                                                        ) : (
+                                                            item.badge &&
+                                                            (!collapsed || mobile) && (
+                                                                <span className={badgeClass}>{item.badge}</span>
+                                                            )
                                                         )}
                                                     </a>
                                                 );
@@ -779,8 +770,13 @@ function SidebarContent({
                                                         <span className='truncate'>{item.name}</span>
                                                     )}
 
-                                                    {item.badge && (!collapsed || mobile) && (
-                                                        <span className={badgeClass}>{item.badge}</span>
+                                                    {item.module && (!collapsed || mobile) ? (
+                                                        <ModuleBadge module={item.module} className='ml-auto' />
+                                                    ) : (
+                                                        item.badge &&
+                                                        (!collapsed || mobile) && (
+                                                            <span className={badgeClass}>{item.badge}</span>
+                                                        )
                                                     )}
                                                     {isTicketsItem &&
                                                         unreadTicketCount > 0 &&
@@ -807,10 +803,69 @@ function SidebarContent({
                 )}
             </nav>
 
-            {!mobile && (
+            {showOsShortcut && (
                 <div
                     className={cn(
                         'mt-auto shrink-0 border-t',
+                        isClassicChrome ? 'border-border/40' : 'border-border/30',
+                    )}
+                >
+                    {collapsed && !mobile ? (
+                        <div className='flex justify-center py-2'>
+                            <a
+                                href='/os'
+                                target='_blank'
+                                rel='noopener'
+                                {...collapsedTip(osTitle)}
+                                className={cn(
+                                    'text-muted-foreground hover:text-foreground focus-visible:ring-ring relative flex h-10 w-10 items-center justify-center transition-colors focus-visible:ring-2 focus-visible:outline-none',
+                                    isClassicChrome
+                                        ? 'hover:bg-muted rounded-md'
+                                        : 'hover:bg-muted/55 dark:hover:bg-muted/20 rounded-xl',
+                                )}
+                                aria-label={osTitle}
+                            >
+                                <Monitor className='h-5 w-5' aria-hidden />
+                            </a>
+                        </div>
+                    ) : (
+                        <div className={cn(isClassicChrome ? 'p-2' : 'p-1.5')}>
+                            <a
+                                href='/os'
+                                target='_blank'
+                                rel='noopener'
+                                onClick={() => {
+                                    if (mobile) setMobileOpen(false);
+                                }}
+                                className={cn(
+                                    'group focus-visible:ring-ring flex w-full items-center gap-2.5 transition-colors focus-visible:ring-2 focus-visible:outline-none',
+                                    isClassicChrome
+                                        ? 'text-muted-foreground hover:bg-muted hover:text-foreground rounded-md px-2.5 py-2 text-sm font-medium'
+                                        : 'text-muted-foreground hover:bg-muted/55 hover:text-foreground dark:hover:bg-muted/20 rounded-xl px-2.5 py-2 text-sm font-medium',
+                                    isCompact && 'py-1.5',
+                                )}
+                                title={t('featheros.nav_open_hint')}
+                            >
+                                <Monitor
+                                    className={cn('shrink-0', isCompact ? 'h-4 w-4' : 'h-[1.125rem] w-[1.125rem]')}
+                                    aria-hidden
+                                />
+                                <span className='min-w-0 flex-1 truncate'>{osTitle}</span>
+                                <ArrowUpRight
+                                    className='text-muted-foreground h-3.5 w-3.5 shrink-0 opacity-40 transition-opacity group-hover:opacity-80'
+                                    aria-hidden
+                                />
+                            </a>
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {!mobile && (
+                <div
+                    className={cn(
+                        'shrink-0',
+                        !showOsShortcut && 'mt-auto border-t',
                         isClassicChrome ? 'border-border/40' : 'border-border/30',
                     )}
                 >
@@ -862,7 +917,12 @@ export default function Sidebar({ mobileOpen, setMobileOpen, pluginFullBleed = f
         sidebarTogglePlacement,
     } = useSidebarPreferences();
     const { t } = useTranslation();
-    const [collapsed, setCollapsed] = useState(() => (typeof window === 'undefined' ? false : readSidebarCollapsed()));
+    // Start expanded like the server render, then apply the stored choice before paint.
+    // Reading storage during the first render caused a hydration mismatch.
+    const [collapsed, setCollapsed] = useState(false);
+    useLayoutEffect(() => {
+        setCollapsed(readSidebarCollapsed());
+    }, []);
     // Prefer the last settled list (session + plugins). Until then, show the live
     // base items so the sidebar is never an empty chrome shell.
     const [settledItems, setSettledItems] = useState<NavigationItem[] | null>(null);
@@ -877,7 +937,7 @@ export default function Sidebar({ mobileOpen, setMobileOpen, pluginFullBleed = f
     const groupedItems = useMemo(() => {
         const grouped = displayItems.reduce(
             (acc, item) => {
-                const group = item.group || 'Other';
+                const group = item.group || t('ui.components.sidebar.other');
                 if (!acc[group]) acc[group] = [];
                 acc[group].push(item);
                 return acc;
@@ -890,9 +950,12 @@ export default function Sidebar({ mobileOpen, setMobileOpen, pluginFullBleed = f
         });
 
         return grouped;
-    }, [displayItems]);
+    }, [displayItems, t]);
 
     useEffect(() => subscribeSidebarCollapsed(setCollapsed), []);
+
+    // The mobile drawer mirrors the desktop side; "bottom" has no dock on phones, so it uses the left drawer.
+    const mobileFromRight = sidebarPosition === 'right';
 
     return (
         <>
@@ -910,23 +973,25 @@ export default function Sidebar({ mobileOpen, setMobileOpen, pluginFullBleed = f
                         <div className='bg-background/80 fixed inset-0 backdrop-blur-sm' />
                     </Transition.Child>
 
-                    <div className='fixed inset-0 flex'>
+                    <div className={cn('fixed inset-0 flex', mobileFromRight && 'justify-end')}>
                         <Transition.Child
                             as={Fragment}
                             enter='transition ease-in-out duration-300 transform'
-                            enterFrom='-translate-x-full'
+                            enterFrom={mobileFromRight ? 'translate-x-full' : '-translate-x-full'}
                             enterTo='translate-x-0'
                             leave='transition ease-in-out duration-300 transform'
                             leaveFrom='translate-x-0'
-                            leaveTo='-translate-x-full'
+                            leaveTo={mobileFromRight ? 'translate-x-full' : '-translate-x-full'}
                         >
                             <Dialog.Panel
                                 className={cn(
-                                    'relative mr-16 flex w-full max-w-xs flex-1',
+                                    'relative flex w-full max-w-xs flex-1',
+                                    mobileFromRight ? 'ml-16' : 'mr-16',
                                     chromeLayout === 'classic'
                                         ? 'overflow-hidden'
                                         : cn(
-                                              'overflow-hidden rounded-r-2xl border border-l-0',
+                                              'overflow-hidden border',
+                                              mobileFromRight ? 'rounded-l-2xl border-r-0' : 'rounded-r-2xl border-l-0',
                                               getSidebarSurfaceClass(sidebarStyle, sidebarGlow),
                                           ),
                                 )}
@@ -940,7 +1005,12 @@ export default function Sidebar({ mobileOpen, setMobileOpen, pluginFullBleed = f
                                     leaveFrom='opacity-100'
                                     leaveTo='opacity-0'
                                 >
-                                    <div className='absolute top-0 left-full flex w-16 justify-center pt-5'>
+                                    <div
+                                        className={cn(
+                                            'absolute top-0 flex w-16 justify-center pt-5',
+                                            mobileFromRight ? 'right-full' : 'left-full',
+                                        )}
+                                    >
                                         <button
                                             type='button'
                                             className='border-border/50 bg-card/90 text-muted-foreground hover:bg-muted hover:text-foreground rounded-full border p-2.5 shadow-lg backdrop-blur-md transition-colors'
@@ -955,7 +1025,8 @@ export default function Sidebar({ mobileOpen, setMobileOpen, pluginFullBleed = f
                                 <div
                                     className={cn(
                                         'flex h-full min-h-0 grow flex-col gap-y-5 overflow-y-auto',
-                                        chromeLayout === 'classic' && 'bg-card border-border/80 border-r',
+                                        chromeLayout === 'classic' &&
+                                            cn('bg-card border-border/80', mobileFromRight ? 'border-l' : 'border-r'),
                                     )}
                                 >
                                     <SidebarContent

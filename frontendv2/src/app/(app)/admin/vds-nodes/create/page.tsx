@@ -28,22 +28,15 @@ import { Select } from '@/components/ui/select-native';
 import { Label } from '@/components/ui/label';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { toast } from 'sonner';
-import {
-    Server,
-    ArrowLeft,
-    Save,
-    Search as SearchIcon,
-    MapPin,
-    ChevronLeft,
-    ChevronRight,
-    Plus,
-    Trash2,
-} from 'lucide-react';
+import { Server, ArrowLeft, Save, Search as SearchIcon, MapPin, Plus, Trash2 } from 'lucide-react';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { cn } from '@/lib/utils';
 import { safeBack } from '@/lib/safe-back';
 import { getApiErrorMessage } from '@/lib/api-errors';
+import { UnsavedChangesBar } from '@/components/featherui/UnsavedChangesBar';
+import { useFormBaseline } from '@/hooks/useFormBaseline';
+import { ListPagination } from '@/components/featherui/ListPagination';
 
 interface Location {
     id: number;
@@ -92,6 +85,7 @@ export default function CreateVdsNodePage() {
         tls_no_verify: 'false' as 'true' | 'false',
         timeout: 60,
     });
+    const { dirty: unsaved, restore: restoreForm } = useFormBaseline(form, { trackFromStart: true });
 
     const [extraHeaders, setExtraHeaders] = useState<Array<{ key: string; value: string }>>([]);
     const [extraParams, setExtraParams] = useState<Array<{ key: string; value: string }>>([]);
@@ -205,8 +199,8 @@ export default function CreateVdsNodePage() {
         return Object.keys(newErrors).length === 0;
     }, [form, t]);
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleSubmit = async (e?: React.FormEvent) => {
+        e?.preventDefault();
         if (!validate()) return;
 
         setLoading(true);
@@ -312,6 +306,7 @@ export default function CreateVdsNodePage() {
                                 <div className='space-y-2'>
                                     <Label className='text-sm font-semibold'>{t('admin.vdsNodes.form.name')}</Label>
                                     <Input
+                                        // i18n-ignore: example node name
                                         placeholder='Proxmox Node A'
                                         value={form.name}
                                         onChange={(e) => setForm({ ...form, name: e.target.value })}
@@ -371,15 +366,12 @@ export default function CreateVdsNodePage() {
 
                         <PageCard title={t('admin.vdsNodes.form.proxmox')} icon={Server}>
                             <div className='space-y-6'>
-                                <div className='rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-100'>
-                                    For VDS console access over VNC, install the FeatherPanel VNC agent on the Proxmox
-                                    node using:
-                                    <div className='mt-2 rounded-md bg-black/30 px-3 py-2 font-mono text-xs break-all'>
+                                <div className='rounded-xl border border-amber-500/25 bg-amber-500/[0.06] p-4 text-sm text-amber-100'>
+                                    {t('ui.admin.vdsNodes.create.forVDSConsoleAccessOverVNC')}
+                                    <div className='bg-muted mt-2 rounded-md px-3 py-2 font-mono text-xs break-all'>
                                         curl -sSL https://get.featherpanel.com/installer.sh | bash
                                     </div>
-                                    Then select the VNC option during installation. Without this agent, VDS console
-                                    connections will not work. Also make sure Proxmox is exposed on a domain (or is in
-                                    the same domain/network context), otherwise VNC may also fail.
+                                    {t('ui.admin.vdsNodes.create.thenSelectTheVNCOptionDuring')}
                                 </div>
                                 <div className='space-y-2'>
                                     <Label className='text-sm font-semibold'>{t('admin.vdsNodes.form.user')}</Label>
@@ -396,8 +388,8 @@ export default function CreateVdsNodePage() {
                                     )}
                                 </div>
                                 <div className='space-y-2'>
-                                    <div className='rounded-xl border border-blue-500/30 bg-blue-500/10 p-4 text-sm text-blue-100'>
-                                        When creating the API token, make sure to create it for the user{' '}
+                                    <div className='fp-surface rounded-xl border p-4 text-sm'>
+                                        {t('ui.admin.vdsNodes.create.whenCreatingTheAPITokenMake')}{' '}
                                         <span className='font-semibold'>root</span> with{' '}
                                         <span className='font-semibold'>no privilege separation</span>.
                                     </div>
@@ -406,6 +398,7 @@ export default function CreateVdsNodePage() {
                                     <Label className='text-sm font-semibold'>{t('admin.vdsNodes.form.token_id')}</Label>
                                     <Input
                                         placeholder='mytokenid'
+                                        data-fp-sensitive=''
                                         value={form.token_id}
                                         onChange={(e) => setForm({ ...form, token_id: e.target.value })}
                                         error={!!errors.token_id}
@@ -421,6 +414,7 @@ export default function CreateVdsNodePage() {
                                     <Input
                                         type='password'
                                         placeholder='********'
+                                        data-fp-sensitive=''
                                         value={form.secret}
                                         onChange={(e) => setForm({ ...form, secret: e.target.value })}
                                         error={!!errors.secret}
@@ -442,6 +436,7 @@ export default function CreateVdsNodePage() {
                                     <Label className='text-sm font-semibold'>{t('admin.vdsNodes.form.fqdn')}</Label>
                                     <Input
                                         placeholder='proxmox.example.com'
+                                        data-fp-sensitive=''
                                         value={form.fqdn}
                                         onChange={(e) => setForm({ ...form, fqdn: e.target.value })}
                                         error={!!errors.fqdn}
@@ -773,41 +768,16 @@ export default function CreateVdsNodePage() {
                                 </div>
 
                                 {locationPagination.total_pages > 1 && (
-                                    <div className='border-border bg-muted/30 flex items-center justify-between gap-2 rounded-lg border px-3 py-2'>
-                                        <Button
-                                            variant='outline'
-                                            size='sm'
-                                            disabled={!locationPagination.has_prev}
-                                            onClick={() =>
-                                                setLocationPagination((prev) => ({
-                                                    ...prev,
-                                                    current_page: prev.current_page - 1,
-                                                }))
-                                            }
-                                            className='h-8 gap-1'
-                                        >
-                                            <ChevronLeft className='h-3 w-3' />
-                                            {t('common.previous')}
-                                        </Button>
-                                        <span className='text-xs font-medium'>
-                                            {locationPagination.current_page} / {locationPagination.total_pages}
-                                        </span>
-                                        <Button
-                                            variant='outline'
-                                            size='sm'
-                                            disabled={!locationPagination.has_next}
-                                            onClick={() =>
-                                                setLocationPagination((prev) => ({
-                                                    ...prev,
-                                                    current_page: prev.current_page + 1,
-                                                }))
-                                            }
-                                            className='h-8 gap-1'
-                                        >
-                                            {t('common.next')}
-                                            <ChevronRight className='h-3 w-3' />
-                                        </Button>
-                                    </div>
+                                    <ListPagination
+                                        page={locationPagination.current_page}
+                                        totalPages={locationPagination.total_pages}
+                                        onPageChange={(nextPage) =>
+                                            setLocationPagination((prev) => ({
+                                                ...prev,
+                                                current_page: nextPage,
+                                            }))
+                                        }
+                                    />
                                 )}
 
                                 <div className='max-h-[calc(100vh-300px)] space-y-2 overflow-y-auto'>
@@ -854,6 +824,17 @@ export default function CreateVdsNodePage() {
             </Sheet>
 
             <WidgetRenderer widgets={getWidgets('admin-vds-nodes-create', 'bottom-of-page')} />
+
+            <UnsavedChangesBar
+                dirty={unsaved}
+                saving={loading}
+                onSave={() => void handleSubmit()}
+                onDiscard={() => {
+                    const saved = restoreForm();
+                    if (saved) setForm(saved);
+                }}
+                saveLabel={t('common.create')}
+            />
         </div>
     );
 }

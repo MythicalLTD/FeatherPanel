@@ -342,6 +342,9 @@ class VdsChatbotController
 
             $data   = json_decode($request->getContent(), true);
             $memory = $data['memory'] ?? '';
+            if (!is_string($memory)) {
+                return ApiResponse::error('Memory must be a string', 'INVALID_DATA_TYPE', 400);
+            }
 
             $updated = ChatConversation::updateConversation($id, [
                 'memory' => $memory,
@@ -381,13 +384,16 @@ class VdsChatbotController
         }
 
         $data = json_decode($request->getContent(), true) ?: [];
-        if (!isset($data['message']) || empty(trim($data['message']))) {
+        if (!isset($data['message']) || !is_scalar($data['message']) || empty(trim((string) $data['message']))) {
             throw new \InvalidArgumentException('Message is required');
         }
 
-        $message = trim($data['message']);
+        $message = trim((string) $data['message']);
         $history = $data['history'] ?? [];
         $pageContext = $data['pageContext'] ?? [];
+        if (!is_array($history) || !is_array($pageContext)) {
+            throw new \InvalidArgumentException('history and pageContext must be arrays');
+        }
         $conversationId = $data['conversation_id'] ?? null;
 
         $conversation = null;

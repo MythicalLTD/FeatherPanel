@@ -14,37 +14,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 */
 
 import { format, formatDistanceToNowStrict, parseISO, type Locale } from 'date-fns';
-import {
-    ar,
-    cs,
-    de,
-    el,
-    enGB,
-    enUS,
-    es,
-    fi,
-    fr,
-    he,
-    hi,
-    hu,
-    id,
-    it,
-    ja,
-    ko,
-    nb,
-    nl,
-    pl,
-    pt,
-    ptBR,
-    ro,
-    ru,
-    sv,
-    th,
-    tr,
-    uk,
-    vi,
-    zhCN,
-} from 'date-fns/locale';
+import { enUS } from 'date-fns/locale/en-US';
 import { formatInTimeZone, toZonedTime } from 'date-fns-tz';
 
 const NAIVE_MYSQL_DATETIME = /^(\d{4}-\d{2}-\d{2})[ T](\d{2}:\d{2}:\d{2})(\.\d+)?$/;
@@ -88,51 +58,78 @@ export function parseApiDate(value: string | number | Date | null | undefined): 
  * Map a TranslationContext locale code (e.g. `en`, `pt-BR`, `pt_BR`) to a
  * `date-fns` locale object. Falls back to `enUS` for unknown values.
  *
- * Keep the table small but representative extra locales can be added on
- * demand once they are introduced in the translation system.
+ * Only `enUS` ships in the main bundle. Every other locale is its own small
+ * chunk, fetched by `preloadDateFnsLocale` (TranslationContext calls it when
+ * the UI language changes). Until that chunk arrives the sync resolver falls
+ * back to `enUS`, so callers never wait.
  */
-const DATE_FNS_LOCALES: Record<string, Locale> = {
-    en: enUS,
-    'en-US': enUS,
-    'en-GB': enGB,
-    de: de,
-    fr: fr,
-    es: es,
-    it: it,
-    pt: pt,
-    'pt-BR': ptBR,
-    nl: nl,
-    pl: pl,
-    ru: ru,
-    uk: uk,
-    cs: cs,
-    hu: hu,
-    ro: ro,
-    el: el,
-    sv: sv,
-    nb: nb,
-    fi: fi,
-    tr: tr,
-    ar: ar,
-    he: he,
-    hi: hi,
-    th: th,
-    vi: vi,
-    id: id,
-    ja: ja,
-    ko: ko,
-    'zh-CN': zhCN,
-    zh: zhCN,
+const DATE_FNS_LOCALE_LOADERS: Record<string, () => Promise<Locale>> = {
+    'en-GB': () => import('date-fns/locale/en-GB').then((m) => m.enGB),
+    de: () => import('date-fns/locale/de').then((m) => m.de),
+    fr: () => import('date-fns/locale/fr').then((m) => m.fr),
+    es: () => import('date-fns/locale/es').then((m) => m.es),
+    it: () => import('date-fns/locale/it').then((m) => m.it),
+    pt: () => import('date-fns/locale/pt').then((m) => m.pt),
+    'pt-BR': () => import('date-fns/locale/pt-BR').then((m) => m.ptBR),
+    nl: () => import('date-fns/locale/nl').then((m) => m.nl),
+    pl: () => import('date-fns/locale/pl').then((m) => m.pl),
+    ru: () => import('date-fns/locale/ru').then((m) => m.ru),
+    uk: () => import('date-fns/locale/uk').then((m) => m.uk),
+    cs: () => import('date-fns/locale/cs').then((m) => m.cs),
+    hu: () => import('date-fns/locale/hu').then((m) => m.hu),
+    ro: () => import('date-fns/locale/ro').then((m) => m.ro),
+    el: () => import('date-fns/locale/el').then((m) => m.el),
+    sv: () => import('date-fns/locale/sv').then((m) => m.sv),
+    nb: () => import('date-fns/locale/nb').then((m) => m.nb),
+    fi: () => import('date-fns/locale/fi').then((m) => m.fi),
+    tr: () => import('date-fns/locale/tr').then((m) => m.tr),
+    ar: () => import('date-fns/locale/ar').then((m) => m.ar),
+    he: () => import('date-fns/locale/he').then((m) => m.he),
+    hi: () => import('date-fns/locale/hi').then((m) => m.hi),
+    th: () => import('date-fns/locale/th').then((m) => m.th),
+    vi: () => import('date-fns/locale/vi').then((m) => m.vi),
+    id: () => import('date-fns/locale/id').then((m) => m.id),
+    ja: () => import('date-fns/locale/ja').then((m) => m.ja),
+    ko: () => import('date-fns/locale/ko').then((m) => m.ko),
+    'zh-CN': () => import('date-fns/locale/zh-CN').then((m) => m.zhCN),
+    zh: () => import('date-fns/locale/zh-CN').then((m) => m.zhCN),
 };
 
-export function resolveDateFnsLocale(code: string | null | undefined): Locale {
-    if (!code) return enUS;
+const loadedDateFnsLocales: Record<string, Locale> = { en: enUS, 'en-US': enUS };
+
+function dateFnsLocaleKey(code: string | null | undefined): string | null {
+    if (!code) return null;
     const normalised = code.replace('_', '-');
-    if (DATE_FNS_LOCALES[normalised]) return DATE_FNS_LOCALES[normalised];
+    if (loadedDateFnsLocales[normalised] || DATE_FNS_LOCALE_LOADERS[normalised]) return normalised;
     // Fall back to the language-only prefix (e.g. `pt-PT` → `pt`).
     const prefix = normalised.split('-')[0];
-    if (DATE_FNS_LOCALES[prefix]) return DATE_FNS_LOCALES[prefix];
-    return enUS;
+    if (loadedDateFnsLocales[prefix] || DATE_FNS_LOCALE_LOADERS[prefix]) return prefix;
+    return null;
+}
+
+export function resolveDateFnsLocale(code: string | null | undefined): Locale {
+    const key = dateFnsLocaleKey(code);
+    return (key && loadedDateFnsLocales[key]) || enUS;
+}
+
+/** True when `resolveDateFnsLocale(code)` already returns the final locale (no fetch pending). */
+export function isDateFnsLocaleReady(code: string | null | undefined): boolean {
+    const key = dateFnsLocaleKey(code);
+    return !key || Boolean(loadedDateFnsLocales[key]);
+}
+
+/** Fetch the date-fns locale for `code` so later `resolveDateFnsLocale` calls return it. */
+export async function preloadDateFnsLocale(code: string | null | undefined): Promise<Locale> {
+    const key = dateFnsLocaleKey(code);
+    if (!key) return enUS;
+    if (loadedDateFnsLocales[key]) return loadedDateFnsLocales[key];
+    try {
+        const loaded = await DATE_FNS_LOCALE_LOADERS[key]();
+        loadedDateFnsLocales[key] = loaded;
+        return loaded;
+    } catch {
+        return enUS;
+    }
 }
 
 /**

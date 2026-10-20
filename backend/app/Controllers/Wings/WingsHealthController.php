@@ -25,14 +25,14 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * Panel health for FeatherWings game daemons — GET /api/remote/health.
+ * Panel health for FeatherWings game daemons - GET /api/remote/health.
  *
  * Web hosting nodes use /api/quilld-remote/health instead.
  */
 class WingsHealthController
 {
     /**
-     * GET /api/remote/health — panel connectivity for authenticated game nodes.
+     * GET /api/remote/health - panel connectivity for authenticated game nodes.
      */
     public function getHealth(Request $request): Response
     {

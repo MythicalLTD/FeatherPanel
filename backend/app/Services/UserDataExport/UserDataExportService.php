@@ -927,7 +927,17 @@ class UserDataExportService
             }
 
             $phar = new \PharData($tarPath);
-            $phar->extractTo($targetDir, null, true);
+            $safeEntries = $this->collectSafePharEntries($phar);
+            if ($safeEntries === null) {
+                return [
+                    'success' => false,
+                    'format' => str_ends_with($archivePath, '.gz') ? 'tar.gz' : 'tar',
+                    'message' => 'Backup archive contains unsafe entries and was rejected',
+                ];
+            }
+            if ($safeEntries !== []) {
+                $phar->extractTo($targetDir, $safeEntries, true);
+            }
 
             return [
                 'success' => true,
@@ -951,6 +961,31 @@ class UserDataExportService
             && !str_contains($normalized, '../')
             && !str_contains($normalized, '..\\')
             && $normalized !== '..';
+    }
+
+    /**
+     * List the archive entries that stay inside the destination directory.
+     * Returns null when the archive contains an unsafe entry (traversal/absolute).
+     *
+     * @return list<string>|null
+     */
+    private function collectSafePharEntries(\PharData $phar): ?array
+    {
+        $safe = [];
+        $iterator = new \RecursiveIteratorIterator($phar, \RecursiveIteratorIterator::SELF_FIRST);
+
+        foreach ($iterator as $entry) {
+            $relative = str_replace('\\', '/', (string) $iterator->getSubPathName());
+            if ($relative === '') {
+                continue;
+            }
+            if (!$this->isSafeArchivePath($relative)) {
+                return null;
+            }
+            $safe[] = $relative;
+        }
+
+        return $safe;
     }
 
     private function buildOrderByClause(array $columns): string

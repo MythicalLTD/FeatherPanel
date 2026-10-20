@@ -11,7 +11,9 @@
 }
 
 :80 {
-	encode zstd gzip
+	# SSE streams (chatbot, Mercure live updates) must reach the browser unbuffered: never compress them
+	@compressible not path /api/user/chatbot/chat/stream /api/user/vds-chatbot/chat/stream /api/mercure
+	encode @compressible zstd gzip
 
 	request_body {
 		max_size 250MB
@@ -28,6 +30,14 @@
 	@bad_pct path_regexp %([^0-9A-Fa-f]|[0-9A-Fa-f]([^0-9A-Fa-f]|$)|$)
 	handle @bad_pct {
 		respond "Bad Request" 400
+	}
+
+	# Proxmox VNC console websocket proxy (issue #168) — single-use tickets
+	# are issued by POST /api/.../vnc-ticket; the async-runner validates them
+	# and bridges the socket to the node's vncwebsocket endpoint.
+	@vncproxy path /vnc-proxy*
+	handle @vncproxy {
+		reverse_proxy async-runner:9100
 	}
 
 	@api path /api*

@@ -15,7 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
+import { createContext, useContext, useEffect, useState, ReactNode, useCallback, useMemo } from 'react';
 import type { AppSettings, CoreInfo } from '@/types/settings';
 import { settingsApi } from '@/lib/settings-api';
 import { getFeatherpanelApiErrorMessage } from '@/lib/api';
@@ -47,7 +47,7 @@ export function SettingsProvider({ children, initialSettings = null, initialCore
 
     const fetchSettings = useCallback(async () => {
         try {
-            if (!initialSettings) {
+            if (!initialSettings && process.env.NODE_ENV !== 'development') {
                 const cached = localStorage.getItem(CACHE_KEY);
                 if (cached) {
                     const { data, version } = JSON.parse(cached);
@@ -66,14 +66,15 @@ export function SettingsProvider({ children, initialSettings = null, initialCore
                 setCore(data.core);
                 setError(null);
 
-                localStorage.setItem(
-                    CACHE_KEY,
-                    JSON.stringify({
-                        data,
-                        version: CACHE_VERSION,
-                        timestamp: Date.now(),
-                    }),
-                );
+                if (process.env.NODE_ENV !== 'development')
+                    localStorage.setItem(
+                        CACHE_KEY,
+                        JSON.stringify({
+                            data,
+                            version: CACHE_VERSION,
+                            timestamp: Date.now(),
+                        }),
+                    );
             } else if (!initialSettings) {
                 throw new Error('Failed to load settings');
             }
@@ -98,19 +99,12 @@ export function SettingsProvider({ children, initialSettings = null, initialCore
         await fetchSettings();
     }, [fetchSettings]);
 
-    return (
-        <SettingsContext.Provider
-            value={{
-                settings,
-                core,
-                loading,
-                error,
-                refetch,
-            }}
-        >
-            {children}
-        </SettingsContext.Provider>
+    const contextValue = useMemo(
+        () => ({ settings, core, loading, error, refetch }),
+        [settings, core, loading, error, refetch],
     );
+
+    return <SettingsContext.Provider value={contextValue}>{children}</SettingsContext.Provider>;
 }
 
 export function useSettings() {

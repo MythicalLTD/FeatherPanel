@@ -1528,7 +1528,7 @@ class FeatherQuilldClient
     /** @return array{ok: bool, status: int, body: mixed, error: ?string} */
     public static function syncWebSpaceSchedules(array $webNode, string $uuid): array
     {
-        // Keep this short — panel CRUD must not hang waiting on a slow/unreachable daemon.
+        // Keep this short - panel CRUD must not hang waiting on a slow/unreachable daemon.
         return self::request($webNode, 'POST', '/api/webspaces/' . $uuid . '/schedules/sync', null, 10);
     }
 

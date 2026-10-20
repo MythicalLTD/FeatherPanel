@@ -30,6 +30,7 @@ import { cn } from '@/lib/utils';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { getApiErrorMessage } from '@/lib/api-errors';
+import { Sensitive } from '@/components/common/Sensitive';
 
 interface AssignedIp {
     id: number;
@@ -118,9 +119,7 @@ export default function VdsNetworkingPage() {
             <div className='flex min-h-[60vh] items-center justify-center'>
                 <div className='flex flex-col items-center gap-4'>
                     <Loader2 className='text-primary h-10 w-10 animate-spin' />
-                    <p className='text-muted-foreground animate-pulse font-medium'>
-                        {t('vds.networking.loading') ?? 'Loading networking…'}
-                    </p>
+                    <p className='text-muted-foreground animate-pulse font-medium'>{t('vds.networking.loading')}</p>
                 </div>
             </div>
         );
@@ -148,8 +147,8 @@ export default function VdsNetworkingPage() {
             <WidgetRenderer widgets={getWidgets('vds-network', 'top-of-page')} />
 
             <PageHeader
-                title={t('vds.networking.title') ?? 'Networking'}
-                description={t('vds.networking.description') ?? 'View assigned IPs, interfaces, and DNS settings.'}
+                title={t('vds.networking.title')}
+                description={t('vds.networking.description')}
                 actions={
                     <div className='flex w-full sm:w-auto sm:justify-end'>
                         <Button
@@ -171,18 +170,17 @@ export default function VdsNetworkingPage() {
                     <CardHeader>
                         <CardTitle className='flex items-center gap-2 text-sm font-black tracking-widest uppercase'>
                             <Network className='text-primary h-4 w-4' />
-                            {t('vds.networking.assigned_ips.title') ?? 'Assigned IPs'}
+                            {t('vds.networking.assigned_ips.title')}
                         </CardTitle>
                         <CardDescription className='text-muted-foreground'>
-                            {t('vds.networking.assigned_ips.description') ??
-                                'These addresses are currently attached to your VDS instance.'}
+                            {t('vds.networking.assigned_ips.description')}
                         </CardDescription>
                     </CardHeader>
                     <CardContent className='space-y-4'>
                         {loading && !networking ? (
                             <div className='text-muted-foreground flex items-center gap-2'>
                                 <Loader2 className='h-4 w-4 animate-spin' />
-                                {t('vds.networking.loading') ?? 'Loading networking…'}
+                                {t('vds.networking.loading')}
                             </div>
                         ) : networking?.assigned_ips?.length ? (
                             networking.assigned_ips.map((ip) => (
@@ -198,7 +196,7 @@ export default function VdsNetworkingPage() {
                                             {Boolean(ip.is_primary) && (
                                                 <span className='inline-flex items-center gap-1 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-black tracking-widest text-emerald-400 uppercase'>
                                                     <ShieldCheck className='h-3 w-3' />
-                                                    {t('vds.networking.assigned_ips.primary_badge') ?? 'Primary'}
+                                                    {t('vds.networking.assigned_ips.primary_badge')}
                                                 </span>
                                             )}
                                         </div>
@@ -206,23 +204,27 @@ export default function VdsNetworkingPage() {
                                             {ip.interface_name ?? (networking.vm_type === 'lxc' ? 'eth0' : 'virtio')}
                                         </span>
                                     </div>
-                                    <div className='font-mono text-xl font-black break-all'>{ip.ip}</div>
+                                    <div className='font-mono text-xl font-black break-all'>
+                                        <Sensitive>{ip.ip}</Sensitive>
+                                    </div>
                                     <div className='grid grid-cols-1 gap-3 text-sm sm:grid-cols-3'>
                                         <div className='border-border/20 bg-background/30 rounded-xl border px-3 py-2'>
                                             <div className='text-muted-foreground/60 text-[10px] font-black tracking-widest uppercase'>
-                                                {t('vds.networking.assigned_ips.cidr') ?? 'CIDR'}
+                                                {t('vds.networking.assigned_ips.cidr')}
                                             </div>
                                             <div className='mt-1 font-mono'>{ip.cidr ?? '-'}</div>
                                         </div>
                                         <div className='border-border/20 bg-background/30 rounded-xl border px-3 py-2'>
                                             <div className='text-muted-foreground/60 text-[10px] font-black tracking-widest uppercase'>
-                                                {t('vds.networking.assigned_ips.gateway') ?? 'Gateway'}
+                                                {t('vds.networking.assigned_ips.gateway')}
                                             </div>
-                                            <div className='mt-1 font-mono'>{ip.gateway || '-'}</div>
+                                            <div className='mt-1 font-mono'>
+                                                <Sensitive>{ip.gateway || '-'}</Sensitive>
+                                            </div>
                                         </div>
                                         <div className='border-border/20 bg-background/30 rounded-xl border px-3 py-2'>
                                             <div className='text-muted-foreground/60 text-[10px] font-black tracking-widest uppercase'>
-                                                {t('vds.networking.assigned_ips.bridge') ?? 'Bridge'}
+                                                {t('vds.networking.assigned_ips.bridge')}
                                             </div>
                                             <div className='mt-1 font-mono'>{ip.bridge || 'vmbr0'}</div>
                                         </div>
@@ -231,7 +233,7 @@ export default function VdsNetworkingPage() {
                             ))
                         ) : (
                             <div className='border-border/40 bg-muted/10 text-muted-foreground rounded-2xl border border-dashed p-6 text-sm'>
-                                {t('vds.networking.assigned_ips.empty') ?? 'No assigned IPs were found for this VDS.'}
+                                {t('vds.networking.assigned_ips.empty')}
                             </div>
                         )}
                     </CardContent>
@@ -241,23 +243,22 @@ export default function VdsNetworkingPage() {
                     <CardHeader>
                         <CardTitle className='flex items-center gap-2 text-sm font-black tracking-widest uppercase'>
                             <Globe className='text-primary h-4 w-4' />
-                            {t('vds.networking.dns.title') ?? 'DNS'}
+                            {t('vds.networking.dns.title')}
                         </CardTitle>
                         <CardDescription className='text-muted-foreground'>
-                            {t('vds.networking.dns.description') ??
-                                'Nameserver and search domain settings for this instance.'}
+                            {t('vds.networking.dns.description')}
                         </CardDescription>
                     </CardHeader>
                     <CardContent className='space-y-4'>
                         <div className='space-y-2'>
                             <div className='text-muted-foreground text-xs font-semibold'>
-                                {t('vds.networking.dns.nameserver_label') ?? 'Nameserver'}
+                                {t('vds.networking.dns.nameserver_label')}
                             </div>
                             <Input
                                 value={dnsNameserver}
                                 onChange={(e) => setDnsNameserver(e.target.value)}
                                 disabled={!canSettings}
-                                placeholder={t('vds.networking.dns.nameserver_placeholder') ?? '1.1.1.1 8.8.8.8'}
+                                placeholder={t('vds.networking.dns.nameserver_placeholder')}
                                 className='bg-muted/30'
                             />
                         </div>
@@ -265,13 +266,13 @@ export default function VdsNetworkingPage() {
                         {networking?.vm_type === 'lxc' && (
                             <div className='space-y-2'>
                                 <div className='text-muted-foreground text-xs font-semibold'>
-                                    {t('vds.networking.dns.searchdomain_label') ?? 'Search domain'}
+                                    {t('vds.networking.dns.searchdomain_label')}
                                 </div>
                                 <Input
                                     value={dnsSearchDomain}
                                     onChange={(e) => setDnsSearchDomain(e.target.value)}
                                     disabled={!canSettings}
-                                    placeholder={t('vds.networking.dns.searchdomain_placeholder') ?? 'example.com'}
+                                    placeholder={t('vds.networking.dns.searchdomain_placeholder')}
                                     className='bg-muted/30'
                                 />
                             </div>
@@ -279,7 +280,7 @@ export default function VdsNetworkingPage() {
 
                         <div className='border-border/20 bg-muted/10 space-y-2 rounded-2xl border px-4 py-3'>
                             <div className='text-muted-foreground/60 text-[10px] font-black tracking-widest uppercase'>
-                                {t('vds.networking.primary_ip_label') ?? 'Primary IP'}
+                                {t('vds.networking.primary_ip_label')}
                             </div>
                             <div className='font-mono text-sm'>{networking?.primary_ip ?? '-'}</div>
                         </div>
@@ -288,13 +289,12 @@ export default function VdsNetworkingPage() {
                             <div className='flex justify-end pt-2'>
                                 <Button variant='default' disabled={saving} onClick={handleApplyDns}>
                                     {saving && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
-                                    {t('vds.networking.dns.apply_button') ?? 'Apply'}
+                                    {t('vds.networking.dns.apply_button')}
                                 </Button>
                             </div>
                         ) : (
                             <div className='border-border/20 bg-muted/10 text-muted-foreground rounded-2xl border px-4 py-3 text-sm'>
-                                {t('vds.networking.dns.readonly_notice') ??
-                                    'You can view DNS settings here, but you do not have permission to change them.'}
+                                {t('vds.networking.dns.readonly_notice')}
                             </div>
                         )}
                     </CardContent>
@@ -305,23 +305,17 @@ export default function VdsNetworkingPage() {
                 <CardHeader>
                     <CardTitle className='flex items-center gap-2 text-sm font-black tracking-widest uppercase'>
                         <Server className='text-primary h-4 w-4' />
-                        {t('vds.networking.notes.title') ?? 'How It Works'}
+                        {t('vds.networking.notes.title')}
                     </CardTitle>
                 </CardHeader>
                 <CardContent className='text-muted-foreground grid grid-cols-1 gap-4 text-sm md:grid-cols-2'>
                     <div className='border-border/20 bg-muted/10 rounded-2xl border p-4'>
                         <div className='text-foreground mb-1 font-semibold'>QEMU / KVM</div>
-                        <p>
-                            {t('vds.networking.notes.qemu') ??
-                                'Additional IPs are provisioned as extra virtual NICs with matching cloud-init ipconfig entries.'}
-                        </p>
+                        <p>{t('vds.networking.notes.qemu')}</p>
                     </div>
                     <div className='border-border/20 bg-muted/10 rounded-2xl border p-4'>
                         <div className='text-foreground mb-1 font-semibold'>LXC</div>
-                        <p>
-                            {t('vds.networking.notes.lxc') ??
-                                'Additional IPs are provisioned as extra container network interfaces such as net1, net2, and so on.'}
-                        </p>
+                        <p>{t('vds.networking.notes.lxc')}</p>
                     </div>
                 </CardContent>
             </Card>

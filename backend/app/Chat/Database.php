@@ -29,8 +29,14 @@ class Database
     private $password;
     private $port;
 
-    /** Request-scoped shared PDO — required for transactions that span helper methods. */
+    /** Request-scoped shared PDO - required for transactions that span helper methods. */
     private static ?\PDO $sharedPdo = null;
+
+    private static ?float $lastRequestFinishedAt = null;
+    private static bool $lastRequestFailed = false;
+
+    /** @var array<string, list<string>> Column names per table, cached for the process lifetime. */
+    private static array $columnCache = [];
 
     /**
      * Database constructor.
@@ -45,33 +51,28 @@ class Database
      */
     public function __construct($host, $dbName, $username = null, $password = null, int $port = 3306)
     {
-        $dsn = "mysql:host=$host;port=$port;dbname=$dbName";
-        try {
-            $this->pdo = new \PDO($dsn, $username, $password);
-            $this->pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
-
-            // Force the MySQL session timezone to UTC so that CURRENT_TIMESTAMP / NOW()
-            // and other server-side time functions are deterministic regardless of the
-            // operating system or container default. All datetime columns in the schema
-            // are stored as UTC and converted to the user's preferred timezone at
-            // display time on the frontend.
-            try {
-                $this->pdo->exec("SET time_zone = '+00:00'");
-            } catch (\PDOException $tzException) {
-                // Non-fatal: log and continue. Some constrained MySQL deployments may
-                // not allow SET time_zone; behaviour falls back to the previous (buggy)
-                // semantics in that case rather than refusing to boot.
-                error_log('Failed to set MySQL session timezone to UTC: ' . $tzException->getMessage());
-            }
-        } catch (\PDOException $e) {
-            throw new \Exception('Connection failed: ' . $e->getMessage());
-        }
-
         $this->host = $host;
         $this->dbName = $dbName;
         $this->username = $username;
         $this->password = $password;
         $this->port = $port;
+
+        $this->pdo = $this->connect();
+    }
+
+    /**
+     * Reconnect in place when the connection died (database restart,
+     * wait_timeout) while a long-running FrankenPHP worker was idle.
+     *
+     * @throws \Exception if the reconnect fails
+     */
+    public function ensureConnected(): void
+    {
+        if (self::isAlive($this->pdo)) {
+            return;
+        }
+
+        $this->pdo = $this->connect();
     }
 
     public function getPdo(): \PDO
@@ -98,6 +99,13 @@ class Database
             return self::$sharedPdo;
         }
 
+        // Share the application's connection instead of opening a second one
+        // to the same database (one connect less per classic request, half the
+        // connections per worker, and settings reads join open transactions).
+        if (isset(\App\App::$instance) && isset(\App\App::$instance->db)) {
+            return self::$sharedPdo = \App\App::$instance->db->getPdo();
+        }
+
         /**
          * Load the environment variables.
          */
@@ -113,6 +121,135 @@ class Database
         self::$sharedPdo = $con->getPdo();
 
         return self::$sharedPdo;
+    }
+
+    /**
+     * Whether a PDO connection still answers. Used between requests only.
+     */
+    public static function isAlive(\PDO $pdo): bool
+    {
+        try {
+            // "MySQL server has gone away" also raises a warning before the exception.
+            return @$pdo->query('SELECT 1') !== false;
+        } catch (\PDOException) {
+            return false;
+        }
+    }
+
+    /**
+     * Forget the shared connection when it died, so the next
+     * getPdoConnection() call opens a new one.
+     */
+    public static function dropDeadSharedConnection(): void
+    {
+        if (self::$sharedPdo instanceof \PDO && !self::isAlive(self::$sharedPdo)) {
+            self::$sharedPdo = null;
+        }
+    }
+
+    /**
+     * Roll back transactions a request left open (an exception between
+     * beginTransaction() and commit()). Under FrankenPHP worker mode the
+     * connection outlives the request, so its locks and uncommitted writes
+     * would otherwise leak into the next request on that thread.
+     */
+    public static function rollBackOpenTransactions(): void
+    {
+        $connections = ['shared' => self::$sharedPdo];
+        if (isset(\App\App::$instance) && isset(\App\App::$instance->db)) {
+            $connections['app'] = \App\App::$instance->db->getPdo();
+        }
+
+        foreach ($connections as $name => $pdo) {
+            if (!$pdo instanceof \PDO) {
+                continue;
+            }
+            try {
+                if ($pdo->inTransaction()) {
+                    $pdo->rollBack();
+                    error_log('Rolled back a transaction left open by the previous request (' . $name . ' connection).');
+                }
+            } catch (\PDOException) {
+                if ($name === 'shared') {
+                    self::$sharedPdo = null;
+                }
+            }
+        }
+    }
+
+    /**
+     * Record the end of a request (see secondsSinceLastRequest()).
+     *
+     * @param bool $failed whether the request ended with a server error
+     */
+    public static function markRequestFinished(bool $failed): void
+    {
+        self::$lastRequestFinishedAt = microtime(true);
+        self::$lastRequestFailed = $failed;
+    }
+
+    /**
+     * Seconds since this process finished its previous request, or null when
+     * it did not serve one yet (always the case in classic mode).
+     */
+    public static function secondsSinceLastRequest(): ?float
+    {
+        if (self::$lastRequestFinishedAt === null) {
+            return null;
+        }
+
+        return microtime(true) - self::$lastRequestFinishedAt;
+    }
+
+    /**
+     * Whether the previous request in this process ended with a server error.
+     */
+    public static function lastRequestFailed(): bool
+    {
+        return self::$lastRequestFailed;
+    }
+
+    /**
+     * Get the column names of a table (cached per process).
+     *
+     * @return list<string>
+     */
+    public static function getTableColumns(string $table): array
+    {
+        if (isset(self::$columnCache[$table])) {
+            return self::$columnCache[$table];
+        }
+
+        $stmt = self::getPdoConnection()->query('SHOW COLUMNS FROM ' . self::quoteIdentifier($table));
+        $columns = $stmt === false ? [] : array_map(static fn ($c) => (string) $c['Field'], $stmt->fetchAll(\PDO::FETCH_ASSOC));
+
+        return self::$columnCache[$table] = $columns;
+    }
+
+    /**
+     * Keep only the keys of $data that are real columns of $table.
+     */
+    public static function filterColumns(string $table, array $data): array
+    {
+        return array_intersect_key($data, array_flip(self::getTableColumns($table)));
+    }
+
+    /**
+     * Return the keys of $data that are not columns of $table.
+     *
+     * @return list<string>
+     */
+    public static function unknownColumns(string $table, array $data): array
+    {
+        return array_values(array_diff(array_map('strval', array_keys($data)), self::getTableColumns($table)));
+    }
+
+    /**
+     * Quote an SQL identifier (table or column name) with backticks.
+     */
+    public static function quoteIdentifier(string $identifier): string
+    {
+        return '`' . str_replace('`', '``', $identifier) . '`';
     }
 
     /**
@@ -158,14 +295,21 @@ class Database
             }
 
             // Process where conditions
+            $columns = self::getTableColumns($table);
             foreach ($where as $key => $value) {
                 if (is_array($value)) {
                     // Handle special operators like >, <, >=, <=, !=
-                    $conditions[] = "{$value[0]} {$value[1]} ?";
-                    $params[] = $value[2];
+                    if (!in_array((string) ($value[0] ?? ''), $columns, true) || !in_array($value[1] ?? null, ['=', '!=', '<>', '>', '<', '>=', '<='], true)) {
+                        return 0;
+                    }
+                    $conditions[] = self::quoteIdentifier((string) $value[0]) . " {$value[1]} ?";
+                    $params[] = $value[2] ?? null;
                 } else {
                     // Standard equals condition
-                    $conditions[] = "$key = ?";
+                    if (!in_array((string) $key, $columns, true)) {
+                        return 0;
+                    }
+                    $conditions[] = self::quoteIdentifier((string) $key) . ' = ?';
                     $params[] = $value;
                 }
             }
@@ -450,5 +594,37 @@ class Database
 
             return [];
         }
+    }
+
+    /**
+     * Open a new PDO connection with the stored credentials.
+     *
+     * @throws \Exception if the connection fails
+     */
+    private function connect(): \PDO
+    {
+        $dsn = "mysql:host={$this->host};port={$this->port};dbname={$this->dbName}";
+        try {
+            $pdo = new \PDO($dsn, $this->username, $this->password);
+            $pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+
+            // Force the MySQL session timezone to UTC so that CURRENT_TIMESTAMP / NOW()
+            // and other server-side time functions are deterministic regardless of the
+            // operating system or container default. All datetime columns in the schema
+            // are stored as UTC and converted to the user's preferred timezone at
+            // display time on the frontend.
+            try {
+                $pdo->exec("SET time_zone = '+00:00'");
+            } catch (\PDOException $tzException) {
+                // Non-fatal: log and continue. Some constrained MySQL deployments may
+                // not allow SET time_zone; behaviour falls back to the previous (buggy)
+                // semantics in that case rather than refusing to boot.
+                error_log('Failed to set MySQL session timezone to UTC: ' . $tzException->getMessage());
+            }
+        } catch (\PDOException $e) {
+            throw new \Exception('Connection failed: ' . $e->getMessage());
+        }
+
+        return $pdo;
     }
 }

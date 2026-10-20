@@ -123,9 +123,13 @@ class ServerSchedule
         $data['updated_at'] = $data['updated_at'] ?? date('Y-m-d H:i:s');
 
         $pdo = Database::getPdoConnection();
+        $data = Database::filterColumns(self::$table, $data);
+        if ($data === []) {
+            return false;
+        }
         $fields = array_keys($data);
         $placeholders = array_map(fn ($f) => ':' . $f, $fields);
-        $sql = 'INSERT INTO ' . self::$table . ' (' . implode(',', $fields) . ') VALUES (' . implode(',', $placeholders) . ')';
+        $sql = 'INSERT INTO ' . self::$table . ' (`' . implode('`, `', $fields) . '`) VALUES (' . implode(',', $placeholders) . ')';
         $stmt = $pdo->prepare($sql);
         if ($stmt->execute($data)) {
             return (int) $pdo->lastInsertId();
@@ -299,6 +303,12 @@ class ServerSchedule
             $sql .= ' WHERE ' . implode(' AND ', $where);
         }
 
+        // Security: only known columns may reach the ORDER BY clause.
+        if (!in_array($sortBy, ['id', 'name', 'created_at', 'next_run_at', 'last_run_at', 'is_active'], true)) {
+            $sortBy = 'id';
+        }
+        $sortOrder = strtoupper($sortOrder) === 'ASC' ? 'ASC' : 'DESC';
+
         $sql .= " ORDER BY $sortBy $sortOrder";
         $offset = max(0, ($page - 1) * $limit);
         $sql .= ' LIMIT :limit OFFSET :offset';
@@ -365,7 +375,7 @@ class ServerSchedule
 
                 return false;
             }
-            $set = implode(', ', array_map(fn ($f) => "$f = :$f", $fields));
+            $set = implode(', ', array_map(fn ($f) => "`$f` = :$f", $fields));
             $sql = 'UPDATE ' . self::$table . ' SET ' . $set . ' WHERE id = :id';
             $stmt = $pdo->prepare($sql);
             $data['id'] = $id;
@@ -554,6 +564,16 @@ class ServerSchedule
     public static function validateCronExpression(string $dayOfWeek, string $month, string $dayOfMonth, string $hour, string $minute): bool
     {
         $expression = self::formatCronExpression($dayOfWeek, $month, $dayOfMonth, $hour, $minute);
+
+        // A fixed day that never exists in the chosen month (e.g. 30 2 or 31 4) never fires;
+        // next-run calculation would then fall back to an unrelated date.
+        if (ctype_digit(trim($dayOfMonth)) && ctype_digit(trim($month)) && trim($dayOfWeek) === '*') {
+            $maxDays = [1 => 31, 2 => 29, 3 => 31, 4 => 30, 5 => 31, 6 => 30, 7 => 31, 8 => 31, 9 => 30, 10 => 31, 11 => 30, 12 => 31];
+            $monthNumber = (int) $month;
+            if (isset($maxDays[$monthNumber]) && (int) $dayOfMonth > $maxDays[$monthNumber]) {
+                return false;
+            }
+        }
 
         if (class_exists(CrontabSchedule::class)) {
             try {

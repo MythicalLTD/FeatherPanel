@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { AdminPageTips } from '@/components/admin/AdminPageTips';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import axios from 'axios';
@@ -25,7 +26,7 @@ import { PageHeader } from '@/components/featherui/PageHeader';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
-import { ResourceCard, type ResourceBadge } from '@/components/featherui/ResourceCard';
+import { ResourceCard, ResourceTable, type ResourceBadge } from '@/components/featherui/ResourceCard';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
 import { EmptyState } from '@/components/featherui/EmptyState';
 import { Select } from '@/components/ui/select-native';
@@ -238,8 +239,10 @@ export default function AdminMailHostsPage() {
                         icon={Wrench}
                     >
                         <div className='space-y-4 text-sm'>
-                            <details className='rounded-lg border border-border/60 p-3' open>
-                                <summary className='cursor-pointer font-semibold'>{t('admin.mailHosts.helpCaseA')}</summary>
+                            <details className='border-border/60 rounded-lg border p-3' open>
+                                <summary className='cursor-pointer font-semibold'>
+                                    {t('admin.mailHosts.helpCaseA')}
+                                </summary>
                                 <ol className='text-muted-foreground mt-2 list-decimal space-y-1 pl-5'>
                                     <li>{t('admin.mailHosts.helpA1')}</li>
                                     <li>{t('admin.mailHosts.helpA2')}</li>
@@ -247,11 +250,15 @@ export default function AdminMailHostsPage() {
                                     <li>{t('admin.mailHosts.helpA4')}</li>
                                     <li>{t('admin.mailHosts.helpA5')}</li>
                                 </ol>
-                                <p className='text-muted-foreground mt-2 text-xs'>{t('admin.mailHosts.helpAPitfalls')}</p>
+                                <p className='text-muted-foreground mt-2 text-xs'>
+                                    {t('admin.mailHosts.helpAPitfalls')}
+                                </p>
                             </details>
 
-                            <details className='rounded-lg border border-border/60 p-3'>
-                                <summary className='cursor-pointer font-semibold'>{t('admin.mailHosts.helpCaseB')}</summary>
+                            <details className='border-border/60 rounded-lg border p-3'>
+                                <summary className='cursor-pointer font-semibold'>
+                                    {t('admin.mailHosts.helpCaseB')}
+                                </summary>
                                 <ol className='text-muted-foreground mt-2 list-decimal space-y-1 pl-5'>
                                     <li>{t('admin.mailHosts.helpB1')}</li>
                                     <li>{t('admin.mailHosts.helpB2')}</li>
@@ -259,7 +266,9 @@ export default function AdminMailHostsPage() {
                                     <li>{t('admin.mailHosts.helpB4')}</li>
                                     <li>{t('admin.mailHosts.helpB5')}</li>
                                 </ol>
-                                <p className='text-muted-foreground mt-2 text-xs'>{t('admin.mailHosts.helpBPitfalls')}</p>
+                                <p className='text-muted-foreground mt-2 text-xs'>
+                                    {t('admin.mailHosts.helpBPitfalls')}
+                                </p>
                             </details>
 
                             <a
@@ -280,7 +289,7 @@ export default function AdminMailHostsPage() {
                             description={t('admin.mailHosts.setupHint')}
                             icon={Server}
                         >
-                            <div className='space-y-3'>
+                            <ResourceTable>
                                 {nodesWithoutMail.map((node) => (
                                     <ResourceCard
                                         key={node.id}
@@ -309,7 +318,7 @@ export default function AdminMailHostsPage() {
                                         }
                                     />
                                 ))}
-                            </div>
+                            </ResourceTable>
                         </PageCard>
                     )}
 
@@ -319,7 +328,7 @@ export default function AdminMailHostsPage() {
                             description={t('admin.mailHosts.builtinHint')}
                             icon={Mail}
                         >
-                            <div className='space-y-3'>
+                            <ResourceTable>
                                 {builtinHosts.map((row) => (
                                     <ResourceCard
                                         key={row.id}
@@ -386,7 +395,7 @@ export default function AdminMailHostsPage() {
                                         }
                                     />
                                 ))}
-                            </div>
+                            </ResourceTable>
                         </PageCard>
                     )}
 
@@ -396,7 +405,7 @@ export default function AdminMailHostsPage() {
                             description={t('admin.mailHosts.externalHint')}
                             icon={Mail}
                         >
-                            <div className='space-y-3'>
+                            <ResourceTable>
                                 {externalHosts.map((row) => (
                                     <ResourceCard
                                         key={row.id}
@@ -422,7 +431,7 @@ export default function AdminMailHostsPage() {
                                         }
                                     />
                                 ))}
-                            </div>
+                            </ResourceTable>
                         </PageCard>
                     )}
 
@@ -502,6 +511,7 @@ export default function AdminMailHostsPage() {
                                             <Input
                                                 id='mail-ext-key'
                                                 type='password'
+                                                data-fp-sensitive=''
                                                 value={externalForm.provision_api_key}
                                                 onChange={(e) =>
                                                     setExternalForm({
@@ -548,6 +558,7 @@ export default function AdminMailHostsPage() {
                                             <Label htmlFor='mail-ext-imap'>{t('admin.mailHosts.form.imapHost')}</Label>
                                             <Input
                                                 id='mail-ext-imap'
+                                                data-fp-sensitive=''
                                                 value={externalForm.imap_host}
                                                 onChange={(e) =>
                                                     setExternalForm({
@@ -562,6 +573,7 @@ export default function AdminMailHostsPage() {
                                             <Label htmlFor='mail-ext-smtp'>{t('admin.mailHosts.form.smtpHost')}</Label>
                                             <Input
                                                 id='mail-ext-smtp'
+                                                data-fp-sensitive=''
                                                 value={externalForm.smtp_host}
                                                 onChange={(e) =>
                                                     setExternalForm({
@@ -587,6 +599,7 @@ export default function AdminMailHostsPage() {
                     </PageCard>
                 </>
             )}
+            <AdminPageTips page='mail-hosts' />
         </div>
     );
 }

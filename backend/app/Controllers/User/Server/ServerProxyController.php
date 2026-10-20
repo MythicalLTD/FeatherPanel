@@ -383,7 +383,7 @@ class ServerProxyController
             if (!$proxy || (int) $proxy['server_id'] !== $serverId) {
                 return ApiResponse::error('Proxy not found', 'PROXY_NOT_FOUND', 404);
             }
-        } elseif (!empty($payload['domain']) && !empty($payload['port'])) {
+        } elseif (!empty($payload['domain']) && is_string($payload['domain']) && !empty($payload['port'])) {
             $proxy = ProxyModel::getByServerDomainPort(
                 $serverId,
                 trim($payload['domain']),
@@ -521,7 +521,7 @@ class ServerProxyController
             return ApiResponse::error('Invalid JSON body', 'INVALID_REQUEST_BODY', 400);
         }
 
-        if (empty($payload['domain']) || empty($payload['port'])) {
+        if (empty($payload['domain']) || empty($payload['port']) || !is_string($payload['domain'])) {
             return ApiResponse::error('Domain and port are required', 'MISSING_REQUIRED_FIELDS', 400);
         }
 

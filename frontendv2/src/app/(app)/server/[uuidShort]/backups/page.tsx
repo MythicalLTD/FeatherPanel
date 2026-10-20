@@ -15,9 +15,13 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { DataTable, RowActionsMenu } from '@/components/featherui/DataTable';
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import axios from 'axios';
+import { useLiveRefresh } from '@/hooks/useLiveRefresh';
+import { realtimeTopics } from '@/lib/realtime';
 import {
     Plus,
     Trash2,
@@ -29,14 +33,12 @@ import {
     ChevronRight,
     HardDrive,
     Database,
-    Calendar,
     Lock,
     Unlock,
     RotateCcw,
     Download,
     AlertTriangle,
     Info,
-    MoreVertical,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslation } from '@/contexts/TranslationContext';
@@ -52,26 +54,42 @@ import { formatBackupLimitLabel, isBackupLimitDisabled } from '@/lib/server-util
 
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
-import { PageHeader } from '@/components/featherui/PageHeader';
+import { ServerPageHeader } from '@/components/server/ServerPageHeader';
+import { ServerPageTips } from '@/components/server/ServerPageTips';
 import { EmptyState } from '@/components/featherui/EmptyState';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ResourceCard } from '@/components/featherui/ResourceCard';
 import { PageLoading } from '@/components/featherui/PageLoading';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogTitle, DialogDescription, DialogHeader, DialogFooter } from '@/components/ui/dialog';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 
 import { BackupItem, BackupsResponse, Server } from '@/types/server';
 import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
+import { ListPagination } from '@/components/featherui/ListPagination';
 
 type BackupTab = 'files' | 'databases';
+
+function BackupStatus({
+    backup,
+}: {
+    backup: { completed_at?: string | null; is_successful?: number | boolean; is_stale?: boolean };
+}) {
+    const { t } = useTranslation();
+    const pending = !backup.completed_at && !backup.is_successful;
+    const cls = pending
+        ? backup.is_stale
+            ? 'border-amber-500/20 bg-amber-500/10 text-amber-500'
+            : 'animate-pulse border-blue-500/20 bg-blue-500/10 text-blue-500'
+        : backup.is_successful
+          ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-500'
+          : 'border-red-500/20 bg-red-500/10 text-red-500';
+    const label = pending
+        ? t(backup.is_stale ? 'serverBackups.statusStale' : 'serverBackups.statusCreating')
+        : backup.is_successful
+          ? t('serverBackups.statusSuccessful')
+          : t('serverBackups.statusFailed');
+    return <span className={cn('inline-flex rounded-full border px-2.5 py-0.5 text-xs', cls)}>{label}</span>;
+}
 
 export default function ServerBackupsPage() {
     const { t } = useTranslation();
@@ -201,15 +219,17 @@ export default function ServerBackupsPage() {
         }
     }, [canRead, permissionsLoading, fetchBackups, uuidShort, router, t]);
 
-    useEffect(() => {
-        const hasCreating = backups.some((b) => !b.completed_at && !b.is_successful && !b.is_stale);
-        if (hasCreating) {
-            const interval = setInterval(() => {
-                if (document.visibilityState !== 'hidden') void fetchBackups(page, true);
-            }, 10000);
-            return () => clearInterval(interval);
-        }
-    }, [backups, fetchBackups, page]);
+    // Live: Wings reports a finished backup / restore and the panel pushes an event.
+    // Polling (only while a backup is running) is the fallback without the hub.
+    const hasCreating = backups.some((b) => !b.completed_at && !b.is_successful && !b.is_stale);
+    useLiveRefresh({
+        topics: [uuidShort && realtimeTopics.server(uuidShort)],
+        types: ['backups.updated'],
+        refresh: () => void fetchBackups(page, true),
+        poll: hasCreating,
+        pollMs: 10000,
+        enabled: canRead,
+    });
 
     const handleRestoreBackup = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -411,14 +431,14 @@ export default function ServerBackupsPage() {
     }
 
     return (
-        <div className='space-y-8 pb-12'>
-            <PageHeader
+        <div className='space-y-6 pb-12'>
+            <ServerPageHeader
                 title={t('serverBackups.title')}
                 description={
-                    <div className='flex items-center gap-3'>
+                    <div className='flex flex-wrap items-center gap-x-3 gap-y-2'>
                         <span>{t('serverBackups.description')}</span>
                         {server && activeTab === 'files' && (
-                            <span className='bg-primary/5 text-primary border-primary/20 rounded-full border px-3 py-1 text-[10px] font-black tracking-widest uppercase'>
+                            <span className='bg-primary/5 text-primary border-primary/20 rounded-full border px-3 py-1 text-[10px] font-semibold whitespace-nowrap'>
                                 {backupCountTotal} / {formatBackupLimitLabel(server.backup_limit, t('common.disabled'))}
                                 {fifoRolling ? ' · FIFO' : ''}
                             </span>
@@ -460,7 +480,7 @@ export default function ServerBackupsPage() {
                 onValueChange={(value) => setActiveTab(value === 'databases' ? 'databases' : 'files')}
                 className='space-y-6'
             >
-                <TabsList className='bg-card/50 border-border/50 grid h-auto w-full grid-cols-2 gap-1 rounded-2xl border p-1.5'>
+                <TabsList className='fp-surface grid h-auto w-full grid-cols-2 gap-1 rounded-xl border p-1.5'>
                     <TabsTrigger
                         value='files'
                         className='data-[state=active]:bg-primary data-[state=active]:text-primary-foreground flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-bold'
@@ -537,7 +557,7 @@ export default function ServerBackupsPage() {
                     )}
 
                     <div className='flex flex-col gap-4 sm:flex-row sm:items-center'>
-                        <div className='group relative flex-1'>
+                        <div className='group relative w-full min-w-0 flex-1'>
                             <Search className='text-muted-foreground/80 group-focus-within:text-foreground absolute top-1/2 left-4 h-5 w-5 -translate-y-1/2 transition-colors' />
                             <Input
                                 placeholder={t('serverBackups.searchPlaceholder')}
@@ -561,7 +581,7 @@ export default function ServerBackupsPage() {
                     </div>
 
                     {canDelete && backups.length > 0 && (
-                        <div className='border-border bg-card/50 flex flex-wrap items-center justify-between gap-3 rounded-xl border px-4 py-3'>
+                        <div className='fp-surface flex flex-wrap items-center justify-between gap-3 rounded-xl border px-4 py-3'>
                             <div className='flex items-center gap-3'>
                                 <Checkbox
                                     checked={allDeletableSelected}
@@ -590,31 +610,12 @@ export default function ServerBackupsPage() {
                     )}
 
                     {pagination.total > pagination.per_page && (
-                        <div className='border-border bg-card/50 flex items-center justify-between gap-4 rounded-xl border px-4 py-3'>
-                            <Button
-                                variant='glass'
-                                size='sm'
-                                disabled={pagination.current_page === 1 || loading}
-                                onClick={() => fetchBackups(pagination.current_page - 1)}
-                                className='gap-1.5'
-                            >
-                                <ChevronLeft className='h-4 w-4' />
-                                {t('common.previous')}
-                            </Button>
-                            <span className='text-sm font-medium'>
-                                {pagination.current_page} / {pagination.last_page}
-                            </span>
-                            <Button
-                                variant='glass'
-                                size='sm'
-                                disabled={pagination.current_page === pagination.last_page || loading}
-                                onClick={() => fetchBackups(pagination.current_page + 1)}
-                                className='gap-1.5'
-                            >
-                                {t('common.next')}
-                                <ChevronRight className='h-4 w-4' />
-                            </Button>
-                        </div>
+                        <ListPagination
+                            page={pagination.current_page}
+                            totalPages={pagination.last_page}
+                            disabled={loading}
+                            onPageChange={(nextPage) => fetchBackups(nextPage)}
+                        />
                     )}
 
                     {backups.length === 0 ? (
@@ -640,199 +641,154 @@ export default function ServerBackupsPage() {
                             }
                         />
                     ) : (
-                        <div className='grid grid-cols-1 gap-4'>
-                            {backups.map((backup) => (
-                                <div key={backup.id} className='flex items-stretch gap-3'>
-                                    {canDelete && (
-                                        <div className='flex shrink-0 items-center pl-1'>
-                                            <Checkbox
-                                                checked={selectedUuids.includes(backup.uuid)}
-                                                disabled={backup.is_locked === 1}
-                                                onCheckedChange={() => toggleBackupSelection(backup.uuid)}
-                                                aria-label={backup.name}
-                                            />
-                                        </div>
-                                    )}
-                                    <ResourceCard
-                                        className={cn(
-                                            'min-w-0 flex-1',
-                                            !backup.completed_at &&
-                                                !backup.is_successful &&
-                                                'animate-pulse border-blue-500/20',
-                                            selectedUuids.includes(backup.uuid) && 'border-primary/40 bg-primary/5',
-                                            'transition-all duration-300',
-                                        )}
-                                        icon={Archive}
-                                        iconWrapperClassName={cn(
-                                            !backup.completed_at && !backup.is_successful
-                                                ? 'bg-blue-500/10 border-blue-500/20'
-                                                : backup.is_successful
-                                                  ? 'bg-emerald-500/10 border-emerald-500/20'
-                                                  : 'bg-red-500/10 border-red-500/20',
-                                        )}
-                                        iconClassName={cn(
-                                            !backup.completed_at && !backup.is_successful
-                                                ? 'text-blue-500'
-                                                : backup.is_successful
-                                                  ? 'text-emerald-500'
-                                                  : 'text-red-500',
-                                        )}
-                                        title={backup.name}
-                                        badges={
-                                            <>
-                                                <span
-                                                    className={cn(
-                                                        'rounded-full px-3 py-1 text-[10px] leading-none font-black tracking-widest uppercase',
-                                                        !backup.completed_at && !backup.is_successful
-                                                            ? backup.is_stale
-                                                                ? 'bg-amber-500 text-white'
-                                                                : 'animate-pulse bg-blue-500 text-white'
-                                                            : backup.is_successful
-                                                              ? 'bg-emerald-500 text-white'
-                                                              : 'bg-red-500 text-white',
-                                                    )}
-                                                >
-                                                    {!backup.completed_at && !backup.is_successful
-                                                        ? t(
-                                                              backup.is_stale
-                                                                  ? 'serverBackups.statusStale'
-                                                                  : 'serverBackups.statusCreating',
-                                                          )
-                                                        : backup.is_successful
-                                                          ? t('serverBackups.statusSuccessful')
-                                                          : t('serverBackups.statusFailed')}
-                                                </span>
+                        <DataTable
+                            rows={backups}
+                            rowKey={(backup) => backup.id}
+                            columns={[
+                                ...(canDelete
+                                    ? [
+                                          {
+                                              key: 'select',
+                                              header: '',
+                                              className: 'w-10',
+                                              cell: (backup: (typeof backups)[number]) => (
+                                                  <Checkbox
+                                                      checked={selectedUuids.includes(backup.uuid)}
+                                                      disabled={backup.is_locked === 1}
+                                                      onCheckedChange={() => toggleBackupSelection(backup.uuid)}
+                                                      aria-label={backup.name}
+                                                  />
+                                              ),
+                                          },
+                                      ]
+                                    : []),
+                                {
+                                    key: 'name',
+                                    header: t('serverBackups.name'),
+                                    cell: (backup) => (
+                                        <div className='flex min-w-0 items-center gap-3'>
+                                            <span className='fp-icon-tile text-primary flex h-9 w-9 shrink-0 items-center justify-center rounded-xl'>
+                                                <Archive className='h-4 w-4' />
+                                            </span>
+                                            <div className='min-w-0'>
+                                                <p className='truncate font-medium'>{backup.name}</p>
                                                 {backup.is_locked === 1 && (
-                                                    <span className='flex items-center gap-1.5 rounded-full border border-yellow-500/20 bg-yellow-500/10 px-3 py-1 text-[10px] leading-none font-black tracking-widest text-yellow-500 uppercase'>
+                                                    <p className='flex items-center gap-1 text-xs text-yellow-500'>
                                                         <Lock className='h-3 w-3' />
                                                         {t('serverBackups.statusLocked')}
-                                                    </span>
+                                                    </p>
                                                 )}
-                                            </>
-                                        }
-                                        description={
-                                            <div className='flex flex-wrap items-center gap-x-6 gap-y-2'>
-                                                <div className='text-muted-foreground flex items-center gap-2'>
-                                                    <HardDrive className='h-4 w-4 opacity-50' />
-                                                    <span className='text-sm font-semibold'>
-                                                        {formatMib(backup.bytes / 1024 / 1024)}
-                                                    </span>
-                                                </div>
-                                                <div className='text-muted-foreground flex items-center gap-2'>
-                                                    <Database className='h-4 w-4 opacity-50' />
-                                                    <span className='text-sm font-semibold tracking-tight uppercase'>
-                                                        {backup.disk === 'pbs'
-                                                            ? 'PBS'
-                                                            : backup.disk === 'wings'
-                                                              ? 'Local'
-                                                              : backup.disk}
-                                                    </span>
-                                                </div>
-                                                <div className='text-muted-foreground flex items-center gap-2'>
-                                                    <Calendar className='h-4 w-4 opacity-50' />
-                                                    <span className='text-sm font-semibold'>
-                                                        {formatDateTimeInTz(backup.created_at, dateOpts)}
-                                                    </span>
-                                                </div>
                                             </div>
-                                        }
-                                        actions={
-                                            (canRestore || canDownload || canDelete) && (
-                                                <DropdownMenu>
-                                                    <DropdownMenuTrigger className='group-hover:bg-primary/10 flex h-12 w-12 items-center justify-center rounded-xl transition-colors outline-none'>
-                                                        <MoreVertical className='text-muted-foreground group-hover:text-primary h-6 w-6 transition-colors' />
-                                                    </DropdownMenuTrigger>
-                                                    <DropdownMenuContent
-                                                        align='end'
-                                                        className='bg-card/90 border-border/40 w-56 rounded-2xl p-2 backdrop-blur-xl'
-                                                    >
-                                                        {canRestore && backup.is_successful === 1 && (
-                                                            <DropdownMenuItem
-                                                                disabled={backup.is_locked === 1}
-                                                                onClick={() => {
-                                                                    setBackupToRestore(backup);
-                                                                    setRestoreDialogOpen(true);
-                                                                }}
-                                                                className='flex cursor-pointer items-center gap-3 rounded-xl p-3'
-                                                            >
-                                                                <RotateCcw className='h-4 w-4 text-emerald-500' />
-                                                                <span className='font-bold'>
-                                                                    {t('serverBackups.restore')}
-                                                                </span>
-                                                            </DropdownMenuItem>
-                                                        )}
-                                                        {canDownload &&
-                                                            backup.is_successful === 1 &&
-                                                            backup.disk !== 'pbs' && (
-                                                                <DropdownMenuItem
-                                                                    onClick={() => handleDownloadBackup(backup)}
-                                                                    className='flex cursor-pointer items-center gap-3 rounded-xl p-3'
-                                                                >
-                                                                    <Download className='h-4 w-4 text-blue-500' />
-                                                                    <span className='font-bold'>
-                                                                        {t('serverBackups.download')}
-                                                                    </span>
-                                                                </DropdownMenuItem>
-                                                            )}
-                                                        {canDelete && backup.is_stale && (
-                                                            <DropdownMenuItem
-                                                                onClick={() => handleRecoverBackup(backup)}
-                                                                className='flex cursor-pointer items-center gap-3 rounded-xl p-3 text-amber-500'
-                                                            >
-                                                                <AlertTriangle className='h-4 w-4' />
-                                                                <span className='font-bold'>
-                                                                    {t('serverBackups.recoverAction')}
-                                                                </span>
-                                                            </DropdownMenuItem>
-                                                        )}
-                                                        {canDelete && (
-                                                            <DropdownMenuItem
-                                                                disabled={backup.is_locked === 1}
-                                                                onClick={() => handleDeleteBackup(backup)}
-                                                                className='flex cursor-pointer items-center gap-3 rounded-xl p-3 text-red-500 focus:bg-red-500/10 focus:text-red-500'
-                                                            >
-                                                                <Trash2 className='h-4 w-4' />
-                                                                <span className='font-bold'>
-                                                                    {t('serverBackups.delete')}
-                                                                </span>
-                                                            </DropdownMenuItem>
-                                                        )}
-                                                        <DropdownMenuSeparator className='bg-border/40 my-1' />
-                                                        <DropdownMenuItem
-                                                            onClick={() =>
-                                                                handleLockBackup(backup, backup.is_locked === 0)
-                                                            }
-                                                            className='flex cursor-pointer items-center gap-3 rounded-xl p-3'
-                                                        >
-                                                            {backup.is_locked === 1 ? (
-                                                                <>
-                                                                    <Unlock className='h-4 w-4 text-yellow-500' />
-                                                                    <span className='font-bold'>
-                                                                        {t('serverBackups.unlock')}
-                                                                    </span>
-                                                                </>
-                                                            ) : (
-                                                                <>
-                                                                    <Lock className='h-4 w-4 text-yellow-500' />
-                                                                    <span className='font-bold'>
-                                                                        {t('serverBackups.lock')}
-                                                                    </span>
-                                                                </>
-                                                            )}
-                                                        </DropdownMenuItem>
-                                                    </DropdownMenuContent>
-                                                </DropdownMenu>
-                                            )
-                                        }
-                                    />
+                                        </div>
+                                    ),
+                                },
+                                {
+                                    key: 'status',
+                                    header: t('common.status'),
+                                    cell: (backup) => <BackupStatus backup={backup} />,
+                                },
+                                {
+                                    key: 'size',
+                                    header: t('serverBackups.size'),
+                                    className: 'text-muted-foreground whitespace-nowrap',
+                                    cell: (backup) => formatMib(backup.bytes / 1024 / 1024),
+                                },
+                                {
+                                    key: 'disk',
+                                    header: t('serverBackups.storage'),
+                                    className: 'text-muted-foreground',
+                                    cell: (backup) =>
+                                        backup.disk === 'pbs'
+                                            ? 'PBS'
+                                            : backup.disk === 'wings'
+                                              ? t('ui.server.backups.local')
+                                              : backup.disk,
+                                },
+                                {
+                                    key: 'created',
+                                    header: t('serverBackups.created'),
+                                    className: 'text-muted-foreground whitespace-nowrap text-xs',
+                                    cell: (backup) => formatDateTimeInTz(backup.created_at, dateOpts),
+                                },
+                            ]}
+                            mobileCard={(backup) => (
+                                <div className='flex min-w-0 items-start gap-3'>
+                                    {canDelete && (
+                                        <Checkbox
+                                            checked={selectedUuids.includes(backup.uuid)}
+                                            disabled={backup.is_locked === 1}
+                                            onCheckedChange={() => toggleBackupSelection(backup.uuid)}
+                                            aria-label={backup.name}
+                                            className='mt-1'
+                                        />
+                                    )}
+                                    <div className='min-w-0 space-y-1.5'>
+                                        <p className='truncate font-medium'>{backup.name}</p>
+                                        <BackupStatus backup={backup} />
+                                        <p className='text-muted-foreground text-xs'>
+                                            {formatMib(backup.bytes / 1024 / 1024)} ·{' '}
+                                            {formatDateTimeInTz(backup.created_at, dateOpts)}
+                                        </p>
+                                    </div>
                                 </div>
-                            ))}
-                        </div>
+                            )}
+                            actions={(backup) =>
+                                (canRestore || canDownload || canDelete) && (
+                                    <RowActionsMenu
+                                        items={[
+                                            {
+                                                label: t('serverBackups.restore'),
+                                                icon: RotateCcw,
+                                                hidden: !(canRestore && backup.is_successful === 1),
+                                                disabled: backup.is_locked === 1,
+                                                onClick: () => {
+                                                    setBackupToRestore(backup);
+                                                    setRestoreDialogOpen(true);
+                                                },
+                                            },
+                                            {
+                                                label: t('serverBackups.download'),
+                                                icon: Download,
+                                                hidden: !(
+                                                    canDownload &&
+                                                    backup.is_successful === 1 &&
+                                                    backup.disk !== 'pbs'
+                                                ),
+                                                onClick: () => handleDownloadBackup(backup),
+                                            },
+                                            {
+                                                label: t('serverBackups.recoverAction'),
+                                                icon: AlertTriangle,
+                                                hidden: !(canDelete && backup.is_stale),
+                                                onClick: () => handleRecoverBackup(backup),
+                                            },
+                                            {
+                                                label:
+                                                    backup.is_locked === 1
+                                                        ? t('serverBackups.unlock')
+                                                        : t('serverBackups.lock'),
+                                                icon: backup.is_locked === 1 ? Unlock : Lock,
+                                                onClick: () => handleLockBackup(backup, backup.is_locked === 0),
+                                            },
+                                            {
+                                                label: t('serverBackups.delete'),
+                                                icon: Trash2,
+                                                destructive: true,
+                                                separated: true,
+                                                hidden: !canDelete,
+                                                disabled: backup.is_locked === 1,
+                                                onClick: () => handleDeleteBackup(backup),
+                                            },
+                                        ]}
+                                    />
+                                )
+                            }
+                        />
                     )}
 
                     {pagination.total > pagination.per_page && (
                         <div className='border-border/40 flex items-center justify-between border-t px-6 py-8'>
-                            <p className='text-sm font-bold tracking-widest uppercase opacity-40'>
+                            <p className='text-sm font-bold opacity-40'>
                                 {t('serverActivities.pagination.showing', {
                                     from: String((pagination.current_page - 1) * pagination.per_page + 1),
                                     to: String(
@@ -854,7 +810,7 @@ export default function ServerBackupsPage() {
                                 >
                                     <ChevronLeft className='h-5 w-5' />
                                 </Button>
-                                <span className='bg-primary/5 text-primary border-primary/20 flex h-10 min-w-12 items-center justify-center rounded-xl border px-4 text-sm font-black'>
+                                <span className='bg-primary/5 text-primary border-primary/20 flex h-10 min-w-12 items-center justify-center rounded-xl border px-4 text-sm font-semibold'>
                                     {pagination.current_page} / {pagination.last_page}
                                 </span>
                                 <Button
@@ -906,9 +862,7 @@ export default function ServerBackupsPage() {
                     <div className='mx-1 space-y-3 rounded-2xl border border-orange-500/20 bg-orange-500/5 p-5 backdrop-blur-sm'>
                         <div className='flex items-center gap-3 text-orange-500'>
                             <AlertTriangle className='h-5 w-5' />
-                            <h4 className='text-[10px] leading-none font-black tracking-widest uppercase'>
-                                {t('serverBackups.caution')}
-                            </h4>
+                            <h4 className='text-[10px] leading-none font-semibold'>{t('serverBackups.caution')}</h4>
                         </div>
                         <p className='text-sm leading-relaxed font-medium text-orange-700/80 dark:text-orange-500/80'>
                             {t('serverBackups.truncateDirectoryHelp')}
@@ -917,7 +871,7 @@ export default function ServerBackupsPage() {
 
                     <form onSubmit={handleRestoreBackup} className='space-y-6' data-fp-save-shortcut>
                         <div
-                            className='group mx-1 flex cursor-pointer items-center gap-4 rounded-3xl border border-white/5 bg-black/20 p-5 transition-all hover:bg-black/30'
+                            className='fp-surface fp-surface-interactive group mx-1 flex cursor-pointer items-center gap-4 rounded-xl border p-5'
                             onClick={() => setTruncateDirectory(!truncateDirectory)}
                         >
                             <Checkbox
@@ -933,7 +887,7 @@ export default function ServerBackupsPage() {
                                 >
                                     {t('serverBackups.truncateDirectory')}
                                 </label>
-                                <p className='text-[10px] font-bold tracking-tighter uppercase opacity-40'>
+                                <p className='text-[10px] font-bold opacity-40'>
                                     {t('serverBackups.truncateDirectoryDescription')}
                                 </p>
                             </div>
@@ -1002,6 +956,7 @@ export default function ServerBackupsPage() {
                     }
                 }}
             />
+            <ServerPageTips page='backups' />
         </div>
     );
 }

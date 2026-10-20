@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { TipCard, TipGrid } from '@/components/featherui/TipCard';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
@@ -23,10 +24,9 @@ import { getApiErrorMessage } from '@/lib/api-errors';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
-import { PageCard } from '@/components/featherui/PageCard';
-import { ResourceCard } from '@/components/featherui/ResourceCard';
+import { ResourceCard, ResourceTable } from '@/components/featherui/ResourceCard';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
-import { EmptyState } from '@/components/featherui/EmptyState';
+import { ListEmptyState } from '@/components/featherui/ListEmptyState';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from '@/components/ui/sheet';
 import { Select } from '@/components/ui/select-native';
 import { Label } from '@/components/ui/label';
@@ -55,6 +55,9 @@ import {
     Info,
 } from 'lucide-react';
 import NextImage from 'next/image';
+import { useFormBaseline } from '@/hooks/useFormBaseline';
+import { useDiscardConfirm } from '@/hooks/useUnsavedChangesGuard';
+import { ListPagination } from '@/components/featherui/ListPagination';
 
 type LocationType = 'game' | 'vps' | 'web';
 
@@ -245,7 +248,7 @@ export default function LocationsPage() {
     const router = useRouter();
     const [loading, setLoading] = useState(true);
     const [locations, setLocations] = useState<Location[]>([]);
-    const { filters, patchFilters, hydrated } = usePersistedListFilters(
+    const { filters, patchFilters, hydrated, resetFilters, isFiltered } = usePersistedListFilters(
         LOCATIONS_LIST_FILTERS_KEY,
         LOCATIONS_LIST_FILTERS_DEFAULTS,
     );
@@ -278,6 +281,12 @@ export default function LocationsPage() {
         type: LocationType;
     }>({ name: '', description: '', flag_code: '', type: 'game' });
     const [webHostingAccepted, setWebHostingAccepted] = useState(false);
+    const { dirty: editFormDirty, commit: commitEditForm } = useFormBaseline(editForm);
+    const { dirty: createFormDirty } = useFormBaseline(createForm, { trackFromStart: true });
+    const guardClose = useDiscardConfirm(
+        (editOpen && editFormDirty) || (createOpen && createFormDirty),
+        t('common.unsavedChanges.leaveConfirm'),
+    );
 
     const [refreshKey, setRefreshKey] = useState(0);
     const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
@@ -354,12 +363,14 @@ export default function LocationsPage() {
             const { data } = await axios.get(`/api/admin/locations/${location.id}`);
             const loc = data.data.location as Location;
             setEditingLocation(loc);
-            setEditForm({
+            const loaded = {
                 name: loc.name || '',
                 description: loc.description || '',
                 flag_code: loc.flag_code || '__NONE__',
                 type: (loc.type as LocationType) || 'game',
-            });
+            };
+            setEditForm(loaded);
+            commitEditForm(loaded);
             setEditOpen(true);
         } catch (error) {
             toast.error(getApiErrorMessage(error, t, 'admin.locations.messages.fetch_details_failed'));
@@ -461,7 +472,7 @@ export default function LocationsPage() {
 
             <WidgetRenderer widgets={getWidgets('admin-locations', 'after-header')} />
 
-            <div className='bg-card/40 flex flex-col items-center gap-4 rounded-2xl p-4 shadow-sm backdrop-blur-md sm:flex-row'>
+            <div className='fp-surface flex flex-col items-center gap-4 rounded-2xl border p-4 sm:flex-row'>
                 <div className='group relative w-full flex-1'>
                     <Search className='text-muted-foreground group-focus-within:text-primary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transition-colors' />
                     <Input
@@ -476,49 +487,32 @@ export default function LocationsPage() {
             <WidgetRenderer widgets={getWidgets('admin-locations', 'before-list')} />
 
             {pagination.totalPages > 1 && !loading && (
-                <div className='border-border bg-card/50 mb-4 flex items-center justify-between gap-4 rounded-xl border px-4 py-3'>
-                    <Button
-                        variant='outline'
-                        size='sm'
-                        disabled={page === 1}
-                        onClick={() => patchFilters({ page: page - 1 })}
-                        className='gap-1.5'
-                    >
-                        <ChevronLeft className='h-4 w-4' />
-                        {t('common.previous')}
-                    </Button>
-                    <span className='text-sm font-medium'>
-                        {page} / {pagination.totalPages}
-                    </span>
-                    <Button
-                        variant='outline'
-                        size='sm'
-                        disabled={page === pagination.totalPages}
-                        onClick={() => patchFilters({ page: page + 1 })}
-                        className='gap-1.5'
-                    >
-                        {t('common.next')}
-                        <ChevronRight className='h-4 w-4' />
-                    </Button>
-                </div>
+                <ListPagination
+                    page={page}
+                    totalPages={pagination.totalPages}
+                    onPageChange={(nextPage) => patchFilters({ page: nextPage })}
+                    className='mb-4'
+                />
             )}
 
             {loading ? (
                 <TableSkeleton count={5} />
             ) : locations.length === 0 ? (
-                <EmptyState
+                <ListEmptyState
                     icon={Globe}
-                    title={t('admin.locations.no_results')}
-                    description={t('admin.locations.create_description')}
+                    title={t('emptyStates.locations.title')}
+                    description={t('emptyStates.locations.description')}
                     action={
                         <Button onClick={() => setCreateOpen(true)}>
                             <Plus className='mr-2 h-4 w-4' />
                             {t('admin.locations.create')}
                         </Button>
                     }
+                    filtered={isFiltered}
+                    onClearFilters={resetFilters}
                 />
             ) : (
-                <div className='grid grid-cols-1 gap-4'>
+                <ResourceTable>
                     {locations.map((location) => (
                         <ResourceCard
                             key={location.id}
@@ -595,7 +589,7 @@ export default function LocationsPage() {
                             }
                         />
                     ))}
-                </div>
+                </ResourceTable>
             )}
 
             {pagination.totalPages > 1 && (
@@ -622,13 +616,13 @@ export default function LocationsPage() {
                 </div>
             )}
 
-            <div className='grid grid-cols-1 gap-6 md:grid-cols-3'>
-                <PageCard title={t('admin.locations.help.what.title')} icon={MapPin}>
+            <TipGrid>
+                <TipCard title={t('admin.locations.help.what.title')} icon={MapPin}>
                     <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.locations.help.what.description')}
                     </p>
-                </PageCard>
-                <PageCard title={t('admin.locations.help.examples.title')} icon={Flag}>
+                </TipCard>
+                <TipCard title={t('admin.locations.help.examples.title')} icon={Flag}>
                     <div className='text-muted-foreground space-y-2 text-sm leading-relaxed'>
                         <ul className='list-inside list-disc space-y-1'>
                             <li>
@@ -642,8 +636,8 @@ export default function LocationsPage() {
                         </ul>
                         <p>{t('admin.locations.help.examples.naming')}</p>
                     </div>
-                </PageCard>
-                <PageCard title={t('admin.locations.help.getting_started.title')} icon={Rocket}>
+                </TipCard>
+                <TipCard title={t('admin.locations.help.getting_started.title')} icon={Rocket}>
                     <div className='text-muted-foreground text-sm leading-relaxed'>
                         <ol className='list-inside list-decimal space-y-1'>
                             <li>{t('admin.locations.help.getting_started.step1')}</li>
@@ -651,11 +645,11 @@ export default function LocationsPage() {
                             <li>{t('admin.locations.help.getting_started.step3')}</li>
                         </ol>
                     </div>
-                </PageCard>
-            </div>
+                </TipCard>
+            </TipGrid>
 
             {/* Edit Sheet */}
-            <Sheet open={editOpen} onOpenChange={setEditOpen}>
+            <Sheet open={editOpen} onOpenChange={guardClose(setEditOpen)}>
                 <SheetContent>
                     <SheetHeader>
                         <SheetTitle>{t('admin.locations.form.edit_title')}</SheetTitle>
@@ -721,10 +715,10 @@ export default function LocationsPage() {
             {/* Create Sheet */}
             <Sheet
                 open={createOpen}
-                onOpenChange={(open) => {
+                onOpenChange={guardClose((open) => {
                     setCreateOpen(open);
                     if (!open) setWebHostingAccepted(false);
-                }}
+                })}
             >
                 <SheetContent>
                     <SheetHeader>

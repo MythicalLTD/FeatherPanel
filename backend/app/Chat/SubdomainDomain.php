@@ -354,12 +354,15 @@ class SubdomainDomain
      */
     public static function count(array $conditions): int
     {
+        if (Database::unknownColumns(self::$table, $conditions) !== []) {
+            return 0;
+        }
         if (empty($conditions)) {
             return self::getDomainsCount();
         }
 
         $pdo = Database::getPdoConnection();
-        $where = implode(' AND ', array_map(static fn ($key) => $key . ' = :' . $key, array_keys($conditions)));
+        $where = implode(' AND ', array_map(static fn ($key) => '`' . $key . '` = :' . $key, array_keys($conditions)));
         $stmt = $pdo->prepare('SELECT COUNT(*) FROM ' . self::$table . ' WHERE ' . $where);
         $stmt->execute($conditions);
 

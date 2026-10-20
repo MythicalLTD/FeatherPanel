@@ -22,6 +22,7 @@ use App\Chat\User;
 use App\Chat\Server;
 use App\Chat\Ticket;
 use App\Chat\Activity;
+use App\Chat\Database;
 use App\Chat\TicketStatus;
 use App\Chat\TicketMessage;
 use App\Chat\TicketCategory;
@@ -480,7 +481,7 @@ class TicketsController
         $requiredFields = ['user_uuid', 'category_id', 'priority_id', 'status_id', 'title', 'description'];
         $missingFields = [];
         foreach ($requiredFields as $field) {
-            if (!isset($data[$field]) || (is_string($data[$field]) && trim($data[$field]) === '')) {
+            if (!isset($data[$field]) || !is_scalar($data[$field]) || (is_string($data[$field]) && trim($data[$field]) === '')) {
                 $missingFields[] = $field;
             }
         }
@@ -490,7 +491,7 @@ class TicketsController
         }
 
         // Validate UUID format
-        if (!preg_match('/^[a-f0-9\-]{36}$/i', $data['user_uuid'])) {
+        if (!is_string($data['user_uuid']) || !preg_match('/^[a-f0-9\-]{36}$/i', $data['user_uuid'])) {
             return ApiResponse::error('Invalid user UUID format', 'INVALID_UUID_FORMAT', 400);
         }
 
@@ -501,15 +502,15 @@ class TicketsController
         }
 
         // Validate foreign keys
-        if (!TicketCategory::getById($data['category_id'])) {
+        if (!is_numeric($data['category_id']) || !TicketCategory::getById((int) $data['category_id'])) {
             return ApiResponse::error('Invalid category ID', 'INVALID_CATEGORY_ID', 400);
         }
 
-        if (!TicketPriority::getById($data['priority_id'])) {
+        if (!is_numeric($data['priority_id']) || !TicketPriority::getById((int) $data['priority_id'])) {
             return ApiResponse::error('Invalid priority ID', 'INVALID_PRIORITY_ID', 400);
         }
 
-        if (!TicketStatus::getById($data['status_id'])) {
+        if (!is_numeric($data['status_id']) || !TicketStatus::getById((int) $data['status_id'])) {
             return ApiResponse::error('Invalid status ID', 'INVALID_STATUS_ID', 400);
         }
 
@@ -618,16 +619,22 @@ class TicketsController
             return ApiResponse::error('No data to update', 'NO_DATA', 400);
         }
 
+        foreach (['user_uuid', 'title', 'description', 'closed_at'] as $field) {
+            if (isset($data[$field]) && !is_scalar($data[$field])) {
+                return ApiResponse::error("Field {$field} must be a string", 'INVALID_DATA_TYPE', 400);
+            }
+        }
+
         // Validate foreign keys if provided
-        if (isset($data['category_id']) && !TicketCategory::getById($data['category_id'])) {
+        if (isset($data['category_id']) && (!is_numeric($data['category_id']) || !TicketCategory::getById((int) $data['category_id']))) {
             return ApiResponse::error('Invalid category ID', 'INVALID_CATEGORY_ID', 400);
         }
 
-        if (isset($data['priority_id']) && !TicketPriority::getById($data['priority_id'])) {
+        if (isset($data['priority_id']) && (!is_numeric($data['priority_id']) || !TicketPriority::getById((int) $data['priority_id']))) {
             return ApiResponse::error('Invalid priority ID', 'INVALID_PRIORITY_ID', 400);
         }
 
-        if (isset($data['status_id']) && !TicketStatus::getById($data['status_id'])) {
+        if (isset($data['status_id']) && (!is_numeric($data['status_id']) || !TicketStatus::getById((int) $data['status_id']))) {
             return ApiResponse::error('Invalid status ID', 'INVALID_STATUS_ID', 400);
         }
 
@@ -656,6 +663,11 @@ class TicketsController
                     $data['closed_at'] = null;
                 }
             }
+        }
+
+        $unknownFields = Database::unknownColumns(Ticket::getTableName(), $data);
+        if ($unknownFields !== []) {
+            return ApiResponse::error('Unknown field(s): ' . implode(', ', $unknownFields), 'UNKNOWN_FIELDS', 400);
         }
 
         $updated = Ticket::updateByUuid($uuid, $data);
@@ -1018,7 +1030,7 @@ class TicketsController
             return ApiResponse::error('Invalid JSON data', 'INVALID_JSON', 400);
         }
 
-        if (!isset($data['message']) || trim($data['message']) === '') {
+        if (!isset($data['message']) || !is_scalar($data['message']) || trim((string) $data['message']) === '') {
             return ApiResponse::error('Message is required', 'MISSING_MESSAGE', 400);
         }
 

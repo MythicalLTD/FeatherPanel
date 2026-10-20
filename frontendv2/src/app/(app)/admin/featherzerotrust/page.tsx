@@ -15,11 +15,13 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { AdminPageTips } from '@/components/admin/AdminPageTips';
 import React, { useState } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { PageHeader } from '@/components/featherui/PageHeader';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Tabs, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { ScrollableTabsList } from '@/components/ui/scrollable-tabs-list';
 import { ShieldCheck, Database, Eye, Settings } from 'lucide-react';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 
@@ -54,14 +56,14 @@ const FeatherZeroTrustPage = () => {
                 />
 
                 <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as typeof activeTab)}>
-                    <TabsList className='grid w-full grid-cols-4'>
+                    <ScrollableTabsList className='flex h-auto w-full md:grid md:grid-cols-4'>
                         {tabs.map((tab) => (
                             <TabsTrigger key={tab.id} value={tab.id} className='flex items-center gap-2'>
                                 <tab.icon className='h-4 w-4' />
                                 {tab.label}
                             </TabsTrigger>
                         ))}
-                    </TabsList>
+                    </ScrollableTabsList>
 
                     <TabsContent value='scanner' className='mt-6'>
                         <ScannerTab />
@@ -80,6 +82,8 @@ const FeatherZeroTrustPage = () => {
                     </TabsContent>
                 </Tabs>
             </div>
+            <AdminPageTips page='featherzerotrust' />
+
             <WidgetRenderer widgets={getWidgets('admin-featherzerotrust', 'bottom-of-page')} />
         </>
     );

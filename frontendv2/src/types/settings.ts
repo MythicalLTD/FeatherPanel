@@ -24,6 +24,12 @@ export interface AppSettings {
     chatbot_enabled: string;
     knowledgebase_enabled: string;
     knowledgebase_public_enabled: string;
+    /** Panel modules, 'false' turns a module off. Missing means enabled. */
+    module_game_enabled?: string;
+    module_web_enabled?: string;
+    module_vds_enabled?: string;
+    /** 'auto' (default), 'always' or 'hidden'. */
+    pterodactyl_importer_visibility?: string;
     server_allow_allocation_select: string;
     server_allow_egg_change: string;
     server_allow_user_made_firewall: string;
@@ -217,6 +223,10 @@ export interface AppSettings {
     auth_show_marketing_panel?: string;
     /** Optional hero image for the auth marketing panel */
     auth_aside_image_url?: string;
+    /** split | centered | spotlight */
+    auth_template?: string;
+    /** aurora | glass | minimal | contrast */
+    auth_visual_preset?: string;
     /** comfortable | compact | dense */
     auth_form_density?: string;
     /** chips | stack | collapsed */

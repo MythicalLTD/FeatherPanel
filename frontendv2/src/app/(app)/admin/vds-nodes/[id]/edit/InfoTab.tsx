@@ -188,6 +188,7 @@ function StatBar({
 }
 
 function NodeCard({ node }: { node: ProxmoxNode }) {
+    const { t } = useTranslation();
     const isOnline = node.status === 'online';
 
     const cpuPct = node.cpu !== undefined ? node.cpu * 100 : 0;
@@ -267,7 +268,7 @@ function NodeCard({ node }: { node: ProxmoxNode }) {
                             <CircleGauge
                                 percent={diskPct}
                                 colorClass={diskColor}
-                                label='Disk'
+                                label={t('ui.admin.vdsNodes.edit.infoTab.disk')}
                                 sub={formatBytes(diskMax)}
                             />
                         )}
@@ -277,7 +278,7 @@ function NodeCard({ node }: { node: ProxmoxNode }) {
                     <div className='border-border/40 space-y-3 border-t pt-1'>
                         <StatBar
                             icon={Cpu}
-                            label='CPU Usage'
+                            label={t('ui.admin.vdsNodes.edit.infoTab.cPUUsage')}
                             used={`${cpuPct.toFixed(1)}%`}
                             max={`${node.maxcpu ?? '?'} cores`}
                             pct={cpuPct}
@@ -286,7 +287,7 @@ function NodeCard({ node }: { node: ProxmoxNode }) {
                         {memMax > 0 && (
                             <StatBar
                                 icon={MemoryStick}
-                                label='Memory'
+                                label={t('ui.admin.vdsNodes.edit.infoTab.memory')}
                                 used={formatBytes(memUsed)}
                                 max={formatBytes(memMax)}
                                 pct={memPct}
@@ -296,7 +297,7 @@ function NodeCard({ node }: { node: ProxmoxNode }) {
                         {diskMax > 0 && (
                             <StatBar
                                 icon={HardDrive}
-                                label='Local Storage'
+                                label={t('ui.admin.vdsNodes.edit.infoTab.localStorage')}
                                 used={formatBytes(diskUsed)}
                                 max={formatBytes(diskMax)}
                                 pct={diskPct}
@@ -310,7 +311,7 @@ function NodeCard({ node }: { node: ProxmoxNode }) {
                         <div className='text-muted-foreground border-border/40 flex items-center gap-2 border-t pt-1 text-xs'>
                             <Clock className='h-3.5 w-3.5' />
                             <span>
-                                Uptime:{' '}
+                                {t('ui.admin.vdsNodes.edit.infoTab.uptime')}{' '}
                                 <strong className='text-foreground font-mono'>{formatUptime(node.uptime)}</strong>
                             </span>
                         </div>

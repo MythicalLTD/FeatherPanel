@@ -15,6 +15,8 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { DataTable, RowActionsMenu } from '@/components/featherui/DataTable';
+
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useRouter, usePathname } from 'next/navigation';
 import axios from 'axios';
@@ -28,12 +30,9 @@ import {
     ChevronLeft,
     ChevronRight,
     ShieldAlert,
-    MoreVertical,
     ExternalLink,
     Eye,
     Copy,
-    User,
-    Server as ServerIcon,
     Globe,
     AlertTriangle,
     Download,
@@ -54,22 +53,17 @@ import { cn, copyToClipboard as copyUtil } from '@/lib/utils';
 
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
-import { PageHeader } from '@/components/featherui/PageHeader';
+import { ServerPageHeader } from '@/components/server/ServerPageHeader';
+import { ServerPageTips } from '@/components/server/ServerPageTips';
 import { EmptyState } from '@/components/featherui/EmptyState';
-import { ResourceCard } from '@/components/featherui/ResourceCard';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogTitle, DialogDescription, DialogHeader, DialogFooter } from '@/components/ui/dialog';
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 
 import { Database, DatabasesResponse, Server } from '@/types/server';
 import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
+import { Sensitive } from '@/components/common/Sensitive';
+import { ListPagination } from '@/components/featherui/ListPagination';
 
 export default function ServerDatabasesPage() {
     const { t, locale } = useTranslation();
@@ -465,16 +459,16 @@ export default function ServerDatabasesPage() {
     const showHeaderCreateAction = canCreate && databases.length > 0;
 
     return (
-        <div key={pathname} className='space-y-8 pb-12'>
+        <div key={pathname} className='space-y-6 pb-12'>
             <WidgetRenderer widgets={getWidgets('server-databases', 'top-of-page')} />
 
-            <PageHeader
+            <ServerPageHeader
                 title={t('serverDatabases.title')}
                 description={
-                    <div className='flex items-center gap-3'>
+                    <div className='flex flex-wrap items-center gap-x-3 gap-y-2'>
                         <span>{t('serverDatabases.description')}</span>
                         {server && (
-                            <span className='bg-primary/5 text-primary border-primary/20 rounded-full border px-3 py-1 text-[10px] font-black tracking-widest uppercase'>
+                            <span className='bg-primary/5 text-primary border-primary/20 rounded-full border px-3 py-1 text-[10px] font-semibold whitespace-nowrap'>
                                 {pagination.total} / {server.database_limit}
                             </span>
                         )}
@@ -532,7 +526,7 @@ export default function ServerDatabasesPage() {
 
             <div className='space-y-6'>
                 <div className='flex flex-col gap-4 sm:flex-row sm:items-center'>
-                    <div className='group relative flex-1'>
+                    <div className='group relative w-full min-w-0 flex-1'>
                         <Search className='text-muted-foreground/80 group-focus-within:text-foreground absolute top-1/2 left-4 h-5 w-5 -translate-y-1/2 transition-colors' />
                         <Input
                             placeholder={t('serverDatabases.searchPlaceholder')}
@@ -556,7 +550,7 @@ export default function ServerDatabasesPage() {
                 </div>
 
                 {canDelete && databases.length > 0 && (
-                    <div className='border-border bg-card/50 flex flex-wrap items-center justify-between gap-3 rounded-xl border px-4 py-3'>
+                    <div className='fp-surface flex flex-wrap items-center justify-between gap-3 rounded-xl border px-4 py-3'>
                         <div className='flex items-center gap-3'>
                             <Checkbox
                                 checked={allSelected}
@@ -586,31 +580,13 @@ export default function ServerDatabasesPage() {
                 <WidgetRenderer widgets={getWidgets('server-databases', 'before-databases-list')} />
 
                 {pagination.total > pagination.per_page && (
-                    <div className='border-border bg-card/50 mb-4 flex items-center justify-between gap-4 rounded-xl border px-4 py-3'>
-                        <Button
-                            variant='glass'
-                            size='sm'
-                            disabled={pagination.current_page === 1 || loading}
-                            onClick={() => fetchDatabases(pagination.current_page - 1)}
-                            className='gap-1.5'
-                        >
-                            <ChevronLeft className='h-4 w-4' />
-                            {t('common.previous')}
-                        </Button>
-                        <span className='text-sm font-medium'>
-                            {pagination.current_page} / {pagination.last_page}
-                        </span>
-                        <Button
-                            variant='glass'
-                            size='sm'
-                            disabled={pagination.current_page === pagination.last_page || loading}
-                            onClick={() => fetchDatabases(pagination.current_page + 1)}
-                            className='gap-1.5'
-                        >
-                            {t('common.next')}
-                            <ChevronRight className='h-4 w-4' />
-                        </Button>
-                    </div>
+                    <ListPagination
+                        page={pagination.current_page}
+                        totalPages={pagination.last_page}
+                        disabled={loading}
+                        onPageChange={(nextPage) => fetchDatabases(nextPage)}
+                        className='mb-4'
+                    />
                 )}
 
                 {databases.length === 0 ? (
@@ -636,153 +612,148 @@ export default function ServerDatabasesPage() {
                         }
                     />
                 ) : (
-                    <div className='grid grid-cols-1 gap-4'>
-                        {databases.map((db) => (
-                            <div key={db.id} className='flex items-stretch gap-3'>
-                                {canDelete && (
-                                    <div className='flex shrink-0 items-center pl-1'>
-                                        <Checkbox
-                                            checked={selectedIds.includes(db.id)}
-                                            onCheckedChange={() => toggleDatabaseSelection(db.id)}
-                                            aria-label={db.database}
-                                        />
+                    <DataTable
+                        rows={databases}
+                        rowKey={(db) => db.id}
+                        columns={[
+                            ...(canDelete
+                                ? [
+                                      {
+                                          key: 'select',
+                                          header: '',
+                                          className: 'w-10',
+                                          cell: (db: (typeof databases)[number]) => (
+                                              <Checkbox
+                                                  checked={selectedIds.includes(db.id)}
+                                                  onCheckedChange={() => toggleDatabaseSelection(db.id)}
+                                                  aria-label={db.database}
+                                              />
+                                          ),
+                                      },
+                                  ]
+                                : []),
+                            {
+                                key: 'name',
+                                header: t('serverDatabases.databaseName'),
+                                cell: (db) => (
+                                    <div className='flex min-w-0 items-center gap-3'>
+                                        <span className='fp-icon-tile text-primary flex h-9 w-9 shrink-0 items-center justify-center rounded-xl'>
+                                            <DatabaseIcon className='h-4 w-4' />
+                                        </span>
+                                        <div className='min-w-0'>
+                                            <p className='truncate font-medium'>{db.database}</p>
+                                            <p className='text-muted-foreground text-xs'>{db.database_type}</p>
+                                        </div>
                                     </div>
+                                ),
+                            },
+                            {
+                                key: 'user',
+                                header: t('serverDatabases.username'),
+                                cell: (db) => <Sensitive>{db.username}</Sensitive>,
+                            },
+                            {
+                                key: 'host',
+                                header: t('serverDatabases.host'),
+                                className: 'font-mono text-xs',
+                                cell: (db) => (
+                                    <Sensitive>{`${getDatabaseDisplayHost(db)}:${db.database_port}`}</Sensitive>
+                                ),
+                            },
+                            {
+                                key: 'remote',
+                                header: t('serverDatabases.remote'),
+                                cell: (db) =>
+                                    db.remote === '%' ? (
+                                        <span className='inline-flex items-center gap-1.5 text-xs text-emerald-500'>
+                                            <Globe className='h-3 w-3' />
+                                            {t('serverDatabases.allHosts')}
+                                        </span>
+                                    ) : (
+                                        <span className='text-muted-foreground font-mono text-xs'>{db.remote}</span>
+                                    ),
+                            },
+                        ]}
+                        mobileCard={(db) => (
+                            <div className='flex min-w-0 items-start gap-3'>
+                                {canDelete && (
+                                    <Checkbox
+                                        checked={selectedIds.includes(db.id)}
+                                        onCheckedChange={() => toggleDatabaseSelection(db.id)}
+                                        aria-label={db.database}
+                                        className='mt-1'
+                                    />
                                 )}
-                                <ResourceCard
-                                    className={cn(
-                                        'min-w-0 flex-1 transition-all duration-300',
-                                        selectedIds.includes(db.id) && 'border-primary/40 bg-primary/5',
-                                    )}
-                                    icon={DatabaseIcon}
-                                    title={db.database}
-                                    badges={
-                                        <>
-                                            <span className='bg-primary/10 text-primary border-primary/20 rounded-full border px-3 py-1 text-[10px] leading-none font-black tracking-widest uppercase'>
-                                                {db.database_type}
-                                            </span>
-                                            {db.remote === '%' ? (
-                                                <span className='flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-[10px] leading-none font-black tracking-widest text-emerald-500 uppercase'>
-                                                    <Globe className='h-3 w-3' />
-                                                    {t('serverDatabases.allHosts')}
-                                                </span>
-                                            ) : (
-                                                <span className='bg-muted border-border/50 text-muted-foreground rounded-full border px-3 py-1 font-mono text-[10px] leading-none font-black tracking-widest uppercase'>
-                                                    {db.remote}
-                                                </span>
-                                            )}
-                                        </>
-                                    }
-                                    description={
-                                        <>
-                                            <div className='text-muted-foreground flex items-center gap-2'>
-                                                <User className='h-4 w-4 opacity-50' />
-                                                <span className='text-sm font-semibold'>{db.username}</span>
-                                            </div>
-                                            <div className='text-muted-foreground flex items-center gap-2'>
-                                                <ServerIcon className='h-4 w-4 opacity-50' />
-                                                <span className='font-mono text-sm font-semibold'>
-                                                    {getDatabaseDisplayHost(db)}:{db.database_port}
-                                                </span>
-                                            </div>
-                                        </>
-                                    }
-                                    actions={
-                                        (canViewPassword || canDelete) && (
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger className='group-hover:bg-primary/10 flex h-12 w-12 items-center justify-center rounded-xl transition-colors outline-none'>
-                                                    <MoreVertical className='text-muted-foreground group-hover:text-primary h-6 w-6 transition-colors' />
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent
-                                                    align='end'
-                                                    className='bg-card/90 border-border/40 w-56 rounded-2xl p-2 backdrop-blur-xl'
-                                                >
-                                                    {canViewPassword && (
-                                                        <>
-                                                            <DropdownMenuItem
-                                                                onClick={() => openViewDatabase(db)}
-                                                                className='flex cursor-pointer items-center gap-3 rounded-xl p-3'
-                                                            >
-                                                                <Eye className='text-primary h-4 w-4' />
-                                                                <span className='font-bold'>
-                                                                    {t('serverDatabases.view')}
-                                                                </span>
-                                                            </DropdownMenuItem>
-                                                            {phpMyAdminInstalled && (
-                                                                <DropdownMenuItem
-                                                                    onClick={() => handlePhpMyAdmin(db)}
-                                                                    className='flex cursor-pointer items-center gap-3 rounded-xl p-3'
-                                                                >
-                                                                    <ExternalLink className='h-4 w-4 text-blue-500' />
-                                                                    <span className='font-bold'>phpMyAdmin</span>
-                                                                </DropdownMenuItem>
-                                                            )}
-                                                            <DropdownMenuSeparator className='bg-border/40 my-1' />
-                                                            <DropdownMenuItem
-                                                                onClick={() => handleExportDatabase(db)}
-                                                                disabled={exportingId === db.id}
-                                                                className='flex cursor-pointer items-center gap-3 rounded-xl p-3'
-                                                            >
-                                                                {exportingId === db.id ? (
-                                                                    <Loader2 className='h-4 w-4 animate-spin text-emerald-500' />
-                                                                ) : (
-                                                                    <Download className='h-4 w-4 text-emerald-500' />
-                                                                )}
-                                                                <span className='font-bold'>
-                                                                    {t('serverDatabases.exportSql')}
-                                                                </span>
-                                                            </DropdownMenuItem>
-                                                            <DropdownMenuItem
-                                                                onClick={() => openImportDialog(db)}
-                                                                className='flex cursor-pointer items-center gap-3 rounded-xl p-3'
-                                                            >
-                                                                <Upload className='h-4 w-4 text-amber-500' />
-                                                                <span className='font-bold'>
-                                                                    {t('serverDatabases.importSql')}
-                                                                </span>
-                                                            </DropdownMenuItem>
-                                                            <DropdownMenuItem
-                                                                onClick={() => openQueryDialog(db)}
-                                                                className='flex cursor-pointer items-center gap-3 rounded-xl p-3'
-                                                            >
-                                                                <Terminal className='text-primary h-4 w-4' />
-                                                                <span className='font-bold'>
-                                                                    {t('serverDatabases.runQuery')}
-                                                                </span>
-                                                            </DropdownMenuItem>
-                                                        </>
-                                                    )}
-                                                    {canDelete && (
-                                                        <>
-                                                            <DropdownMenuSeparator className='bg-border/40 my-1' />
-                                                            <DropdownMenuItem
-                                                                onClick={() => {
-                                                                    setDatabaseToDelete(db);
-                                                                    setConfirmDeleteDialogOpen(true);
-                                                                }}
-                                                                className='text-destructive focus:text-destructive focus:bg-destructive/10 flex cursor-pointer items-center gap-3 rounded-xl p-3'
-                                                            >
-                                                                <Trash2 className='h-4 w-4' />
-                                                                <span className='font-bold'>
-                                                                    {t('serverDatabases.confirmDelete')}
-                                                                </span>
-                                                            </DropdownMenuItem>
-                                                        </>
-                                                    )}
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
-                                        )
-                                    }
-                                />
+                                <div className='min-w-0 space-y-1'>
+                                    <p className='truncate font-medium'>{db.database}</p>
+                                    <p className='text-muted-foreground text-xs'>
+                                        {db.database_type} · <Sensitive>{db.username}</Sensitive>
+                                    </p>
+                                    <p className='text-muted-foreground font-mono text-xs'>
+                                        <Sensitive>{`${getDatabaseDisplayHost(db)}:${db.database_port}`}</Sensitive>
+                                    </p>
+                                </div>
                             </div>
-                        ))}
-                    </div>
+                        )}
+                        actions={(db) =>
+                            (canViewPassword || canDelete) && (
+                                <RowActionsMenu
+                                    items={[
+                                        {
+                                            label: t('serverDatabases.view'),
+                                            icon: Eye,
+                                            onClick: () => openViewDatabase(db),
+                                            hidden: !canViewPassword,
+                                        },
+                                        {
+                                            label: 'phpMyAdmin',
+                                            icon: ExternalLink,
+                                            onClick: () => handlePhpMyAdmin(db),
+                                            hidden: !canViewPassword || !phpMyAdminInstalled,
+                                        },
+                                        {
+                                            label: t('serverDatabases.exportSql'),
+                                            icon: exportingId === db.id ? Loader2 : Download,
+                                            onClick: () => handleExportDatabase(db),
+                                            disabled: exportingId === db.id,
+                                            hidden: !canViewPassword,
+                                            separated: true,
+                                        },
+                                        {
+                                            label: t('serverDatabases.importSql'),
+                                            icon: Upload,
+                                            onClick: () => openImportDialog(db),
+                                            hidden: !canViewPassword,
+                                        },
+                                        {
+                                            label: t('serverDatabases.runQuery'),
+                                            icon: Terminal,
+                                            onClick: () => openQueryDialog(db),
+                                            hidden: !canViewPassword,
+                                        },
+                                        {
+                                            label: t('serverDatabases.confirmDelete'),
+                                            icon: Trash2,
+                                            destructive: true,
+                                            separated: true,
+                                            hidden: !canDelete,
+                                            onClick: () => {
+                                                setDatabaseToDelete(db);
+                                                setConfirmDeleteDialogOpen(true);
+                                            },
+                                        },
+                                    ]}
+                                />
+                            )
+                        }
+                    />
                 )}
 
                 <WidgetRenderer widgets={getWidgets('server-databases', 'after-databases-list')} />
 
                 {pagination.total > pagination.per_page && (
                     <div className='border-border/40 flex items-center justify-between border-t px-6 py-8'>
-                        <p className='text-sm font-bold tracking-widest uppercase opacity-40'>
+                        <p className='text-sm font-bold opacity-40'>
                             {t('serverActivities.pagination.showing', {
                                 from: String((pagination.current_page - 1) * pagination.per_page + 1),
                                 to: String(Math.min(pagination.current_page * pagination.per_page, pagination.total)),
@@ -802,7 +773,7 @@ export default function ServerDatabasesPage() {
                             >
                                 <ChevronLeft className='h-5 w-5' />
                             </Button>
-                            <span className='bg-primary/5 text-primary border-primary/20 flex h-10 min-w-12 items-center justify-center rounded-xl border px-4 text-sm font-black'>
+                            <span className='bg-primary/5 text-primary border-primary/20 flex h-10 min-w-12 items-center justify-center rounded-xl border px-4 text-sm font-semibold'>
                                 {pagination.current_page} / {pagination.last_page}
                             </span>
                             <Button
@@ -877,7 +848,7 @@ export default function ServerDatabasesPage() {
                         <div className='mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-3xl border border-yellow-500/20 bg-yellow-500/10 shadow-inner'>
                             <ShieldAlert className='h-8 w-8 text-yellow-500' />
                         </div>
-                        <DialogTitle className='text-2xl leading-tight font-black text-yellow-500'>
+                        <DialogTitle className='text-2xl leading-tight font-semibold text-yellow-500'>
                             {t('serverDatabases.sensitiveInfoWarning')}
                         </DialogTitle>
                         <DialogDescription className='px-4 text-sm leading-relaxed opacity-70'>
@@ -886,7 +857,7 @@ export default function ServerDatabasesPage() {
                     </DialogHeader>
 
                     <div
-                        className='bg-card/50 border-border/50 group hover:bg-accent/50 mx-1 flex cursor-pointer items-center gap-4 rounded-3xl border p-5 backdrop-blur-xl transition-all'
+                        className='fp-surface fp-surface-interactive group mx-1 flex cursor-pointer items-center gap-4 rounded-xl border p-5'
                         onClick={() => setRememberSensitiveChoice(!rememberSensitiveChoice)}
                     >
                         <Checkbox
@@ -902,7 +873,7 @@ export default function ServerDatabasesPage() {
                             >
                                 {t('serverDatabases.rememberChoice')}
                             </label>
-                            <p className='text-[10px] font-bold tracking-tighter uppercase opacity-40'>
+                            <p className='text-[10px] font-bold opacity-40'>
                                 {t('serverDatabases.skipWarningInFuture')}
                             </p>
                         </div>
@@ -944,7 +915,7 @@ export default function ServerDatabasesPage() {
 
                         <div className='space-y-6 px-1'>
                             <div className='border-primary/20 bg-primary/5 space-y-5 rounded-3xl border p-6 backdrop-blur-sm'>
-                                <h3 className='text-primary/60 flex items-center gap-2 text-[10px] font-black tracking-[0.2em] uppercase'>
+                                <h3 className='text-primary/60 flex items-center gap-2 text-[10px] font-semibold'>
                                     <div className='bg-primary/30 h-4 w-1.5 rounded-full' />
                                     {t('serverDatabases.connectionDetails')}
                                 </h3>
@@ -953,28 +924,33 @@ export default function ServerDatabasesPage() {
                                         {
                                             label: t('serverDatabases.host'),
                                             value: getDatabaseDisplayHost(viewingDatabase),
+                                            copyValue: getDatabaseDisplayHost(viewingDatabase),
                                         },
                                         {
                                             label: t('serverDatabases.port'),
                                             value: String(viewingDatabase.database_port),
+                                            copyValue: String(viewingDatabase.database_port),
                                         },
-                                        { label: t('serverDatabases.type'), value: viewingDatabase.database_type },
+                                        {
+                                            label: t('serverDatabases.type'),
+                                            value: viewingDatabase.database_type,
+                                            copyValue: viewingDatabase.database_type,
+                                        },
                                     ].map((item, i) => (
                                         <div key={i} className='space-y-2'>
-                                            <label className='text-[10px] font-bold tracking-widest uppercase opacity-40'>
-                                                {item.label}
-                                            </label>
+                                            <label className='text-[10px] font-bold opacity-40'>{item.label}</label>
                                             <div className='group relative'>
                                                 <Input
                                                     readOnly
+                                                    data-fp-sensitive={i < 2 ? '' : undefined}
                                                     value={item.value || 'N/A'}
                                                     className='bg-card border-border/50 pr-10 font-mono text-xs'
                                                 />
                                                 <Button
                                                     variant='glass'
                                                     size='sm'
-                                                    className='absolute top-1/2 right-1 h-8 w-8 -translate-y-1/2 bg-white/10 p-0 opacity-0 transition-opacity group-hover:opacity-100'
-                                                    onClick={() => copyToClipboard(item.value || '')}
+                                                    className='bg-muted/60 absolute top-1/2 right-1 h-8 w-8 -translate-y-1/2 p-0 opacity-0 transition-opacity group-hover:opacity-100'
+                                                    onClick={() => copyToClipboard(item.copyValue || '')}
                                                 >
                                                     <Copy className='h-3.5 w-3.5' />
                                                 </Button>
@@ -985,25 +961,26 @@ export default function ServerDatabasesPage() {
                             </div>
 
                             <div className='border-primary/20 bg-primary/5 space-y-5 rounded-3xl border p-6 backdrop-blur-sm'>
-                                <h3 className='text-primary/60 flex items-center gap-2 text-[10px] font-black tracking-[0.2em] uppercase'>
+                                <h3 className='text-primary/60 flex items-center gap-2 text-[10px] font-semibold'>
                                     <div className='bg-primary/30 h-4 w-1.5 rounded-full' />
                                     {t('serverDatabases.loginCredentials')}
                                 </h3>
                                 <div className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
                                     <div className='space-y-2'>
-                                        <label className='text-[10px] font-bold tracking-widest uppercase opacity-40'>
+                                        <label className='text-[10px] font-bold opacity-40'>
                                             {t('serverDatabases.username')}
                                         </label>
                                         <div className='group relative'>
                                             <Input
                                                 readOnly
+                                                data-fp-sensitive=''
                                                 value={viewingDatabase.username}
                                                 className='bg-card border-border/50 pr-10 font-mono text-xs'
                                             />
                                             <Button
                                                 variant='glass'
                                                 size='sm'
-                                                className='absolute top-1/2 right-1 h-8 w-8 -translate-y-1/2 bg-white/10 p-0 opacity-0 transition-opacity group-hover:opacity-100'
+                                                className='bg-muted/60 absolute top-1/2 right-1 h-8 w-8 -translate-y-1/2 p-0 opacity-0 transition-opacity group-hover:opacity-100'
                                                 onClick={() => copyToClipboard(viewingDatabase.username)}
                                             >
                                                 <Copy className='h-3.5 w-3.5' />
@@ -1012,11 +989,11 @@ export default function ServerDatabasesPage() {
                                     </div>
                                     <div className='space-y-2'>
                                         <div className='flex items-center justify-between'>
-                                            <label className='text-[10px] font-bold tracking-widest uppercase opacity-40'>
+                                            <label className='text-[10px] font-bold opacity-40'>
                                                 {t('serverDatabases.password')}
                                             </label>
                                             <button
-                                                className='text-primary text-[10px] font-black uppercase hover:underline'
+                                                className='text-primary text-[10px] font-semibold hover:underline'
                                                 onClick={() => setShowPassword(!showPassword)}
                                             >
                                                 {showPassword ? t('common.hide') : t('common.show')}
@@ -1026,13 +1003,14 @@ export default function ServerDatabasesPage() {
                                             <Input
                                                 readOnly
                                                 type={showPassword ? 'text' : 'password'}
+                                                data-fp-sensitive=''
                                                 value={viewingDatabase.password || ''}
                                                 className='bg-card border-border/50 pr-10 font-mono text-xs'
                                             />
                                             <Button
                                                 variant='glass'
                                                 size='sm'
-                                                className='absolute top-1/2 right-1 h-8 w-8 -translate-y-1/2 bg-white/10 p-0 opacity-0 transition-opacity group-hover:opacity-100'
+                                                className='bg-muted/60 absolute top-1/2 right-1 h-8 w-8 -translate-y-1/2 p-0 opacity-0 transition-opacity group-hover:opacity-100'
                                                 onClick={() => copyToClipboard(viewingDatabase.password || '')}
                                             >
                                                 <Copy className='h-3.5 w-3.5' />
@@ -1050,7 +1028,7 @@ export default function ServerDatabasesPage() {
                                     localStorage.removeItem('featherpanel-remember-sensitive-info');
                                     toast.success(t('serverDatabases.rememberedChoiceCleared'));
                                 }}
-                                className='text-[10px] font-black tracking-widest uppercase opacity-40 transition-opacity hover:opacity-100 sm:mr-auto'
+                                className='text-[10px] font-semibold opacity-40 transition-opacity hover:opacity-100 sm:mr-auto'
                             >
                                 {t('serverDatabases.resetWarning')}
                             </Button>
@@ -1076,7 +1054,7 @@ export default function ServerDatabasesPage() {
                         <div className='mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-3xl border border-red-500/20 bg-red-500/10 shadow-inner'>
                             <Trash2 className='h-8 w-8 text-red-500' />
                         </div>
-                        <DialogTitle className='text-2xl leading-tight font-black text-red-500'>
+                        <DialogTitle className='text-2xl leading-tight font-semibold text-red-500'>
                             {t('serverDatabases.confirmDeleteTitle')}
                         </DialogTitle>
                         <DialogDescription className='px-4 text-sm leading-relaxed opacity-70'>
@@ -1087,7 +1065,7 @@ export default function ServerDatabasesPage() {
                     </DialogHeader>
 
                     <div className='py-2 text-center'>
-                        <p className='text-[10px] font-black tracking-[0.2em] text-red-500 uppercase opacity-80'>
+                        <p className='text-[10px] font-semibold text-red-500 opacity-80'>
                             {t('common.actionsCannotBeUndone')}
                         </p>
                     </div>
@@ -1168,7 +1146,7 @@ export default function ServerDatabasesPage() {
                             </div>
                             {importResult.errors.length > 0 && (
                                 <div className='border-destructive/20 bg-destructive/5 max-h-48 space-y-2 overflow-y-auto rounded-xl border p-4'>
-                                    <p className='text-destructive/70 text-xs font-black tracking-wider uppercase'>
+                                    <p className='text-destructive/70 text-xs font-semibold'>
                                         {t('serverDatabases.errorsHeader')}
                                     </p>
                                     {importResult.errors.map((err, i) => (
@@ -1200,7 +1178,7 @@ export default function ServerDatabasesPage() {
                     ) : (
                         <>
                             <div
-                                className='flex cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-white/10 bg-white/5 p-5 transition-colors hover:border-white/20'
+                                className='border-border/60 bg-muted/40 hover:border-border flex cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed p-5 transition-colors'
                                 onClick={() => importFileRef.current?.click()}
                             >
                                 <Upload className='text-muted-foreground h-7 w-7' />
@@ -1214,12 +1192,12 @@ export default function ServerDatabasesPage() {
                                 />
                             </div>
                             <div className='text-muted-foreground flex items-center gap-3 text-xs'>
-                                <div className='h-px flex-1 bg-white/10' />
+                                <div className='bg-border h-px flex-1' />
                                 <span>{t('serverDatabases.orPasteSql')}</span>
-                                <div className='h-px flex-1 bg-white/10' />
+                                <div className='bg-border h-px flex-1' />
                             </div>
                             <textarea
-                                className='text-foreground placeholder:text-muted-foreground focus:ring-primary min-h-[160px] w-full resize-none rounded-xl border border-white/10 bg-white/5 p-3 font-mono text-xs focus:ring-1 focus:outline-none'
+                                className='text-foreground placeholder:text-muted-foreground focus:ring-primary border-border/60 bg-muted/40 min-h-[160px] w-full resize-none rounded-xl border p-3 font-mono text-xs focus:ring-1 focus:outline-none'
                                 placeholder='-- Paste your SQL here...'
                                 value={importSql}
                                 onChange={(e) => setImportSql(e.target.value)}
@@ -1227,7 +1205,7 @@ export default function ServerDatabasesPage() {
                             />
                             <button
                                 type='button'
-                                className='border-border/40 bg-card/50 hover:bg-accent/30 flex w-full items-center gap-3 rounded-xl border p-4 text-left transition-colors'
+                                className='border-border/40 fp-surface hover:bg-accent/30 flex w-full items-center gap-3 rounded-xl border p-4 text-left transition-colors'
                                 onClick={() => setImportIgnoreErrors(!importIgnoreErrors)}
                             >
                                 <Checkbox
@@ -1366,7 +1344,7 @@ export default function ServerDatabasesPage() {
                                                 {queryResult.columns.map((col, i) => (
                                                     <th
                                                         key={i}
-                                                        className='text-muted-foreground border-border/40 border-b px-3 py-2 text-left font-black tracking-wider whitespace-nowrap uppercase'
+                                                        className='text-muted-foreground border-border/40 border-b px-3 py-2 text-left font-semibold whitespace-nowrap'
                                                     >
                                                         {col}
                                                     </th>
@@ -1377,7 +1355,7 @@ export default function ServerDatabasesPage() {
                                             {queryResult.rows.map((row, ri) => (
                                                 <tr
                                                     key={ri}
-                                                    className='border-border/20 border-b transition-colors hover:bg-white/5'
+                                                    className='border-border/20 hover:bg-muted/60 border-b transition-colors'
                                                 >
                                                     {(row as unknown[]).map((cell, ci) => (
                                                         <td
@@ -1427,6 +1405,7 @@ export default function ServerDatabasesPage() {
             </Dialog>
 
             <WidgetRenderer widgets={getWidgets('server-databases', 'bottom-of-page')} />
+            <ServerPageTips page='databases' />
         </div>
     );
 }

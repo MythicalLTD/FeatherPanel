@@ -23,7 +23,8 @@ import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent, TabsTrigger } from '@/components/ui/tabs';
+import { ScrollableTabsList } from '@/components/ui/scrollable-tabs-list';
 import { toast } from 'sonner';
 import {
     Server,
@@ -55,6 +56,8 @@ import { StorageConfigurationTab } from './StorageConfigurationTab';
 import { DhcpAgentTab } from './DhcpAgentTab';
 import { FirewallTab } from './FirewallTab';
 import { InfoTab } from './InfoTab';
+import { UnsavedChangesBar } from '@/components/featherui/UnsavedChangesBar';
+import { useFormBaseline } from '@/hooks/useFormBaseline';
 
 interface Location {
     id: number;
@@ -107,6 +110,7 @@ export default function EditVdsNodePage() {
         storage_efi: '',
         storage_backups: '',
     });
+    const { dirty: unsaved, markClean, restore: restoreForm } = useFormBaseline(form);
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [saving, setSaving] = useState(false);
     const [loadingNode, setLoadingNode] = useState(true);
@@ -191,6 +195,7 @@ export default function EditVdsNodePage() {
                     storage_efi: node.storage_efi ?? '',
                     storage_backups: node.storage_backups ?? '',
                 });
+                markClean();
 
                 if (node.addional_headers) {
                     try {
@@ -239,6 +244,7 @@ export default function EditVdsNodePage() {
 
             await axios.patch(`/api/admin/vm-nodes/${id}`, payload);
             setNodeName(form.name);
+            markClean();
             toast.success(t('admin.vdsNodes.messages.updated'));
         } catch (error) {
             if (isAxiosError(error) && error.response?.data?.errors) {
@@ -368,8 +374,8 @@ export default function EditVdsNodePage() {
 
             <div className='block'>
                 <Tabs defaultValue='details' orientation='vertical' className='flex w-full flex-col gap-6 md:flex-row'>
-                    <aside className='w-full shrink-0 overflow-x-auto pb-2 md:w-64 md:overflow-visible md:pb-0'>
-                        <TabsList className='bg-card/30 border-border/50 flex h-auto w-max flex-row gap-2 rounded-2xl border p-2 md:w-full md:flex-col md:gap-1'>
+                    <aside className='w-full shrink-0 md:sticky md:top-24 md:w-64 md:self-start'>
+                        <ScrollableTabsList className='fp-surface flex h-auto w-full flex-row gap-2 rounded-2xl border p-2 md:flex-col md:gap-1 md:overflow-visible'>
                             {tabs.map((tab) => {
                                 const Icon = tab.icon;
 
@@ -384,7 +390,7 @@ export default function EditVdsNodePage() {
                                     </TabsTrigger>
                                 );
                             })}
-                        </TabsList>
+                        </ScrollableTabsList>
                     </aside>
 
                     <div className='min-w-0 flex-1 space-y-6'>
@@ -498,6 +504,16 @@ export default function EditVdsNodePage() {
                     </div>
                 </SheetContent>
             </Sheet>
+
+            <UnsavedChangesBar
+                dirty={unsaved}
+                saving={saving}
+                onSave={() => void handleSave()}
+                onDiscard={() => {
+                    const saved = restoreForm();
+                    if (saved) setForm(saved);
+                }}
+            />
         </div>
     );
 }

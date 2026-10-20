@@ -907,7 +907,7 @@ function WebSpaceFilesPageInner({ uuidShort }: { uuidShort: string }) {
             />
 
             <div className='flex flex-col gap-4'>
-                <div className='flex flex-col gap-4 rounded-xl border border-black/5 bg-white/80 p-4 backdrop-blur-xl sm:flex-row sm:items-center sm:justify-between dark:border-white/10 dark:bg-white/5'>
+                <div className='fp-surface flex flex-col gap-4 rounded-xl border p-4 sm:flex-row sm:items-center sm:justify-between'>
                     <FileBreadcrumbs
                         currentDirectory={currentDirectory || '/'}
                         onNavigate={navigate}
@@ -984,10 +984,7 @@ function WebSpaceFilesPageInner({ uuidShort }: { uuidShort: string }) {
                     <div className='mb-2 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3'>
                         {uploadBatches.flatMap(({ items }) =>
                             items.map((item) => (
-                                <div
-                                    key={item.id}
-                                    className='rounded-2xl border border-black/5 bg-white/80 p-4 backdrop-blur-xl dark:border-white/10 dark:bg-white/5'
-                                >
+                                <div key={item.id} className='fp-surface rounded-xl border p-4'>
                                     <div className='mb-2 flex items-center justify-between gap-2'>
                                         <div className='flex min-w-0 items-center gap-2'>
                                             {item.status === 'done' && (
@@ -1019,11 +1016,11 @@ function WebSpaceFilesPageInner({ uuidShort }: { uuidShort: string }) {
                                     </div>
                                     {(item.status === 'uploading' || item.status === 'pending') && (
                                         <div className='space-y-1.5'>
-                                            <div className='flex justify-between text-[10px] font-bold tracking-tighter text-white/40 uppercase'>
+                                            <div className='text-muted-foreground flex justify-between text-[10px] font-bold tracking-tighter uppercase'>
                                                 <span>{t('files.toolbar.upload')}</span>
                                                 <span className='text-primary'>{item.progress}%</span>
                                             </div>
-                                            <div className='h-1.5 w-full overflow-hidden rounded-full border border-white/5 bg-white/5'>
+                                            <div className='border-border/50 bg-muted/40 h-1.5 w-full overflow-hidden rounded-full border'>
                                                 <div
                                                     className='from-primary to-primary-foreground h-full bg-linear-to-r transition-all duration-300'
                                                     style={{ width: `${item.progress}%` }}
@@ -1050,10 +1047,7 @@ function WebSpaceFilesPageInner({ uuidShort }: { uuidShort: string }) {
                 {pullProgressEnabled && activePulls.length > 0 && (
                     <div className='mb-2 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3'>
                         {activePulls.map((pull) => (
-                            <div
-                                key={pull.Identifier}
-                                className='rounded-2xl border border-black/5 bg-white/80 p-4 backdrop-blur-xl dark:border-white/10 dark:bg-white/5'
-                            >
+                            <div key={pull.Identifier} className='fp-surface rounded-xl border p-4'>
                                 <div className='mb-2 flex items-center justify-between gap-2'>
                                     <span className='truncate text-sm font-medium'>
                                         {t('files.messages.task_id', { id: pull.Identifier.slice(0, 8) })}...
@@ -1068,11 +1062,11 @@ function WebSpaceFilesPageInner({ uuidShort }: { uuidShort: string }) {
                                     </Button>
                                 </div>
                                 <div className='space-y-1.5'>
-                                    <div className='flex justify-between text-[10px] font-bold tracking-tighter text-white/40 uppercase'>
+                                    <div className='text-muted-foreground flex justify-between text-[10px] font-bold tracking-tighter uppercase'>
                                         <span>{t('files.toolbar.pull')}</span>
                                         <span className='text-primary'>{pull.Progress}%</span>
                                     </div>
-                                    <div className='h-1.5 w-full overflow-hidden rounded-full border border-white/5 bg-white/5'>
+                                    <div className='border-border/50 bg-muted/40 h-1.5 w-full overflow-hidden rounded-full border'>
                                         <div
                                             className='from-primary to-primary-foreground h-full bg-linear-to-r transition-all duration-500'
                                             style={{ width: `${pull.Progress}%` }}
@@ -1124,7 +1118,7 @@ function WebSpaceFilesPageInner({ uuidShort }: { uuidShort: string }) {
                     canEdit={canUpdate || canReadContent}
                     canDelete={canDelete}
                     canDownload={canRead}
-                    canShare={shareEnabled}
+                    canShare={shareEnabled && canUpdate}
                     canBrowseArchiveFeature={archiveBrowseEnabled}
                     canDownloadDirectory={directoryDownloadEnabled}
                     acceptArchiveExtract={canArchive && archiveBrowseEnabled}
@@ -1321,7 +1315,7 @@ function WebSpaceFilesPageInner({ uuidShort }: { uuidShort: string }) {
 
             {isDragging && canCreate && (
                 <div className='pointer-events-none fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm'>
-                    <div className='rounded-2xl border border-dashed border-white/30 bg-white/10 px-10 py-8 text-center shadow-2xl'>
+                    <div className='bg-muted/60 rounded-2xl border border-dashed border-white/30 px-10 py-8 text-center shadow-2xl'>
                         <Download className='text-primary mx-auto mb-3 h-10 w-10' />
                         <p className='text-lg font-semibold text-white'>{t('files.messages.drop_to_upload')}</p>
                     </div>

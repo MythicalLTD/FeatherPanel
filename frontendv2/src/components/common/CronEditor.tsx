@@ -24,6 +24,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/featherui/Input';
 import { Button } from '@/components/featherui/Button';
 import { cn } from '@/lib/utils';
+import { useTranslation } from '@/contexts/TranslationContext';
 
 export type CronFields = {
     cron_minute: string;
@@ -49,45 +50,45 @@ type CronEditorProps = {
     };
 };
 
-const PRESETS: { id: string; label: string; fields: CronFields }[] = [
+const PRESETS: { id: string; labelKey: string; fields: CronFields }[] = [
     {
         id: 'every5',
-        label: 'Every 5 minutes',
+        labelKey: 'ui.components.common.cronEditor.presetEvery5',
         fields: { cron_minute: '*/5', cron_hour: '*', cron_day_of_month: '*', cron_month: '*', cron_day_of_week: '*' },
     },
     {
         id: 'hourly',
-        label: 'Hourly',
+        labelKey: 'ui.components.common.cronEditor.presetHourly',
         fields: { cron_minute: '0', cron_hour: '*', cron_day_of_month: '*', cron_month: '*', cron_day_of_week: '*' },
     },
     {
         id: 'daily',
-        label: 'Daily at midnight',
+        labelKey: 'ui.components.common.cronEditor.presetDaily',
         fields: { cron_minute: '0', cron_hour: '0', cron_day_of_month: '*', cron_month: '*', cron_day_of_week: '*' },
     },
     {
         id: 'weekly',
-        label: 'Weekly (Sun 00:00)',
+        labelKey: 'ui.components.common.cronEditor.presetWeekly',
         fields: { cron_minute: '0', cron_hour: '0', cron_day_of_month: '*', cron_month: '*', cron_day_of_week: '0' },
     },
     {
         id: 'monthly',
-        label: 'Monthly (1st 00:00)',
+        labelKey: 'ui.components.common.cronEditor.presetMonthly',
         fields: { cron_minute: '0', cron_hour: '0', cron_day_of_month: '1', cron_month: '*', cron_day_of_week: '*' },
     },
 ];
 
 const WEEKDAYS = [
-    { value: '0', label: 'Sun' },
-    { value: '1', label: 'Mon' },
-    { value: '2', label: 'Tue' },
-    { value: '3', label: 'Wed' },
-    { value: '4', label: 'Thu' },
-    { value: '5', label: 'Fri' },
-    { value: '6', label: 'Sat' },
+    { value: '0', labelKey: 'ui.components.common.cronEditor.daySun' },
+    { value: '1', labelKey: 'ui.components.common.cronEditor.dayMon' },
+    { value: '2', labelKey: 'ui.components.common.cronEditor.dayTue' },
+    { value: '3', labelKey: 'ui.components.common.cronEditor.dayWed' },
+    { value: '4', labelKey: 'ui.components.common.cronEditor.dayThu' },
+    { value: '5', labelKey: 'ui.components.common.cronEditor.dayFri' },
+    { value: '6', labelKey: 'ui.components.common.cronEditor.daySat' },
 ];
 
-function describeCron(fields: CronFields): string {
+function describeCron(fields: CronFields, t: (key: string) => string): string {
     const { cron_minute: m, cron_hour: h, cron_day_of_month: dom, cron_month: mon, cron_day_of_week: dow } = fields;
     const expr = `${m} ${h} ${dom} ${mon} ${dow}`;
     const preset = PRESETS.find(
@@ -98,7 +99,7 @@ function describeCron(fields: CronFields): string {
             p.fields.cron_month === mon &&
             p.fields.cron_day_of_week === dow,
     );
-    if (preset) return `${preset.label} (${expr})`;
+    if (preset) return `${t(preset.labelKey)} (${expr})`;
     return expr;
 }
 
@@ -115,7 +116,8 @@ function activePresetId(fields: CronFields): string | null {
 }
 
 export function CronEditor({ value, onChange, labels }: CronEditorProps) {
-    const summary = useMemo(() => describeCron(value), [value]);
+    const { t } = useTranslation();
+    const summary = useMemo(() => describeCron(value, t), [value, t]);
     const active = activePresetId(value);
     const selectedDays = useMemo(() => {
         if (value.cron_day_of_week === '*') return new Set(WEEKDAYS.map((d) => d.value));
@@ -150,7 +152,7 @@ export function CronEditor({ value, onChange, labels }: CronEditorProps) {
     return (
         <div className='space-y-4'>
             <div className='space-y-2'>
-                <Label>{labels?.presets || 'Presets'}</Label>
+                <Label>{labels?.presets || t('ui.components.common.cronEditor.presets')}</Label>
                 <div className='flex flex-wrap gap-2'>
                     {PRESETS.map((preset) => (
                         <Button
@@ -160,14 +162,14 @@ export function CronEditor({ value, onChange, labels }: CronEditorProps) {
                             variant={active === preset.id ? 'default' : 'outline'}
                             onClick={() => onChange({ ...preset.fields })}
                         >
-                            {preset.label}
+                            {t(preset.labelKey)}
                         </Button>
                     ))}
                 </div>
             </div>
 
             <div className='space-y-2'>
-                <Label>Days of week</Label>
+                <Label>{t('ui.components.common.cronEditor.daysOfWeek')}</Label>
                 <div className='flex flex-wrap gap-1.5'>
                     {WEEKDAYS.map((day) => {
                         const on = value.cron_day_of_week === '*' || selectedDays.has(day.value);
@@ -183,7 +185,7 @@ export function CronEditor({ value, onChange, labels }: CronEditorProps) {
                                         : 'border-border text-muted-foreground hover:bg-muted',
                                 )}
                             >
-                                {day.label}
+                                {t(day.labelKey)}
                             </button>
                         );
                     })}
@@ -191,15 +193,18 @@ export function CronEditor({ value, onChange, labels }: CronEditorProps) {
             </div>
 
             <div className='space-y-2'>
-                <Label>{labels?.advanced || 'Advanced (cron fields)'}</Label>
+                <Label>{labels?.advanced || t('ui.components.common.cronEditor.advancedCronFields')}</Label>
                 <div className='grid grid-cols-2 gap-3 md:grid-cols-5'>
                     {(
                         [
-                            ['cron_minute', labels?.minute || 'Minute'],
-                            ['cron_hour', labels?.hour || 'Hour'],
-                            ['cron_day_of_month', labels?.dayOfMonth || 'Day of month'],
-                            ['cron_month', labels?.month || 'Month'],
-                            ['cron_day_of_week', labels?.dayOfWeek || 'Day of week'],
+                            ['cron_minute', labels?.minute || t('ui.components.common.cronEditor.minute')],
+                            ['cron_hour', labels?.hour || t('ui.components.common.cronEditor.hour')],
+                            [
+                                'cron_day_of_month',
+                                labels?.dayOfMonth || t('ui.components.common.cronEditor.dayOfMonth'),
+                            ],
+                            ['cron_month', labels?.month || t('ui.components.common.cronEditor.month')],
+                            ['cron_day_of_week', labels?.dayOfWeek || t('ui.components.common.cronEditor.dayOfWeek')],
                         ] as const
                     ).map(([key, label]) => (
                         <div key={key} className='space-y-2'>
@@ -213,7 +218,7 @@ export function CronEditor({ value, onChange, labels }: CronEditorProps) {
                     ))}
                 </div>
                 <p className='text-muted-foreground text-xs'>
-                    {labels?.help || 'Need help?'}{' '}
+                    {labels?.help || t('ui.components.common.cronEditor.needHelp')}{' '}
                     <a href='https://crontab.guru/' target='_blank' rel='noreferrer' className='text-primary underline'>
                         crontab.guru
                     </a>
@@ -221,7 +226,10 @@ export function CronEditor({ value, onChange, labels }: CronEditorProps) {
             </div>
 
             <p className='text-muted-foreground text-sm'>
-                <span className='text-foreground font-medium'>{labels?.summary || 'Runs'}:</span> {summary}
+                <span className='text-foreground font-medium'>
+                    {labels?.summary || t('ui.components.common.cronEditor.runs')}:
+                </span>{' '}
+                {summary}
             </p>
         </div>
     );

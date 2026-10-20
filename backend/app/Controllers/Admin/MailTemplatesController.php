@@ -19,6 +19,7 @@ namespace App\Controllers\Admin;
 
 use App\Chat\User;
 use App\Chat\Activity;
+use App\Chat\Database;
 use App\Chat\MailList;
 use App\Chat\MailQueue;
 use App\Chat\MailTemplate;
@@ -282,7 +283,7 @@ class MailTemplatesController
         $requiredFields = ['name', 'subject', 'body'];
         $missingFields = [];
         foreach ($requiredFields as $field) {
-            if (!isset($data[$field]) || trim($data[$field]) === '') {
+            if (!isset($data[$field]) || !is_scalar($data[$field]) || trim((string) $data[$field]) === '') {
                 $missingFields[] = $field;
             }
         }
@@ -322,6 +323,11 @@ class MailTemplatesController
         $data['deleted'] = 'false';
         $data['created_at'] = date('Y-m-d H:i:s');
         $data['updated_at'] = date('Y-m-d H:i:s');
+
+        $unknownFields = Database::unknownColumns(MailTemplate::getTableName(), $data);
+        if ($unknownFields !== []) {
+            return ApiResponse::error('Unknown field(s): ' . implode(', ', $unknownFields), 'UNKNOWN_FIELDS', 400);
+        }
 
         $templateId = MailTemplate::create($data);
         if (!$templateId) {
@@ -438,6 +444,14 @@ class MailTemplatesController
 
         // Add updated timestamp
         $data['updated_at'] = date('Y-m-d H:i:s');
+
+        $unknownFields = Database::unknownColumns(MailTemplate::getTableName(), $data);
+        if ($unknownFields !== []) {
+            return ApiResponse::error('Unknown field(s): ' . implode(', ', $unknownFields), 'UNKNOWN_FIELDS', 400);
+        }
+        if ($data === []) {
+            return ApiResponse::error('No data to update', 'NO_DATA', 400);
+        }
 
         $updated = MailTemplate::update($id, $data);
         if (!$updated) {
@@ -679,7 +693,7 @@ class MailTemplatesController
         $requiredFields = ['subject', 'body'];
         $missingFields = [];
         foreach ($requiredFields as $field) {
-            if (!isset($data[$field]) || trim($data[$field]) === '') {
+            if (!isset($data[$field]) || !is_scalar($data[$field]) || trim((string) $data[$field]) === '') {
                 $missingFields[] = $field;
             }
         }
@@ -820,7 +834,7 @@ class MailTemplatesController
         $requiredFields = ['email', 'subject', 'body'];
         $missingFields = [];
         foreach ($requiredFields as $field) {
-            if (!isset($data[$field]) || trim($data[$field]) === '') {
+            if (!isset($data[$field]) || !is_scalar($data[$field]) || trim((string) $data[$field]) === '') {
                 $missingFields[] = $field;
             }
         }

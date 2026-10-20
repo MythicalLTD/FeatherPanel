@@ -26,7 +26,7 @@ import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { safeBack } from '@/lib/safe-back';
 
-import { PageHeader } from '@/components/featherui/PageHeader';
+import { ServerPageHeader } from '@/components/server/ServerPageHeader';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { Label } from '@/components/ui/label';
@@ -34,6 +34,8 @@ import { HeadlessSelect } from '@/components/ui/headless-select';
 import type { DatabaseHost, Server } from '@/types/server';
 import { PageLoading } from '@/components/featherui/PageLoading';
 import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
+import { UnsavedChangesBar } from '@/components/featherui/UnsavedChangesBar';
+import { useFormBaseline } from '@/hooks/useFormBaseline';
 
 export default function CreateDatabasePage() {
     const { uuidShort } = useParams() as { uuidShort: string };
@@ -53,6 +55,7 @@ export default function CreateDatabasePage() {
         remote: '%',
         max_connections: 0,
     });
+    const { dirty: unsaved, markClean, restore: restoreForm } = useFormBaseline(form, { trackFromStart: true });
 
     const { getWidgets, fetchWidgets } = usePluginWidgets('server-databases-new');
 
@@ -82,6 +85,8 @@ export default function CreateDatabasePage() {
                     setAvailableHosts(hosts);
                     if (hosts.length === 1) {
                         setForm((prev) => ({ ...prev, database_host_id: String(hosts[0].id) }));
+                        // The only host is picked for the user; that alone is not an edit.
+                        markClean();
                     }
                 }
                 const total = databasesRes.data?.data?.pagination?.total;
@@ -96,7 +101,7 @@ export default function CreateDatabasePage() {
             }
         };
         load();
-    }, [uuidShort, t]);
+    }, [uuidShort, t, markClean]);
 
     const limitReached = !!server && server.database_limit > 0 && databaseCount >= server.database_limit;
     const databasesDisabled = !!server && server.database_limit === 0;
@@ -159,9 +164,9 @@ export default function CreateDatabasePage() {
     }
 
     return (
-        <div className='mx-auto max-w-4xl space-y-8 pb-16'>
+        <div className='space-y-6 pb-12'>
             <WidgetRenderer widgets={getWidgets('server-databases-new', 'top-of-page')} />
-            <PageHeader
+            <ServerPageHeader
                 title={t('serverDatabases.createDatabase')}
                 description={t('serverDatabases.createDatabaseDescription')}
                 actions={
@@ -213,7 +218,7 @@ export default function CreateDatabasePage() {
             )}
 
             <form onSubmit={handleCreate} className='space-y-8' data-fp-save-shortcut>
-                <div className='bg-card/50 border-border/50 space-y-6 rounded-3xl border p-8 backdrop-blur-3xl'>
+                <div className='fp-surface space-y-6 rounded-xl border p-4 sm:p-6'>
                     <div className='border-border/10 flex items-center gap-4 border-b pb-6'>
                         <div className='bg-primary/10 border-primary/20 flex h-10 w-10 items-center justify-center rounded-xl border'>
                             <ServerIcon className='text-primary h-5 w-5' />
@@ -255,7 +260,7 @@ export default function CreateDatabasePage() {
                     </div>
                 </div>
 
-                <div className='bg-card/50 border-border/50 space-y-6 rounded-3xl border p-8 backdrop-blur-3xl'>
+                <div className='fp-surface space-y-6 rounded-xl border p-4 sm:p-6'>
                     <div className='border-border/10 flex items-center gap-4 border-b pb-6'>
                         <div className='bg-primary/10 border-primary/20 flex h-10 w-10 items-center justify-center rounded-xl border'>
                             <Database className='text-primary h-5 w-5' />
@@ -265,7 +270,7 @@ export default function CreateDatabasePage() {
                                 {t('serverDatabases.databaseCredentials')}
                             </h2>
                             <p className='text-muted-foreground text-[9px] font-bold tracking-widest uppercase opacity-50'>
-                                Configuration
+                                {t('ui.server.databases.new.configuration')}
                             </p>
                         </div>
                     </div>
@@ -323,6 +328,17 @@ export default function CreateDatabasePage() {
                 </div>
             </form>
             <WidgetRenderer widgets={getWidgets('server-databases-new', 'bottom-of-page')} />
+
+            <UnsavedChangesBar
+                dirty={unsaved}
+                saving={saving}
+                onSave={() => void handleCreate()}
+                onDiscard={() => {
+                    const saved = restoreForm();
+                    if (saved) setForm(saved);
+                }}
+                saveLabel={t('common.create')}
+            />
         </div>
     );
 }

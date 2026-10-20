@@ -21,7 +21,7 @@ import axios, { AxiosError } from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { Calendar, Save, ExternalLink, Lock } from 'lucide-react';
 
-import { PageHeader } from '@/components/featherui/PageHeader';
+import { ServerPageHeader } from '@/components/server/ServerPageHeader';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { FormSection } from '@/components/featherui/FormSection';
@@ -38,6 +38,8 @@ import type { Schedule, ScheduleUpdateRequest } from '@/types/server';
 import { safeBack } from '@/lib/safe-back';
 import { PageLoading } from '@/components/featherui/PageLoading';
 import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
+import { UnsavedChangesBar } from '@/components/featherui/UnsavedChangesBar';
+import { useFormBaseline } from '@/hooks/useFormBaseline';
 
 export default function EditSchedulePage() {
     const { uuidShort, id } = useParams() as { uuidShort: string; id: string };
@@ -64,6 +66,7 @@ export default function EditSchedulePage() {
         only_when_online: 0,
         is_active: 1,
     });
+    const { dirty: unsaved, markClean, restore: restoreForm } = useFormBaseline(formData);
 
     const timezoneOptions = React.useMemo(() => listSupportedTimezones().map((tz) => ({ id: tz, name: tz })), []);
 
@@ -91,6 +94,7 @@ export default function EditSchedulePage() {
                         only_when_online: scheduleData.only_when_online,
                         is_active: scheduleData.is_active,
                     });
+                    markClean();
                 }
             } catch (error) {
                 console.error('Failed to fetch schedule:', error);
@@ -106,14 +110,14 @@ export default function EditSchedulePage() {
         } else if (!permissionsLoading && !canUpdate) {
             router.push(`/server/${uuidShort}/schedules`);
         }
-    }, [uuidShort, id, canUpdate, permissionsLoading, router, settings?.server_allow_schedules, t]);
+    }, [uuidShort, id, canUpdate, permissionsLoading, router, settings?.server_allow_schedules, t, markClean]);
 
     React.useEffect(() => {
         fetchWidgets();
     }, [fetchWidgets]);
 
-    const handleUpdate = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleUpdate = async (e?: React.FormEvent) => {
+        e?.preventDefault();
 
         if (!formData.name.trim()) {
             toast.error(t('serverSchedules.nameRequired'));
@@ -162,8 +166,8 @@ export default function EditSchedulePage() {
     }
 
     return (
-        <div className='mx-auto max-w-4xl space-y-8 pb-16'>
-            <PageHeader
+        <div className='space-y-6 pb-12'>
+            <ServerPageHeader
                 title={t('serverSchedules.editSchedule')}
                 description={t('serverSchedules.editScheduleDescription')}
                 actions={
@@ -207,7 +211,7 @@ export default function EditSchedulePage() {
                                 {t('serverSchedules.name')}
                             </h2>
                             <p className='text-muted-foreground text-[9px] font-bold tracking-widest uppercase opacity-50'>
-                                Basic Info
+                                {t('ui.server.schedules.edit.basicInfo')}
                             </p>
                         </div>
                     </div>
@@ -242,7 +246,7 @@ export default function EditSchedulePage() {
                                     {t('serverSchedules.cronExpression')}
                                 </h2>
                                 <p className='text-muted-foreground text-[9px] font-bold tracking-widest uppercase opacity-50'>
-                                    Schedule Timing
+                                    {t('ui.server.schedules.edit.scheduleTiming')}
                                 </p>
                             </div>
                         </div>
@@ -392,8 +396,11 @@ export default function EditSchedulePage() {
                                 value={String(formData.is_active)}
                                 onChange={(val) => setFormData({ ...formData, is_active: Number(val) })}
                                 options={[
-                                    { id: '1', name: 'Enabled - Schedule will run automatically' },
-                                    { id: '0', name: 'Disabled - Schedule will not run' },
+                                    {
+                                        id: '1',
+                                        name: t('ui.server.schedules.edit.enabledScheduleWillRunAutomatically'),
+                                    },
+                                    { id: '0', name: t('ui.server.schedules.edit.disabledScheduleWillNotRun') },
                                 ]}
                                 disabled={saving}
                                 buttonClassName='h-12 bg-secondary/50 border-border/10 focus:border-primary/50 rounded-xl text-sm font-extrabold transition-all'
@@ -429,6 +436,16 @@ export default function EditSchedulePage() {
                     </Button>
                 </div>
             </form>
+
+            <UnsavedChangesBar
+                dirty={unsaved}
+                saving={saving}
+                onSave={() => void handleUpdate()}
+                onDiscard={() => {
+                    const saved = restoreForm();
+                    if (saved) setFormData(saved);
+                }}
+            />
         </div>
     );
 }

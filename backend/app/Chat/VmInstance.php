@@ -398,7 +398,7 @@ class VmInstance
                 continue;
             }
             if ($key === 'hostname' || $key === 'notes') {
-                $updates[] = $key . ' = :' . $key;
+                $updates[] = '`' . $key . '` = :' . $key;
                 $params[$key] = $data[$key] === null ? null : (is_string($data[$key]) ? trim($data[$key]) : $data[$key]);
                 continue;
             }
@@ -407,7 +407,7 @@ class VmInstance
                 if ($val <= 0) {
                     continue;
                 }
-                $updates[] = $key . ' = :' . $key;
+                $updates[] = '`' . $key . '` = :' . $key;
                 $params[$key] = $val;
                 continue;
             }
@@ -422,7 +422,7 @@ class VmInstance
                 continue;
             }
             if ($key === 'suspension_reason' || $key === 'suspended_by_uuid') {
-                $updates[] = $key . ' = :' . $key;
+                $updates[] = '`' . $key . '` = :' . $key;
                 $params[$key] = $data[$key] === null ? null : (is_string($data[$key]) ? trim($data[$key]) : $data[$key]);
 
                 continue;

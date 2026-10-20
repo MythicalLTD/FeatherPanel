@@ -22,6 +22,7 @@ use App\Chat\Node;
 use App\Cache\Cache;
 use App\Chat\Server;
 use App\Chat\Activity;
+use App\Chat\Database;
 use App\Chat\Location;
 use GuzzleHttp\Client;
 use App\Chat\Allocation;
@@ -38,6 +39,7 @@ use App\Helpers\FeatherWingsConfigBuilder;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use App\Services\Servers\ServerTransferInitiator;
+use App\Services\Wings\Exceptions\WingsConnectionException;
 
 #[OA\Schema(
     schema: 'Node',
@@ -359,7 +361,7 @@ class NodesController
         $logger = App::getInstance(true)->getLogger();
         $admin = $request->attributes->get('user');
         $data = json_decode($request->getContent(), true);
-        if (json_last_error() !== JSON_ERROR_NONE) {
+        if (json_last_error() !== JSON_ERROR_NONE || !is_array($data)) {
             return ApiResponse::error('Invalid JSON in request body', 'INVALID_JSON', 400);
         }
         $requiredFields = ['name', 'fqdn', 'location_id'];
@@ -517,7 +519,7 @@ class NodesController
             return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
         }
         $data = json_decode($request->getContent(), true);
-        if (json_last_error() !== JSON_ERROR_NONE) {
+        if (json_last_error() !== JSON_ERROR_NONE || !is_array($data)) {
             return ApiResponse::error('Invalid JSON in request body', 'INVALID_JSON', 400);
         }
         if (empty($data)) {
@@ -598,6 +600,14 @@ class NodesController
                 );
             }
             unset($data['daemon_type']);
+        }
+
+        $unknownFields = Database::unknownColumns(Node::getTableName(), $data);
+        if ($unknownFields !== []) {
+            return ApiResponse::error('Unknown field(s): ' . implode(', ', $unknownFields), 'UNKNOWN_FIELDS', 400);
+        }
+        if ($data === []) {
+            return ApiResponse::error('No data to update', 'NO_DATA', 400);
         }
 
         $success = Node::updateNodeById($id, $data);
@@ -1250,6 +1260,9 @@ class NodesController
             'install_command' => $commands['install_command'],
             'setup_command' => $commands['setup_command'],
             'config_path_hint' => $commands['config_path_hint'],
+            // Full config.yml with the daemon token, for manual setup. Only
+            // exposed here (the explicit reveal endpoint), never in show().
+            'config_yaml' => $configYaml,
             'daemon_type' => $caps->getType(),
             'daemon_display_name' => $defaults['display_name'],
             'systemd_unit' => $defaults['systemd_unit'],
@@ -1535,7 +1548,7 @@ class NodesController
         }
 
         $data = json_decode($request->getContent(), true);
-        if (json_last_error() !== JSON_ERROR_NONE) {
+        if (json_last_error() !== JSON_ERROR_NONE || !is_array($data)) {
             return ApiResponse::error('Invalid JSON in request body', 'INVALID_JSON', 400);
         }
 
@@ -1657,7 +1670,7 @@ class NodesController
         }
 
         $data = json_decode($request->getContent(), true);
-        if (json_last_error() !== JSON_ERROR_NONE) {
+        if (json_last_error() !== JSON_ERROR_NONE || !is_array($data)) {
             return ApiResponse::error('Invalid JSON in request body', 'INVALID_JSON', 400);
         }
 
@@ -1891,6 +1904,10 @@ class NodesController
                 'github_owner' => $githubOwner,
                 'github_repo' => $githubRepo,
             ], 'Version status retrieved successfully', 200);
+        } catch (WingsConnectionException $e) {
+            App::getInstance(true)->getLogger()->warning('Version check: node ' . $id . ' unreachable: ' . $e->getMessage());
+
+            return ApiResponse::error('Failed to reach the node', 'DAEMON_UNREACHABLE', 502);
         } catch (\Throwable $e) {
             App::getInstance(true)->getLogger()->error('Failed to check version status for node ' . $id . ': ' . $e->getMessage());
 
@@ -2018,7 +2035,7 @@ class NodesController
         }
 
         $data = json_decode($request->getContent(), true);
-        if (json_last_error() !== JSON_ERROR_NONE) {
+        if (json_last_error() !== JSON_ERROR_NONE || !is_array($data)) {
             return ApiResponse::error('Invalid JSON in request body', 'INVALID_JSON', 400);
         }
 

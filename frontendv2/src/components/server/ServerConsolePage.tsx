@@ -20,15 +20,16 @@ import { useParams, useSearchParams } from 'next/navigation';
 import axios from 'axios';
 import { useWingsWebSocket, type CommandSuggestResponse } from '@/hooks/useWingsWebSocket';
 import ServerHeader from '@/components/server/ServerHeader';
-import ServerInfoCards from '@/components/server/ServerInfoCards';
+import { ServerPageHeader } from '@/components/server/ServerPageHeader';
+import ServerConsoleStats from '@/components/server/ServerConsoleStats';
+import ServerAddressChip from '@/components/server/ServerAddressChip';
 import ServerTerminal, { ServerTerminalRef, ConsoleFilterRule } from '@/components/server/ServerTerminal';
-import ServerPerformance from '@/components/server/ServerPerformance';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useServerPermissions } from '@/hooks/useServerPermissions';
-import { AlertTriangle, Wifi, WifiOff, Loader2, Copy } from 'lucide-react';
+import { AlertTriangle, Wifi, WifiOff, Loader2, Copy, TerminalSquare } from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useSession } from '@/contexts/SessionContext';
 import { useSettings } from '@/contexts/SettingsContext';
@@ -44,6 +45,8 @@ import { toast } from 'sonner';
 import { copyToClipboard } from '@/lib/utils';
 import { getApiErrorMessageFromPayload } from '@/lib/api-errors';
 import { resolveServerSpellBannerStyle } from '@/lib/server-spell-banner';
+import { useServerResourceHistory } from '@/lib/resource-history';
+import { ResourceTrendStrip } from '@/components/dashboard/ResourceTrends';
 
 interface WingsStats {
     uptime?: number;
@@ -90,10 +93,11 @@ function replaceLegacyPanelNameInConsoleOutput(text: string, appDisplayName: str
 export default function ServerConsolePage() {
     const { t } = useTranslation();
     const { settings } = useSettings();
-    const consoleAppDisplayName = settings?.app_name?.trim() || 'FeatherPanel';
+    const consoleAppDisplayName = settings?.app_name?.trim() || 'Panel';
     const params = useParams();
     const searchParams = useSearchParams();
     const serverUuid = params.uuidShort as string;
+    const { series: history } = useServerResourceHistory(serverUuid);
     const terminalRef = useRef<ServerTerminalRef>(null);
     const pendingActionResolveRef = useRef<(() => void) | null>(null);
     const hasRequestedLogsRef = useRef(false);
@@ -135,20 +139,24 @@ export default function ServerConsolePage() {
     const [memoryData, setMemoryData] = useState<Array<{ timestamp: number; value: number }>>([]);
     const [diskData, setDiskData] = useState<Array<{ timestamp: number; value: number }>>([]);
     const [networkData, setNetworkData] = useState<Array<{ timestamp: number; value: number }>>([]);
-    const [diskIoData, setDiskIoData] = useState<Array<{ timestamp: number; value: number }>>([]);
+    const [, setDiskIoData] = useState<Array<{ timestamp: number; value: number }>>([]);
     const maxDataPoints = 60;
 
     const [currentCpu, setCurrentCpu] = useState(0);
     const [currentMemory, setCurrentMemory] = useState(0);
     const [currentDisk, setCurrentDisk] = useState(0);
+    // Disk usage is known once either live stats or the resources endpoint reported it. The
+    // daemon only streams stats while the server runs, so an offline server used to show 0.
+    const [diskKnown, setDiskKnown] = useState(false);
+    const lastLiveDiskAtRef = useRef(0);
     const [currentNetworkRx, setCurrentNetworkRx] = useState(0);
     const [currentNetworkTx, setCurrentNetworkTx] = useState(0);
     const [networkRxTotal, setNetworkRxTotal] = useState(0);
     const [networkTxTotal, setNetworkTxTotal] = useState(0);
-    const [currentDiskIoRead, setCurrentDiskIoRead] = useState(0);
-    const [currentDiskIoWrite, setCurrentDiskIoWrite] = useState(0);
-    const [diskIoReadTotal, setDiskIoReadTotal] = useState(0);
-    const [diskIoWriteTotal, setDiskIoWriteTotal] = useState(0);
+    const [, setCurrentDiskIoRead] = useState(0);
+    const [, setCurrentDiskIoWrite] = useState(0);
+    const [, setDiskIoReadTotal] = useState(0);
+    const [, setDiskIoWriteTotal] = useState(0);
 
     const [consoleFilters, setConsoleFilters] = useState<ConsoleFilterRule[]>([]);
     const hasLoadedFilters = useRef(false);
@@ -194,6 +202,37 @@ export default function ServerConsolePage() {
     const canConnect = hasPermission('websocket.connect');
     const isServerSuspended = server?.suspended === 1 || server?.status === 'suspended';
     const shouldConnectToWings = canConnect && !isServerSuspended;
+
+    // Disk usage for stopped servers (no live stats): ask the daemon directly, then every minute
+    // while live stats are not flowing.
+    useEffect(() => {
+        if (!shouldConnectToWings || !serverUuid) return;
+        let cancelled = false;
+        const load = async () => {
+            if (Date.now() - lastLiveDiskAtRef.current < 60_000) return;
+            try {
+                const { data } = await axios.get<{
+                    success: boolean;
+                    data: { disk_bytes: number | null };
+                }>(`/api/user/servers/${serverUuid}/resources`);
+                if (cancelled || !data.success || data.data.disk_bytes == null) return;
+                if (Date.now() - lastLiveDiskAtRef.current < 60_000) return;
+                const diskMiB = Number(data.data.disk_bytes) / (1024 * 1024);
+                setCurrentDisk(diskMiB);
+                setDiskKnown(true);
+                // The performance chart reads its current value from the history, so feed it too.
+                setDiskData((prev) => [...prev, { timestamp: Date.now(), value: diskMiB }].slice(-maxDataPoints));
+            } catch {
+                // Node unreachable: keep the pending state.
+            }
+        };
+        void load();
+        const timer = window.setInterval(() => void load(), 60_000);
+        return () => {
+            cancelled = true;
+            window.clearInterval(timer);
+        };
+    }, [shouldConnectToWings, serverUuid, maxDataPoints]);
 
     const { fetchWidgets, getWidgets } = usePluginWidgets('server-console');
 
@@ -331,7 +370,9 @@ export default function ServerConsolePage() {
 
             if (stats.disk_bytes !== undefined && stats.disk_bytes !== null) {
                 const diskMiB = Number(stats.disk_bytes) / (1024 * 1024);
+                lastLiveDiskAtRef.current = Date.now();
                 setCurrentDisk(diskMiB);
+                setDiskKnown(true);
                 setDiskData((prev) => {
                     const newData = [...prev, { timestamp, value: diskMiB }];
                     return newData.slice(-maxDataPoints);
@@ -439,7 +480,7 @@ export default function ServerConsolePage() {
         terminalRef.current?.applyCommandSuggestions(response);
     }, []);
 
-    const { connectionStatus, ping, sendCommand, suggestCommand, sendPowerAction, requestStats, requestLogs } =
+    const { connectionStatus, sendCommand, suggestCommand, sendPowerAction, requestStats, requestLogs } =
         useWingsWebSocket({
             serverUuid,
             connect: shouldConnectToWings,
@@ -522,7 +563,7 @@ export default function ServerConsolePage() {
                 const confirmCtx = await pluginActionHooks.run(FP_ACTIONS.UI_CONFIRM, {
                     kind: 'server-kill',
                     uuid: serverUuid,
-                    message: 'Kill server?',
+                    message: t('ui.components.server.serverConsolePage.killServer'),
                 });
                 if (confirmCtx.cancelled) {
                     return;
@@ -688,6 +729,10 @@ export default function ServerConsolePage() {
     }
 
     const connectionInfo = getConnectionStatusInfo();
+    const serverHost =
+        server.subdomain && server.subdomain.domain && server.subdomain.subdomain
+            ? `${server.subdomain.subdomain}.${server.subdomain.domain}`
+            : server.allocation?.ip_alias || server.allocation?.ip || '';
 
     if (isPopout) {
         return (
@@ -728,15 +773,32 @@ export default function ServerConsolePage() {
     }
 
     return (
-        <div className='space-y-4 pb-8'>
+        <div className='space-y-6 pb-12'>
             <WidgetRenderer widgets={getWidgets('server-console', 'top-of-page')} />
+
+            <ServerPageHeader
+                title={t('servers.console.terminal.title')}
+                description={t('servers.console.page_description')}
+                icon={TerminalSquare}
+                actions={
+                    serverHost ? (
+                        <ServerAddressChip
+                            host={serverHost}
+                            port={server.allocation?.port || null}
+                            showVisibilityToggle
+                        />
+                    ) : undefined
+                }
+            />
 
             <ServerHeader
                 serverName={server.name}
+                description={server.description}
                 serverStatus={serverStatus}
-                serverUuid={server.uuid}
-                serverUuidShort={server.uuidShort}
-                nodeLocation={server.location?.name || server.node?.name}
+                address={serverHost}
+                port={server.allocation?.port || null}
+                uptime={connectionStatus === 'connected' && serverStatus === 'running' ? wingsUptime : undefined}
+                nodeLocation={server.location?.name}
                 nodeLocationFlag={server.location?.flag_code}
                 nodeName={server.node?.name}
                 bannerUrl={server.spell?.banner}
@@ -751,6 +813,17 @@ export default function ServerConsolePage() {
                 onStop={() => handlePowerAction('stop')}
                 onRestart={() => handlePowerAction('restart')}
                 onKill={() => handlePowerAction('kill')}
+                trend={
+                    history ? (
+                        <ResourceTrendStrip
+                            cpu={history.cpu}
+                            memory={history.memory}
+                            cpuLimit={server.cpu || 0}
+                            memoryLimit={(server.memory || 0) * 1024 * 1024}
+                            size='header'
+                        />
+                    ) : null
+                }
             />
 
             <PluginSlot id='toolbar.server-header' showActions className='w-full' />
@@ -758,8 +831,8 @@ export default function ServerConsolePage() {
 
             <WidgetRenderer widgets={getWidgets('server-console', 'after-header')} />
 
-            <div className='grid grid-cols-1 items-stretch gap-4 xl:grid-cols-12 xl:gap-5 2xl:gap-6'>
-                <div className='flex h-full min-h-0 min-w-0 flex-col gap-4 xl:col-span-9'>
+            <div className='grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_18rem] 2xl:grid-cols-[minmax(0,1fr)_20rem]'>
+                <div className='flex min-w-0 flex-col gap-4'>
                     {/* Disconnected/error cable message lives in ServerNodeConnectionBanner (layout). */}
                     {shouldConnectToWings && connectionStatus === 'connecting' && (
                         <Card className={`border-2 ${connectionInfo.bgColor}`}>
@@ -823,7 +896,9 @@ export default function ServerConsolePage() {
                     )}
 
                     {shouldConnectToWings && (
-                        <div className='flex min-h-0 flex-1 flex-col'>
+                        // Desktop: the console grows to the bottom of the stats column next to it (at least
+                        // the viewport); phones and tablets keep a fixed, scrollable height.
+                        <div className='flex h-[min(70dvh,40rem)] min-h-[22rem] flex-col xl:h-auto xl:min-h-[max(32rem,calc(100dvh-22rem))] xl:flex-1'>
                             <ServerTerminal
                                 ref={terminalRef}
                                 onSendCommand={sendCommand}
@@ -832,6 +907,7 @@ export default function ServerConsolePage() {
                                 serverStatus={serverStatus}
                                 filters={consoleFilters}
                                 onFiltersChange={setConsoleFilters}
+                                fillContainer
                                 onUploadLogs={
                                     canConnect && hasPermission('activity.read') ? handleUploadLogs : undefined
                                 }
@@ -842,62 +918,37 @@ export default function ServerConsolePage() {
                     <WidgetRenderer widgets={getWidgets('server-console', 'after-terminal')} />
                 </div>
 
-                <div className='min-w-0 space-y-4 xl:col-span-3'>
-                    <PlayerStatusWidget uuidShort={serverUuid} />
-
+                {/* Desktop: the stat cards share out the column height, so they end level with the console. */}
+                <div className='flex min-w-0 flex-col gap-4'>
                     {shouldConnectToWings && (
-                        <ServerInfoCards
-                            serverIp={
-                                server.subdomain && server.subdomain.domain && server.subdomain.subdomain
-                                    ? `${server.subdomain.subdomain}.${server.subdomain.domain}`
-                                    : server.allocation?.ip_alias || server.allocation?.ip || ''
-                            }
-                            serverPort={server.allocation?.port || 0}
-                            cpuLimit={server.cpu || 0}
-                            memoryLimit={server.memory || 0}
-                            diskLimit={server.disk || 0}
-                            wingsUptime={wingsUptime}
-                            ping={ping}
+                        <ServerConsoleStats
+                            className='xl:flex-1 xl:auto-rows-fr'
                             statsReady={connectionStatus === 'connected'}
+                            diskReady={diskKnown || connectionStatus === 'connected'}
                             cpuUsage={currentCpu}
                             memoryUsage={currentMemory}
                             diskUsage={currentDisk}
+                            cpuLimit={server.cpu || 0}
+                            memoryLimit={server.memory || 0}
+                            diskLimit={server.disk || 0}
                             networkRx={currentNetworkRx}
                             networkTx={currentNetworkTx}
                             networkRxTotal={networkRxTotal}
                             networkTxTotal={networkTxTotal}
-                            diskIoRead={currentDiskIoRead}
-                            diskIoWrite={currentDiskIoWrite}
-                            diskIoReadTotal={diskIoReadTotal}
-                            diskIoWriteTotal={diskIoWriteTotal}
-                            className='xl:grid-cols-1'
+                            cpuData={cpuData}
+                            memoryData={memoryData}
+                            diskData={diskData}
+                            networkData={networkData}
                         />
                     )}
+
+                    <PlayerStatusWidget uuidShort={serverUuid} />
 
                     <WidgetRenderer widgets={getWidgets('server-console', 'under-server-info-cards')} />
                 </div>
             </div>
 
             <WidgetRenderer widgets={getWidgets('server-console', 'before-performance')} />
-
-            {server && shouldConnectToWings && (
-                <ServerPerformance
-                    cpuData={cpuData}
-                    memoryData={memoryData}
-                    diskData={diskData}
-                    networkData={networkData}
-                    diskIoData={diskIoData}
-                    networkRxTotal={networkRxTotal}
-                    networkTxTotal={networkTxTotal}
-                    diskIoReadTotal={diskIoReadTotal}
-                    diskIoWriteTotal={diskIoWriteTotal}
-                    cpuLimit={server.cpu || 0}
-                    memoryLimit={server.memory || 0}
-                    diskLimit={server.disk || 0}
-                />
-            )}
-
-            <WidgetRenderer widgets={getWidgets('server-console', 'after-performance')} />
             <WidgetRenderer widgets={getWidgets('server-console', 'after-performance')} />
 
             <WidgetRenderer widgets={getWidgets('server-console', 'bottom-of-page')} />

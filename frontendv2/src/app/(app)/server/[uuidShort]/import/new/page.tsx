@@ -41,7 +41,7 @@ import { cn, isEnabled } from '@/lib/utils';
 import { supportsDaemonFeature } from '@/lib/daemonCapabilities';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
-import { PageHeader } from '@/components/featherui/PageHeader';
+import { ServerPageHeader } from '@/components/server/ServerPageHeader';
 import { EmptyState } from '@/components/featherui/EmptyState';
 import { FormSection } from '@/components/featherui/FormSection';
 import { safeBack } from '@/lib/safe-back';
@@ -178,10 +178,10 @@ export default function CreateServerImportPage() {
     }
 
     return (
-        <div className='space-y-8 pb-16'>
+        <div className='space-y-6 pb-12'>
             <WidgetRenderer widgets={getWidgets('server-import-new', 'top-of-page')} />
 
-            <PageHeader
+            <ServerPageHeader
                 title={t('serverImport.createImport')}
                 description={t('serverImport.drawerDescription')}
                 actions={
@@ -249,8 +249,8 @@ export default function CreateServerImportPage() {
                                             }));
                                         }}
                                         options={[
-                                            { id: 'sftp', name: 'SFTP (Secure / SSH)' },
-                                            { id: 'ftp', name: 'FTP (Standard)' },
+                                            { id: 'sftp', name: t('ui.server.import.new.sFTPSecureSSH') },
+                                            { id: 'ftp', name: t('ui.server.import.new.fTPStandard') },
                                         ]}
                                         disabled={saving}
                                         buttonClassName='h-12 bg-secondary/50 border-border/10 focus:border-primary/50 rounded-xl text-sm font-extrabold transition-all w-full'
@@ -445,7 +445,7 @@ export default function CreateServerImportPage() {
                                     {t('serverImport.options')}
                                 </h2>
                                 <p className='text-muted-foreground text-[9px] font-bold tracking-widest uppercase italic opacity-50'>
-                                    Configuration
+                                    {t('ui.server.import.new.configuration')}
                                 </p>
                             </div>
                         </div>

@@ -18,6 +18,8 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import { usePathname } from 'next/navigation';
 import DashboardShell from '@/components/layout/DashboardShell';
 import ChatbotWidget from '@/components/ai/ChatbotWidget';
+import { Suspense } from 'react';
+import { OnboardingTour } from '@/components/onboarding/OnboardingTour';
 
 export default function DashboardChrome({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
@@ -32,6 +34,9 @@ export default function DashboardChrome({ children }: { children: React.ReactNod
         <>
             <DashboardShell>{children}</DashboardShell>
             <ChatbotWidget />
+            <Suspense fallback={null}>
+                <OnboardingTour />
+            </Suspense>
         </>
     );
 }

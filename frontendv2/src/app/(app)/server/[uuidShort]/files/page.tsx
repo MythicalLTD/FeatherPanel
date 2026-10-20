@@ -20,10 +20,18 @@ import { useRouter } from 'next/navigation';
 import { useFileManager } from '@/hooks/useFileManager';
 import { useServerPermissions } from '@/hooks/useServerPermissions';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
-import { PageHeader } from '@/components/featherui/PageHeader';
+import { ServerPageHeader } from '@/components/server/ServerPageHeader';
+import { ServerPageTips } from '@/components/server/ServerPageTips';
 import { FileActionToolbar } from './components/FileActionToolbar';
 import { FileBreadcrumbs } from './components/FileBreadcrumbs';
 import { FileList } from './components/FileList';
+import { FileListControls } from './components/FileListControls';
+import { FileTransferDialog } from './components/FileTransferDialog';
+import { FileTransfersPanel } from './components/FileTransfersPanel';
+import { FileInfoSheet } from './components/FileInfoSheet';
+import { FileQuickAccess, FileQuickAccessPanel } from './components/FileQuickAccess';
+import { PanelRightOpen } from 'lucide-react';
+import { useFilesViewPrefs, useFilesQuickAccess, sortAndFilterFiles } from '@/lib/files-view-prefs';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import {
     CreateFolderDialog,
@@ -236,6 +244,9 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
     const [moveCopyOpen, setMoveCopyOpen] = useState(false);
     const [permissionsOpen, setPermissionsOpen] = useState(false);
     const [compressOpen, setCompressOpen] = useState(false);
+    const [transferOpen, setTransferOpen] = useState(false);
+    const [infoFile, setInfoFile] = useState<FileObject | null>(null);
+    const [transferKey, setTransferKey] = useState(0);
     const [fileHashOpen, setFileHashOpen] = useState(false);
     const [archiveBrowseOpen, setArchiveBrowseOpen] = useState(false);
     const [calagopusOpen, setCalagopusOpen] = useState(false);
@@ -304,7 +315,12 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
         void refreshTrashStats();
     }, [refreshTrashStats]);
 
-    const baseFiles = searchResults ?? files;
+    const { prefs: viewPrefs, update: updateViewPrefs } = useFilesViewPrefs();
+    const quickAccess = useFilesQuickAccess(uuidShort);
+    const baseFiles = useMemo(
+        () => sortAndFilterFiles(searchResults ?? files, viewPrefs),
+        [searchResults, files, viewPrefs],
+    );
     const visibleFiles = useMemo(() => {
         if (!trashEnabled || searchResults !== null) return baseFiles;
         return [createTrashFolderEntry(trashStats ?? undefined), ...baseFiles];
@@ -673,6 +689,12 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
         }
 
         switch (action) {
+            case 'info':
+                setInfoFile(file);
+                return;
+            case 'duplicate':
+                void handleDuplicate(file);
+                return;
             case 'edit':
                 {
                     const editPath = `/server/${uuidShort}/files/edit?file=${encodeURIComponent(
@@ -755,6 +777,39 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
             setActionFile(null);
         } catch (error) {
             toast.error(getApiErrorMessage(error, t, 'files.messages.failed_download_directory'), { id: toastId });
+        }
+    };
+
+    const handleDownloadSelected = async () => {
+        const entries = visibleFiles.filter((f) => selectedFiles.includes(f.name) && !isTrashShortcut(f));
+        const folders = entries.filter((f) => !f.isFile);
+        if (folders.length > 0 && !directoryDownloadEnabled) {
+            toast.info(t('files.messages.download_selected_files_only'));
+        }
+        for (const entry of entries) {
+            if (entry.isFile) {
+                await handleDownload(entry.name);
+            } else if (directoryDownloadEnabled) {
+                await handleDownloadDirectory(entry.name);
+            }
+            await new Promise((r) => setTimeout(r, 300));
+        }
+    };
+
+    const handleDuplicate = async (file: FileObject) => {
+        const names = new Set(visibleFiles.map((f) => f.name));
+        const dot = file.isFile ? file.name.lastIndexOf('.') : -1;
+        const base = dot > 0 ? file.name.slice(0, dot) : file.name;
+        const ext = dot > 0 ? file.name.slice(dot) : '';
+        let candidate = `${base} copy${ext}`;
+        for (let n = 2; names.has(candidate); n++) candidate = `${base} copy ${n}${ext}`;
+        const toastId = toast.loading(t('files.messages.duplicating'));
+        try {
+            await filesApi.copyFile(uuidShort, currentDirectory || '/', file.name, candidate);
+            toast.success(t('files.messages.duplicated', { name: candidate }), { id: toastId });
+            refresh();
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'files.messages.duplicate_failed'), { id: toastId });
         }
     };
 
@@ -1272,16 +1327,16 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
     }, [currentDirectory, addToUploadQueueFromDrop]);
 
     return (
-        <div className='relative flex min-h-screen flex-col gap-6 pb-20'>
+        <div className='relative flex flex-col gap-6 pb-12'>
             <WidgetRenderer widgets={getWidgets('server-files', 'top-of-page')} />
-            <PageHeader
+            <ServerPageHeader
                 title={t('files.title')}
                 description={t('files.manage_description', { directory: currentDirectory || '/' })}
             />
             <WidgetRenderer widgets={getWidgets('server-files', 'after-header')} />
 
             <div className='flex flex-col gap-4'>
-                <div className='flex flex-col gap-4 rounded-xl border border-black/5 bg-white/80 p-4 backdrop-blur-xl sm:flex-row sm:items-center sm:justify-between dark:border-white/10 dark:bg-white/5'>
+                <div className='fp-surface flex flex-col gap-4 rounded-xl border p-4 sm:flex-row sm:items-center sm:justify-between'>
                     <FileBreadcrumbs
                         currentDirectory={currentDirectory || '/'}
                         onNavigate={navigate}
@@ -1290,6 +1345,13 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                         onDropFilesToPath={canUpdate || canArchive ? handleDropOnPath : undefined}
                         onToggleFilters={fileSearchEnabled ? () => setSearchFiltersOpen(true) : undefined}
                         activeFiltersCount={activeAdvancedFiltersCount}
+                        listFolders={async (path) => {
+                            const res = await filesApi.getFiles(uuidShort, path);
+                            return res.contents
+                                .filter((f) => !f.isFile)
+                                .map((f) => f.name)
+                                .sort((a, b) => a.localeCompare(b));
+                        }}
                     />
                 </div>
                 <WidgetRenderer widgets={getWidgets('server-files', 'after-search-bar')} />
@@ -1327,6 +1389,8 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                                 setDeleteOpen(true);
                             }}
                             onArchiveSelected={() => handleCompress(selectedFiles)}
+                            onDownloadSelected={canRead ? handleDownloadSelected : undefined}
+                            onTransferSelected={canRead && canArchive ? () => setTransferOpen(true) : undefined}
                             onClearSelection={() => setSelectedFiles([])}
                             onPullFile={() => setPullFileOpen(true)}
                             onWipeAll={() => setWipeAllOpen(true)}
@@ -1360,7 +1424,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                         {uploadQueue.length > 0 && (
                             <div className='animate-in slide-in-from-top-4 mb-6 grid grid-cols-1 gap-4 duration-500 md:grid-cols-2 lg:grid-cols-3'>
                                 <div className='flex items-center justify-between md:col-span-2 lg:col-span-3'>
-                                    <span className='text-primary/80 text-xs font-bold tracking-widest uppercase'>
+                                    <span className='text-primary/80 text-xs font-bold'>
                                         {uploadQueue.length === 1
                                             ? t('files.toolbar.upload')
                                             : t('files.messages.uploading_files_progress', {
@@ -1438,7 +1502,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                                                     </div>
                                                     {!allDone && !hasError && (
                                                         <div className='space-y-1.5'>
-                                                            <div className='flex justify-between text-[10px] font-bold tracking-tighter text-white/40 uppercase'>
+                                                            <div className='text-muted-foreground flex justify-between text-[10px] font-bold'>
                                                                 <span>
                                                                     {t('files.messages.uploading_folder_progress', {
                                                                         current: String(currentLabel),
@@ -1447,7 +1511,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                                                                 </span>
                                                                 <span className='text-primary'>{batchProgress}%</span>
                                                             </div>
-                                                            <div className='h-1.5 w-full overflow-hidden rounded-full border border-white/5 bg-white/5'>
+                                                            <div className='border-border/50 bg-muted/40 h-1.5 w-full overflow-hidden rounded-full border'>
                                                                 <div
                                                                     className='from-primary to-primary-foreground h-full bg-linear-to-r transition-all duration-300'
                                                                     style={{ width: `${batchProgress}%` }}
@@ -1514,15 +1578,17 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                                                 </div>
                                                 {(item.status === 'uploading' || item.status === 'pending') && (
                                                     <div className='space-y-1.5'>
-                                                        <div className='flex justify-between text-[10px] font-bold tracking-tighter text-white/40 uppercase'>
+                                                        <div className='text-muted-foreground flex justify-between text-[10px] font-bold'>
                                                             <span>
                                                                 {item.status === 'uploading'
-                                                                    ? t('files.messages.uploading', { file: '' })
+                                                                    ? t('files.messages.uploading', {
+                                                                          file: item.file.name,
+                                                                      })
                                                                     : t('files.toolbar.upload')}
                                                             </span>
                                                             <span className='text-primary'>{item.progress}%</span>
                                                         </div>
-                                                        <div className='h-1.5 w-full overflow-hidden rounded-full border border-white/5 bg-white/5'>
+                                                        <div className='border-border/50 bg-muted/40 h-1.5 w-full overflow-hidden rounded-full border'>
                                                             <div
                                                                 className='from-primary to-primary-foreground h-full bg-linear-to-r transition-all duration-300'
                                                                 style={{ width: `${item.progress}%` }}
@@ -1561,7 +1627,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                                                     <div className='bg-primary/20 text-primary flex h-8 w-8 items-center justify-center rounded-lg'>
                                                         <Download className='h-4 w-4 animate-bounce' />
                                                     </div>
-                                                    <span className='text-primary/80 text-xs font-bold tracking-widest uppercase'>
+                                                    <span className='text-primary/80 text-xs font-bold'>
                                                         {t('files.messages.active_pull')}
                                                     </span>
                                                 </div>
@@ -1578,7 +1644,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                                                 </Button>
                                             </div>
                                             <div className='space-y-1.5'>
-                                                <div className='flex justify-between text-[10px] font-bold tracking-tighter text-white/40 uppercase'>
+                                                <div className='text-muted-foreground flex justify-between text-[10px] font-bold'>
                                                     <span>
                                                         {t('files.messages.task_id', {
                                                             id: pull.Identifier.slice(0, 8),
@@ -1587,7 +1653,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                                                     </span>
                                                     <span className='text-primary'>{pull.Progress}%</span>
                                                 </div>
-                                                <div className='h-1.5 w-full overflow-hidden rounded-full border border-white/5 bg-white/5'>
+                                                <div className='border-border/50 bg-muted/40 h-1.5 w-full overflow-hidden rounded-full border'>
                                                     <div
                                                         className='from-primary to-primary-foreground h-full bg-linear-to-r transition-all duration-500'
                                                         style={{ width: `${pull.Progress}%` }}
@@ -1637,37 +1703,105 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                             }}
                         />
 
-                        <FileList
-                            files={visibleFiles}
-                            loading={loading || searchLoading}
-                            selectedFiles={selectedFiles}
-                            onSelect={handleSelectToggle}
-                            onSelectAll={handleSelectAllToggle}
-                            onModifierClick={handleModifierClick}
-                            anchorName={anchorName}
-                            isSearching={Boolean(searchQuery.trim()) || searchResults !== null}
-                            onNavigate={(name) => {
-                                if (name === FEATHER_TRASH_DIR) {
-                                    router.push(`/server/${uuidShort}/files/trash`);
-                                    return;
-                                }
-                                navigateAndCloseArchive(resolveDirectoryTarget(currentDirectory || '/', name));
-                            }}
-                            onAction={handleAction}
-                            onRowDragStart={canUpdate ? handleRowDragStart : undefined}
-                            onRowDragEnd={canUpdate ? handleRowDragEnd : undefined}
-                            onDropFiles={canUpdate || canArchive ? handleDropOnFolder : undefined}
-                            draggingFileNames={draggingFileNames}
-                            canEdit={canUpdate}
-                            canDelete={canDelete}
-                            canDownload={canRead}
-                            acceptArchiveExtract={canArchive && archiveBrowseEnabled}
-                            canShare={shareEnabled}
-                            canBrowseArchiveFeature={archiveBrowseEnabled}
-                            canDownloadDirectory={directoryDownloadEnabled}
-                            serverUuid={uuidShort}
-                            currentDirectory={currentDirectory || '/'}
-                        />
+                        <div className='flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between'>
+                            <div className='lg:hidden'>
+                                <FileQuickAccess
+                                    currentDirectory={currentDirectory || '/'}
+                                    pins={quickAccess.pins}
+                                    recent={quickAccess.recent}
+                                    onTogglePin={quickAccess.togglePin}
+                                    onClearRecent={quickAccess.clearRecent}
+                                    onNavigate={(path) => navigateAndCloseArchive(path)}
+                                />
+                            </div>
+                            <div className='flex flex-wrap items-center gap-2 lg:ml-auto'>
+                                <FileListControls prefs={viewPrefs} onChange={updateViewPrefs} />
+                                {!viewPrefs.sidePanel && (
+                                    <button
+                                        type='button'
+                                        onClick={() => updateViewPrefs({ sidePanel: true })}
+                                        className='fp-surface-inset text-muted-foreground hover:text-foreground hidden h-9 items-center gap-1.5 rounded-xl border px-2.5 text-xs lg:inline-flex'
+                                        title={t('files.quick.expand')}
+                                    >
+                                        <PanelRightOpen className='h-3.5 w-3.5' />
+                                        {t('files.quick.title')}
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+
+                        <FileTransfersPanel serverUuid={uuidShort} refreshKey={transferKey} onCompleted={refresh} />
+
+                        <div className='flex items-start gap-4'>
+                            <div className='min-w-0 flex-1'>
+                                <FileList
+                                    view={viewPrefs.view}
+                                    emptyActions={
+                                        canCreate ? (
+                                            <>
+                                                <Button onClick={() => fileInputRef.current?.click()} className='gap-2'>
+                                                    <Upload className='h-4 w-4' />
+                                                    {t('files.list.empty_upload')}
+                                                </Button>
+                                                <Button variant='outline' onClick={() => setCreateFileOpen(true)}>
+                                                    {t('files.toolbar.new_file')}
+                                                </Button>
+                                                <Button variant='outline' onClick={() => setCreateFolderOpen(true)}>
+                                                    {t('files.toolbar.new_folder')}
+                                                </Button>
+                                            </>
+                                        ) : undefined
+                                    }
+                                    files={visibleFiles}
+                                    loading={loading || searchLoading}
+                                    selectedFiles={selectedFiles}
+                                    onSelect={handleSelectToggle}
+                                    onSelectAll={handleSelectAllToggle}
+                                    onModifierClick={handleModifierClick}
+                                    anchorName={anchorName}
+                                    isSearching={Boolean(searchQuery.trim()) || searchResults !== null}
+                                    onNavigate={(name) => {
+                                        if (name === FEATHER_TRASH_DIR) {
+                                            router.push(`/server/${uuidShort}/files/trash`);
+                                            return;
+                                        }
+                                        navigateAndCloseArchive(resolveDirectoryTarget(currentDirectory || '/', name));
+                                    }}
+                                    onAction={(action, file) => {
+                                        if (file.isFile && (action === 'edit' || action === 'preview')) {
+                                            quickAccess.addRecent(joinPath(currentDirectory || '/', file.name));
+                                        }
+                                        handleAction(action, file);
+                                    }}
+                                    onRowDragStart={canUpdate ? handleRowDragStart : undefined}
+                                    onRowDragEnd={canUpdate ? handleRowDragEnd : undefined}
+                                    onDropFiles={canUpdate || canArchive ? handleDropOnFolder : undefined}
+                                    draggingFileNames={draggingFileNames}
+                                    canEdit={canUpdate}
+                                    canDelete={canDelete}
+                                    canDownload={canRead}
+                                    acceptArchiveExtract={canArchive && archiveBrowseEnabled}
+                                    canShare={shareEnabled}
+                                    canBrowseArchiveFeature={archiveBrowseEnabled}
+                                    canDownloadDirectory={directoryDownloadEnabled}
+                                    serverUuid={uuidShort}
+                                    currentDirectory={currentDirectory || '/'}
+                                />
+                            </div>
+                            {viewPrefs.sidePanel && (
+                                <div className='hidden lg:block'>
+                                    <FileQuickAccessPanel
+                                        currentDirectory={currentDirectory || '/'}
+                                        pins={quickAccess.pins}
+                                        recent={quickAccess.recent}
+                                        onTogglePin={quickAccess.togglePin}
+                                        onClearRecent={quickAccess.clearRecent}
+                                        onNavigate={(path) => navigateAndCloseArchive(path)}
+                                        onCollapse={() => updateViewPrefs({ sidePanel: false })}
+                                    />
+                                </div>
+                            )}
+                        </div>
 
                         <WidgetRenderer widgets={getWidgets('server-files', 'after-files-list')} />
                     </>
@@ -1791,6 +1925,28 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                     setSelectedFiles([]);
                 }}
             />
+            <FileInfoSheet
+                file={infoFile}
+                directory={currentDirectory || '/'}
+                open={infoFile !== null}
+                onOpenChange={(open) => !open && setInfoFile(null)}
+                onChecksum={(file) => {
+                    setInfoFile(null);
+                    handleAction('hash', file);
+                }}
+            />
+            <FileTransferDialog
+                open={transferOpen}
+                onOpenChange={setTransferOpen}
+                serverUuid={uuidShort}
+                directory={currentDirectory || '/'}
+                files={selectedFiles}
+                canMove={canDelete}
+                onStarted={() => {
+                    setTransferKey((k) => k + 1);
+                    setSelectedFiles([]);
+                }}
+            />
             <CompressDialog
                 open={compressOpen}
                 onOpenChange={setCompressOpen}
@@ -1820,7 +1976,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                         <div className='space-y-1'>
                             <label className='text-sm font-semibold'>{t('files.search.advanced.include_label')}</label>
                             <input
-                                className='w-full rounded-md border border-white/10 bg-black/10 px-3 py-2 text-sm'
+                                className='bg-background/50 w-full rounded-md border border-[var(--fp-surface-border)] px-3 py-2 text-sm'
                                 placeholder={t('files.search.advanced.include_placeholder')}
                                 value={includePattern}
                                 onChange={(e) => setIncludePattern(e.target.value)}
@@ -1830,7 +1986,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                         <div className='space-y-1'>
                             <label className='text-sm font-semibold'>{t('files.search.advanced.exclude_label')}</label>
                             <input
-                                className='w-full rounded-md border border-white/10 bg-black/10 px-3 py-2 text-sm'
+                                className='bg-background/50 w-full rounded-md border border-[var(--fp-surface-border)] px-3 py-2 text-sm'
                                 placeholder={t('files.search.advanced.exclude_placeholder')}
                                 value={excludePattern}
                                 onChange={(e) => setExcludePattern(e.target.value)}
@@ -1842,7 +1998,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                                 {t('files.search.advanced.search_text_label')}
                             </label>
                             <input
-                                className='w-full rounded-md border border-white/10 bg-black/10 px-3 py-2 text-sm'
+                                className='bg-background/50 w-full rounded-md border border-[var(--fp-surface-border)] px-3 py-2 text-sm'
                                 placeholder={t('files.search.advanced.search_text_placeholder')}
                                 value={contentQuery}
                                 onChange={(e) => setContentQuery(e.target.value)}
@@ -1856,7 +2012,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                                 {t('files.search.advanced.max_file_size_label')}
                             </label>
                             <input
-                                className='w-full rounded-md border border-white/10 bg-black/10 px-3 py-2 text-sm'
+                                className='bg-background/50 w-full rounded-md border border-[var(--fp-surface-border)] px-3 py-2 text-sm'
                                 type='number'
                                 min={0}
                                 placeholder={t('files.search.advanced.max_file_size')}
@@ -1873,7 +2029,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                             </label>
                             <div className='grid grid-cols-2 gap-2'>
                                 <input
-                                    className='w-full rounded-md border border-white/10 bg-black/10 px-3 py-2 text-sm'
+                                    className='bg-background/50 w-full rounded-md border border-[var(--fp-surface-border)] px-3 py-2 text-sm'
                                     type='number'
                                     min={0}
                                     placeholder={t('files.search.advanced.minimum_placeholder')}
@@ -1881,7 +2037,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                                     onChange={(e) => setMinSizeBytes(Number(e.target.value || 0))}
                                 />
                                 <input
-                                    className='w-full rounded-md border border-white/10 bg-black/10 px-3 py-2 text-sm'
+                                    className='bg-background/50 w-full rounded-md border border-[var(--fp-surface-border)] px-3 py-2 text-sm'
                                     type='number'
                                     min={0}
                                     placeholder={t('files.search.advanced.maximum_placeholder')}
@@ -1933,6 +2089,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                 </DialogContent>
             </Dialog>
             <WidgetRenderer widgets={getWidgets('server-files', 'bottom-of-page')} />
+            <ServerPageTips page='files' />
         </div>
     );
 }

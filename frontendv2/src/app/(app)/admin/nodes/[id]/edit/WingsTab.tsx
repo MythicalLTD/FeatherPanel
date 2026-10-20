@@ -22,6 +22,7 @@ import { Button } from '@/components/featherui/Button';
 import { Shield, Copy, RefreshCw, Terminal } from 'lucide-react';
 import axios from 'axios';
 import { copyToClipboard } from '@/lib/utils';
+import { Sensitive } from '@/components/common/Sensitive';
 
 interface WingsTabProps {
     nodeId: string;
@@ -40,6 +41,7 @@ interface SetupCommandData {
     daemon_display_name?: string;
     systemd_unit?: string;
     join_data?: string;
+    config_yaml?: string;
 }
 
 interface CommandBlockProps {
@@ -51,13 +53,13 @@ interface CommandBlockProps {
 
 function CommandBlock({ command, copyLabel, onCopy, preClassName }: CommandBlockProps) {
     return (
-        <div className='overflow-hidden rounded-xl border border-zinc-800 bg-zinc-950'>
-            <div className='flex justify-end border-b border-zinc-800 bg-zinc-900 px-3 py-2'>
+        <div className='overflow-hidden rounded-xl border border-[var(--fp-surface-border)] bg-zinc-950'>
+            <div className='flex justify-end border-b border-[var(--fp-surface-border)] bg-zinc-900 px-3 py-2'>
                 <Button
                     type='button'
                     variant='plain'
                     size='sm'
-                    className='border border-zinc-600 bg-zinc-800 text-zinc-100 hover:border-zinc-500 hover:bg-zinc-700 hover:text-white'
+                    className='border border-[var(--fp-surface-border)] bg-zinc-800 text-zinc-100 hover:border-[var(--fp-surface-border)] hover:bg-zinc-700 hover:text-white'
                     onClick={onCopy}
                 >
                     <Copy className='mr-2 h-4 w-4 shrink-0' />
@@ -69,7 +71,7 @@ function CommandBlock({ command, copyLabel, onCopy, preClassName }: CommandBlock
                     preClassName ?? 'overflow-x-auto p-4 font-mono text-xs break-all whitespace-pre-wrap text-zinc-300'
                 }
             >
-                {command}
+                <Sensitive>{command}</Sensitive>
             </pre>
         </div>
     );
@@ -79,6 +81,11 @@ export function WingsTab({ nodeId, wingsConfigYaml, handleResetKey, resetting }:
     const { t } = useTranslation();
     const [setupData, setSetupData] = useState<SetupCommandData | null>(null);
     const [setupLoading, setSetupLoading] = useState(false);
+
+    // The node detail response no longer includes the daemon token, so the
+    // locally built YAML would show token_id/token as undefined. Prefer the
+    // server-generated config from the setup-command endpoint.
+    const configYaml = setupData?.config_yaml || wingsConfigYaml;
 
     const fetchSetupCommand = useCallback(async () => {
         if (!nodeId) return;
@@ -112,7 +119,7 @@ export function WingsTab({ nodeId, wingsConfigYaml, handleResetKey, resetting }:
                         </p>
                     ) : null}
                     {setupLoading ? (
-                        <div className='text-muted-foreground rounded-xl border border-white/5 bg-zinc-950/50 p-4 text-sm'>
+                        <div className='text-muted-foreground rounded-xl border border-[var(--fp-surface-border)] bg-zinc-950/50 p-4 text-sm'>
                             {t('common.loading')}...
                         </div>
                     ) : setupData ? (
@@ -142,7 +149,7 @@ export function WingsTab({ nodeId, wingsConfigYaml, handleResetKey, resetting }:
                                 </div>
                             )}
                             {setupData.join_data && (
-                                <div className='space-y-2 border-t border-white/5 pt-4'>
+                                <div className='space-y-2 border-t border-[var(--fp-surface-border)] pt-4'>
                                     <p className='text-foreground text-xs font-semibold'>
                                         {t('admin.node.wings.join_data_title')}
                                     </p>
@@ -170,16 +177,16 @@ export function WingsTab({ nodeId, wingsConfigYaml, handleResetKey, resetting }:
                 <div className='space-y-6'>
                     <p className='text-muted-foreground text-sm'>{t('admin.node.wings.config_help')}</p>
                     <CommandBlock
-                        command={wingsConfigYaml}
+                        command={configYaml}
                         copyLabel={t('admin.node.wings.copy_config')}
-                        onCopy={() => copyToClipboard(wingsConfigYaml, t)}
+                        onCopy={() => copyToClipboard(configYaml, t)}
                         preClassName='scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent overflow-x-auto p-6 font-mono text-xs whitespace-pre text-zinc-300'
                     />
 
-                    <div className='space-y-4 border-t border-white/5 pt-6'>
+                    <div className='space-y-4 border-t border-[var(--fp-surface-border)] pt-6'>
                         <div className='flex items-center justify-between'>
                             <div>
-                                <h4 className='text-sm font-bold text-white'>{t('admin.node.wings.reset_key')}</h4>
+                                <h4 className='text-foreground text-sm font-bold'>{t('admin.node.wings.reset_key')}</h4>
                                 <p className='text-muted-foreground mt-1 text-xs'>
                                     {t('admin.node.wings.reset_key_help')}
                                 </p>

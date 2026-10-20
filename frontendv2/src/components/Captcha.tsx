@@ -22,6 +22,7 @@ import ReCAPTCHA from 'react-google-recaptcha';
 import { useSettings } from '@/contexts/SettingsContext';
 import { executeRecaptchaV3 } from '@/lib/recaptchaV3';
 import { loadReforgeWidgetScript } from '@/lib/reforgeCaptcha';
+import { useTranslation } from '@/contexts/TranslationContext';
 
 declare global {
     interface Window {
@@ -138,6 +139,7 @@ const ReCaptchaV3Widget: React.FC<{
     onVerify: (token: string) => void;
     onError?: () => void;
 }> = ({ siteKey, action, refreshKey, onVerify, onError }) => {
+    const { t } = useTranslation();
     const callbacksRef = useRef({ onVerify, onError });
     callbacksRef.current = { onVerify, onError };
 
@@ -166,14 +168,14 @@ const ReCaptchaV3Widget: React.FC<{
 
     return (
         <p className='text-muted-foreground max-w-md text-center text-xs leading-relaxed'>
-            This site is protected by reCAPTCHA and the Google{' '}
+            {t('ui.components.captcha.thisSiteIsProtectedByReCAPTCHA')}{' '}
             <a
                 href='https://policies.google.com/privacy'
                 target='_blank'
                 rel='noopener noreferrer'
                 className='text-primary underline underline-offset-2'
             >
-                Privacy Policy
+                {t('ui.components.captcha.privacyPolicy')}
             </a>{' '}
             and{' '}
             <a
@@ -182,7 +184,7 @@ const ReCaptchaV3Widget: React.FC<{
                 rel='noopener noreferrer'
                 className='text-primary underline underline-offset-2'
             >
-                Terms of Service
+                {t('ui.components.captcha.termsOfService')}
             </a>{' '}
             apply.
         </p>

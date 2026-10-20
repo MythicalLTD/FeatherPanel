@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { TipCard, TipGrid } from '@/components/featherui/TipCard';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
@@ -34,8 +35,7 @@ import {
 } from 'lucide-react';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
-import { PageCard } from '@/components/featherui/PageCard';
-import { ResourceCard, type ResourceBadge } from '@/components/featherui/ResourceCard';
+import { ResourceCard, ResourceTable, type ResourceBadge } from '@/components/featherui/ResourceCard';
 import { EmptyState } from '@/components/featherui/EmptyState';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -173,7 +173,7 @@ export default function AdminWingsBackupsPage() {
             />
 
             <Tabs value={tab} onValueChange={(v) => setTab(v as 'policies' | 'destinations')} className='space-y-6'>
-                <TabsList className='border-border/30 bg-card/40 flex h-auto w-full flex-wrap justify-start gap-1 rounded-lg border p-1 shadow-sm sm:w-auto'>
+                <TabsList className='fp-surface flex h-auto w-full flex-wrap justify-start gap-1 rounded-lg border p-1 sm:w-auto'>
                     <TabsTrigger value='policies'>{t('adminWingsBackups.tabPolicies')}</TabsTrigger>
                     <TabsTrigger value='destinations'>{t('adminWingsBackups.tabDestinations')}</TabsTrigger>
                 </TabsList>
@@ -194,7 +194,7 @@ export default function AdminWingsBackupsPage() {
                             }
                         />
                     ) : (
-                        <div className='grid grid-cols-1 gap-4'>
+                        <ResourceTable>
                             {policies.map((policy) => {
                                 const badges: ResourceBadge[] = [
                                     {
@@ -277,7 +277,7 @@ export default function AdminWingsBackupsPage() {
                                     />
                                 );
                             })}
-                        </div>
+                        </ResourceTable>
                     )}
                 </TabsContent>
 
@@ -297,7 +297,7 @@ export default function AdminWingsBackupsPage() {
                             }
                         />
                     ) : (
-                        <div className='grid grid-cols-1 gap-4'>
+                        <ResourceTable>
                             {destinations.map((dest) => {
                                 const testLabel =
                                     dest.last_test_ok === null || dest.last_test_ok === undefined
@@ -357,28 +357,28 @@ export default function AdminWingsBackupsPage() {
                                     />
                                 );
                             })}
-                        </div>
+                        </ResourceTable>
                     )}
                 </TabsContent>
             </Tabs>
 
-            <div className='grid gap-4 md:grid-cols-3'>
-                <PageCard title={t('adminWingsBackups.help.how.title')} icon={CalendarClock}>
+            <TipGrid>
+                <TipCard title={t('adminWingsBackups.help.how.title')} icon={CalendarClock}>
                     <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('adminWingsBackups.help.how.body')}
                     </p>
-                </PageCard>
-                <PageCard title={t('adminWingsBackups.help.retention.title')} icon={Shield}>
+                </TipCard>
+                <TipCard title={t('adminWingsBackups.help.retention.title')} icon={Shield}>
                     <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('adminWingsBackups.help.retention.body')}
                     </p>
-                </PageCard>
-                <PageCard title={t('adminWingsBackups.help.tips.title')} icon={HelpCircle}>
+                </TipCard>
+                <TipCard title={t('adminWingsBackups.help.tips.title')} icon={HelpCircle}>
                     <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('adminWingsBackups.help.tips.body')}
                     </p>
-                </PageCard>
-            </div>
+                </TipCard>
+            </TipGrid>
         </div>
     );
 }

@@ -19,10 +19,12 @@ import React from 'react';
 import { Wifi, Cpu, Clock, Activity, HardDrive, Database, ArrowDown, ArrowUp, type LucideIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { IpVisibilityButton } from '@/components/common/IpVisibilityButton';
 import { formatMib, formatCpu as formatCpuGlobal, cn, formatFileSize } from '@/lib/utils';
 import { getUsagePercentage, getProgressColor } from '@/lib/server-utils';
 import { Progress } from '@/components/ui/progress';
 import { OverflowText } from '@/components/featherui/OverflowText';
+import { Sensitive } from '@/components/common/Sensitive';
 
 interface ThroughputRowProps {
     icon: LucideIcon;
@@ -85,6 +87,8 @@ interface ServerInfoCardsProps {
     ping: number | null;
     /** False until Wings is connected and metrics are meaningful (avoids 0% flash). */
     statsReady?: boolean;
+    /** Disk usage can be known without live stats (resources endpoint); defaults to statsReady. */
+    diskReady?: boolean;
 
     cpuUsage?: number;
     memoryUsage?: number;
@@ -109,6 +113,7 @@ export default React.memo(function ServerInfoCards({
     wingsUptime,
     ping,
     statsReady = true,
+    diskReady,
     cpuUsage = 0,
     memoryUsage = 0,
     diskUsage = 0,
@@ -144,6 +149,7 @@ export default React.memo(function ServerInfoCards({
 
     const cpuPercent = getUsagePercentage(cpuUsage, cpuLimit);
     const memoryPercent = getUsagePercentage(memoryUsage, memoryLimit);
+    const diskShown = diskReady ?? statsReady;
     const diskPercent = getUsagePercentage(diskUsage, diskLimit);
     const diskOverLimit = diskLimit > 0 && diskUsage > diskLimit;
     const memoryOverLimit = memoryLimit > 0 && memoryUsage > memoryLimit;
@@ -180,7 +186,7 @@ export default React.memo(function ServerInfoCards({
 
     return (
         <div className={cn('grid gap-4', className)}>
-            <div className='border-border/50 bg-card/50 rounded-xl border p-4 backdrop-blur-xl'>
+            <div className='fp-surface rounded-xl border p-4'>
                 <h3 className='text-muted-foreground mb-3 flex items-center gap-2 text-sm font-medium'>
                     <Wifi className='h-4 w-4' />
                     {t('servers.console.info_cards.network_title')}
@@ -191,8 +197,9 @@ export default React.memo(function ServerInfoCards({
                         <p className='text-muted-foreground mb-1 text-xs'>{t('servers.console.info_cards.address')}</p>
                         <div className='flex items-center gap-2'>
                             <code className='bg-muted flex-1 truncate rounded px-2 py-1 font-mono text-sm'>
-                                {serverIp && serverPort ? `${serverIp}:${serverPort}` : 'N/A'}
+                                {serverIp && serverPort ? <Sensitive>{`${serverIp}:${serverPort}`}</Sensitive> : 'N/A'}
                             </code>
+                            <IpVisibilityButton />
                             <button
                                 onClick={() => handleCopy(serverIp && serverPort ? `${serverIp}:${serverPort}` : 'N/A')}
                                 className='hover:bg-muted text-muted-foreground hover:text-foreground rounded-md p-1.5 transition-colors'
@@ -239,7 +246,7 @@ export default React.memo(function ServerInfoCards({
                 </div>
             </div>
 
-            <div className='border-border/50 bg-card/50 rounded-xl border p-4 backdrop-blur-xl'>
+            <div className='fp-surface rounded-xl border p-4'>
                 <h3 className='text-muted-foreground mb-3 flex items-center gap-2 text-sm font-medium'>
                     <Activity className='h-4 w-4' />
                     {t('servers.console.info_cards.resources_title')}
@@ -297,10 +304,10 @@ export default React.memo(function ServerInfoCards({
                                 {t('servers.disk')}
                             </span>
                             <span className={cn('font-medium tabular-nums', diskOverLimit && 'text-destructive')}>
-                                {statsReady ? formatMib(diskUsage) : pendingValue}
+                                {diskShown ? formatMib(diskUsage) : pendingValue}
                             </span>
                         </div>
-                        {statsReady && diskLimit > 0 && (
+                        {diskShown && diskLimit > 0 && (
                             <Progress
                                 value={diskPercent}
                                 className='h-1.5'
@@ -314,7 +321,7 @@ export default React.memo(function ServerInfoCards({
                 </div>
             </div>
 
-            <div className='border-border/50 bg-card/50 rounded-xl border p-4 backdrop-blur-xl'>
+            <div className='fp-surface rounded-xl border p-4'>
                 <h3 className='text-muted-foreground mb-3 flex items-center gap-2 text-sm font-medium'>
                     <Activity className='h-4 w-4' />
                     {t('servers.console.info_cards.network_title')}
@@ -341,7 +348,7 @@ export default React.memo(function ServerInfoCards({
                 </div>
             </div>
 
-            <div className='border-border/50 bg-card/50 rounded-xl border p-4 backdrop-blur-xl'>
+            <div className='fp-surface rounded-xl border p-4'>
                 <h3 className='text-muted-foreground mb-3 flex items-center gap-2 text-sm font-medium'>
                     <HardDrive className='h-4 w-4' />
                     {t('servers.console.info_cards.disk_io_title')}

@@ -33,6 +33,7 @@ import ActivityTab from '@/components/account/ActivityTab';
 import MailTab from '@/components/account/MailTab';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
+import { Sensitive } from '@/components/common/Sensitive';
 
 export default function AccountPage() {
     const { t } = useTranslation();
@@ -86,9 +87,9 @@ export default function AccountPage() {
         <div className='space-y-6'>
             <WidgetRenderer widgets={getWidgets('dashboard-account', 'top-of-page')} />
 
-            <div className='border-border/60 bg-card/70 rounded-2xl border p-6 backdrop-blur-xl sm:p-8'>
+            <div className='fp-surface rounded-xl border p-5 sm:p-8'>
                 {showProfileSkeleton ? (
-                    <div className='flex flex-col gap-5 sm:flex-row sm:items-center sm:gap-6'>
+                    <div className='flex flex-col items-center gap-4 sm:flex-row sm:gap-6'>
                         <div className='bg-muted/50 border-border/60 mx-auto h-20 w-20 animate-pulse rounded-full border-2 sm:mx-0 sm:h-24 sm:w-24' />
                         <div className='flex w-full flex-col items-center space-y-2 sm:items-start'>
                             <div className='bg-muted/50 h-7 w-40 animate-pulse rounded-md sm:h-8 sm:w-48' />
@@ -97,7 +98,7 @@ export default function AccountPage() {
                         </div>
                     </div>
                 ) : (
-                    <div className='flex flex-col gap-5 sm:flex-row sm:items-center sm:gap-6'>
+                    <div className='flex flex-col items-center gap-4 sm:flex-row sm:gap-6'>
                         {user?.avatar ? (
                             <NextImage
                                 src={user.avatar}
@@ -112,9 +113,11 @@ export default function AccountPage() {
                                 <span className='text-primary text-2xl font-semibold'>{getUserInitials()}</span>
                             </div>
                         )}
-                        <div className='space-y-2 text-center sm:text-left'>
+                        <div className='min-w-0 space-y-1.5 text-center sm:space-y-2 sm:text-left'>
                             <h2 className='text-foreground text-xl font-bold sm:text-2xl'>{user?.username}</h2>
-                            <p className='text-muted-foreground text-sm sm:text-base'>{user?.email}</p>
+                            <p className='text-muted-foreground text-sm [overflow-wrap:anywhere] sm:text-base'>
+                                <Sensitive>{user?.email}</Sensitive>
+                            </p>
                             <p className='text-muted-foreground text-xs sm:text-sm'>
                                 {t('account.memberSince')}{' '}
                                 {user?.first_seen ? (
@@ -131,13 +134,13 @@ export default function AccountPage() {
             </div>
             <WidgetRenderer widgets={getWidgets('dashboard-account', 'after-profile-card')} />
 
-            <div className='border-border/60 bg-card/60 overflow-hidden rounded-2xl border backdrop-blur-xl'>
+            <div className='fp-surface overflow-hidden rounded-xl border'>
                 <Tab.Group selectedIndex={selectedIndex} onChange={handleTabChange}>
-                    <div className='border-border block border-b p-4 sm:hidden'>
+                    <div className='border-border block border-b p-3 sm:hidden'>
                         <select
                             value={selectedIndex}
                             onChange={(e) => handleTabChange(Number(e.target.value))}
-                            className='border-border bg-background focus:ring-primary w-full rounded-lg border p-3 text-sm focus:ring-2 focus:outline-none'
+                            className='border-border bg-background focus:ring-primary h-11 w-full rounded-xl border px-3 text-sm font-medium focus:ring-2 focus:outline-none'
                         >
                             {tabs.map((tab, index) => (
                                 <option key={tab.id} value={index}>
@@ -167,7 +170,7 @@ export default function AccountPage() {
                         </Tab.List>
                     </div>
 
-                    <Tab.Panels className='p-5 sm:p-6'>
+                    <Tab.Panels className='p-4 sm:p-6'>
                         {tabs.map((tab) => (
                             <Tab.Panel key={tab.id} className='focus:outline-none'>
                                 <tab.component />

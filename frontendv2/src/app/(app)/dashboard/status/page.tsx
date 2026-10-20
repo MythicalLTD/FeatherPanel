@@ -38,7 +38,7 @@ import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { PoweredByFeatherPanel } from '@/components/branding/PoweredByFeatherPanel';
 import { useTranslation } from '@/contexts/TranslationContext';
-import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
+import { getApiErrorCode, getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 import { formatMemory, formatDisk } from '@/lib/server-utils';
 import { cn } from '@/lib/utils';
 
@@ -47,6 +47,7 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Input } from '@/components/featherui/Input';
 import { NodeServersList, type NodeStatusServer } from '@/components/admin/NodeServersList';
+import { Sensitive } from '@/components/common/Sensitive';
 
 interface NodeEntry {
     id: number;
@@ -192,7 +193,9 @@ function NodeExpandedDetail({
             <div className='mt-4 flex flex-wrap items-center justify-between gap-3'>
                 <div className='flex flex-wrap items-center gap-4'>
                     {node.fqdn && (
-                        <span className='text-muted-foreground font-mono text-xs opacity-60'>{node.fqdn}</span>
+                        <span className='text-muted-foreground font-mono text-xs opacity-60'>
+                            <Sensitive>{node.fqdn}</Sensitive>
+                        </span>
                     )}
                     {showPlayerCount && node.total_players !== undefined && (
                         <span className='text-muted-foreground flex items-center gap-1 text-xs'>
@@ -224,6 +227,7 @@ export default function StatusPage() {
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [disabled, setDisabled] = useState(false);
     const [statusData, setStatusData] = useState<StatusData | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [expandedNodeId, setExpandedNodeId] = useState<number | null>(null);
@@ -247,11 +251,14 @@ export default function StatusPage() {
                     setError(getApiErrorMessageFromPayload(data, t, 'dashboard.status.failedToFetchStatus'));
                 }
             } catch (err: unknown) {
+                // A disabled status page is a setting, not a failure: show the notice and stop polling.
+                if (getApiErrorCode(err) === 'STATUS_PAGE_DISABLED') {
+                    setDisabled(true);
+                    return;
+                }
                 const errorMessage = getApiErrorMessage(err, t, 'dashboard.status.failedToFetchStatus');
                 setError(errorMessage);
-                if (errorMessage !== 'Status page is disabled') {
-                    toast.error(errorMessage);
-                }
+                toast.error(errorMessage);
             } finally {
                 setLoading(false);
                 setRefreshing(false);
@@ -267,9 +274,13 @@ export default function StatusPage() {
 
     useEffect(() => {
         fetchNodes();
+    }, [fetchNodes]);
+
+    useEffect(() => {
+        if (disabled) return;
         const interval = setInterval(() => fetchNodes(true), 30000);
         return () => clearInterval(interval);
-    }, [fetchNodes]);
+    }, [fetchNodes, disabled]);
 
     const filteredNodes =
         statusData?.data?.nodes?.filter(
@@ -293,7 +304,7 @@ export default function StatusPage() {
     }
 
     //  Disabled
-    if (statusData && !statusData.enabled) {
+    if (disabled || (statusData && !statusData.enabled)) {
         return (
             <div className='mx-auto max-w-4xl p-4 md:p-8'>
                 <Alert>
@@ -368,7 +379,7 @@ export default function StatusPage() {
             {global && (
                 <div className='grid grid-cols-2 gap-3 md:grid-cols-4'>
                     {/* Total nodes */}
-                    <div className='bg-card/50 border-border/50 flex items-center justify-between rounded-xl border p-4 backdrop-blur-xl'>
+                    <div className='fp-surface flex items-center justify-between rounded-xl border p-4'>
                         <div className='space-y-0.5'>
                             <p className='text-muted-foreground text-[10px] font-black tracking-widest uppercase'>
                                 {t('dashboard.status.totalNodes')}
@@ -381,7 +392,7 @@ export default function StatusPage() {
                     </div>
 
                     {/* Healthy nodes */}
-                    <div className='bg-card/50 border-border/50 flex items-center justify-between rounded-xl border p-4 backdrop-blur-xl'>
+                    <div className='fp-surface flex items-center justify-between rounded-xl border p-4'>
                         <div className='space-y-0.5'>
                             <p className='text-muted-foreground text-[10px] font-black tracking-widest uppercase'>
                                 {t('dashboard.status.healthyNodes')}
@@ -394,7 +405,7 @@ export default function StatusPage() {
                     </div>
 
                     {/* Total servers */}
-                    <div className='bg-card/50 border-border/50 flex items-center justify-between rounded-xl border p-4 backdrop-blur-xl'>
+                    <div className='fp-surface flex items-center justify-between rounded-xl border p-4'>
                         <div className='space-y-0.5'>
                             <p className='text-muted-foreground text-[10px] font-black tracking-widest uppercase'>
                                 {t('dashboard.status.totalServers')}
@@ -409,7 +420,7 @@ export default function StatusPage() {
                     </div>
 
                     {/* Avg CPU */}
-                    <div className='bg-card/50 border-border/50 flex items-center justify-between rounded-xl border p-4 backdrop-blur-xl'>
+                    <div className='fp-surface flex items-center justify-between rounded-xl border p-4'>
                         <div className='space-y-0.5'>
                             <p className='text-muted-foreground text-[10px] font-black tracking-widest uppercase'>
                                 {t('dashboard.status.avgCpuUsage')}
@@ -448,7 +459,7 @@ export default function StatusPage() {
                     <WidgetRenderer widgets={getWidgets('dashboard-status', 'before-node-list')} />
 
                     {/* Node list */}
-                    <div className='bg-card/50 border-border/50 overflow-hidden rounded-xl border backdrop-blur-xl'>
+                    <div className='fp-surface overflow-hidden rounded-xl border'>
                         {filteredNodes.length > 0 ? (
                             <div className='divide-border/40 divide-y'>
                                 {filteredNodes.map((node) => {
@@ -639,7 +650,7 @@ export default function StatusPage() {
             {/*  Global memory / disk bars  */}
             {global && (
                 <div className='grid grid-cols-1 gap-4 lg:grid-cols-2'>
-                    <div className='bg-card/50 border-border/50 rounded-xl border p-5 backdrop-blur-xl'>
+                    <div className='fp-surface rounded-xl border p-5'>
                         <div className='mb-3 flex items-center justify-between'>
                             <span className='text-muted-foreground flex items-center gap-2 text-[10px] font-black tracking-widest uppercase'>
                                 <MemoryStick className='h-4 w-4 text-blue-500 opacity-60' />
@@ -649,7 +660,7 @@ export default function StatusPage() {
                                 {formatMemory(global.used_memory || 0)} / {formatMemory(global.total_memory || 0)}
                             </span>
                         </div>
-                        <div className='bg-muted/50 h-2 w-full overflow-hidden rounded-full border border-white/5'>
+                        <div className='bg-muted/50 border-border/50 h-2 w-full overflow-hidden rounded-full border'>
                             <div
                                 className='h-full bg-blue-500 transition-all duration-1000 ease-out'
                                 style={{
@@ -658,7 +669,7 @@ export default function StatusPage() {
                             />
                         </div>
                     </div>
-                    <div className='bg-card/50 border-border/50 rounded-xl border p-5 backdrop-blur-xl'>
+                    <div className='fp-surface rounded-xl border p-5'>
                         <div className='mb-3 flex items-center justify-between'>
                             <span className='text-muted-foreground flex items-center gap-2 text-[10px] font-black tracking-widest uppercase'>
                                 <HardDrive className='h-4 w-4 text-green-500 opacity-60' />
@@ -668,7 +679,7 @@ export default function StatusPage() {
                                 {formatDisk(global.used_disk || 0)} / {formatDisk(global.total_disk || 0)}
                             </span>
                         </div>
-                        <div className='bg-muted/50 h-2 w-full overflow-hidden rounded-full border border-white/5'>
+                        <div className='bg-muted/50 border-border/50 h-2 w-full overflow-hidden rounded-full border'>
                             <div
                                 className='h-full bg-green-500 transition-all duration-1000 ease-out'
                                 style={{

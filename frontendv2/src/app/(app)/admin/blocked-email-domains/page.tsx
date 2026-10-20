@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { AdminPageTips } from '@/components/admin/AdminPageTips';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import axios from 'axios';
@@ -27,20 +28,7 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
 import { EmptyState } from '@/components/featherui/EmptyState';
-import {
-    Loader2,
-    Plus,
-    Trash2,
-    RefreshCw,
-    Upload,
-    MailX,
-    ShieldCheck,
-    Search,
-    ChevronLeft,
-    ChevronRight,
-    X,
-    AlertCircle,
-} from 'lucide-react';
+import { Loader2, Plus, Trash2, RefreshCw, Upload, MailX, ShieldCheck, Search, X, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
@@ -49,6 +37,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
+import { ListPagination } from '@/components/featherui/ListPagination';
 
 interface BlockedRow {
     id: number;
@@ -377,35 +366,14 @@ export default function BlockedEmailDomainsPage() {
     const bottomWidgets = getWidgets(WIDGET_PAGE, 'bottom-of-page');
 
     const paginationBar = (
-        <div className='border-border bg-card/50 flex items-center justify-between gap-4 rounded-xl border px-4 py-3 shadow-sm'>
-            <Button
-                variant='outline'
-                size='sm'
-                disabled={page <= 1 || loading}
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                className='gap-1.5'
-            >
-                <ChevronLeft className='h-4 w-4' />
-                {t('common.previous')}
-            </Button>
-            <span className='text-sm font-medium'>
-                {t('admin.blocked_email_domains.pagination', {
-                    total: String(total),
-                    page: String(page),
-                    pages: String(totalPages),
-                })}
-            </span>
-            <Button
-                variant='outline'
-                size='sm'
-                disabled={page >= totalPages || loading}
-                onClick={() => setPage((p) => p + 1)}
-                className='gap-1.5'
-            >
-                {t('common.next')}
-                <ChevronRight className='h-4 w-4' />
-            </Button>
-        </div>
+        <ListPagination
+            page={page}
+            totalPages={totalPages}
+            totalItems={total}
+            pageSize={limit}
+            disabled={loading}
+            onPageChange={setPage}
+        />
     );
 
     const isFilteredEmpty = !loading && rows.length === 0 && debouncedSearch.length > 0;
@@ -587,8 +555,8 @@ export default function BlockedEmailDomainsPage() {
                 </div>
             </PageCard>
 
-            <div className='border-border bg-card/50 flex flex-col gap-4 rounded-2xl border p-4 shadow-sm backdrop-blur-md sm:flex-row sm:items-center'>
-                <div className='group relative flex-1'>
+            <div className='fp-surface flex flex-col gap-4 rounded-2xl border p-4 sm:flex-row sm:items-center'>
+                <div className='group relative w-full min-w-0 flex-1'>
                     <Search className='text-muted-foreground group-focus-within:text-primary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transition-colors' />
                     <Input
                         placeholder={t('admin.blocked_email_domains.search_placeholder')}
@@ -662,7 +630,7 @@ export default function BlockedEmailDomainsPage() {
                     }
                 />
             ) : (
-                <div className='border-border/80 bg-card/40 overflow-hidden rounded-2xl border shadow-sm backdrop-blur-sm'>
+                <div className='fp-surface overflow-hidden rounded-2xl border'>
                     <div className='overflow-x-auto'>
                         <table className='w-full min-w-[640px] text-sm'>
                             <thead>
@@ -738,6 +706,7 @@ export default function BlockedEmailDomainsPage() {
                     <WidgetRenderer widgets={bottomWidgets} />
                 </div>
             ) : null}
+            <AdminPageTips page='blocked-email-domains' />
         </div>
     );
 }

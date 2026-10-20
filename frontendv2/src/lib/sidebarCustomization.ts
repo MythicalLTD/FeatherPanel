@@ -70,6 +70,73 @@ function isExternalUrl(url: string): boolean {
 }
 
 /**
+ * Admin submenus that were flattened into sidebar sections. Saved configs may still hide or
+ * order these parent ids; expand them to the items that used to live inside so a hidden
+ * submenu stays hidden and an ordered one keeps its place.
+ */
+const LEGACY_ADMIN_PARENTS: Record<string, string[]> = {
+    'admin-myfeatherpanel': [
+        'admin-myfeatherpanel-cloud',
+        'admin-myfeatherpanel-premium',
+        'admin-myfeatherpanel-report-issue',
+        'admin-myfeatherpanel-suggest',
+        'admin-myfeatherpanel-marketplace',
+        'admin-plugins',
+        'admin-updates',
+        'admin-translations',
+    ],
+    'admin-servers-parent': [
+        'admin-servers',
+        'admin-vm-instances',
+        'admin-webspaces',
+        'admin-backup-schedules',
+        'admin-wings-backups',
+    ],
+    'admin-locations-parent': [
+        'admin-locations',
+        'admin-nodes',
+        'admin-vds-nodes',
+        'admin-web-nodes',
+        'admin-mail-hosts',
+        'admin-dns-hosts',
+        'admin-nodes-status',
+        'admin-mounts',
+        'admin-node-databases',
+    ],
+    'admin-realms-parent': ['admin-realms', 'admin-spells', 'admin-webplates'],
+    'admin-settings': [
+        'admin-settings-general',
+        'admin-support',
+        'admin-oidc-providers',
+        'admin-ldap-providers',
+        'admin-rate-limits',
+        'admin-blocked-email-domains',
+        'admin-blocked-ips',
+        'admin-abuseipdb',
+        'admin-subdomains',
+        'admin-mail-templates',
+        'admin-feathercloud-ai-agent',
+    ],
+};
+
+/** Replace legacy admin parent ids with their former children (order preserved, no duplicates). */
+export function expandLegacyAdminIds(ids: string[]): string[] {
+    const out: string[] = [];
+    const seen = new Set<string>();
+    const add = (id: string) => {
+        if (seen.has(id)) return;
+        seen.add(id);
+        out.push(id);
+    };
+    for (const id of ids) {
+        const children = LEGACY_ADMIN_PARENTS[id];
+        if (children) children.forEach(add);
+        else add(id);
+    }
+    return out;
+}
+
+/**
  * Apply Premium sidebar hide / reorder / custom links for one scope.
  * Safe no-op when config is empty.
  */
@@ -84,7 +151,8 @@ export function applySidebarCustomization(
         return items;
     }
 
-    const hidden = new Set((scopeConfig.hidden ?? []).filter(Boolean));
+    const legacy = scope === 'admin' ? expandLegacyAdminIds : (ids: string[]) => ids;
+    const hidden = new Set(legacy((scopeConfig.hidden ?? []).filter(Boolean)));
     let next = items
         .filter((item) => !hidden.has(item.id))
         .map((item) => {
@@ -116,7 +184,7 @@ export function applySidebarCustomization(
         });
     }
 
-    const order = (scopeConfig.order ?? []).filter(Boolean);
+    const order = legacy((scopeConfig.order ?? []).filter(Boolean));
     if (order.length > 0) {
         const indexMap = new Map(order.map((id, index) => [id, index]));
         next = [...next].sort((a, b) => {

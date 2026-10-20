@@ -41,6 +41,8 @@ import {
     type WebSpaceScheduleDraft,
     type WebSpaceScheduleTaskDraft,
 } from '@/lib/webspace-schedules';
+import { UnsavedChangesBar } from '@/components/featherui/UnsavedChangesBar';
+import { useFormBaseline } from '@/hooks/useFormBaseline';
 
 interface ScheduleTask {
     id?: number;
@@ -61,6 +63,7 @@ export default function WebSpaceScheduleEditPage() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [form, setForm] = useState<WebSpaceScheduleDraft>(emptyScheduleDraft());
+    const { dirty: unsaved, markClean, restore: restoreForm } = useFormBaseline(form);
 
     const timezoneOptions = useMemo(() => listSupportedTimezones().map((tz) => ({ id: tz, name: tz })), []);
 
@@ -97,6 +100,7 @@ export default function WebSpaceScheduleEditPage() {
                     is_active: !!schedule.is_active,
                     tasks: tasks.length > 0 ? tasks : [emptyScheduleTask(1)],
                 });
+                markClean();
             } catch (err) {
                 toast.error(getApiErrorMessage(err, t, 'serverSchedules.loadFailed'));
                 router.push(`/webspace/${uuidShort}/schedules`);
@@ -105,10 +109,10 @@ export default function WebSpaceScheduleEditPage() {
             }
         };
         void load();
-    }, [uuidShort, scheduleId, router, t]);
+    }, [uuidShort, scheduleId, router, t, markClean]);
 
-    const handleSubmit = async (e: FormEvent) => {
-        e.preventDefault();
+    const handleSubmit = async (e?: FormEvent) => {
+        e?.preventDefault();
         if (!form.name.trim()) {
             toast.error(t('serverSchedules.nameRequired'));
             return;
@@ -242,6 +246,16 @@ export default function WebSpaceScheduleEditPage() {
                     </div>
                 </FormSection>
             </form>
+
+            <UnsavedChangesBar
+                dirty={unsaved}
+                saving={saving}
+                onSave={() => void handleSubmit()}
+                onDiscard={() => {
+                    const saved = restoreForm();
+                    if (saved) setForm(saved);
+                }}
+            />
         </div>
     );
 }

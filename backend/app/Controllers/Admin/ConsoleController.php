@@ -74,7 +74,7 @@ class ConsoleController
         try {
             $config = App::getInstance(true)->getConfig();
             if ($config->getSetting(ConfigInterface::APP_DEVELOPER_MODE, 'false') === 'false') {
-                return ApiResponse::error('You are not allowed to execute commands in non-developer mode', 403);
+                return ApiResponse::error('You are not allowed to execute commands in non-developer mode', 'FORBIDDEN', 403);
             }
             // These variables are populated from POST form data (not JSON body).
             // 'command' is the system command to execute, 'cwd' is the working directory.
@@ -92,13 +92,16 @@ class ConsoleController
                 }
 
                 if (is_array($data) && !empty($data['command'])) {
+                    if (!is_string($data['command'])) {
+                        return ApiResponse::error('Command must be a string', 'INVALID_DATA_TYPE', 400);
+                    }
                     $command = trim($data['command']);
-                    $workingDirectory = $data['cwd'] ?? getcwd();
+                    $workingDirectory = isset($data['cwd']) && is_string($data['cwd']) ? $data['cwd'] : getcwd();
                 }
             }
 
             if (empty($command)) {
-                return ApiResponse::error('No command provided in form data or JSON body', 400);
+                return ApiResponse::error('No command provided in form data or JSON body', 'BAD_REQUEST', 400);
             }
 
             // Validate working directory - use current working directory as fallback
@@ -154,7 +157,7 @@ class ConsoleController
                     'timestamp' => date('Y-m-d H:i:s'),
                 ];
             } else {
-                return ApiResponse::error('Failed to execute command', 500);
+                return ApiResponse::error('Failed to execute command', 'INTERNAL_SERVER_ERROR', 500);
             }
 
             // Emit event
@@ -174,7 +177,7 @@ class ConsoleController
 
             return ApiResponse::success($output, 'Command executed successfully', 200);
         } catch (\Exception $e) {
-            return ApiResponse::error('Failed to execute command: ' . $e->getMessage(), 500);
+            return ApiResponse::error('Failed to execute command: ' . $e->getMessage(), 'INTERNAL_SERVER_ERROR', 500);
         }
     }
 
@@ -216,7 +219,7 @@ class ConsoleController
     {
         $config = App::getInstance(true)->getConfig();
         if ($config->getSetting(ConfigInterface::APP_DEVELOPER_MODE, 'false') === 'false') {
-            return ApiResponse::error('You are not allowed to view system info in non-developer mode', 403);
+            return ApiResponse::error('You are not allowed to view system info in non-developer mode', 'FORBIDDEN', 403);
         }
         // Suppress PHP warnings to prevent them from interfering with JSON response
         $originalErrorReporting = error_reporting(E_ERROR | E_PARSE | E_CORE_ERROR | E_COMPILE_ERROR | E_USER_ERROR | E_RECOVERABLE_ERROR);
@@ -237,7 +240,7 @@ class ConsoleController
 
             return ApiResponse::success($info, 'System info fetched successfully', 200);
         } catch (\Exception $e) {
-            return ApiResponse::error('Failed to fetch system info: ' . $e->getMessage(), 500);
+            return ApiResponse::error('Failed to fetch system info: ' . $e->getMessage(), 'INTERNAL_SERVER_ERROR', 500);
         } finally {
             // Restore original error reporting
             error_reporting($originalErrorReporting);

@@ -62,13 +62,14 @@ function formatTime(timestamp: number): string {
 }
 
 function BodyBlock({ label, value, onCopy }: { label: string; value: string; onCopy: () => void }) {
+    const { t } = useTranslation();
     return (
         <div className='border-border/60 overflow-hidden rounded-lg border'>
             <div className='border-border/60 bg-muted/30 flex items-center justify-between border-b px-3 py-1.5'>
                 <p className='text-muted-foreground text-[10px] font-medium uppercase'>{label}</p>
                 <Button size='sm' variant='ghost' className='h-6 px-2 text-[10px]' onClick={onCopy}>
                     <Copy className='mr-1 h-3 w-3' />
-                    Copy
+                    {t('common.copy')}
                 </Button>
             </div>
             <pre className='custom-scrollbar text-foreground max-h-56 overflow-auto p-3 font-mono text-[11px] leading-relaxed whitespace-pre-wrap'>

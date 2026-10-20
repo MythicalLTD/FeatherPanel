@@ -85,8 +85,12 @@ class NodeBackupRun
         $data['updated_at'] = gmdate('Y-m-d H:i:s');
         $pdo = Database::getPdoConnection();
         try {
+            $data = Database::filterColumns(self::$runsTable, $data);
+            if ($data === []) {
+                return false;
+            }
             $fields = array_keys($data);
-            $set = implode(', ', array_map(fn ($f) => "$f = :$f", $fields));
+            $set = implode(', ', array_map(fn ($f) => "`$f` = :$f", $fields));
             $params = $data;
             $params['id'] = $id;
             $stmt = $pdo->prepare('UPDATE ' . self::$runsTable . ' SET ' . $set . ' WHERE id = :id');
@@ -163,8 +167,12 @@ class NodeBackupRun
         $data['updated_at'] = gmdate('Y-m-d H:i:s');
         $pdo = Database::getPdoConnection();
         try {
+            $data = Database::filterColumns(self::$itemsTable, $data);
+            if ($data === []) {
+                return false;
+            }
             $fields = array_keys($data);
-            $set = implode(', ', array_map(fn ($f) => "$f = :$f", $fields));
+            $set = implode(', ', array_map(fn ($f) => "`$f` = :$f", $fields));
             $params = $data;
             $params['id'] = $id;
             $stmt = $pdo->prepare('UPDATE ' . self::$itemsTable . ' SET ' . $set . ' WHERE id = :id');

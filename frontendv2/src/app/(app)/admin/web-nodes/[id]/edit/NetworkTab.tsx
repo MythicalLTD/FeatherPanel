@@ -44,6 +44,7 @@ export function NetworkTab({ form, setForm, errors }: NetworkTabProps) {
                         <Label className='text-sm font-semibold'>{t('admin.webNodes.form.fqdn')}</Label>
                         <Input
                             placeholder='web.node.example.com'
+                            data-fp-sensitive=''
                             value={form.fqdn}
                             onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                                 setForm({ ...form, fqdn: e.target.value })

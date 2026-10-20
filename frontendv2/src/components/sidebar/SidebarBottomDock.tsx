@@ -18,7 +18,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import { useMemo, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import NextImage from 'next/image';
-import { ChevronsDown, ChevronsUp } from 'lucide-react';
+import { ChevronsDown, ChevronsUp, Monitor } from 'lucide-react';
 import type { DockDisplay, DockSize, SidebarGlow } from '@/hooks/useSidebarPreferences';
 import type { NavigationItem } from '@/types/navigation';
 import { PanelIcon } from '@/components/icons/PanelIcon';
@@ -32,6 +32,7 @@ import {
 import { setSidebarCollapsed } from '@/lib/sidebarChrome';
 import { runPluginJs } from '@/lib/run-plugin-js';
 import { cn } from '@/lib/utils';
+import { compareNavGroups } from '@/lib/navigationGroups';
 
 type SidebarBottomDockProps = {
     collapsed: boolean;
@@ -46,27 +47,12 @@ type SidebarBottomDockProps = {
     unreadTicketCount: number;
     adminOpenTicketCount: number;
     showCollapseToggle?: boolean;
+    gameEnabled?: boolean;
 };
-
-const GROUP_ORDER = [
-    'overview',
-    'management',
-    'files',
-    'networking',
-    'automation',
-    'configuration',
-    'feathercloud',
-    'users',
-    'tickets',
-    'infrastructure',
-    'content',
-    'system',
-    'support',
-    'plugins',
-];
 
 export function SidebarBottomDock({
     collapsed,
+    dockDisplay,
     dockSize,
     sidebarGlow,
     groupedItems,
@@ -77,18 +63,12 @@ export function SidebarBottomDock({
     unreadTicketCount,
     adminOpenTicketCount,
     showCollapseToggle = true,
+    gameEnabled = false,
 }: SidebarBottomDockProps) {
     const [openSubmenuId, setOpenSubmenuId] = useState<string | null>(null);
 
     const sortedGroups = useMemo(() => {
-        return Object.keys(groupedItems).sort((a, b) => {
-            const indexA = GROUP_ORDER.indexOf(a.toLowerCase());
-            const indexB = GROUP_ORDER.indexOf(b.toLowerCase());
-            if (indexA !== -1 && indexB !== -1) return indexA - indexB;
-            if (indexA !== -1) return -1;
-            if (indexB !== -1) return 1;
-            return a.localeCompare(b);
-        });
+        return Object.keys(groupedItems).sort(compareNavGroups);
     }, [groupedItems]);
 
     const itemCount = useMemo(
@@ -97,7 +77,7 @@ export function SidebarBottomDock({
     );
 
     const iconPx = getDockIconSize(dockSize, itemCount, collapsed);
-    const showItemLabels = !collapsed;
+    const showItemLabels = !collapsed && dockDisplay === 'labels';
     const collapseLabel = collapsed ? t('navbar.expandSidebar') : t('navbar.collapseSidebar');
 
     const renderGroupTitle = (group: string) => {
@@ -121,7 +101,7 @@ export function SidebarBottomDock({
     };
 
     const renderItemContent = (item: NavigationItem) => (
-        <span className='relative flex items-center justify-center text-current'>
+        <span className='relative flex items-center justify-center leading-none text-current'>
             <PanelIcon
                 source={item}
                 size={iconPx}
@@ -241,7 +221,7 @@ export function SidebarBottomDock({
             compact={collapsed}
             showItemLabels={showItemLabels}
             sidebarGlow={sidebarGlow}
-            className='fp-mac-dock-shell w-full gap-1 px-1.5 py-0.5'
+            className='fp-mac-dock-shell max-w-full gap-1 px-1.5 py-0.5'
         >
             <MacDockItem label={appName}>
                 <Link
@@ -278,32 +258,50 @@ export function SidebarBottomDock({
                 })}
             </MacDockTrack>
 
+            {gameEnabled && (
+                <>
+                    <div
+                        className='from-primary/25 mx-0.5 h-6 w-px shrink-0 self-center bg-gradient-to-b to-transparent'
+                        aria-hidden
+                    />
+                    <MacDockItem label={`${appName} OS`}>
+                        <a
+                            href='/os'
+                            target='_blank'
+                            rel='noopener noreferrer'
+                            className='flex h-full w-full items-center justify-center outline-none'
+                            aria-label={`${appName} OS`}
+                        >
+                            <Monitor style={{ width: iconPx, height: iconPx }} className='shrink-0' aria-hidden />
+                        </a>
+                    </MacDockItem>
+                </>
+            )}
+
             {showCollapseToggle && (
                 <>
                     <div
                         className='from-primary/25 mx-0.5 h-6 w-px shrink-0 self-center bg-gradient-to-b to-transparent'
                         aria-hidden
                     />
-                    <MacDockItem label={collapseLabel} active={false}>
-                        <button
-                            type='button'
-                            className='text-muted-foreground hover:text-primary flex h-full w-full items-center justify-center outline-none'
-                            title={collapseLabel}
-                            aria-label={t('navbar.toggleSidebar')}
-                            aria-pressed={collapsed}
-                            onClick={(event) => {
-                                event.preventDefault();
-                                event.stopPropagation();
-                                handleToggleCollapsed();
-                            }}
-                        >
-                            {collapsed ? (
-                                <ChevronsUp className='h-5 w-5' aria-hidden />
-                            ) : (
-                                <ChevronsDown className='h-5 w-5' aria-hidden />
-                            )}
-                        </button>
-                    </MacDockItem>
+                    <button
+                        type='button'
+                        className='text-muted-foreground hover:bg-muted/60 hover:text-foreground focus-visible:ring-ring flex h-8 w-8 shrink-0 items-center justify-center self-center rounded-lg transition-colors outline-none focus-visible:ring-2'
+                        title={collapseLabel}
+                        aria-label={collapseLabel}
+                        aria-pressed={collapsed}
+                        onClick={(event) => {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            handleToggleCollapsed();
+                        }}
+                    >
+                        {collapsed ? (
+                            <ChevronsUp className='h-4 w-4' aria-hidden />
+                        ) : (
+                            <ChevronsDown className='h-4 w-4' aria-hidden />
+                        )}
+                    </button>
                 </>
             )}
         </MacDockProvider>

@@ -17,6 +17,7 @@
 
 use App\App;
 use RateLimit\Rate;
+use App\Realtime\Events;
 use App\Helpers\ApiResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RouteCollection;
@@ -81,7 +82,10 @@ return function (RouteCollection $routes): void {
                 return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
             }
 
-            return (new ServerBackupController())->createBackup($request, $server['uuid']);
+            return Events::onSuccess(
+                (new ServerBackupController())->createBackup($request, $server['uuid']),
+                static fn () => Events::backupsChangedForServerUuid((string) $server['uuid'])
+            );
         },
         'uuidShort',
         ['POST'],
@@ -104,7 +108,10 @@ return function (RouteCollection $routes): void {
                 return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
             }
 
-            return (new ServerBackupController())->createDatabaseBackup($request, $server['uuid']);
+            return Events::onSuccess(
+                (new ServerBackupController())->createDatabaseBackup($request, $server['uuid']),
+                static fn () => Events::backupsChangedForServerUuid((string) $server['uuid'])
+            );
         },
         'uuidShort',
         ['POST'],
@@ -150,7 +157,10 @@ return function (RouteCollection $routes): void {
                 return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
             }
 
-            return (new ServerBackupController())->bulkDeleteBackups($request, $server['uuid']);
+            return Events::onSuccess(
+                (new ServerBackupController())->bulkDeleteBackups($request, $server['uuid']),
+                static fn () => Events::backupsChangedForServerUuid((string) $server['uuid'])
+            );
         },
         'uuidShort',
         ['DELETE'],
@@ -198,7 +208,10 @@ return function (RouteCollection $routes): void {
                 return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
             }
 
-            return (new ServerBackupController())->restoreBackup($request, $server['uuid'], $backupUuid);
+            return Events::onSuccess(
+                (new ServerBackupController())->restoreBackup($request, $server['uuid'], $backupUuid),
+                static fn () => Events::backupsChangedForServerUuid((string) $server['uuid'])
+            );
         },
         'uuidShort',
         ['POST'],
@@ -222,7 +235,10 @@ return function (RouteCollection $routes): void {
                 return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
             }
 
-            return (new ServerBackupController())->deleteBackup($request, $server['uuid'], $backupUuid);
+            return Events::onSuccess(
+                (new ServerBackupController())->deleteBackup($request, $server['uuid'], $backupUuid),
+                static fn () => Events::backupsChangedForServerUuid((string) $server['uuid'])
+            );
         },
         'uuidShort',
         ['DELETE'],
@@ -270,7 +286,10 @@ return function (RouteCollection $routes): void {
                 return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
             }
 
-            return (new ServerBackupController())->lockBackup($request, $server['uuid'], $backupUuid);
+            return Events::onSuccess(
+                (new ServerBackupController())->lockBackup($request, $server['uuid'], $backupUuid),
+                static fn () => Events::backupsChangedForServerUuid((string) $server['uuid'])
+            );
         },
         'uuidShort',
         ['POST'],
@@ -294,7 +313,10 @@ return function (RouteCollection $routes): void {
                 return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
             }
 
-            return (new ServerBackupController())->unlockBackup($request, $server['uuid'], $backupUuid);
+            return Events::onSuccess(
+                (new ServerBackupController())->unlockBackup($request, $server['uuid'], $backupUuid),
+                static fn () => Events::backupsChangedForServerUuid((string) $server['uuid'])
+            );
         },
         'uuidShort',
         ['POST'],

@@ -195,7 +195,9 @@ export default function SetupTwoFactorForm() {
                 <WidgetRenderer widgets={getWidgets('auth-setup-2fa', 'auth-setup-2fa-before-form')} />
                 <form onSubmit={handleSubmit} className='space-y-5'>
                     <div className='dark:bg-muted/20 border-border/50 flex justify-center rounded-2xl border bg-white p-5 shadow-sm'>
-                        <QRCode value={qrCodeUrl} size={188} level='M' />
+                        <div className='rounded-lg bg-white p-3'>
+                            <QRCode value={qrCodeUrl} size={188} level='M' />
+                        </div>
                     </div>
 
                     <div className='space-y-3'>

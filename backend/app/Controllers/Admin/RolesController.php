@@ -20,6 +20,7 @@ namespace App\Controllers\Admin;
 use App\App;
 use App\Chat\Role;
 use App\Chat\Activity;
+use App\Chat\Database;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
@@ -239,13 +240,13 @@ class RolesController
     public function create(Request $request): Response
     {
         $data = json_decode($request->getContent(), true);
-        if (json_last_error() !== JSON_ERROR_NONE) {
+        if (json_last_error() !== JSON_ERROR_NONE || !is_array($data)) {
             return ApiResponse::error('Invalid JSON in request body', 'INVALID_JSON', 400);
         }
         $requiredFields = ['name', 'display_name', 'color'];
         $missingFields = [];
         foreach ($requiredFields as $field) {
-            if (!isset($data[$field]) || trim($data[$field]) === '') {
+            if (!isset($data[$field]) || !is_scalar($data[$field]) || trim((string) $data[$field]) === '') {
                 $missingFields[] = $field;
             }
         }
@@ -284,6 +285,11 @@ class RolesController
             }
             $data['badge_icon'] = $normalizedIcon;
         }
+        $unknownFields = Database::unknownColumns(Role::getTableName(), $data);
+        if ($unknownFields !== []) {
+            return ApiResponse::error('Unknown field(s): ' . implode(', ', $unknownFields), 'UNKNOWN_FIELDS', 400);
+        }
+
         $id = Role::createRole($data);
         if (!$id) {
             return ApiResponse::error('Failed to create role', 'ROLE_CREATE_FAILED', 400);
@@ -355,7 +361,7 @@ class RolesController
             return ApiResponse::error('Role not found', 'ROLE_NOT_FOUND', 404);
         }
         $data = json_decode($request->getContent(), true);
-        if (json_last_error() !== JSON_ERROR_NONE) {
+        if (json_last_error() !== JSON_ERROR_NONE || !is_array($data)) {
             return ApiResponse::error('Invalid JSON in request body', 'INVALID_JSON', 400);
         }
         if (empty($data)) {
@@ -408,6 +414,14 @@ class RolesController
             }
             $data['badge_icon'] = $normalizedIcon;
         }
+        $unknownFields = Database::unknownColumns(Role::getTableName(), $data);
+        if ($unknownFields !== []) {
+            return ApiResponse::error('Unknown field(s): ' . implode(', ', $unknownFields), 'UNKNOWN_FIELDS', 400);
+        }
+        if ($data === []) {
+            return ApiResponse::error('No data to update', 'NO_DATA', 400);
+        }
+
         $success = Role::updateRole($id, $data);
         if (!$success) {
             return ApiResponse::error('Failed to update role', 'ROLE_UPDATE_FAILED', 400);

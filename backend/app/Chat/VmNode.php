@@ -423,8 +423,11 @@ class VmNode
      */
     public static function count(array $conditions): int
     {
+        if (Database::unknownColumns(self::$table, $conditions) !== []) {
+            return 0;
+        }
         $pdo = Database::getPdoConnection();
-        $where = implode(' AND ', array_map(static fn ($k) => "{$k} = :{$k}", array_keys($conditions)));
+        $where = implode(' AND ', array_map(static fn ($k) => "`{$k}` = :{$k}", array_keys($conditions)));
         $stmt = $pdo->prepare('SELECT COUNT(*) FROM ' . self::$table . ' WHERE ' . $where);
         $stmt->execute($conditions);
 

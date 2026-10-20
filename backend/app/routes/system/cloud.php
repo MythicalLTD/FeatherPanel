@@ -16,10 +16,13 @@
  */
 
 use App\App;
+use RateLimit\Rate;
 use App\Helpers\ApiResponse;
 use App\Config\ConfigInterface;
 use App\Helpers\DemoCloudHelper;
+use App\CloudFlare\CloudFlareRealIP;
 use Symfony\Component\Routing\Route;
+use App\Middleware\RateLimitMiddleware;
 use App\Middleware\CloudAccessMiddleware;
 use App\Middleware\PanelAccessMiddleware;
 use App\Controllers\System\CloudV1Controller;
@@ -167,9 +170,32 @@ return static function (RouteCollection $routes): void {
                             return ApiResponse::error('Invalid panel credentials.', 'INVALID_PANEL_CREDENTIALS', 403);
                         }
                     } else {
+                        // First link of this panel. This is the only moment the
+                        // identity pair can be set by an unauthenticated caller,
+                        // so it is audited and can be locked down (see below).
+                        $linkToken = trim((string) ($config->getSetting('feathercloud_link_token', '') ?? ''));
+                        if ($linkToken !== '') {
+                            $provided = trim((string) (
+                                $request->headers->get('X-Panel-Link-Token')
+                                ?? $request->headers->get('x-feathercloud-link-token')
+                                ?? $request->query->get('panel_link_token')
+                                ?? ''
+                            ));
+
+                            if ($provided === '' || !hash_equals($linkToken, $provided)) {
+                                $logger->warning('Mythic panel-handshake: missing or invalid link token');
+
+                                return ApiResponse::error('Invalid panel link token.', 'INVALID_LINK_TOKEN', 403);
+                            }
+                        }
+
                         $config->setSetting(ConfigInterface::FEATHERCLOUD_CLOUD_PUBLIC_KEY, $panelPublic);
                         $config->setSetting(ConfigInterface::FEATHERCLOUD_CLOUD_PRIVATE_KEY, $panelPrivate);
                         $config->setSetting(ConfigInterface::FEATHERCLOUD_CLOUD_LAST_ROTATED, $timestamp);
+                        $config->setSetting('feathercloud_link_source_ip', CloudFlareRealIP::getRealIP());
+
+                        $logger->warning('Mythic panel-handshake: panel identity keys stored for the first time (remote: '
+                            . CloudFlareRealIP::getRealIP() . ')');
                     }
 
                     $config->setSetting(ConfigInterface::FEATHERCLOUD_LAST_SYNCED_AT, $timestamp);
@@ -193,7 +219,9 @@ return static function (RouteCollection $routes): void {
                 }
             },
             // Auth is optional (verified inside when ACCESS keys exist + headers provided).
-            '_middleware' => [],
+            // Rate limited so the first-link window cannot be hammered.
+            '_middleware' => [RateLimitMiddleware::class],
+            '_rate_limit' => ['rate' => Rate::perMinute(10), 'namespace' => 'cloud-handshake'],
         ],
         [],
         [],
@@ -272,8 +300,8 @@ return static function (RouteCollection $routes): void {
                         }
                     }
 
-                    // Always require panel identity keys. Omitting them must fail closed —
-                    // not skip verification — or unauthenticated callers can overwrite ACCESS credentials.
+                    // Always require panel identity keys. Omitting them must fail closed -
+                    // not skip verification - or unauthenticated callers can overwrite ACCESS credentials.
                     if ($panelPublicFromRequest === '' || $panelPrivateFromRequest === '') {
                         return ApiResponse::error(
                             'Missing required parameters: panel_public_key, panel_private_key.',
@@ -322,7 +350,9 @@ return static function (RouteCollection $routes): void {
                     return ApiResponse::error('Failed to process OAuth2 callback', 'OAUTH2_CALLBACK_FAILED', 500);
                 }
             },
-            '_middleware' => [],
+            // Still no panel session (Mythic posts this), but rate limited like the handshake.
+            '_middleware' => [RateLimitMiddleware::class],
+            '_rate_limit' => ['rate' => Rate::perMinute(10), 'namespace' => 'cloud-handshake'],
         ],
         [],
         [],

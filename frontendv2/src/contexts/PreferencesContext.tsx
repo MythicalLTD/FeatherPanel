@@ -20,9 +20,13 @@ import axios from 'axios';
 import { getEffectiveTimezone, type FormatDateOptions } from '@/lib/dateUtils';
 import { useSession } from '@/contexts/SessionContext';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { toast } from 'sonner';
+import { consumeUiPrefsAppliedFlag, startUiPrefsSync } from '@/lib/ui-prefs-sync';
 
 interface UserPreferences {
     timezone?: string | null;
+    /** Per-user switch that masks server IP addresses in the whole panel. */
+    hide_server_ips?: boolean | null;
     [key: string]: unknown;
 }
 
@@ -38,6 +42,9 @@ interface PreferencesContextValue {
     /** Whether the initial fetch + auto-detect cycle has finished. */
     ready: boolean;
     setTimezone: (tz: string | null) => Promise<boolean>;
+    /** True when the user hides server IP addresses throughout the panel. */
+    hideServerIps: boolean;
+    setHideServerIps: (hidden: boolean) => Promise<boolean>;
 }
 
 const PreferencesContext = createContext<PreferencesContextValue | undefined>(undefined);
@@ -54,11 +61,32 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
     // we are still fetching the user's stored preference from the server.
     const [browserTimezone] = useState<string>(() => detectBrowserTimezone());
     const autoPersistedForUuid = useRef<string | null>(null);
+    // Values the user changed locally while the initial GET was still in
+    // flight. A slow GET must not overwrite them with the stale server copy.
+    const localEdits = useRef<Partial<UserPreferences>>({});
 
     const reset = useCallback(() => {
         setPreferences({});
         setReady(false);
         autoPersistedForUuid.current = null;
+        localEdits.current = {};
+    }, []);
+
+    const { t } = useTranslation();
+
+    // Interface settings (theme, layout, sidebar, list views...) follow the account
+    // across devices. See lib/ui-prefs-sync.ts.
+    useEffect(() => {
+        if (!isSessionChecked) return;
+        void startUiPrefsSync(user?.uuid ?? null);
+    }, [user?.uuid, isSessionChecked]);
+
+    useEffect(() => {
+        if (consumeUiPrefsAppliedFlag()) {
+            toast.success(t('uiSync.applied'));
+        }
+        // Once per load; the flag is set right before a sync reload.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     useEffect(() => {
@@ -79,7 +107,7 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
                     data?.success && data.data?.preferences && typeof data.data.preferences === 'object'
                         ? (data.data.preferences as UserPreferences)
                         : {};
-                setPreferences(fetched);
+                setPreferences({ ...fetched, ...localEdits.current });
 
                 // Auto-detect & persist the browser timezone on the very first
                 // session, so subsequent visits from other browsers still show
@@ -115,6 +143,7 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
     }, [user?.uuid, isSessionChecked, reset]);
 
     const setTimezone = useCallback(async (tz: string | null): Promise<boolean> => {
+        localEdits.current = { ...localEdits.current, timezone: tz };
         try {
             const { data } = await axios.patch('/api/user/preferences', { timezone: tz });
             if (data?.success) {
@@ -135,6 +164,32 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
         }
     }, []);
 
+    const setHideServerIps = useCallback(async (hidden: boolean): Promise<boolean> => {
+        // Optimistic: the UI flips immediately, the server is the source of truth.
+        localEdits.current = { ...localEdits.current, hide_server_ips: hidden };
+        setPreferences((prev) => ({ ...prev, hide_server_ips: hidden }));
+        try {
+            const { data } = await axios.patch('/api/user/preferences', { hide_server_ips: hidden });
+            if (data?.success) {
+                const updated: UserPreferences | null =
+                    data.data?.preferences && typeof data.data.preferences === 'object'
+                        ? (data.data.preferences as UserPreferences)
+                        : null;
+                if (updated) {
+                    setPreferences(updated);
+                }
+                return true;
+            }
+            localEdits.current = { ...localEdits.current, hide_server_ips: !hidden };
+            setPreferences((prev) => ({ ...prev, hide_server_ips: !hidden }));
+            return false;
+        } catch {
+            localEdits.current = { ...localEdits.current, hide_server_ips: !hidden };
+            setPreferences((prev) => ({ ...prev, hide_server_ips: !hidden }));
+            return false;
+        }
+    }, []);
+
     const value = useMemo<PreferencesContextValue>(() => {
         const explicit =
             typeof preferences.timezone === 'string' && preferences.timezone.trim() !== ''
@@ -145,8 +200,17 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
             timezone: explicit ?? browserTimezone,
             ready,
             setTimezone,
+            // Mask until the stored preference is known so a slow GET never
+            // flashes real addresses to a user who chose to hide them.
+            hideServerIps: !ready || preferences.hide_server_ips === true,
+            setHideServerIps,
         };
-    }, [preferences, browserTimezone, ready, setTimezone]);
+    }, [preferences, browserTimezone, ready, setTimezone, setHideServerIps]);
+
+    useEffect(() => {
+        if (typeof document === 'undefined') return;
+        document.documentElement.classList.toggle('fp-privacy', value.hideServerIps);
+    }, [value.hideServerIps]);
 
     return <PreferencesContext.Provider value={value}>{children}</PreferencesContext.Provider>;
 }
@@ -169,6 +233,31 @@ export function useUserTimezone(): string {
     const ctx = useContext(PreferencesContext);
     if (ctx) return ctx.timezone;
     return detectBrowserTimezone();
+}
+
+/**
+ * Whether the signed-in user wants server IP addresses masked in the UI.
+ *
+ * Falls back to `false` outside `PreferencesProvider` (plugins, modals
+ * rendered into a detached tree) instead of throwing.
+ */
+export function useHideServerIps(): boolean {
+    const ctx = useContext(PreferencesContext);
+    return ctx ? ctx.hideServerIps : false;
+}
+
+/**
+ * Privacy mode: masks IPs, ports, hosts, emails, API keys, SFTP and database
+ * credentials across the user and admin areas for this account only. It is the
+ * same stored preference as the earlier "hide server IPs" switch.
+ */
+export function usePrivacyMode(): { enabled: boolean; ready: boolean; setEnabled: (on: boolean) => Promise<boolean> } {
+    const ctx = useContext(PreferencesContext);
+    return {
+        enabled: ctx ? ctx.hideServerIps : false,
+        ready: ctx ? ctx.ready : true,
+        setEnabled: ctx ? ctx.setHideServerIps : async () => false,
+    };
 }
 
 /**

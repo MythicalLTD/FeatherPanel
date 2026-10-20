@@ -46,6 +46,24 @@ class SessionCookieHelper
     }
 
     /**
+     * Start a per-device session for the user and set its cookie. Falls back to the account token
+     * when the sessions table is not available yet.
+     *
+     * @param array $user The user row (needs id)
+     * @param string $accountToken The user's account token (users.remember_token)
+     */
+    public static function startSession(array $user, string $accountToken, int $expire): void
+    {
+        $sessionToken = \App\Chat\UserSession::issue(
+            $user,
+            $accountToken,
+            \App\CloudFlare\CloudFlareRealIP::getRealIP(),
+            isset($_SERVER['HTTP_USER_AGENT']) ? (string) $_SERVER['HTTP_USER_AGENT'] : null,
+        );
+        self::set($sessionToken ?? $accountToken, $expire);
+    }
+
+    /**
      * Clear the remember_token cookie (logout / account deletion / etc).
      */
     public static function clear(): void

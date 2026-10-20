@@ -39,11 +39,13 @@ import { HeadlessSelect } from '@/components/ui/headless-select';
 import { toast } from 'sonner';
 import { useServerPermissions } from '@/hooks/useServerPermissions';
 import { useSettings } from '@/contexts/SettingsContext';
+import { useHideServerIps } from '@/contexts/PreferencesContext';
+import { maskEndpointKeepPort } from '@/lib/ip-mask';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { cn, isEnabled } from '@/lib/utils';
 import type { AllocationItem, AllocationsResponse, ProxyCreateRequest, DnsVerifyResponse } from '@/types/server';
-import { PageHeader } from '@/components/featherui/PageHeader';
+import { ServerPageHeader } from '@/components/server/ServerPageHeader';
 import { EmptyState } from '@/components/featherui/EmptyState';
 import { FormSection } from '@/components/featherui/FormSection';
 import { safeBack } from '@/lib/safe-back';
@@ -55,6 +57,7 @@ export default function CreateProxyPage() {
     const router = useRouter();
     const { t } = useTranslation();
     const { settings, loading: settingsLoading } = useSettings();
+    const hideIps = useHideServerIps();
     const { hasPermission, loading: permissionsLoading } = useServerPermissions(uuidShort);
 
     const canManage = hasPermission('proxy.manage');
@@ -203,10 +206,10 @@ export default function CreateProxyPage() {
     }
 
     return (
-        <div className='mx-auto max-w-6xl space-y-8 pb-16'>
+        <div className='space-y-6 pb-12'>
             <WidgetRenderer widgets={getWidgets('server-proxy-new', 'top-of-page')} />
 
-            <PageHeader
+            <ServerPageHeader
                 title={t('serverProxy.createProxy')}
                 description={t('serverProxy.createModalDescription')}
                 actions={
@@ -288,7 +291,7 @@ export default function CreateProxyPage() {
                                     }}
                                     options={allocations.map((a) => ({
                                         id: String(a.port),
-                                        name: `${a.ip}:${a.port} ${a.is_primary ? t('serverProxy.primary') : ''}`,
+                                        name: `${maskEndpointKeepPort(a.ip, a.port, hideIps)} ${a.is_primary ? t('serverProxy.primary') : ''}`,
                                     }))}
                                     placeholder={t('serverProxy.selectPort')}
                                     disabled={saving}

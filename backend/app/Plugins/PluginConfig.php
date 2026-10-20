@@ -140,7 +140,7 @@ class PluginConfig
 
             return true;
         } catch (\Exception $e) {
-            $app->getLogger()->error('Error processing plugin config: ' . $e->getMessage());
+            App::getInstance(true)->getLogger()->error('Error processing plugin config: ' . $e->getMessage());
 
             return false;
         }
@@ -457,7 +457,7 @@ class PluginConfig
 
             return true;
         } catch (\Exception $e) {
-            $app->getLogger()->error('Error validating optional fields: ' . $e->getMessage());
+            App::getInstance(true)->getLogger()->error('Error validating optional fields: ' . $e->getMessage());
 
             return false;
         }
@@ -528,7 +528,7 @@ class PluginConfig
 
             return true;
         } catch (\Exception $e) {
-            $app->getLogger()->error('Error validating mixins: ' . $e->getMessage());
+            App::getInstance(true)->getLogger()->error('Error validating mixins: ' . $e->getMessage());
 
             return false;
         }

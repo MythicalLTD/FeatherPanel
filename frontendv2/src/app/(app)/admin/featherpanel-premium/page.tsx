@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { AdminPageTips } from '@/components/admin/AdminPageTips';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
@@ -210,7 +211,7 @@ export default function FeatherPanelPremiumPage() {
                                             {t('admin.featherpanel_premium.status.active')}
                                         </span>
                                         <span className='bg-primary/10 text-primary border-primary/20 rounded-md border px-2 py-0.5 text-xs font-medium'>
-                                            Premium
+                                            {t('ui.admin.featherpanelPremium.premium')}
                                         </span>
                                     </>
                                 ) : (
@@ -386,6 +387,7 @@ export default function FeatherPanelPremiumPage() {
                     )}
                 </>
             )}
+            <AdminPageTips page='premium' />
         </div>
     );
 }

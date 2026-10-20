@@ -27,6 +27,14 @@ class KnowledgebaseArticle
     private static string $table = 'featherpanel_knowledgebase_articles';
 
     /**
+     * Get the name of the table.
+     */
+    public static function getTableName(): string
+    {
+        return self::$table;
+    }
+
+    /**
      * Get all articles with optional filters and pagination.
      *
      * @param int $page Page number

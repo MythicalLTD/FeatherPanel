@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { TipCard, TipGrid } from '@/components/featherui/TipCard';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
@@ -32,23 +33,22 @@ import {
     FileText,
     ChevronLeft,
     ChevronRight,
-    AlertCircle,
     Info,
     Layout,
     Shield,
     Image as ImageIcon,
 } from 'lucide-react';
 import { PageHeader } from '@/components/featherui/PageHeader';
-import { ResourceCard, type ResourceBadge } from '@/components/featherui/ResourceCard';
+import { ResourceCard, ResourceTable, type ResourceBadge } from '@/components/featherui/ResourceCard';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
-import { EmptyState } from '@/components/featherui/EmptyState';
+import { ListEmptyState } from '@/components/featherui/ListEmptyState';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
-import { PageCard } from '@/components/featherui/PageCard';
 import { Sheet, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from '@/components/ui/sheet';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
+import { ListPagination } from '@/components/featherui/ListPagination';
 
 interface Category {
     id: number;
@@ -301,7 +301,7 @@ export default function KnowledgeBaseCategoriesPage() {
 
             <WidgetRenderer widgets={getWidgets('admin-knowledgebase-categories', 'after-header')} />
 
-            <div className='bg-card/40 flex flex-col items-center gap-4 rounded-2xl p-4 shadow-sm backdrop-blur-md sm:flex-row'>
+            <div className='fp-surface flex flex-col items-center gap-4 rounded-2xl border p-4 sm:flex-row'>
                 <div className='group relative w-full flex-1'>
                     <Search className='text-muted-foreground group-focus-within:text-primary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transition-colors' />
                     <Input
@@ -316,40 +316,21 @@ export default function KnowledgeBaseCategoriesPage() {
             <WidgetRenderer widgets={getWidgets('admin-knowledgebase-categories', 'before-list')} />
 
             {pagination.totalPages > 1 && !loading && (
-                <div className='border-border bg-card/50 mb-4 flex items-center justify-between gap-4 rounded-xl border px-4 py-3'>
-                    <Button
-                        variant='outline'
-                        size='sm'
-                        disabled={!pagination.hasPrev}
-                        onClick={() => setPagination((p) => ({ ...p, page: p.page - 1 }))}
-                        className='gap-1.5'
-                    >
-                        <ChevronLeft className='h-4 w-4' />
-                        {t('common.previous')}
-                    </Button>
-                    <span className='text-sm font-medium'>
-                        {pagination.page} / {pagination.totalPages}
-                    </span>
-                    <Button
-                        variant='outline'
-                        size='sm'
-                        disabled={!pagination.hasNext}
-                        onClick={() => setPagination((p) => ({ ...p, page: p.page + 1 }))}
-                        className='gap-1.5'
-                    >
-                        {t('common.next')}
-                        <ChevronRight className='h-4 w-4' />
-                    </Button>
-                </div>
+                <ListPagination
+                    page={pagination.page}
+                    totalPages={pagination.totalPages}
+                    onPageChange={(nextPage) => setPagination((p) => ({ ...p, page: nextPage }))}
+                    className='mb-4'
+                />
             )}
 
             {loading ? (
                 <TableSkeleton count={5} />
             ) : categories.length === 0 ? (
-                <EmptyState
-                    title={t('admin.knowledgebase.categories.no_results')}
-                    description={t('admin.knowledgebase.categories.search_placeholder')}
-                    icon={AlertCircle}
+                <ListEmptyState
+                    icon={BookOpen}
+                    title={t('emptyStates.kbCategories.title')}
+                    description={t('emptyStates.kbCategories.description')}
                     action={
                         <Button
                             variant='outline'
@@ -361,9 +342,11 @@ export default function KnowledgeBaseCategoriesPage() {
                             {t('admin.knowledgebase.categories.create')}
                         </Button>
                     }
+                    filtered={Boolean(searchQuery.trim())}
+                    onClearFilters={() => setSearchQuery('')}
                 />
             ) : (
-                <div className='grid grid-cols-1 gap-6'>
+                <ResourceTable>
                     {categories.map((category) => {
                         const IconComponent = ({ className }: { className?: string }) => (
                             <div
@@ -456,7 +439,7 @@ export default function KnowledgeBaseCategoriesPage() {
                             />
                         );
                     })}
-                </div>
+                </ResourceTable>
             )}
 
             {pagination.totalPages > 1 && (
@@ -485,23 +468,23 @@ export default function KnowledgeBaseCategoriesPage() {
                 </div>
             )}
 
-            <div className='grid grid-cols-1 gap-6 pt-10 md:grid-cols-2 lg:grid-cols-3'>
-                <PageCard title={t('admin.knowledgebase.help.managing.title')} icon={Layout}>
+            <TipGrid>
+                <TipCard title={t('admin.knowledgebase.help.managing.title')} icon={Layout}>
                     <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.knowledgebase.help.managing.description')}
                     </p>
-                </PageCard>
-                <PageCard title={t('admin.knowledgebase.help.content.title')} icon={Info}>
+                </TipCard>
+                <TipCard title={t('admin.knowledgebase.help.content.title')} icon={Info}>
                     <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.knowledgebase.help.content.description')}
                     </p>
-                </PageCard>
-                <PageCard title={t('admin.knowledgebase.help.attachments.title')} icon={Shield} variant='danger'>
+                </TipCard>
+                <TipCard title={t('admin.knowledgebase.help.attachments.title')} icon={Shield} variant='danger'>
                     <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.knowledgebase.help.attachments.description')}
                     </p>
-                </PageCard>
-            </div>
+                </TipCard>
+            </TipGrid>
 
             <Sheet open={createOpen} onOpenChange={setCreateOpen}>
                 <div className='flex h-full flex-col p-6'>
@@ -530,7 +513,7 @@ export default function KnowledgeBaseCategoriesPage() {
                                     {iconPreview ? (
                                         <Image
                                             src={iconPreview}
-                                            alt='Preview'
+                                            alt={t('common.preview')}
                                             width={64}
                                             height={64}
                                             className='h-full w-full object-cover'
@@ -620,7 +603,7 @@ export default function KnowledgeBaseCategoriesPage() {
                                     {iconPreview ? (
                                         <Image
                                             src={iconPreview}
-                                            alt='Preview'
+                                            alt={t('common.preview')}
                                             width={64}
                                             height={64}
                                             className='h-full w-full object-cover'

@@ -64,6 +64,14 @@ class Node
     ];
 
     /**
+     * Get the name of the table.
+     */
+    public static function getTableName(): string
+    {
+        return self::$table;
+    }
+
+    /**
      * Validate required fields and types for node creation/update.
      */
     public static function validateNodeData(array $data, array $requiredFields = []): array
@@ -72,13 +80,13 @@ class Node
 
         // Check required fields
         foreach ($requiredFields as $field) {
-            if (!isset($data[$field]) || trim((string) $data[$field]) === '') {
+            if (!isset($data[$field]) || !is_scalar($data[$field]) || trim((string) $data[$field]) === '') {
                 $errors[] = "Missing required field: $field";
             }
         }
 
         // Type and format validations
-        if (isset($data['uuid']) && !self::isValidUuid($data['uuid'])) {
+        if (isset($data['uuid']) && (!is_string($data['uuid']) || !self::isValidUuid($data['uuid']))) {
             $errors[] = 'Invalid UUID format';
         }
 
@@ -130,7 +138,7 @@ class Node
             }
         }
 
-        if (isset($data['sftp_subdomain']) && !self::isValidSubdomain($data['sftp_subdomain'])) {
+        if (isset($data['sftp_subdomain']) && (!is_string($data['sftp_subdomain']) || !self::isValidSubdomain($data['sftp_subdomain']))) {
             $errors[] = 'SFTP subdomain must be a valid DNS hostname (alphanumeric, hyphens, dots only)';
         }
 
@@ -797,7 +805,7 @@ class Node
             $cachedNodeId = Cache::get($cacheKey);
             if (is_numeric($cachedNodeId) && (int) $cachedNodeId > 0) {
                 $cachedNode = self::getNodeById((int) $cachedNodeId);
-                // getNodeById already decrypts tokens — compare plaintext
+                // getNodeById already decrypts tokens - compare plaintext
                 if (
                     $cachedNode !== null
                     && ($cachedNode['daemon_token_id'] ?? '') === $tokenId
@@ -840,6 +848,9 @@ class Node
 
     public static function count(array $conditions = []): int
     {
+        if (Database::unknownColumns(self::$table, $conditions) !== []) {
+            return 0;
+        }
         $pdo = Database::getPdoConnection();
         if ($conditions === []) {
             $stmt = $pdo->query('SELECT COUNT(*) FROM ' . self::$table);
@@ -847,7 +858,7 @@ class Node
             return (int) $stmt->fetchColumn();
         }
 
-        $stmt = $pdo->prepare('SELECT COUNT(*) FROM ' . self::$table . ' WHERE ' . implode(' AND ', array_map(fn ($k) => "$k = :$k", array_keys($conditions))));
+        $stmt = $pdo->prepare('SELECT COUNT(*) FROM ' . self::$table . ' WHERE ' . implode(' AND ', array_map(fn ($k) => "`$k` = :$k", array_keys($conditions))));
         $stmt->execute($conditions);
 
         return (int) $stmt->fetchColumn();

@@ -56,6 +56,8 @@ import {
     Loader2,
 } from 'lucide-react';
 import { AllocationCreateForm } from '@/components/admin/AllocationCreateForm';
+import { Sensitive } from '@/components/common/Sensitive';
+import { ListPagination } from '@/components/featherui/ListPagination';
 
 interface Allocation {
     id: number;
@@ -341,31 +343,11 @@ export function AllocationsTab({ nodeId, nodeName }: AllocationsTabProps) {
                     </div>
 
                     {pagination.totalPages > 1 && (
-                        <div className='border-border bg-card/50 flex items-center justify-between gap-4 rounded-xl border px-4 py-3'>
-                            <Button
-                                variant='outline'
-                                size='sm'
-                                disabled={!pagination.hasPrev}
-                                onClick={() => setPagination((p) => ({ ...p, page: p.page - 1 }))}
-                                className='gap-1.5'
-                            >
-                                <ChevronLeft className='h-4 w-4' />
-                                {t('common.previous')}
-                            </Button>
-                            <span className='text-sm font-medium'>
-                                {pagination.page} / {pagination.totalPages}
-                            </span>
-                            <Button
-                                variant='outline'
-                                size='sm'
-                                disabled={!pagination.hasNext}
-                                onClick={() => setPagination((p) => ({ ...p, page: p.page + 1 }))}
-                                className='gap-1.5'
-                            >
-                                {t('common.next')}
-                                <ChevronRight className='h-4 w-4' />
-                            </Button>
-                        </div>
+                        <ListPagination
+                            page={pagination.page}
+                            totalPages={pagination.totalPages}
+                            onPageChange={(nextPage) => setPagination((p) => ({ ...p, page: nextPage }))}
+                        />
                     )}
 
                     <div className='border-border/50 overflow-hidden rounded-xl border'>
@@ -420,7 +402,9 @@ export function AllocationsTab({ nodeId, nodeName }: AllocationsTabProps) {
                                             <TableCell className='font-mono text-xs'>{allocation.id}</TableCell>
                                             <TableCell>
                                                 <div className='flex items-center gap-2'>
-                                                    <span className='font-mono'>{allocation.ip}</span>
+                                                    <span className='font-mono'>
+                                                        <Sensitive>{allocation.ip}</Sensitive>
+                                                    </span>
                                                     {allocation.server_id ? (
                                                         <span className='rounded-full border border-green-500/20 bg-green-500/10 px-2 py-0.5 text-[10px] font-bold text-green-500 uppercase'>
                                                             {t('admin.node.allocations.assigned')}
@@ -557,7 +541,7 @@ export function AllocationsTab({ nodeId, nodeName }: AllocationsTabProps) {
             </PageCard>
 
             <div className='mt-8 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3'>
-                <div className='bg-card/40 border-border/50 space-y-3 rounded-2xl border p-6'>
+                <div className='fp-surface space-y-3 rounded-2xl border p-6'>
                     <div className='text-primary flex items-center gap-3'>
                         <Network className='h-5 w-5' />
                         <h4 className='font-bold'>{t('admin.node.allocations.help.what_are_allocations')}</h4>
@@ -566,7 +550,7 @@ export function AllocationsTab({ nodeId, nodeName }: AllocationsTabProps) {
                         {t('admin.node.allocations.help.what_are_allocations_text')}
                     </p>
                 </div>
-                <div className='bg-card/40 border-border/50 space-y-3 rounded-2xl border p-6'>
+                <div className='fp-surface space-y-3 rounded-2xl border p-6'>
                     <div className='text-primary flex items-center gap-3'>
                         <MapPin className='h-5 w-5' />
                         <h4 className='font-bold'>{t('admin.node.allocations.help.what_you_will_need')}</h4>
@@ -578,7 +562,7 @@ export function AllocationsTab({ nodeId, nodeName }: AllocationsTabProps) {
                         <li>{t('admin.node.allocations.help.what_you_will_need_notes')}</li>
                     </ul>
                 </div>
-                <div className='bg-card/40 border-border/50 space-y-3 rounded-2xl border p-6'>
+                <div className='fp-surface space-y-3 rounded-2xl border p-6'>
                     <div className='text-primary flex items-center gap-3'>
                         <Gamepad2 className='h-5 w-5' />
                         <h4 className='font-bold'>{t('admin.node.allocations.help.popular_game_ranges')}</h4>
@@ -587,7 +571,7 @@ export function AllocationsTab({ nodeId, nodeName }: AllocationsTabProps) {
                         {t('admin.node.allocations.help.recommendation')}
                     </p>
                 </div>
-                <div className='bg-card/40 border-border/50 space-y-3 rounded-2xl border p-6 md:col-span-2 lg:col-span-3'>
+                <div className='fp-surface space-y-3 rounded-2xl border p-6 md:col-span-2 lg:col-span-3'>
                     <div className='text-primary flex items-center gap-3'>
                         <Shield className='h-5 w-5' />
                         <h4 className='font-bold'>{t('admin.node.allocations.help.protocols_and_firewall')}</h4>
@@ -602,7 +586,9 @@ export function AllocationsTab({ nodeId, nodeName }: AllocationsTabProps) {
                 <SheetHeader>
                     <SheetTitle>{t('common.details')}</SheetTitle>
                     <SheetDescription>
-                        {viewingAllocation && `${viewingAllocation.ip}:${viewingAllocation.port}`}
+                        {viewingAllocation && (
+                            <Sensitive>{`${viewingAllocation.ip}:${viewingAllocation.port}`}</Sensitive>
+                        )}
                     </SheetDescription>
                 </SheetHeader>
                 {viewingAllocation && (
@@ -613,7 +599,7 @@ export function AllocationsTab({ nodeId, nodeName }: AllocationsTabProps) {
                                     {t('admin.node.allocations.ip_address')}
                                 </Label>
                                 <p className='bg-muted/30 border-border/50 rounded-lg border px-3 py-2 font-mono'>
-                                    {viewingAllocation.ip}
+                                    <Sensitive>{viewingAllocation.ip}</Sensitive>
                                 </p>
                             </div>
                             <div className='space-y-1'>
@@ -694,6 +680,7 @@ export function AllocationsTab({ nodeId, nodeName }: AllocationsTabProps) {
                             <div className='flex gap-2'>
                                 <Input
                                     placeholder='0.0.0.0'
+                                    data-fp-sensitive=''
                                     value={editForm.ip}
                                     className='h-11'
                                     onChange={(e) => setEditForm((prev) => ({ ...prev, ip: e.target.value }))}

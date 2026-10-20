@@ -25,7 +25,8 @@ DB_NAME="${DB_NAME:-featherpanel}"
 DB_USER="${DB_USER:-featherpanel}"
 DB_HOST="${DB_HOST:-127.0.0.1}"
 DB_PORT="${DB_PORT:-3306}"
-DB_PASSWORD="${DB_PASSWORD:-change-me}"
+# Empty: reuse the password from an existing .env, else generate one.
+DB_PASSWORD="${DB_PASSWORD:-}"
 DB_ENCRYPTION="${DB_ENCRYPTION:-xchacha20}"
 REDIS_PASSWORD="${REDIS_PASSWORD:-eufefwefwefw}"
 REDIS_HOST="${REDIS_HOST:-127.0.0.1}"
@@ -217,7 +218,7 @@ install_backend_deps() {
         echo "Backend directory is missing composer.json: ${BACKEND_DIR}" >&2
         exit 1
     fi
-    run_as_www_data "cd '${BACKEND_DIR}' && composer install --no-interaction --prefer-dist"
+    run_as_www_data "cd '${BACKEND_DIR}' && COMPOSER_ALLOW_SUPERUSER=1 composer install --no-interaction --prefer-dist --optimize-autoloader"
 }
 
 install_frontend_deps() {
@@ -226,6 +227,25 @@ install_frontend_deps() {
         exit 1
     fi
     run_frontend_with_nvm "cd '${FRONTEND_DIR}' && pnpm install --frozen-lockfile=false"
+}
+
+# Re-running the installer must not change credentials or keys: reuse what
+# the existing .env has, generate only what is missing.
+env_value() {
+    local file="$1" key="$2"
+    [ -r "$file" ] || return 0
+    sed -n "s/^${key}=//p" "$file" | tail -n 1 | sed 's/^["'"'"']//; s/["'"'"']$//'
+}
+
+resolve_db_password() {
+    local env_file="${BACKEND_DIR}/storage/config/.env"
+    if [ -z "$DB_PASSWORD" ]; then
+        DB_PASSWORD="$(env_value "$env_file" DATABASE_PASSWORD)"
+    fi
+    if [ -z "$DB_PASSWORD" ] || [ "$DB_PASSWORD" = "change-me" ]; then
+        DB_PASSWORD="$(openssl rand -hex 24)"
+        echo "Generated a random database password (stored in ${env_file})."
+    fi
 }
 
 setup_application_database_connection() {
@@ -240,9 +260,13 @@ setup_application_database_connection() {
     mkdir -p "$(dirname "$env_file")"
     touch "$env_file"
 
-    encryption_key="$(php -r 'echo base64_encode(sodium_crypto_secretbox_keygen());')"
+    # Never replace an existing key: everything encrypted with it would be lost.
+    encryption_key="$(env_value "$env_file" DATABASE_ENCRYPTION_KEY)"
     if [ -z "$encryption_key" ]; then
-        echo "Failed to generate DATABASE_ENCRYPTION_KEY." >&2
+        encryption_key="$(php -r 'echo base64_encode(sodium_crypto_secretbox_keygen());')"
+    fi
+    if [ -z "$encryption_key" ]; then
+        echo "Failed to generate DATABASE_ENCRYPTION_KEY (is the PHP sodium extension installed?)." >&2
         exit 1
     fi
 
@@ -495,20 +519,7 @@ EOF
     systemctl restart "${RUNNER_SERVICE_NAME}"
 }
 
-detect_php_fpm_socket() {
-    local sockets=()
-    shopt -s nullglob
-    sockets=(/run/php/php*-fpm.sock)
-    shopt -u nullglob
-    if [ "${#sockets[@]}" -eq 0 ]; then
-        echo "Unable to find PHP-FPM socket in /run/php." >&2
-        exit 1
-    fi
-    printf '%s\n' "${sockets[@]}" | sort -V | tail -n 1
-}
-
 write_nginx_config_no_ssl() {
-    local php_fpm_socket="$1"
     cat >"$NGINX_SITE_FILE" <<EOF
 server {
     listen 80;
@@ -523,6 +534,20 @@ server {
     add_header Referrer-Policy same-origin;
     proxy_hide_header X-Powered-By;
     proxy_hide_header Server;
+
+    # Live updates (Mercure, served by FrankenPHP): an unbuffered event stream.
+    location /api/mercure {
+        proxy_pass http://127.0.0.1:8721;
+        proxy_http_version 1.1;
+        proxy_set_header Connection "";
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_buffering off;
+        proxy_cache off;
+        proxy_read_timeout 1h;
+    }
 
     location /api {
         proxy_pass http://127.0.0.1:8721;
@@ -579,7 +604,6 @@ EOF
 }
 
 write_nginx_config_cloudflare_tunnel() {
-    local php_fpm_socket="$1"
     cat >"$NGINX_SITE_FILE" <<EOF
 server {
     listen 127.0.0.1:${CF_TUNNEL_LOCAL_PORT};
@@ -594,6 +618,20 @@ server {
     add_header Referrer-Policy same-origin;
     proxy_hide_header X-Powered-By;
     proxy_hide_header Server;
+
+    # Live updates (Mercure, served by FrankenPHP): an unbuffered event stream.
+    location /api/mercure {
+        proxy_pass http://127.0.0.1:8721;
+        proxy_http_version 1.1;
+        proxy_set_header Connection "";
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_buffering off;
+        proxy_cache off;
+        proxy_read_timeout 1h;
+    }
 
     location /api {
         proxy_pass http://127.0.0.1:8721;
@@ -646,46 +684,10 @@ server {
         proxy_pass http://127.0.0.1:3000;
     }
 }
-
-server {
-    listen 127.0.0.1:8721;
-    server_name localhost;
-    root ${BACKEND_DIR}/public;
-    index index.php;
-
-    client_max_body_size 100m;
-    client_body_timeout 120s;
-    sendfile off;
-    error_log ${BACKEND_DIR}/storage/logs/featherpanel-web.fplog error;
-
-    location / {
-        try_files \$uri \$uri/ /index.php?\$query_string;
-    }
-
-    location ~ \\.php$ {
-        include fastcgi_params;
-        fastcgi_param SCRIPT_FILENAME \$document_root\$fastcgi_script_name;
-        fastcgi_param HTTP_PROXY "";
-        fastcgi_param PHP_VALUE "upload_max_filesize = 100M\\npost_max_size = 100M";
-        fastcgi_pass unix:${php_fpm_socket};
-        fastcgi_index index.php;
-        fastcgi_intercept_errors off;
-        fastcgi_buffer_size 16k;
-        fastcgi_buffers 4 16k;
-        fastcgi_connect_timeout 300;
-        fastcgi_send_timeout 300;
-        fastcgi_read_timeout 300;
-    }
-
-    location ~ /\\.ht {
-        deny all;
-    }
-}
 EOF
 }
 
 write_nginx_config_ssl() {
-    local php_fpm_socket="$1"
     cat >"$NGINX_SITE_FILE" <<EOF
 server {
     listen 80;
@@ -714,6 +716,20 @@ server {
     proxy_hide_header X-Powered-By;
     proxy_hide_header Server;
 
+    # Live updates (Mercure, served by FrankenPHP): an unbuffered event stream.
+    location /api/mercure {
+        proxy_pass http://127.0.0.1:8721;
+        proxy_http_version 1.1;
+        proxy_set_header Connection "";
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_buffering off;
+        proxy_cache off;
+        proxy_read_timeout 1h;
+    }
+
     location /api {
         proxy_pass http://127.0.0.1:8721;
         proxy_set_header Host \$host;
@@ -763,41 +779,6 @@ server {
         proxy_buffers 8 128k;
         proxy_busy_buffers_size 256k;
         proxy_pass http://127.0.0.1:3000;
-    }
-}
-
-server {
-    listen 8721;
-    server_name 127.0.0.1 localhost;
-    root ${BACKEND_DIR}/public;
-    index index.php;
-
-    client_max_body_size 100m;
-    client_body_timeout 120s;
-    sendfile off;
-    error_log ${BACKEND_DIR}/storage/logs/featherpanel-web.fplog error;
-
-    location / {
-        try_files \$uri \$uri/ /index.php?\$query_string;
-    }
-
-    location ~ \\.php$ {
-        include fastcgi_params;
-        fastcgi_param SCRIPT_FILENAME \$document_root\$fastcgi_script_name;
-        fastcgi_param HTTP_PROXY "";
-        fastcgi_param PHP_VALUE "upload_max_filesize = 100M\\npost_max_size = 100M";
-        fastcgi_pass unix:${php_fpm_socket};
-        fastcgi_index index.php;
-        fastcgi_intercept_errors off;
-        fastcgi_buffer_size 16k;
-        fastcgi_buffers 4 16k;
-        fastcgi_connect_timeout 300;
-        fastcgi_send_timeout 300;
-        fastcgi_read_timeout 300;
-    }
-
-    location ~ /\\.ht {
-        deny all;
     }
 }
 EOF
@@ -843,17 +824,14 @@ configure_cloudflare_tunnel() {
 }
 
 configure_nginx() {
-    local php_fpm_socket
     install_nginx_tools
 
     if [ -z "$CF_TUNNEL_SETUP" ]; then
         CF_TUNNEL_SETUP="$(prompt_yes_no_default_no "Use Cloudflare Tunnel mode (frontend only via tunnel)? (y/n): ")"
     fi
 
-    php_fpm_socket="$(detect_php_fpm_socket)"
-
     if [ "$CF_TUNNEL_SETUP" = "true" ]; then
-        write_nginx_config_cloudflare_tunnel "$php_fpm_socket"
+        write_nginx_config_cloudflare_tunnel
         enable_and_reload_nginx
         configure_cloudflare_tunnel
     else
@@ -871,7 +849,7 @@ configure_nginx() {
             fi
         fi
 
-        write_nginx_config_no_ssl "$php_fpm_socket"
+        write_nginx_config_no_ssl
         enable_and_reload_nginx
 
         if [ "$ENABLE_SSL" = "y" ] || [ "$ENABLE_SSL" = "Y" ] || [ "$ENABLE_SSL" = "yes" ] || [ "$ENABLE_SSL" = "YES" ]; then
@@ -892,7 +870,7 @@ configure_nginx() {
             fi
 
             if obtain_ssl_certificate; then
-                write_nginx_config_ssl "$php_fpm_socket"
+                write_nginx_config_ssl
                 enable_and_reload_nginx
             else
                 echo "Certificate issuance failed."
@@ -906,23 +884,39 @@ configure_nginx() {
     fi
 }
 
+load_frankenphp_lib() {
+    local lib="${PANEL_DIR}/installer/source/lib/frankenphp.bash"
+    if [ ! -f "$lib" ]; then
+        echo "Missing ${lib}: the checked-out panel version predates the FrankenPHP installer." >&2
+        exit 1
+    fi
+    # shellcheck source=/dev/null
+    . "$lib"
+}
+
 main() {
     require_root
     banner
     step "Syncing panel repository..."
     sync_repo
+    load_frankenphp_lib
     set_runtime_permissions
     step "Installing backend dependencies..."
     install_backend_deps
     step "Installing frontend dependencies..."
     install_frontend_deps
     step "Configuring database user and schema..."
+    resolve_db_password
     configure_database
     step "Writing application environment configuration..."
     setup_application_database_connection
     set_runtime_permissions
     step "Running database migrations..."
     run_database_migrations
+    step "Installing FrankenPHP backend (worker mode, Mercure, OPcache)..."
+    fp_setup_backend "$BACKEND_DIR"
+    set_runtime_permissions
+    fp_start_backend
     step "Building async runner..."
     build_runner_binary
     step "Installing async runner service..."

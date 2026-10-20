@@ -119,7 +119,7 @@ return function (RouteCollection $routes): void {
 
             return (new WebNodesController())->getSetupCommand($request, (int) $id);
         },
-        Permissions::ADMIN_NODES_VIEW,
+        Permissions::ADMIN_NODES_EDIT, // reveals the daemon token
     );
 
     App::getInstance(true)->registerAdminRoute(
@@ -134,7 +134,7 @@ return function (RouteCollection $routes): void {
 
             return (new WebNodesController())->getConfig($request, (int) $id);
         },
-        Permissions::ADMIN_NODES_VIEW,
+        Permissions::ADMIN_NODES_EDIT, // reveals the daemon token
     );
 
     App::getInstance(true)->registerAdminRoute(

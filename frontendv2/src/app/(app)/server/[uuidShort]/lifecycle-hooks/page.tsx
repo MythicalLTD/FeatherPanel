@@ -42,7 +42,7 @@ import {
 
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useServerPermissions } from '@/hooks/useServerPermissions';
-import { PageHeader } from '@/components/featherui/PageHeader';
+import { ServerPageHeader } from '@/components/server/ServerPageHeader';
 import { PageCard } from '@/components/featherui/PageCard';
 import { ResourceCard } from '@/components/featherui/ResourceCard';
 import { EmptyState } from '@/components/featherui/EmptyState';
@@ -421,7 +421,10 @@ export default function ServerLifecycleHooksPage() {
                             {content || t('lifecycleHooks.discord.contentEmpty')}
                         </p>
                         <p className='text-muted-foreground'>
-                            <span className='text-foreground/80 font-semibold'>Embeds:</span> {embeds}
+                            <span className='text-foreground/80 font-semibold'>
+                                {t('ui.server.lifecycleHooks.embeds')}
+                            </span>{' '}
+                            {embeds}
                         </p>
                     </div>
                 );
@@ -531,8 +534,8 @@ export default function ServerLifecycleHooksPage() {
     return (
         <>
             <WidgetRenderer widgets={getWidgets('server-lifecycle-hooks', 'top-of-page')} />
-            <div className='space-y-8 pb-12'>
-                <PageHeader
+            <div className='space-y-6 pb-12'>
+                <ServerPageHeader
                     title={t('lifecycleHooks.title')}
                     description={t('lifecycleHooks.description')}
                     className='gap-4'
@@ -607,7 +610,7 @@ export default function ServerLifecycleHooksPage() {
                     ))}
                 </div>
 
-                <div className='border-border/30 bg-card/40 rounded-2xl border p-4 sm:p-5'>
+                <div className='fp-surface rounded-xl border p-4 sm:p-5'>
                     <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
                         <div className='min-w-0 space-y-1'>
                             <p className='text-muted-foreground text-xs font-semibold tracking-wide uppercase'>
@@ -663,7 +666,7 @@ export default function ServerLifecycleHooksPage() {
                                 badges={[
                                     {
                                         label: `#${step.sequence_id}`,
-                                        className: 'bg-white/5 border-white/10 text-muted-foreground',
+                                        className: 'bg-muted/40 border-border/60 text-muted-foreground',
                                     },
                                     ...(step.continue_on_failure === 1
                                         ? [

@@ -20,19 +20,6 @@ use PHPUnit\Framework\TestCase;
 
 class MailHostNormalizeTest extends TestCase
 {
-    /**
-     * @param array<string, mixed> $data
-     *
-     * @return array<string, mixed>
-     */
-    private function normalize(array $data): array
-    {
-        $m = new \ReflectionMethod(MailHost::class, 'normalize');
-        $m->setAccessible(true);
-
-        return $m->invoke(null, $data);
-    }
-
     public function testPartialUpdateDoesNotResetProvisionModeOrPorts(): void
     {
         // What DnsProvisioner passes after a successful DNS run.
@@ -66,5 +53,17 @@ class MailHostNormalizeTest extends TestCase
     {
         $this->assertNull($this->normalize(['web_node_id' => 0])['web_node_id']);
         $this->assertSame(7, $this->normalize(['web_node_id' => '7'])['web_node_id']);
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     *
+     * @return array<string, mixed>
+     */
+    private function normalize(array $data): array
+    {
+        $m = new ReflectionMethod(MailHost::class, 'normalize');
+
+        return $m->invoke(null, $data);
     }
 }

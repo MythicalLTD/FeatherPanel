@@ -120,7 +120,7 @@ class SubuserPermissionChecker
         $subuser = Subuser::getSubuserByUserAndServer($userId, $serverId);
 
         if (!$subuser) {
-            return null; // Owner — full permission set
+            return null; // Owner - full permission set
         }
 
         $permissions = [];

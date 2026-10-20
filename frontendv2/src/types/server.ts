@@ -182,6 +182,9 @@ export interface Server {
         | 'offline'
         | 'error';
     suspended: number; // 0 = not suspended, 1 = suspended
+    suspension_reason?: string | null;
+    /** When set, the server is removed or suspended after this date. */
+    expires_at?: string | null;
     user_id: number;
     owner_id: number;
     node_id: number;
@@ -402,7 +405,10 @@ export interface AllocationItem {
     ip: string;
     port: number;
     ip_alias?: string;
+    /** Note set by an administrator (read-only for server users). */
     notes?: string;
+    /** Note kept by the server's users; cleared when the allocation leaves the server. */
+    server_notes?: string | null;
     is_primary: boolean;
 }
 

@@ -198,7 +198,9 @@ export default function VdsSubusersPage() {
         return (
             <div className='flex flex-col items-center justify-center py-24'>
                 <Loader2 className='text-primary h-12 w-12 animate-spin opacity-50' />
-                <p className='text-muted-foreground mt-4 animate-pulse font-medium'>Loading subusers…</p>
+                <p className='text-muted-foreground mt-4 animate-pulse font-medium'>
+                    {t('ui.vds.users.loadingSubusers')}
+                </p>
             </div>
         );
     }
@@ -223,7 +225,7 @@ export default function VdsSubusersPage() {
                     <p className='text-muted-foreground mt-2'>{t('vds.subusers.owner_only')}</p>
                 </div>
                 <Button variant='outline' onClick={() => router.push(`/vds/${id}`)}>
-                    Go Back
+                    {t('common.goBack')}
                 </Button>
             </div>
         );
@@ -236,9 +238,9 @@ export default function VdsSubusersPage() {
             <PageHeader
                 title={t('navigation.items.users') || t('vds.subusers.title')}
                 description={
-                    <div className='flex items-center gap-3'>
+                    <div className='flex flex-wrap items-center gap-x-3 gap-y-2'>
                         <span>{t('vds.subusers.description')}</span>
-                        <span className='bg-primary/5 text-primary border-primary/20 rounded-full border px-3 py-1 text-[10px] font-black tracking-widest uppercase'>
+                        <span className='bg-primary/5 text-primary border-primary/20 rounded-full border px-3 py-1 text-[10px] font-black tracking-widest whitespace-nowrap uppercase'>
                             {subusers.length} {t('common.users')}
                         </span>
                     </div>
@@ -273,12 +275,12 @@ export default function VdsSubusersPage() {
             {subusers.length === 0 ? (
                 <EmptyState
                     title={t('vds.subusers.no_subusers')}
-                    description='Add a subuser to grant them access to this VDS instance.'
+                    description={t('ui.vds.users.addASubuserToGrantThem')}
                     icon={Users}
                     action={
                         <Button size='default' onClick={() => setIsAddOpen(true)} className='h-14 px-10 text-lg'>
                             <Plus className='mr-2 h-6 w-6' />
-                            Add Subuser
+                            {t('ui.vds.users.addSubuser')}
                         </Button>
                     }
                 />
@@ -308,10 +310,10 @@ export default function VdsSubusersPage() {
                                         variant='ghost'
                                         size='sm'
                                         onClick={() => openPermissions(sub)}
-                                        className='h-8 rounded-lg px-3 text-xs hover:bg-white/10'
+                                        className='hover:bg-muted/70 h-8 rounded-lg px-3 text-xs'
                                     >
                                         <Shield className='mr-1.5 h-3.5 w-3.5' />
-                                        Permissions
+                                        {t('ui.vds.users.permissions')}
                                     </Button>
                                     <Button
                                         variant='destructive'
@@ -343,14 +345,12 @@ export default function VdsSubusersPage() {
             >
                 <DialogHeader>
                     <DialogTitle>{t('vds.subusers.add')}</DialogTitle>
-                    <DialogDescription>
-                        {'Enter the email address of the user you want to add and select their permissions.'}
-                    </DialogDescription>
+                    <DialogDescription>{t('ui.vds.users.enterTheEmailAddressOfThe')}</DialogDescription>
                 </DialogHeader>
                 <div className='space-y-6 py-4'>
                     <div className='space-y-2'>
                         <label className='text-muted-foreground text-sm font-black tracking-wider uppercase'>
-                            Email Address
+                            {t('ui.vds.users.emailAddress')}
                         </label>
                         <div className='relative'>
                             <User className='text-muted-foreground absolute top-1/2 left-4 z-10 h-5 w-5 -translate-y-1/2' />
@@ -366,7 +366,7 @@ export default function VdsSubusersPage() {
                     </div>
                     <div className='space-y-3'>
                         <label className='text-muted-foreground text-sm font-black tracking-wider uppercase'>
-                            Permissions
+                            {t('ui.vds.users.permissions')}
                         </label>
                         <div className='space-y-2'>
                             {VM_PERMISSIONS.map((permKey) => (
@@ -433,7 +433,7 @@ export default function VdsSubusersPage() {
                         ) : (
                             <Plus className='mr-2 h-5 w-5' />
                         )}
-                        Add
+                        {t('ui.vds.users.add')}
                     </Button>
                 </div>
             </Dialog>

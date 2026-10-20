@@ -114,7 +114,7 @@ class ServerBackupTaskService
         return $this->result('files', self::STATUS_CREATED, null, $backup['uuid'], $backup['id'], $backup['name']);
     }
 
-    // --- Seams (database / daemon access), overridden in unit tests ---------------------------
+    // Seams (database / daemon access), overridden in unit tests
 
     protected function countBackups(int $serverId): int
     {

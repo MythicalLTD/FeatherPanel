@@ -60,12 +60,26 @@ class PhpMyAdmin
             return;
         }
 
+        // Files are there but the panel setup (config/signon bridge) is missing,
+        // e.g. an interrupted install or files restored from a backup/volume.
+        // Try to finish the setup in place before falling back to a re-download.
+        if (self::hasCoreFiles()) {
+            $logger->info('phpMyAdmin files found but setup is incomplete, repairing ' . $targetPath);
+            self::finishSetup($targetPath, $logger);
+            if (self::isInstalled()) {
+                self::writeInstalledMarker();
+
+                return;
+            }
+            $logger->info('phpMyAdmin repair did not complete, reinstalling from scratch');
+        }
+
         // Create public directory if it doesn't exist
         if (!is_dir($publicDir) && !@mkdir($publicDir, 0755, true)) {
             throw new \Exception('Failed to create public directory: ' . $publicDir);
         }
 
-        // Docker mounts public/pma as a volume — empty contents, never remove the mountpoint
+        // Docker mounts public/pma as a volume - empty contents, never remove the mountpoint
         if (is_dir($targetPath)) {
             $logger->info('Clearing incomplete phpMyAdmin directory at ' . $targetPath);
             self::emptyDirectory($targetPath);
@@ -122,25 +136,11 @@ class PhpMyAdmin
             self::moveDirectoryContents($extractedPath, $targetPath);
             self::deleteDirectory($extractedPath);
 
-            // Rename config.sample.inc.php to config.inc.php if it exists
-            $configSamplePath = $targetPath . '/config.sample.inc.php';
-            $configPath = $targetPath . '/config.inc.php';
-            if (file_exists($configSamplePath) && !file_exists($configPath)) {
-                if (!@rename($configSamplePath, $configPath)) {
-                    $logger->warning('Failed to rename config.sample.inc.php to config.inc.php');
-                } else {
-                    $logger->info('Renamed config.sample.inc.php to config.inc.php');
-                }
+            self::finishSetup($targetPath, $logger);
+
+            if (!self::isInstalled()) {
+                throw new \Exception('phpMyAdmin was extracted but the panel setup (config.inc.php signon / token.php) could not be completed. Check that ' . $targetPath . ' is writable.');
             }
-
-            // Configure config.inc.php
-            self::configurePhpMyAdmin($targetPath, $logger);
-
-            // Download and install themes
-            self::installThemes($targetPath, $logger);
-
-            // Copy token authentication files
-            self::copyTokenFiles($targetPath, $logger);
 
             self::writeInstalledMarker();
             $logger->info('phpMyAdmin successfully downloaded and extracted to ' . $targetPath);
@@ -153,16 +153,32 @@ class PhpMyAdmin
     }
 
     /**
-     * Check if phpMyAdmin is installed.
+     * Check if phpMyAdmin is installed and usable from the panel.
+     *
+     * index.php alone is not enough: a half-finished install (or files copied
+     * from a backup/volume) has no signon config or token bridge, and opening
+     * it from the panel fails. Such installs are reported as not installed so
+     * the admin can install again (which repairs them in place).
      *
      * @return bool True if phpMyAdmin is installed, false otherwise
      */
     public static function isInstalled(): bool
     {
-        $publicDir = dirname(__DIR__, 2) . '/public';
-        $targetPath = $publicDir . '/pma';
+        $targetPath = dirname(__DIR__, 2) . '/public/pma';
+        if (!self::hasCoreFiles()) {
+            return false;
+        }
 
-        return is_dir($targetPath) && file_exists($targetPath . '/index.php');
+        if (!is_file($targetPath . '/token.php')) {
+            return false;
+        }
+
+        $config = @file_get_contents($targetPath . '/config.inc.php');
+        if (!is_string($config) || $config === '') {
+            return false;
+        }
+
+        return (bool) preg_match("/\\['auth_type'\\]\\s*=\\s*['\"]signon['\"]/", $config);
     }
 
     /**
@@ -181,6 +197,9 @@ class PhpMyAdmin
             return;
         }
 
+        // Only act on installs the admin actually asked for (marker present).
+        // Leftover files without a marker stay reported as "not installed";
+        // pressing Install repairs them in place.
         if (!self::hasInstalledMarker()) {
             return;
         }
@@ -248,6 +267,36 @@ class PhpMyAdmin
         }
         self::clearInstalledMarker();
         $logger->info('phpMyAdmin successfully deleted');
+    }
+
+    /**
+     * Whether the phpMyAdmin application files are present (setup may be incomplete).
+     */
+    private static function hasCoreFiles(): bool
+    {
+        $targetPath = dirname(__DIR__, 2) . '/public/pma';
+
+        return is_dir($targetPath) && is_file($targetPath . '/index.php');
+    }
+
+    /**
+     * Create/configure config.inc.php, install themes and copy the token bridge.
+     */
+    private static function finishSetup(string $targetPath, $logger): void
+    {
+        $configSamplePath = $targetPath . '/config.sample.inc.php';
+        $configPath = $targetPath . '/config.inc.php';
+        if (file_exists($configSamplePath) && !file_exists($configPath)) {
+            if (!@copy($configSamplePath, $configPath)) {
+                $logger->warning('Failed to create config.inc.php from config.sample.inc.php');
+            } else {
+                $logger->info('Created config.inc.php from config.sample.inc.php');
+            }
+        }
+
+        self::configurePhpMyAdmin($targetPath, $logger);
+        self::installThemes($targetPath, $logger);
+        self::copyTokenFiles($targetPath, $logger);
     }
 
     /**
@@ -733,7 +782,7 @@ class PhpMyAdmin
             return;
         }
 
-        // Docker named volumes bind-mount public/pma — the mountpoint cannot be removed
+        // Docker named volumes bind-mount public/pma - the mountpoint cannot be removed
         if (self::isMountPoint($dir) || self::isDirectoryEmpty($dir)) {
             return;
         }

@@ -70,7 +70,7 @@ async function getEnabledPluginPublicPaths(request: NextRequest): Promise<string
         const settingsRes = await fetch(`${origin}/api/system/plugin-public-pages`, {
             headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
             // Short TTL plugin install/settings can change without redeploy.
-            next: { revalidate: 30 },
+            ...(process.env.NODE_ENV === 'development' ? { cache: 'no-store' as const } : { next: { revalidate: 30 } }),
         });
 
         if (!settingsRes.ok) {

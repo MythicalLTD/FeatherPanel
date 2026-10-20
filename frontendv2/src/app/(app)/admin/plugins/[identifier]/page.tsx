@@ -46,6 +46,8 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { getApiErrorMessage } from '@/lib/api-errors';
 import { cn } from '@/lib/utils';
+import { UnsavedChangesBar } from '@/components/featherui/UnsavedChangesBar';
+import { useFormBaseline } from '@/hooks/useFormBaseline';
 
 interface ConfigField {
     name: string;
@@ -125,7 +127,7 @@ function updateVisibilityEntry(
     };
 }
 
-const surfaceClass = 'border-border/40 bg-card/45 shadow-sm ring-1 ring-white/5';
+const surfaceClass = 'fp-surface border';
 const softPanelClass = 'border-border/35 bg-background/35';
 const mutedPanelClass = 'border-border/30 bg-muted/20';
 
@@ -139,6 +141,11 @@ export default function PluginDetailPage({ params }: { params: Promise<{ identif
     const [config, setConfig] = useState<PluginConfig | null>(null);
     const [visibility, setVisibility] = useState<PluginVisibilityPayload | null>(null);
     const [savingSettings, setSavingSettings] = useState(false);
+    const {
+        dirty: settingsUnsaved,
+        markClean: markSettingsClean,
+        restore: restoreSettings,
+    } = useFormBaseline(config?.settings ?? null);
     const [savingVisibilityKey, setSavingVisibilityKey] = useState<string | null>(null);
     const [selectedSpellIds, setSelectedSpellIds] = useState<Set<number>>(new Set());
     const [selectedSpellsDetails, setSelectedSpellsDetails] = useState<SpellOption[]>([]);
@@ -187,6 +194,7 @@ export default function PluginDetailPage({ params }: { params: Promise<{ identif
                 configSchema: apiData.configSchema || [],
                 allowedOnlyOnSpells: apiData.allowedOnlyOnSpells || [],
             });
+            markSettingsClean();
             setVisibility(visibilityResponse.data.data.visibility || null);
 
             const spellIds = Array.isArray(apiData.allowedOnlyOnSpells) ? apiData.allowedOnlyOnSpells : [];
@@ -202,7 +210,7 @@ export default function PluginDetailPage({ params }: { params: Promise<{ identif
         } finally {
             setLoading(false);
         }
-    }, [decodedIdentifier, loadSelectedSpellsDetails, t]);
+    }, [decodedIdentifier, loadSelectedSpellsDetails, t, markSettingsClean]);
 
     const fetchSpells = useCallback(async () => {
         setSpellsLoading(true);
@@ -448,7 +456,7 @@ export default function PluginDetailPage({ params }: { params: Promise<{ identif
             </div>
 
             <Tabs defaultValue='overview' className='space-y-6'>
-                <TabsList className='border-border/30 bg-card/40 flex h-auto w-full flex-wrap justify-start gap-1 rounded-lg border p-1 shadow-sm'>
+                <TabsList className='fp-surface flex h-auto w-full flex-wrap justify-start gap-1 rounded-lg border p-1'>
                     <TabsTrigger value='overview'>{t('admin.plugins.detail.tabs.overview')}</TabsTrigger>
                     <TabsTrigger value='settings'>{t('admin.plugins.detail.tabs.settings')}</TabsTrigger>
                     <TabsTrigger value='visibility'>{t('admin.plugins.detail.tabs.visibility')}</TabsTrigger>
@@ -460,7 +468,7 @@ export default function PluginDetailPage({ params }: { params: Promise<{ identif
                     <PageCard
                         title={t('admin.plugins.detail.tabs.overview')}
                         icon={ShieldCheck}
-                        className='border-border/40 bg-card/45 rounded-lg p-6 shadow-sm ring-1 ring-white/5'
+                        className='fp-surface rounded-lg border p-6'
                     >
                         <div className='grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px]'>
                             <div className='space-y-4'>
@@ -501,7 +509,7 @@ export default function PluginDetailPage({ params }: { params: Promise<{ identif
                             </div>
                         </div>
                         {hasIssues ? (
-                            <div className='mt-6 rounded-lg border border-amber-500/25 bg-amber-500/10 p-4'>
+                            <div className='mt-6 rounded-lg border border-amber-500/25 bg-amber-500/[0.06] p-4'>
                                 <p className='text-sm font-medium text-amber-700 dark:text-amber-400'>
                                     {t('admin.plugins.detail.attention')}
                                 </p>
@@ -527,7 +535,7 @@ export default function PluginDetailPage({ params }: { params: Promise<{ identif
                         title={t('admin.plugins.drawers.config.settings_title')}
                         description={t('admin.plugins.detail.settings_description')}
                         icon={Settings}
-                        className='border-border/40 bg-card/45 rounded-lg p-6 shadow-sm ring-1 ring-white/5'
+                        className='fp-surface rounded-lg border p-6'
                         action={
                             configFields.length > 0 ? (
                                 <Button
@@ -634,7 +642,7 @@ export default function PluginDetailPage({ params }: { params: Promise<{ identif
                         title={t('admin.plugins.drawers.config.visibility.title')}
                         description={t('admin.plugins.drawers.config.visibility.description')}
                         icon={EyeOff}
-                        className='border-border/40 bg-card/45 rounded-lg p-6 shadow-sm ring-1 ring-white/5'
+                        className='fp-surface rounded-lg border p-6'
                     >
                         {visibilityEntryCount === 0 ? (
                             <div className='border-border/30 bg-muted/15 text-muted-foreground rounded-lg border border-dashed py-12 text-center text-sm'>
@@ -680,7 +688,7 @@ export default function PluginDetailPage({ params }: { params: Promise<{ identif
                         title={t('admin.plugins.drawers.config.spell_restrictions.title')}
                         description={t('admin.plugins.drawers.config.spell_restrictions.description')}
                         icon={SlidersHorizontal}
-                        className='border-border/40 bg-card/45 rounded-lg p-6 shadow-sm ring-1 ring-white/5'
+                        className='fp-surface rounded-lg border p-6'
                         action={
                             <Button
                                 size='sm'
@@ -798,7 +806,7 @@ export default function PluginDetailPage({ params }: { params: Promise<{ identif
                     <PageCard
                         title={t('admin.plugins.detail.tabs.actions')}
                         icon={Package}
-                        className='border-border/40 bg-card/45 rounded-lg p-6 shadow-sm ring-1 ring-white/5'
+                        className='fp-surface rounded-lg border p-6'
                     >
                         <div className='grid gap-3 sm:grid-cols-2 xl:grid-cols-3'>
                             <Button variant='outline' onClick={() => void loadPlugin()}>
@@ -813,6 +821,16 @@ export default function PluginDetailPage({ params }: { params: Promise<{ identif
                     </PageCard>
                 </TabsContent>
             </Tabs>
+
+            <UnsavedChangesBar
+                dirty={settingsUnsaved}
+                saving={savingSettings}
+                onSave={() => void saveAllSettings()}
+                onDiscard={() => {
+                    const saved = restoreSettings();
+                    if (saved) setConfig((prev) => (prev ? { ...prev, settings: saved } : prev));
+                }}
+            />
         </div>
     );
 }

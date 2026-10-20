@@ -18,6 +18,7 @@ import { BookOpen, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import axios from 'axios';
 import Image from 'next/image';
+import { DashboardPanel } from './DashboardOverview';
 
 interface KnowledgeBaseListProps {
     t: (key: string) => string;
@@ -67,90 +68,53 @@ export function KnowledgeBaseList({ t }: KnowledgeBaseListProps) {
 
     if (loading) {
         return (
-            <div className='border-border/50 bg-card/50 space-y-4 rounded-xl border p-6 backdrop-blur-xl'>
-                <div className='flex items-center justify-between'>
-                    <div className='bg-muted h-6 w-32 animate-pulse rounded' />
-                    <div className='bg-muted h-4 w-16 animate-pulse rounded' />
-                </div>
-                <div className='space-y-3'>
-                    {[1, 2, 3].map((i) => (
-                        <div key={i} className='bg-muted/50 h-12 animate-pulse rounded-lg' />
-                    ))}
-                </div>
+            <div className='fp-surface space-y-2 rounded-xl border p-4' aria-busy='true'>
+                <div className='bg-muted h-4 w-28 animate-pulse rounded' />
+                {[0, 1, 2].map((i) => (
+                    <div key={i} className='bg-muted/50 h-9 animate-pulse rounded-lg' />
+                ))}
             </div>
         );
     }
 
-    if (error) {
+    // Nothing to browse: leave the space to widgets that have content.
+    if (error || categories.length === 0) {
         return null;
     }
 
     return (
-        <div className='border-border/50 bg-card/50 rounded-xl border backdrop-blur-xl'>
-            <div className='border-border flex min-w-0 flex-col gap-2 border-b p-4 sm:flex-row sm:items-center sm:justify-between sm:p-6'>
-                <div className='flex min-w-0 items-center gap-2'>
-                    <BookOpen className='text-muted-foreground h-5 w-5' />
-                    <h2 className='truncate text-base font-bold sm:text-lg'>{t('dashboard.knowledgebase.title')}</h2>
-                </div>
+        <DashboardPanel
+            title={t('dashboard.knowledgebase.title')}
+            icon={BookOpen}
+            action={{ label: t('dashboard.knowledgebase.view_all'), href: '/dashboard/knowledgebase' }}
+            flush
+        >
+            {categories.map((category) => (
                 <Link
-                    href='/dashboard/knowledgebase'
-                    className='text-primary hover:text-primary/80 self-start text-xs font-medium whitespace-nowrap transition-colors sm:self-auto sm:text-sm'
+                    key={category.id}
+                    href={`/dashboard/knowledgebase/category/${category.id}`}
+                    className='hover:bg-muted/40 group flex min-w-0 items-center gap-3 px-4 py-2.5 transition-colors'
                 >
-                    {t('dashboard.knowledgebase.view_all')} &rarr;
+                    <span className='fp-icon-tile flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-lg'>
+                        {category.icon ? (
+                            <span className='relative h-5 w-5 overflow-hidden rounded-sm'>
+                                <Image src={category.icon} alt='' fill className='object-cover' unoptimized />
+                            </span>
+                        ) : (
+                            <BookOpen className='h-4 w-4' />
+                        )}
+                    </span>
+                    <span className='min-w-0 flex-1'>
+                        <span className='block truncate text-sm font-medium' title={category.name}>
+                            {category.name}
+                        </span>
+                        {category.description && (
+                            <span className='text-muted-foreground block truncate text-xs'>{category.description}</span>
+                        )}
+                    </span>
+                    <ChevronRight className='text-muted-foreground/40 group-hover:text-primary h-4 w-4 shrink-0 transition-transform group-hover:translate-x-0.5' />
                 </Link>
-            </div>
-
-            <div className='divide-border divide-y'>
-                {categories.length > 0 ? (
-                    categories.map((category) => (
-                        <Link
-                            key={category.id}
-                            href={`/dashboard/knowledgebase/category/${category.id}`}
-                            className='hover:bg-muted/50 group block p-4 transition-colors'
-                        >
-                            <div className='flex min-w-0 flex-col justify-between gap-3 sm:flex-row sm:items-center sm:gap-4'>
-                                <div className='flex min-w-0 items-start gap-3 sm:gap-4'>
-                                    <div className='bg-primary/5 text-primary mt-1 shrink-0 rounded-full p-2 transition-transform group-hover:scale-110 sm:mt-0'>
-                                        {category.icon ? (
-                                            <div className='relative h-5 w-5 overflow-hidden rounded-sm'>
-                                                <Image
-                                                    src={category.icon}
-                                                    alt={category.name}
-                                                    fill
-                                                    className='object-cover'
-                                                    unoptimized
-                                                />
-                                            </div>
-                                        ) : (
-                                            <BookOpen className='h-5 w-5' />
-                                        )}
-                                    </div>
-                                    <div className='min-w-0'>
-                                        <h4
-                                            className='text-foreground group-hover:text-primary line-clamp-2 text-sm font-medium break-words transition-colors sm:text-base'
-                                            title={category.name}
-                                        >
-                                            {category.name}
-                                        </h4>
-                                        {category.description && (
-                                            <p className='text-muted-foreground mt-1 line-clamp-2 text-xs break-words'>
-                                                {category.description}
-                                            </p>
-                                        )}
-                                    </div>
-                                </div>
-
-                                <ChevronRight className='text-muted-foreground/30 group-hover:text-primary hidden h-5 w-5 shrink-0 transition-all group-hover:translate-x-1 sm:block' />
-                            </div>
-                        </Link>
-                    ))
-                ) : (
-                    <div className='text-muted-foreground p-8 text-center'>
-                        <BookOpen className='mx-auto mb-2 h-8 w-8 opacity-50' />
-                        <p>{t('dashboard.knowledgebase.no_categories')}</p>
-                    </div>
-                )}
-            </div>
-        </div>
+            ))}
+        </DashboardPanel>
     );
 }

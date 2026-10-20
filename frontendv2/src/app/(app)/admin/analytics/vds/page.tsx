@@ -119,7 +119,7 @@ export default function VdsAnalyticsPage() {
                                 templates: String(dashboard.vds.templates),
                             })}
                             icon={Boxes}
-                            className='bg-card/50 shadow-none! backdrop-blur-sm'
+                            className='fp-surface border'
                         />
                         <ResourceCard
                             title={String(dashboard.vds.nodes)}
@@ -129,7 +129,7 @@ export default function VdsAnalyticsPage() {
                                 tasks: String(dashboard.vds.tasks),
                             })}
                             icon={Server}
-                            className='bg-card/50 shadow-none! backdrop-blur-sm'
+                            className='fp-surface border'
                         />
                         <ResourceCard
                             title={String(dashboard.vds.instance_backups)}
@@ -139,7 +139,7 @@ export default function VdsAnalyticsPage() {
                                 subusers: String(dashboard.vds.subusers),
                             })}
                             icon={Archive}
-                            className='bg-card/50 shadow-none! backdrop-blur-sm'
+                            className='fp-surface border'
                         />
                         <ResourceCard
                             title={String(dashboard.vds.instance_activities)}
@@ -148,7 +148,7 @@ export default function VdsAnalyticsPage() {
                                 count: String(dashboard.totals.vds_objects),
                             })}
                             icon={Activity}
-                            className='bg-card/50 shadow-none! backdrop-blur-sm'
+                            className='fp-surface border'
                         />
                     </div>
                 )}

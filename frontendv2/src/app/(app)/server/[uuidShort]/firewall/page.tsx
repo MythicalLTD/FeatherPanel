@@ -21,7 +21,7 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useServerPermissions } from '@/hooks/useServerPermissions';
 import { Button } from '@/components/featherui/Button';
-import { PageHeader } from '@/components/featherui/PageHeader';
+import { ServerPageHeader } from '@/components/server/ServerPageHeader';
 import { EmptyState } from '@/components/featherui/EmptyState';
 import { Input } from '@/components/featherui/Input';
 import { Label } from '@/components/ui/label';
@@ -33,6 +33,8 @@ import { cn, isEnabled } from '@/lib/utils';
 import axios from 'axios';
 import { toast } from 'sonner';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
+import { useHideServerIps } from '@/contexts/PreferencesContext';
+import { maskEndpointKeepPort } from '@/lib/ip-mask';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import type {
     FirewallRule,
@@ -53,6 +55,7 @@ export default function ServerFirewallPage() {
     const uuidShort = params.uuidShort as string;
     const { t } = useTranslation();
     const { settings, loading: settingsLoading } = useSettings();
+    const hideIps = useHideServerIps();
 
     const { hasPermission, loading: permissionsLoading, server } = useServerPermissions(uuidShort);
     const canRead = hasPermission('allocation.read') || hasPermission('firewall.read');
@@ -297,9 +300,9 @@ export default function ServerFirewallPage() {
         () =>
             allocations.map((a) => ({
                 id: a.id.toString(),
-                name: `${a.ip}:${a.port} ${a.is_primary ? `(${t('serverAllocations.primary')})` : ''}`,
+                name: `${maskEndpointKeepPort(a.ip, a.port, hideIps)} ${a.is_primary ? `(${t('serverAllocations.primary')})` : ''}`,
             })),
-        [allocations, t],
+        [allocations, t, hideIps],
     );
 
     const typeOptions = [
@@ -364,9 +367,9 @@ export default function ServerFirewallPage() {
     const showHeaderCreateAction = canManage && firewallEnabled && rules.length > 0;
 
     return (
-        <div key={pathname} className='space-y-8 pb-12'>
+        <div key={pathname} className='space-y-6 pb-12'>
             <WidgetRenderer widgets={getWidgets('server-firewall', 'top-of-page')} />
-            <PageHeader
+            <ServerPageHeader
                 title={t('serverFirewall.title')}
                 description={t('serverFirewall.description')}
                 actions={

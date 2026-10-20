@@ -25,6 +25,7 @@ import { backgroundFitToCssSize } from '@/lib/backgroundImageFit';
 import BackgroundAnimatedLayer from '@/components/theme/BackgroundAnimatedLayer';
 import { resolveServerSpellBannerBackground, resolveSpellBannerUrl } from '@/lib/server-spell-banner';
 import { cn } from '@/lib/utils';
+import { safeCssUrl } from '@/lib/safe-css-url';
 
 export default function BackgroundWrapper({
     children,
@@ -35,6 +36,7 @@ export default function BackgroundWrapper({
     fillViewport?: boolean;
 }) {
     const {
+        theme,
         backgroundType,
         backgroundImage,
         backdropBlur,
@@ -55,17 +57,25 @@ export default function BackgroundWrapper({
     }, []);
 
     const isServerRoute = Boolean(pathname?.startsWith('/server/'));
-    const spellBgMode = resolveServerSpellBannerBackground(settings);
+    const isLight = theme === 'light';
+    // Server artwork is dark-first and reduces contrast across the light theme. Keep it disabled
+    // there even when the server-level banner preference is enabled.
+    const spellBgMode = isLight ? 'off' : resolveServerSpellBannerBackground(settings);
     const spellBannerUrl =
         isServerRoute && spellBgMode !== 'off' ? resolveSpellBannerUrl(serverCtx?.server?.spell?.banner) : null;
     const useSpellReplace = Boolean(spellBannerUrl && spellBgMode === 'replace');
     const useSpellBlend = Boolean(spellBannerUrl && spellBgMode === 'blend');
+    // Light mode only paints pattern/solid; never aurora/image/gradient canvases.
+    const effectiveBackgroundType =
+        isLight && backgroundType !== 'pattern' && backgroundType !== 'solid' ? 'pattern' : backgroundType;
 
     useEffect(() => {
         if (!mounted) return;
         if (!settings) return;
         // Don't fight a server-route spell replace background with admin image seeding.
         if (useSpellReplace) return;
+        // Image backgrounds are dark-first and disabled while Light is active.
+        if (isLight) return;
 
         const imageUrl = settings.app_background_image_url;
         const lock = settings.app_background_lock === 'true';
@@ -91,46 +101,50 @@ export default function BackgroundWrapper({
         setBackgroundImage,
         setBackgroundType,
         useSpellReplace,
+        isLight,
     ]);
 
-    if (!mounted) {
-        return <>{children}</>;
-    }
-
     const getBackgroundStyle = (): React.CSSProperties => {
+        const opaqueBase: React.CSSProperties = {
+            backgroundColor: 'hsl(var(--background))',
+        };
+
         if (useSpellReplace && spellBannerUrl) {
             return {
-                backgroundImage: `url(${spellBannerUrl})`,
+                ...opaqueBase,
+                backgroundImage: safeCssUrl(spellBannerUrl),
                 backgroundSize: backgroundFitToCssSize(backgroundImageFit),
                 backgroundPosition: 'center',
                 backgroundRepeat: 'no-repeat',
             };
         }
 
-        if (backgroundType === 'image' && backgroundImage) {
+        if (effectiveBackgroundType === 'image' && backgroundImage) {
             return {
-                backgroundImage: `url(${backgroundImage})`,
+                ...opaqueBase,
+                backgroundImage: safeCssUrl(backgroundImage),
                 backgroundSize: backgroundFitToCssSize(backgroundImageFit),
                 backgroundPosition: 'center',
                 backgroundRepeat: 'no-repeat',
             };
         }
 
-        if (backgroundType === 'gradient') {
+        if (effectiveBackgroundType === 'gradient') {
             return {
                 background:
-                    'linear-gradient(135deg, hsl(var(--primary) / 0.12) 0%, hsl(var(--primary) / 0.04) 50%, hsl(var(--primary) / 0.12) 100%)',
+                    'linear-gradient(135deg, hsl(var(--primary) / 0.12) 0%, hsl(var(--primary) / 0.04) 50%, hsl(var(--primary) / 0.12) 100%), hsl(var(--background))',
             };
         }
 
-        if (backgroundType === 'pattern') {
+        if (effectiveBackgroundType === 'pattern') {
             return {
+                ...opaqueBase,
                 backgroundImage: 'radial-gradient(circle, hsl(var(--muted-foreground) / 0.1) 1px, transparent 1px)',
                 backgroundSize: '16px 16px',
             };
         }
 
-        if (backgroundType === 'solid' && backgroundImage) {
+        if (effectiveBackgroundType === 'solid' && backgroundImage) {
             if (backgroundImage.startsWith('#')) {
                 return {
                     backgroundColor: backgroundImage,
@@ -138,17 +152,20 @@ export default function BackgroundWrapper({
             }
         }
 
-        return {};
+        return opaqueBase;
     };
 
-    const useAurora = !useSpellReplace && backgroundType === 'aurora';
-    const hasOverlay = backdropBlur > 0 || backdropDarken > 0 || useSpellReplace;
+    const useAurora = !isLight && !useSpellReplace && effectiveBackgroundType === 'aurora';
+    // Darken veil breaks light-mode contrast; keep blur only when useful.
+    const effectiveDarken = isLight ? 0 : backdropDarken;
+    const effectiveBlur = isLight ? 0 : backdropBlur;
+    const hasOverlay = effectiveBlur > 0 || effectiveDarken > 0 || useSpellReplace;
     const overlayStyle: React.CSSProperties = {
-        backdropFilter: backdropBlur > 0 ? `blur(${backdropBlur}px)` : undefined,
-        WebkitBackdropFilter: backdropBlur > 0 ? `blur(${backdropBlur}px)` : undefined,
+        backdropFilter: effectiveBlur > 0 ? `blur(${effectiveBlur}px)` : undefined,
+        WebkitBackdropFilter: effectiveBlur > 0 ? `blur(${effectiveBlur}px)` : undefined,
         backgroundColor:
-            backdropDarken > 0 || useSpellReplace
-                ? `rgba(0,0,0,${Math.max(backdropDarken, useSpellReplace ? 35 : 0) / 100})`
+            effectiveDarken > 0 || useSpellReplace
+                ? `rgba(0,0,0,${Math.max(effectiveDarken, useSpellReplace ? 35 : 0) / 100})`
                 : undefined,
     };
 
@@ -156,11 +173,16 @@ export default function BackgroundWrapper({
         <div
             className={cn(
                 'relative transition-all duration-500',
-                fillViewport ? 'flex h-svh max-h-svh flex-col overflow-hidden' : 'min-h-svh',
+                // overflow-clip (not hidden): a hidden box can still be scrolled by scrollIntoView()/focus(),
+                // which pushed the top bar out of view on mobile.
+                fillViewport ? 'flex h-svh max-h-svh flex-col overflow-clip' : 'min-h-svh',
             )}
         >
-            {/* Background layer: Aurora or gradient/solid/pattern/image (or spell replace on server pages) */}
-            {useAurora ? (
+            {/* Background layer: Aurora or gradient/solid/pattern/image (or spell replace on server pages).
+                Painted only after mount (theme prefs live in localStorage), but the wrapper and the
+                children slot below never change shape: swapping `<>{children}</>` for this tree used
+                to remount the whole page right after load, re-running every fetch and WebGL setup. */}
+            {!mounted ? null : useAurora ? (
                 <>
                     <div
                         className='auth-aurora-wrap pointer-events-none fixed inset-0 z-0'
@@ -187,15 +209,15 @@ export default function BackgroundWrapper({
             )}
 
             {/* Soft spell banner over the existing theme background on server pages */}
-            {useSpellBlend && spellBannerUrl ? (
+            {mounted && useSpellBlend && spellBannerUrl ? (
                 <div
                     className='pointer-events-none fixed inset-0 z-[1] bg-cover bg-center bg-no-repeat opacity-45 transition-all duration-500'
-                    style={{ backgroundImage: `url(${spellBannerUrl})` }}
+                    style={{ backgroundImage: safeCssUrl(spellBannerUrl) }}
                     aria-hidden
                 />
             ) : null}
 
-            {hasOverlay && (
+            {mounted && hasOverlay && (
                 <div
                     className='pointer-events-none fixed inset-0 z-[2] transition-all duration-500'
                     style={overlayStyle}

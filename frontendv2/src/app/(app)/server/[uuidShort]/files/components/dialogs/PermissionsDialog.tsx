@@ -102,7 +102,7 @@ export function PermissionsDialog({ open, onOpenChange, uuid, root, files, onSuc
                             placeholder={t('files.dialogs.permissions.mode_placeholder')}
                             value={mode}
                             onChange={(e) => setMode(e.target.value)}
-                            className='border-white/10 bg-white/5 text-center font-mono text-lg tracking-widest'
+                            className='border-border/60 bg-muted/40 text-center font-mono text-lg tracking-widest'
                             maxLength={4}
                         />
                     </div>

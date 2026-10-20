@@ -34,6 +34,7 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { Sensitive } from '@/components/common/Sensitive';
 
 interface ApiNode {
     id: number;
@@ -244,9 +245,13 @@ export function MassTransferServersDialog({
                             }}
                         >
                             <span className={selectedNode ? 'text-foreground font-medium' : 'text-muted-foreground'}>
-                                {selectedNode
-                                    ? `${selectedNode.name} (${selectedNode.fqdn})`
-                                    : t('admin.node.mass_transfer.select_destination')}
+                                {selectedNode ? (
+                                    <>
+                                        {selectedNode.name} (<Sensitive>{selectedNode.fqdn}</Sensitive>)
+                                    </>
+                                ) : (
+                                    t('admin.node.mass_transfer.select_destination')
+                                )}
                             </span>
                             <ChevronRight className='text-muted-foreground h-4 w-4' />
                         </Button>
@@ -288,7 +293,7 @@ export function MassTransferServersDialog({
                             </div>
 
                             {!hasEnoughAllocations && selectedCount > 0 && (
-                                <p className='rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-600'>
+                                <p className='rounded-xl border border-red-500/25 bg-red-500/[0.06] p-3 text-sm text-red-600'>
                                     {t('admin.node.mass_transfer.insufficient_allocations')}
                                 </p>
                             )}
@@ -416,7 +421,9 @@ export function MassTransferServersDialog({
                                     className='border-border/50 hover:bg-muted/50 w-full rounded-xl border p-4 text-left transition-all'
                                 >
                                     <p className='text-sm font-bold'>{node.name}</p>
-                                    <p className='text-muted-foreground text-xs'>{node.fqdn}</p>
+                                    <p className='text-muted-foreground text-xs'>
+                                        <Sensitive>{node.fqdn}</Sensitive>
+                                    </p>
                                 </button>
                             ))
                         )}

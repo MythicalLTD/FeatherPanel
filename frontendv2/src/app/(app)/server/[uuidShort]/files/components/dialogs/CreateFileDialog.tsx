@@ -29,6 +29,8 @@ import { useFileManagerApi } from '@/contexts/FileManagerApiContext';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { Textarea } from '@/components/featherui/Textarea';
 import { getApiErrorMessage } from '@/lib/api-errors';
+import { FILE_TEMPLATES } from '@/lib/file-templates';
+import { FileText } from 'lucide-react';
 
 interface CreateFileDialogProps {
     open: boolean;
@@ -74,6 +76,27 @@ export function CreateFileDialog({ open, onOpenChange, uuid, root, onSuccess }: 
                     <DialogDescription>{t('files.dialogs.create_file.description', { root: root })}</DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className='space-y-4' data-fp-save-shortcut>
+                    <div className='space-y-2'>
+                        <p className='text-muted-foreground text-xs font-medium'>
+                            {t('files.dialogs.create_file.templates')}
+                        </p>
+                        <div className='flex flex-wrap gap-1.5'>
+                            {FILE_TEMPLATES.map((tpl) => (
+                                <button
+                                    key={tpl.id}
+                                    type='button'
+                                    onClick={() => {
+                                        setName(tpl.fileName);
+                                        setContent(tpl.content);
+                                    }}
+                                    className='fp-surface-inset hover:border-primary/40 text-muted-foreground hover:text-foreground inline-flex min-h-8 items-center gap-1.5 rounded-lg border px-2.5 font-mono text-xs transition-colors'
+                                >
+                                    <FileText className='h-3.5 w-3.5' />
+                                    {tpl.fileName}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
                     <div className='space-y-2'>
                         <label className='text-sm font-medium'>{t('files.dialogs.create_file.name_label')}</label>
                         <Input

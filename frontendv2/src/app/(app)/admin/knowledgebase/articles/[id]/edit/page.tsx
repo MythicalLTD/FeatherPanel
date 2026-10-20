@@ -16,6 +16,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { TipCard, TipGrid } from '@/components/featherui/TipCard';
 import { useState, useEffect, useCallback, useRef, use } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
@@ -64,6 +65,8 @@ import remarkGfm from 'remark-gfm';
 import { copyToClipboard, formatFileSize } from '@/lib/utils';
 import { safeBack } from '@/lib/safe-back';
 import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
+import { UnsavedChangesBar } from '@/components/featherui/UnsavedChangesBar';
+import { useFormBaseline } from '@/hooks/useFormBaseline';
 
 interface Category {
     id: number;
@@ -116,6 +119,7 @@ export default function ArticleEditPage({ params }: { params: Promise<{ id: stri
         status: 'draft',
         pinned: 'false',
     });
+    const { dirty: unsaved, markClean, restore: restoreForm } = useFormBaseline(form);
 
     const [iconFile, setIconFile] = useState<File | null>(null);
     const [iconPreview, setIconPreview] = useState<string | null>(null);
@@ -148,6 +152,7 @@ export default function ArticleEditPage({ params }: { params: Promise<{ id: stri
                 const art = artRes.data.data.article;
                 setArticle(art);
                 setForm(art);
+                markClean();
                 setIconPreview(art.icon);
             }
             if (catRes.data?.success) setCategories(catRes.data.data.categories);
@@ -156,7 +161,7 @@ export default function ArticleEditPage({ params }: { params: Promise<{ id: stri
         } catch (error) {
             toast.error(getApiErrorMessage(error, t, 'admin.knowledgebase.articles.messages.fetch_failed'));
         }
-    }, [id, t]);
+    }, [id, t, markClean]);
 
     // Fetch articles in the same category for reordering
     const fetchCategoryArticles = useCallback(async (categoryId: number) => {
@@ -264,8 +269,8 @@ export default function ArticleEditPage({ params }: { params: Promise<{ id: stri
         }
     };
 
-    const handleSave = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleSave = async (e?: React.FormEvent) => {
+        e?.preventDefault();
         setSaveLoading(true);
 
         let iconUrl = form.icon || '';
@@ -425,7 +430,7 @@ export default function ArticleEditPage({ params }: { params: Promise<{ id: stri
                 <div className='space-y-6 lg:col-span-2'>
                     <WidgetRenderer widgets={getWidgets('admin-knowledgebase-article-edit', 'before-content')} />
                     <Tabs defaultValue='content' className='w-full'>
-                        <div className='bg-card/40 mb-6 flex items-center justify-between rounded-2xl p-2 shadow-sm backdrop-blur-md'>
+                        <div className='fp-surface mb-6 flex items-center justify-between rounded-2xl border p-2'>
                             <TabsList className='h-10 bg-transparent'>
                                 <TabsTrigger
                                     value='content'
@@ -473,7 +478,7 @@ export default function ArticleEditPage({ params }: { params: Promise<{ id: stri
                         </div>
 
                         <TabsContent value='content' className='m-0 border-none p-0 outline-none'>
-                            <div className='bg-card/40 space-y-4 rounded-2xl p-6 shadow-sm backdrop-blur-md'>
+                            <div className='fp-surface space-y-4 rounded-2xl border p-6'>
                                 <div className='space-y-2'>
                                     <Label htmlFor='title'>{t('admin.knowledgebase.articles.form.title')}</Label>
                                     <Input
@@ -590,7 +595,7 @@ export default function ArticleEditPage({ params }: { params: Promise<{ id: stri
                         </TabsContent>
 
                         <TabsContent value='attachments' className='m-0 border-none p-0 outline-none'>
-                            <div className='bg-card/40 space-y-6 rounded-2xl p-6 shadow-sm backdrop-blur-md'>
+                            <div className='fp-surface space-y-6 rounded-2xl border p-6'>
                                 <div className='flex items-center justify-between'>
                                     <div>
                                         <h3 className='text-lg font-bold'>
@@ -690,7 +695,7 @@ export default function ArticleEditPage({ params }: { params: Promise<{ id: stri
                         </TabsContent>
 
                         <TabsContent value='tags' className='m-0 border-none p-0 outline-none'>
-                            <div className='bg-card/40 space-y-6 rounded-2xl p-6 shadow-sm backdrop-blur-md'>
+                            <div className='fp-surface space-y-6 rounded-2xl border p-6'>
                                 <div className='flex items-center justify-between'>
                                     <div>
                                         <h3 className='text-lg font-bold'>
@@ -733,22 +738,22 @@ export default function ArticleEditPage({ params }: { params: Promise<{ id: stri
                         </TabsContent>
                     </Tabs>
 
-                    <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
-                        <PageCard title={t('admin.knowledgebase.help.managing.title')} icon={Layout}>
+                    <TipGrid>
+                        <TipCard title={t('admin.knowledgebase.help.managing.title')} icon={Layout}>
                             <p className='text-muted-foreground text-sm leading-relaxed'>
                                 {t('admin.knowledgebase.help.managing.description')}
                             </p>
-                        </PageCard>
-                        <PageCard title={t('admin.knowledgebase.help.content.title')} icon={Info}>
+                        </TipCard>
+                        <TipCard title={t('admin.knowledgebase.help.content.title')} icon={Info}>
                             <p className='text-muted-foreground text-sm leading-relaxed'>
                                 {t('admin.knowledgebase.help.content.description')}
                             </p>
-                        </PageCard>
-                    </div>
+                        </TipCard>
+                    </TipGrid>
                 </div>
 
                 <div className='space-y-6'>
-                    <div className='bg-card/40 space-y-6 overflow-hidden rounded-2xl p-6 shadow-sm backdrop-blur-md'>
+                    <div className='fp-surface space-y-6 overflow-hidden rounded-2xl border p-6'>
                         <h3 className='mb-2 text-lg font-bold'>{t('common.details')}</h3>
 
                         <div className='space-y-2'>
@@ -800,7 +805,7 @@ export default function ArticleEditPage({ params }: { params: Promise<{ id: stri
                                     {iconPreview ? (
                                         <Image
                                             src={iconPreview}
-                                            alt='Preview'
+                                            alt={t('common.preview')}
                                             width={64}
                                             height={64}
                                             className='h-full w-full object-cover'
@@ -832,11 +837,11 @@ export default function ArticleEditPage({ params }: { params: Promise<{ id: stri
                         </div>
                     </div>
 
-                    <PageCard title={t('admin.knowledgebase.help.attachments.title')} icon={Shield} variant='danger'>
+                    <TipCard title={t('admin.knowledgebase.help.attachments.title')} icon={Shield} variant='danger'>
                         <p className='text-muted-foreground text-sm leading-relaxed'>
                             {t('admin.knowledgebase.help.attachments.description')}
                         </p>
-                    </PageCard>
+                    </TipCard>
 
                     {/* Article Reordering Section */}
                     {categoryArticles.length > 1 && (
@@ -932,7 +937,7 @@ export default function ArticleEditPage({ params }: { params: Promise<{ id: stri
             </div>
 
             <Dialog open={tagsDialogOpen} onOpenChange={setTagsDialogOpen}>
-                <DialogContent className='rounded-3xl sm:max-w-[425px]'>
+                <DialogContent className='sm:max-w-[425px]'>
                     <DialogHeader>
                         <DialogTitle>{t('admin.knowledgebase.edit.tags.add_dialog_title')}</DialogTitle>
                         <DialogDescription>
@@ -962,6 +967,16 @@ export default function ArticleEditPage({ params }: { params: Promise<{ id: stri
             </Dialog>
 
             <WidgetRenderer widgets={getWidgets('admin-knowledgebase-article-edit', 'bottom-of-page')} />
+
+            <UnsavedChangesBar
+                dirty={unsaved}
+                saving={saveLoading}
+                onSave={() => void handleSave()}
+                onDiscard={() => {
+                    const saved = restoreForm();
+                    if (saved) setForm(saved);
+                }}
+            />
         </div>
     );
 }

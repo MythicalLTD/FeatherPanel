@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { TipCard, TipGrid } from '@/components/featherui/TipCard';
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import axios from 'axios';
@@ -23,10 +24,9 @@ import { getApiErrorMessage } from '@/lib/api-errors';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
-import { ResourceCard, type ResourceBadge } from '@/components/featherui/ResourceCard';
+import { ResourceCard, ResourceTable, type ResourceBadge } from '@/components/featherui/ResourceCard';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
-import { EmptyState } from '@/components/featherui/EmptyState';
-import { PageCard } from '@/components/featherui/PageCard';
+import { ListEmptyState } from '@/components/featherui/ListEmptyState';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { usePersistedListFilters } from '@/hooks/usePersistedListFilters';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
@@ -43,6 +43,8 @@ import {
     LayoutTemplate,
     Activity,
 } from 'lucide-react';
+import { useIpMask } from '@/hooks/useIpMask';
+import { ListPagination } from '@/components/featherui/ListPagination';
 
 interface WebNode {
     id: number;
@@ -89,11 +91,12 @@ const WEB_NODES_LIST_FILTERS_DEFAULTS = {
 
 export default function WebNodesPage() {
     const { t } = useTranslation();
+    const privacyMask = useIpMask();
     const router = useRouter();
     const searchParams = useSearchParams();
     const urlLocationId = searchParams.get('location_id') ?? '';
 
-    const { filters, patchFilters, hydrated } = usePersistedListFilters(
+    const { filters, patchFilters, hydrated, resetFilters, isFiltered } = usePersistedListFilters(
         WEB_NODES_LIST_FILTERS_KEY,
         WEB_NODES_LIST_FILTERS_DEFAULTS,
     );
@@ -266,7 +269,7 @@ export default function WebNodesPage() {
 
             <WidgetRenderer widgets={getWidgets('admin-web-nodes', 'after-header')} />
 
-            <div className='bg-card/40 flex flex-col items-center gap-4 rounded-2xl p-4 shadow-sm backdrop-blur-md sm:flex-row'>
+            <div className='fp-surface flex flex-col items-center gap-4 rounded-2xl border p-4 sm:flex-row'>
                 <div className='group relative w-full flex-1'>
                     <Search className='text-muted-foreground group-focus-within:text-primary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transition-colors' />
                     <Input
@@ -281,43 +284,32 @@ export default function WebNodesPage() {
             <WidgetRenderer widgets={getWidgets('admin-web-nodes', 'before-list')} />
 
             {pagination.totalPages > 1 && !loading && (
-                <div className='border-border bg-card/50 mb-4 flex items-center justify-between gap-4 rounded-xl border px-4 py-3'>
-                    <Button
-                        variant='outline'
-                        size='sm'
-                        disabled={page === 1}
-                        onClick={() => patchFilters({ page: page - 1 })}
-                        className='gap-1.5'
-                    >
-                        <ChevronLeft className='h-4 w-4' />
-                        {t('common.previous')}
-                    </Button>
-                    <span className='text-sm font-medium'>
-                        {page} / {pagination.totalPages}
-                    </span>
-                    <Button
-                        variant='outline'
-                        size='sm'
-                        disabled={page === pagination.totalPages}
-                        onClick={() => patchFilters({ page: page + 1 })}
-                        className='gap-1.5'
-                    >
-                        {t('common.next')}
-                        <ChevronRight className='h-4 w-4' />
-                    </Button>
-                </div>
+                <ListPagination
+                    page={page}
+                    totalPages={pagination.totalPages}
+                    onPageChange={(nextPage) => patchFilters({ page: nextPage })}
+                    className='mb-4'
+                />
             )}
 
             {loading ? (
                 <TableSkeleton count={5} />
             ) : webNodes.length === 0 ? (
-                <EmptyState
+                <ListEmptyState
                     icon={Server}
-                    title={t('admin.webNodes.no_results')}
-                    description={t('admin.webNodes.search_placeholder')}
+                    title={t('emptyStates.webNodes.title')}
+                    description={t('emptyStates.webNodes.description')}
+                    action={
+                        <Button onClick={() => router.push('/admin/web-nodes/create')}>
+                            <Plus className='mr-2 h-4 w-4' />
+                            {t('admin.webNodes.create')}
+                        </Button>
+                    }
+                    filtered={isFiltered}
+                    onClearFilters={resetFilters}
                 />
             ) : (
-                <div className='grid grid-cols-1 gap-4'>
+                <ResourceTable>
                     {webNodes.map((node) => {
                         const health = nodeHealth[node.id];
                         const badges: ResourceBadge[] = [
@@ -353,7 +345,7 @@ export default function WebNodesPage() {
                             <ResourceCard
                                 key={node.id}
                                 title={node.name}
-                                subtitle={`${node.scheme}://${node.fqdn}:${node.daemonListen}`}
+                                subtitle={privacyMask.text(`${node.scheme}://${node.fqdn}:${node.daemonListen}`)}
                                 icon={LayoutTemplate}
                                 badges={badges}
                                 description={
@@ -406,7 +398,7 @@ export default function WebNodesPage() {
                             />
                         );
                     })}
-                </div>
+                </ResourceTable>
             )}
 
             {pagination.totalPages > 1 && (
@@ -433,25 +425,25 @@ export default function WebNodesPage() {
                 </div>
             )}
 
-            <div className='grid grid-cols-1 gap-6 md:grid-cols-3'>
-                <PageCard title={t('admin.webNodes.help.what.title')} icon={LayoutTemplate}>
+            <TipGrid>
+                <TipCard title={t('admin.webNodes.help.what.title')} icon={LayoutTemplate}>
                     <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.webNodes.help.what.description')}
                     </p>
-                </PageCard>
-                <PageCard title={t('admin.webNodes.help.utility.title')} icon={Server}>
+                </TipCard>
+                <TipCard title={t('admin.webNodes.help.utility.title')} icon={Server}>
                     <ul className='text-muted-foreground list-inside list-disc space-y-1 text-sm leading-relaxed'>
                         <li>{t('admin.webNodes.help.utility.connect')}</li>
                         <li>{t('admin.webNodes.help.utility.limits')}</li>
                         <li>{t('admin.webNodes.help.utility.mapLocations')}</li>
                     </ul>
-                </PageCard>
-                <PageCard title={t('admin.webNodes.help.locations.title')} icon={MapPin}>
+                </TipCard>
+                <TipCard title={t('admin.webNodes.help.locations.title')} icon={MapPin}>
                     <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.webNodes.help.locations.description')}
                     </p>
-                </PageCard>
-            </div>
+                </TipCard>
+            </TipGrid>
 
             <WidgetRenderer widgets={getWidgets('admin-web-nodes', 'bottom-of-page')} />
         </div>

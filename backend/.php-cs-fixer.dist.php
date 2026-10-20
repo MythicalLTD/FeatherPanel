@@ -31,6 +31,7 @@ $finder = new Finder()
         "caches",
         "logs",
         "storage/packages",
+        "public/webmail",
     ])
     ->notName(["_ide_helper*"]);
 

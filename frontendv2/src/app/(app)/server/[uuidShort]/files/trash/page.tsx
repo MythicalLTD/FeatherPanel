@@ -17,7 +17,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { use, useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { PageHeader } from '@/components/featherui/PageHeader';
+import { ServerPageHeader } from '@/components/server/ServerPageHeader';
 import { Button } from '@/components/featherui/Button';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useSettings } from '@/contexts/SettingsContext';
@@ -140,8 +140,8 @@ export default function ServerTrashPage({ params }: { params: Promise<{ uuidShor
 
     if (!trashEnabled) {
         return (
-            <div className='relative flex min-h-screen flex-col gap-6 pb-20'>
-                <PageHeader title={t('files.trash.title')} description={t('files.trash.disabled')} />
+            <div className='relative flex flex-col gap-6 pb-12'>
+                <ServerPageHeader title={t('files.trash.title')} description={t('files.trash.disabled')} />
                 <Button asChild variant='outline'>
                     <Link href={`/server/${uuidShort}/files`}>
                         <ArrowLeft className='mr-2 h-4 w-4' />
@@ -153,8 +153,8 @@ export default function ServerTrashPage({ params }: { params: Promise<{ uuidShor
     }
 
     return (
-        <div className='relative flex min-h-screen flex-col gap-6 pb-20'>
-            <PageHeader title={t('files.trash.title')} description={headerDescription} />
+        <div className='relative flex flex-col gap-6 pb-12'>
+            <ServerPageHeader title={t('files.trash.title')} description={headerDescription} />
 
             <TrashActionToolbar
                 serverUuid={uuidShort}

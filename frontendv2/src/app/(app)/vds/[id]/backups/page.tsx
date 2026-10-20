@@ -321,9 +321,9 @@ export default function VdsBackupsPage() {
             <PageHeader
                 title={t('serverBackups.title')}
                 description={
-                    <div className='flex items-center gap-3'>
+                    <div className='flex flex-wrap items-center gap-x-3 gap-y-2'>
                         <span>{t('serverBackups.description')}</span>
-                        <span className='bg-primary/5 text-primary border-primary/20 rounded-full border px-3 py-1 text-[10px] font-black tracking-widest uppercase'>
+                        <span className='bg-primary/5 text-primary border-primary/20 rounded-full border px-3 py-1 text-[10px] font-black tracking-widest whitespace-nowrap uppercase'>
                             {backups.length} / {formatBackupLimitLabel(backupLimit, t('common.disabled'))}
                             {fifoRolling ? ' · FIFO' : ''}
                         </span>
@@ -400,7 +400,7 @@ export default function VdsBackupsPage() {
                     <Button variant='glass' disabled={loading} onClick={() => void fetchBackups()}>
                         {t('serverBackups.recheckAction')}
                     </Button>
-                    <div className='group relative flex-1'>
+                    <div className='group relative w-full min-w-0 flex-1'>
                         <Search className='text-muted-foreground/80 group-focus-within:text-foreground absolute top-1/2 left-4 h-5 w-5 -translate-y-1/2 transition-colors' />
                         <Input
                             placeholder={t('serverBackups.searchPlaceholder')}

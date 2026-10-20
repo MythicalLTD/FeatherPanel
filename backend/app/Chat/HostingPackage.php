@@ -82,7 +82,7 @@ class HostingPackage
 
         $pdo = Database::getPdoConnection();
         $cols = array_keys($row);
-        $sql = 'INSERT INTO ' . self::$table . ' (' . implode(', ', $cols) . ') VALUES (:' . implode(', :', $cols) . ')';
+        $sql = 'INSERT INTO ' . self::$table . ' (`' . implode('`, `', $cols) . '`) VALUES (:' . implode(', :', $cols) . ')';
         $stmt = $pdo->prepare($sql);
         if (!$stmt->execute($row)) {
             return false;
@@ -115,7 +115,7 @@ class HostingPackage
 
         $sets = [];
         foreach (array_keys($row) as $col) {
-            $sets[] = $col . ' = :' . $col;
+            $sets[] = '`' . $col . '` = :' . $col;
         }
 
         $row['id'] = $id;

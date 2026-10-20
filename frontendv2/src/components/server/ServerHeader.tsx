@@ -16,21 +16,27 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import { Button } from '@/components/featherui/Button';
-import { Badge } from '@/components/ui/badge';
-import { Play, Square, RotateCw, Skull, Loader2 } from 'lucide-react';
+import { Play, Square, RotateCw, Skull, Loader2, Clock, Gamepad2, Server as ServerIcon } from 'lucide-react';
+import ServerAddressChip from '@/components/server/ServerAddressChip';
 import { useTranslation } from '@/contexts/TranslationContext';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type ReactNode } from 'react';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
+import { useTheme } from '@/contexts/ThemeContext';
 import { resolveSpellBannerUrl, type ServerSpellBannerStyle } from '@/lib/server-spell-banner';
 
 interface ServerHeaderProps {
     serverName: string;
     serverStatus: string;
-    serverUuid?: string;
-    serverUuidShort?: string;
+    /** Short server description shown under the name. */
+    description?: string | null;
+    /** Connection host (subdomain, alias or IP) and port for the address chip. */
+    address?: string;
+    port?: number | null;
+    /** Human readable uptime from the daemon, when known. */
+    uptime?: string;
     nodeLocation?: string;
     nodeLocationFlag?: string;
     nodeName?: string;
@@ -47,13 +53,17 @@ interface ServerHeaderProps {
     onStop?: () => void;
     onRestart?: () => void;
     onKill?: () => void;
+    /** Optional 24 hour usage history shown above the power buttons. */
+    trend?: ReactNode;
 }
 
 export default function ServerHeader({
     serverName,
     serverStatus,
-    serverUuid,
-    serverUuidShort,
+    description,
+    address,
+    port,
+    uptime,
     nodeLocation,
     nodeLocationFlag,
     nodeName,
@@ -69,14 +79,16 @@ export default function ServerHeader({
     onStop,
     onRestart,
     onKill,
+    trend,
 }: ServerHeaderProps) {
     const { t } = useTranslation();
+    const { theme } = useTheme();
     const [actionLoading, setActionLoading] = useState<string | null>(null);
     const [showKillConfirm, setShowKillConfirm] = useState(false);
     const [dontAskAgain, setDontAskAgain] = useState(false);
     const [skipKillConfirm, setSkipKillConfirm] = useState(false);
 
-    const style = bannerStyle === 'off' ? 'off' : bannerStyle;
+    const style = theme === 'light' || bannerStyle === 'off' ? 'off' : bannerStyle;
     const resolvedBanner = style !== 'off' ? resolveSpellBannerUrl(bannerUrl) : null;
 
     useEffect(() => {
@@ -123,78 +135,76 @@ export default function ServerHeader({
     const isOfflineStatus = (status: string) => status === 'stopped' || status === 'offline' || status === 'error';
     const isRunningStatus = (status: string) => status === 'running' || status === 'starting';
 
-    const getStatusColor = (status: string) => {
+    const statusDot = (status: string) => {
         switch (status) {
             case 'running':
-                return 'bg-green-500/10 text-green-500 border-green-500/20';
+                return 'bg-emerald-500';
             case 'starting':
-                return 'bg-blue-500/10 text-blue-500 border-blue-500/20';
-            case 'installing':
-                return 'bg-blue-500/10 text-blue-500 border-blue-500/20';
             case 'stopping':
-                return 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20';
-            case 'offline':
-            case 'stopped':
-                return 'bg-gray-500/10 text-gray-500 border-gray-500/20';
-            case 'unknown':
-                return 'bg-muted/40 text-muted-foreground border-border/40';
+            case 'installing':
+                return 'bg-amber-500 animate-pulse';
             case 'error':
-                return 'bg-red-600/20 text-red-600 border-red-600/40';
+                return 'bg-destructive';
             default:
-                return 'bg-red-500/10 text-red-500 border-red-500/20';
+                return 'bg-muted-foreground/50';
         }
     };
 
+    const chipClass =
+        'border-border/50 bg-muted/40 inline-flex h-7 max-w-full min-w-0 items-center gap-1.5 rounded-full border px-2.5 text-xs';
+
     const metaRow = (
-        <div className='text-muted-foreground flex flex-wrap items-center gap-2 text-sm sm:gap-3'>
-            <Badge className={getStatusColor(serverStatus)}>
-                {t(`servers.status.${serverStatus}`, { defaultValue: serverStatus.toUpperCase() })}
-            </Badge>
-            {spellName && resolvedBanner ? (
-                <span className='bg-muted/50 border-border/50 truncate rounded-md border px-2 py-0.5 text-xs font-medium'>
-                    {spellName}
+        <div className='flex flex-wrap items-center gap-2'>
+            <span className={chipClass}>
+                <span className={cn('h-2 w-2 shrink-0 rounded-full', statusDot(serverStatus))} aria-hidden />
+                <span className='font-medium'>
+                    {t(`servers.status.${serverStatus}`, { defaultValue: serverStatus })}
+                </span>
+            </span>
+            {address ? <ServerAddressChip host={address} port={port} className='hidden sm:inline-flex' /> : null}
+            {uptime ? (
+                <span className={chipClass} title={t('servers.console.info_cards.uptime')}>
+                    <Clock className='text-muted-foreground h-3.5 w-3.5 shrink-0' aria-hidden />
+                    <span className='tabular-nums'>{uptime}</span>
                 </span>
             ) : null}
-            {serverUuidShort && (
-                <span className='flex items-center gap-1'>
-                    <span className='opacity-50'>#</span>
-                    <code className='bg-muted rounded px-1 font-mono text-xs'>{serverUuidShort}</code>
-                </span>
-            )}
-            {nodeLocation && (
-                <span className='bg-muted/50 border-border/50 flex items-center gap-1.5 rounded-md border px-2 py-0.5'>
+            {nodeName || nodeLocation ? (
+                <span className={chipClass} title={t('servers.node')}>
                     {nodeLocationFlag ? (
                         /* eslint-disable-next-line @next/next/no-img-element */
                         <img
                             src={`https://flagcdn.com/16x12/${nodeLocationFlag}.png`}
                             srcSet={`https://flagcdn.com/32x24/${nodeLocationFlag}.png 2x, https://flagcdn.com/48x36/${nodeLocationFlag}.png 3x`}
-                            alt={nodeLocation}
-                            className='h-3 w-4 rounded-[1px] object-cover'
+                            alt={nodeLocation || ''}
+                            className='h-3 w-4 shrink-0 rounded-[1px] object-cover'
                         />
                     ) : (
-                        <span className='opacity-50'>@</span>
+                        <ServerIcon className='text-muted-foreground h-3.5 w-3.5 shrink-0' aria-hidden />
                     )}
-                    <span className='font-medium'>{nodeLocation}</span>
+                    <span className='truncate'>
+                        {nodeName && nodeLocation && nodeName !== nodeLocation
+                            ? `${nodeName} · ${nodeLocation}`
+                            : nodeName || nodeLocation}
+                    </span>
                 </span>
-            )}
-            {nodeName && (
-                <span className='bg-muted/50 border-border/50 flex items-center gap-1.5 rounded-md border px-2 py-0.5'>
-                    <span className='opacity-50'>{t('servers.node')}:</span>
-                    <span className='font-medium'>{nodeName}</span>
+            ) : null}
+            {spellName ? (
+                <span className={cn(chipClass, 'text-muted-foreground hidden sm:inline-flex')}>
+                    <span className='truncate'>{spellName}</span>
                 </span>
-            )}
+            ) : null}
         </div>
     );
 
     const powerButtons = (
-        <div className='grid grid-cols-2 gap-2 sm:flex sm:flex-wrap'>
+        <div className='grid shrink-0 grid-cols-[repeat(3,minmax(0,1fr))_auto] gap-2 sm:flex sm:items-center'>
             {canStart && (
                 <Button
-                    variant='outline'
+                    variant='secondary'
                     size='sm'
                     disabled={actionLoading === 'start' || !connectionLive || !isOfflineStatus(serverStatus)}
                     onClick={() => handleAction('start', onStart)}
-                    className='flex items-center gap-2 border-emerald-600/40 bg-emerald-600 text-white hover:bg-emerald-600/90 hover:text-white disabled:border-emerald-600/20 disabled:bg-emerald-600/40 disabled:text-white/70'
+                    className='min-w-0 gap-1.5 px-2 sm:gap-2 sm:px-3'
                 >
                     {actionLoading === 'start' ? (
                         <Loader2 className='h-4 w-4 animate-spin' />
@@ -207,11 +217,11 @@ export default function ServerHeader({
 
             {canRestart && (
                 <Button
-                    variant='outline'
+                    variant='secondary'
                     size='sm'
                     disabled={actionLoading === 'restart' || !connectionLive || serverStatus !== 'running'}
                     onClick={() => handleAction('restart', onRestart)}
-                    className='flex items-center gap-2 border-sky-600/40 bg-sky-600 text-white hover:bg-sky-600/90 hover:text-white disabled:border-sky-600/20 disabled:bg-sky-600/40 disabled:text-white/70'
+                    className='min-w-0 gap-1.5 px-2 sm:gap-2 sm:px-3'
                 >
                     {actionLoading === 'restart' ? (
                         <Loader2 className='h-4 w-4 animate-spin' />
@@ -224,11 +234,11 @@ export default function ServerHeader({
 
             {canStop && (
                 <Button
-                    variant='outline'
+                    variant='destructive'
                     size='sm'
                     disabled={actionLoading === 'stop' || !connectionLive || !isRunningStatus(serverStatus)}
                     onClick={() => handleAction('stop', onStop)}
-                    className='flex items-center gap-2 border-orange-600/40 bg-orange-600 text-white hover:bg-orange-600/90 hover:text-white disabled:border-orange-600/20 disabled:bg-orange-600/40 disabled:text-white/70'
+                    className='min-w-0 gap-1.5 px-2 sm:gap-2 sm:px-3'
                 >
                     {actionLoading === 'stop' ? (
                         <Loader2 className='h-4 w-4 animate-spin' />
@@ -241,31 +251,20 @@ export default function ServerHeader({
 
             {canKill && (
                 <Button
-                    variant='destructive'
+                    variant='outline'
                     size='sm'
                     disabled={actionLoading === 'kill' || !connectionLive || isOfflineStatus(serverStatus)}
                     onClick={() => handleAction('kill', onKill)}
-                    className='flex items-center gap-2'
+                    className='text-destructive hover:text-destructive gap-2 px-2.5'
+                    title={t('servers.console.kill')}
+                    aria-label={t('servers.console.kill')}
                 >
                     {actionLoading === 'kill' ? (
                         <Loader2 className='h-4 w-4 animate-spin' />
                     ) : (
                         <Skull className='h-4 w-4' />
                     )}
-                    <span>{t('servers.console.kill')}</span>
                 </Button>
-            )}
-        </div>
-    );
-
-    const titleBlock = (
-        <div className='min-w-0 space-y-2'>
-            <h1 className='truncate text-xl font-bold tracking-tight sm:text-2xl md:text-3xl'>{serverName}</h1>
-            {metaRow}
-            {serverUuid && (
-                <p className='text-muted-foreground/50 hidden font-mono text-xs sm:block'>
-                    {t('servers.console.uuid')}: {serverUuid}
-                </p>
             )}
         </div>
     );
@@ -293,82 +292,47 @@ export default function ServerHeader({
         </ConfirmDialog>
     );
 
-    // Style: strip - compact image bar above controls
-    if (resolvedBanner && style === 'strip') {
-        return (
-            <div className='border-border/50 bg-card/50 overflow-hidden rounded-xl border backdrop-blur-xl'>
-                <div className='border-border/40 relative h-20 overflow-hidden border-b sm:h-24'>
+    // Banner styles (strip / cover / hero) all render the spell art behind the hero, faded towards the
+    // text so it stays readable; "off" keeps a plain card.
+    return (
+        <div className='fp-surface relative overflow-hidden rounded-xl border'>
+            {resolvedBanner ? (
+                <div className='pointer-events-none absolute inset-0' aria-hidden>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                         src={resolvedBanner}
-                        alt={spellName || serverName}
-                        className='absolute inset-0 h-full w-full object-cover'
+                        alt=''
+                        className={cn(
+                            'absolute inset-y-0 right-0 h-full object-cover',
+                            style === 'hero' ? 'w-full opacity-50' : 'w-full opacity-40 sm:w-2/3',
+                        )}
                     />
+                    <div className='from-card via-card/85 to-card/30 absolute inset-0 bg-gradient-to-r' />
                 </div>
-                <div className='flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5'>
-                    {titleBlock}
-                    {powerButtons}
+            ) : null}
+            <div className='relative flex flex-col gap-4 p-4 sm:p-5 lg:flex-row lg:items-end lg:justify-between'>
+                <div className='min-w-0 space-y-3'>
+                    <div className='flex min-w-0 items-center gap-3'>
+                        <span className='bg-primary/15 text-primary flex h-10 w-10 shrink-0 items-center justify-center rounded-lg'>
+                            <Gamepad2 className='h-5 w-5' aria-hidden />
+                        </span>
+                        <div className='min-w-0'>
+                            <h1 className='truncate text-xl font-semibold tracking-tight sm:text-2xl'>{serverName}</h1>
+                            {description ? (
+                                <p className='text-muted-foreground line-clamp-1 text-sm'>{description}</p>
+                            ) : null}
+                        </div>
+                    </div>
+                    {metaRow}
                 </div>
-                {killDialog}
-            </div>
-        );
-    }
-
-    // Style: hero - image fills header; frosted control panel on top
-    if (resolvedBanner && style === 'hero') {
-        return (
-            <div className='border-border/50 relative overflow-hidden rounded-xl border'>
-                <div className='absolute inset-0'>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={resolvedBanner} alt='' className='h-full w-full object-cover' aria-hidden />
-                    <div className='absolute inset-0 bg-black/45' aria-hidden />
-                </div>
-                <div className='relative z-10 p-4 sm:p-5'>
-                    <div className='border-border/40 bg-card/85 flex flex-col gap-4 rounded-xl border p-3 shadow-sm backdrop-blur-md sm:flex-row sm:items-center sm:justify-between sm:p-4'>
-                        {titleBlock}
+                {trend ? (
+                    <div className='flex min-w-0 flex-col gap-3 lg:items-end'>
+                        <div className='w-full lg:w-80'>{trend}</div>
                         {powerButtons}
                     </div>
-                </div>
-                {killDialog}
-            </div>
-        );
-    }
-
-    // Style: cover - side art (default when enabled) - or plain header when off / no image
-    return (
-        <div className='border-border/50 bg-card/50 overflow-hidden rounded-xl border backdrop-blur-xl'>
-            <div className={cn('p-4 sm:p-5', resolvedBanner && style === 'cover' && 'sm:p-4')}>
-                <div
-                    className={cn(
-                        'flex flex-col gap-4',
-                        resolvedBanner && style === 'cover'
-                            ? 'sm:flex-row sm:items-stretch sm:gap-5'
-                            : 'sm:flex-row sm:items-center sm:justify-between',
-                    )}
-                >
-                    {resolvedBanner && style === 'cover' ? (
-                        <div className='border-border/60 bg-muted/30 relative aspect-[21/9] w-full shrink-0 overflow-hidden rounded-lg border sm:aspect-auto sm:min-h-[7.5rem] sm:w-44 sm:self-stretch md:w-52 lg:w-56'>
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
-                                src={resolvedBanner}
-                                alt={spellName || serverName}
-                                className='absolute inset-0 h-full w-full object-cover'
-                            />
-                        </div>
-                    ) : null}
-
-                    <div
-                        className={cn(
-                            'flex min-w-0 flex-1 flex-col gap-4',
-                            resolvedBanner && style === 'cover'
-                                ? 'sm:justify-between'
-                                : 'sm:flex-row sm:items-center sm:justify-between',
-                        )}
-                    >
-                        {titleBlock}
-                        <div className={cn(resolvedBanner && style === 'cover' && 'sm:self-end')}>{powerButtons}</div>
-                    </div>
-                </div>
+                ) : (
+                    powerButtons
+                )}
             </div>
             {killDialog}
         </div>

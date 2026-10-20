@@ -26,7 +26,6 @@ use App\Chat\Activity;
 use App\Chat\MailList;
 use App\Chat\ApiClient;
 use App\Chat\MailQueue;
-use App\Chat\Permission;
 use App\Chat\TicketStatus;
 use App\Chat\TicketMessage;
 use App\Helpers\TimeHelper;
@@ -82,6 +81,11 @@ use Symfony\Component\HttpFoundation\Response;
     schema: 'UserPreferences',
     type: 'object',
     description: 'User preferences stored as localStorage key-value pairs',
+    properties: [
+        new OA\Property(property: 'timezone', type: 'string', nullable: true, description: 'IANA timezone identifier used for date rendering; null means browser default'),
+        new OA\Property(property: 'favorite_server_uuids', type: 'array', items: new OA\Items(type: 'string', format: 'uuid'), description: 'Pinned server UUIDs (max 50)'),
+        new OA\Property(property: 'hide_server_ips', type: 'boolean', description: 'Mask server IP addresses in the panel UI for this account only'),
+    ],
     additionalProperties: true
 )]
 #[OA\Schema(
@@ -135,7 +139,7 @@ class SessionController
         $data = json_decode($request->getContent(), true);
 
         if ($config->getSetting(ConfigInterface::TURNSTILE_ENABLED, 'false') == 'true') {
-            if (!isset($data['turnstile_token']) || trim($data['turnstile_token']) === '') {
+            if (!isset($data['turnstile_token']) || !is_scalar($data['turnstile_token']) || trim((string) $data['turnstile_token']) === '') {
                 return ApiResponse::error('Captcha token is required', 'CAPTCHA_TOKEN_REQUIRED');
             }
             if (!CaptchaHelper::validate($data['turnstile_token'], CloudFlareRealIP::getRealIP())) {
@@ -170,7 +174,18 @@ class SessionController
             if (!is_bool($data['two_fa_enabled'])) {
                 return ApiResponse::error('two_fa_enabled must be a boolean value', 'INVALID_2FA_VALUE');
             }
+            // Enabling must go through PUT /api/user/auth/two-factor, which stores the secret after
+            // verifying a code. Turning the flag on here without a secret locks the account out.
+            if ($data['two_fa_enabled'] && ($user['two_fa_enabled'] ?? 'false') !== 'true') {
+                return ApiResponse::error('Use the two-factor setup to enable 2FA', 'INVALID_2FA_VALUE', 400);
+            }
             $data['two_fa_enabled'] = $data['two_fa_enabled'] ? 'true' : 'false';
+        }
+
+        foreach (['username', 'email', 'first_name', 'last_name', 'password', 'avatar', 'ticket_signature'] as $field) {
+            if (isset($data[$field]) && !is_scalar($data[$field])) {
+                return ApiResponse::error(ucfirst(str_replace('_', ' ', $field)) . ' must be a string', 'INVALID_DATA_TYPE', 400);
+            }
         }
 
         // Check if avatar change is allowed
@@ -247,6 +262,10 @@ class SessionController
                 }
             }
         }
+        // Same charset as registration; login only accepts usernames matching it.
+        if (isset($data['username']) && $data['username'] !== $user['username'] && (!is_string($data['username']) || !preg_match('/^[a-zA-Z0-9_]+$/', $data['username']))) {
+            return ApiResponse::error('Username can only contain letters, numbers, and underscores', 'INVALID_USERNAME_FORMAT');
+        }
         // Validate email format
         if (isset($data['email'])) {
             if (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
@@ -259,7 +278,8 @@ class SessionController
                     return ApiResponse::error($domainRejection['message'], $domainRejection['code'], 400);
                 }
                 $existingUser = User::getUserByEmail($data['email']);
-                if ($existingUser) {
+                // Lookups are case-insensitive, so a case-only change finds the current user itself.
+                if ($existingUser && ($existingUser['uuid'] ?? null) !== $user['uuid']) {
                     return ApiResponse::error('Email already exists', 'EMAIL_ALREADY_EXISTS', 409);
                 }
             }
@@ -269,7 +289,7 @@ class SessionController
             // Only check for duplicate username if it's different from the current user's username
             if ($data['username'] !== $user['username']) {
                 $existingUser = User::getUserByUsername($data['username']);
-                if ($existingUser) {
+                if ($existingUser && ($existingUser['uuid'] ?? null) !== $user['uuid']) {
                     return ApiResponse::error('Username already exists', 'USERNAME_ALREADY_EXISTS', 409);
                 }
             }
@@ -354,8 +374,8 @@ class SessionController
         if ($user == null) {
             return ApiResponse::error('You are not allowed to access this resource!', 'INVALID_ACCOUNT_TOKEN', 400, []);
         }
-        $permissions = Permission::getPermissionsByRoleId($user['role_id']);
-        $permissions = array_column($permissions, 'permission');
+        // Same (request-memoised) lookup the permission checks below use.
+        $permissions = PermissionHelper::getPermissionNodesForRole((int) ($user['role_id'] ?? 0));
 
         // Load role information for the current user
         $roleId = $user['role_id'] ?? null;
@@ -371,7 +391,7 @@ class SessionController
             'color' => $role ? ($role['color'] ?? '#666666') : '#666666',
         ];
 
-        unset($user['password'], $user['two_fa_key']);
+        $user = User::stripSensitiveFields($user);
 
         if ($app->isDemoMode()) {
             $user['first_ip'] = $app->getIPIntoFBIFormat();
@@ -762,7 +782,7 @@ class SessionController
             return ApiResponse::error('You are not allowed to access this resource!', 'INVALID_ACCOUNT_TOKEN', 400, []);
         }
 
-        $preferences = UserPreference::getPreferences($user['uuid']);
+        $preferences = $this->applyPreferenceDefaults(UserPreference::getPreferences($user['uuid']));
 
         return ApiResponse::success([
             'preferences' => $preferences,
@@ -806,6 +826,9 @@ class SessionController
             return ApiResponse::error('Invalid request data', 'INVALID_REQUEST_DATA', 400, []);
         }
 
+        // Written only through /api/user/preferences/ui so its merge stays atomic.
+        unset($data[UserPreference::UI_STATE_KEY]);
+
         if (array_key_exists('favorite_server_uuids', $data)) {
             if (!is_array($data['favorite_server_uuids'])) {
                 return ApiResponse::error('favorite_server_uuids must be an array', 'INVALID_PREFERENCES', 400, []);
@@ -828,6 +851,12 @@ class SessionController
             $data['favorite_server_uuids'] = $cleanFavorites;
         }
 
+        if (array_key_exists('hide_server_ips', $data)) {
+            if (!is_bool($data['hide_server_ips'])) {
+                return ApiResponse::error('hide_server_ips must be a boolean', 'INVALID_PREFERENCES', 400, []);
+            }
+        }
+
         if (array_key_exists('timezone', $data)) {
             if ($data['timezone'] === null || $data['timezone'] === '') {
                 // Treat empty value as "clear preference, fall back to browser/global default"
@@ -845,7 +874,7 @@ class SessionController
         }
 
         // Get updated preferences to return
-        $updatedPreferences = UserPreference::getPreferences($user['uuid']);
+        $updatedPreferences = $this->applyPreferenceDefaults(UserPreference::getPreferences($user['uuid']));
 
         return ApiResponse::success([
             'preferences' => $updatedPreferences,
@@ -1193,8 +1222,13 @@ class SessionController
     )]
     public function signApiKey(Request $request): Response
     {
+        $user = AuthMiddleware::getCurrentUser($request);
+        if ($user == null) {
+            return ApiResponse::error('You are not allowed to access this resource!', 'INVALID_ACCOUNT_TOKEN', 400, []);
+        }
+
         $data = json_decode($request->getContent(), true);
-        if ($data == null || !isset($data['api_key'])) {
+        if ($data == null || !isset($data['api_key']) || !is_string($data['api_key'])) {
             return ApiResponse::error('API key is required', 'API_KEY_REQUIRED', 400, []);
         }
 
@@ -1211,11 +1245,38 @@ class SessionController
             }
         }
 
+        // Only the owner of the API client may have its key signed.
+        if (($apiClient['user_uuid'] ?? null) !== ($user['uuid'] ?? null)) {
+            return ApiResponse::error('You are not allowed to sign this API key', 'UNAUTHORIZED_ACCESS', 403, []);
+        }
+
         $signature = hash_hmac('sha256', $apiKey, $apiClient['private_key']);
 
         return ApiResponse::success([
             'signature' => $signature,
             'api_key' => $apiKey,
         ], 'API key signed successfully', 200);
+    }
+
+    /**
+     * Adds effective defaults for preferences that hold no stored value yet.
+     *
+     * `hide_server_ips` follows the administrator-wide setting until the user
+     * flips the switch themselves, so a global opt-in stays respected and GET
+     * and PATCH responses always agree.
+     *
+     * @param array $preferences the stored preferences
+     *
+     * @return array the preferences with defaults applied
+     */
+    private function applyPreferenceDefaults(array $preferences): array
+    {
+
+        if (!array_key_exists('hide_server_ips', $preferences)) {
+            $preferences['hide_server_ips'] =
+                App::getInstance(true)->getConfig()->getSetting(ConfigInterface::SERVER_HIDE_IPS, 'false') === 'true';
+        }
+
+        return $preferences;
     }
 }

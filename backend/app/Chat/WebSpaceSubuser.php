@@ -180,6 +180,40 @@ class WebSpaceSubuser
         ]);
     }
 
+    /**
+     * Restrict a requested permission list to what an actor is allowed to grant.
+     *
+     * Owners and panel admins are unrestricted: pass null as $actorPermissions and the
+     * normalised request (including the "*" wildcard) is returned unchanged. A WebSpace
+     * subuser may only hand out a subset of the permissions they themselves hold, and
+     * never the "*" wildcard.
+     *
+     * @param array<int|string, mixed> $requested Raw permission list from the request
+     * @param list<string>|null $actorPermissions Actor's own permissions, or null when unrestricted
+     *
+     * @return list<string>
+     */
+    public static function clampAssignablePermissions(array $requested, ?array $actorPermissions): array
+    {
+        $normalized = self::normalizePermissions($requested) ?? [];
+
+        if ($actorPermissions === null) {
+            return $normalized;
+        }
+
+        $out = [];
+        foreach ($normalized as $perm) {
+            if ($perm === '*') {
+                continue;
+            }
+            if (in_array($perm, $actorPermissions, true)) {
+                $out[] = $perm;
+            }
+        }
+
+        return array_values(array_unique($out));
+    }
+
     public static function delete(int $id): bool
     {
         if ($id <= 0) {

@@ -117,7 +117,7 @@ class RateLimitController
     {
         $data = json_decode($request->getContent(), true);
 
-        if (json_last_error() !== JSON_ERROR_NONE) {
+        if (json_last_error() !== JSON_ERROR_NONE || !is_array($data)) {
             return ApiResponse::error('Invalid JSON data', 'INVALID_JSON', 400);
         }
 
@@ -143,12 +143,13 @@ class RateLimitController
                 $config['routes'] = [];
             }
 
-            // Update the _enabled flag
+            // Update the _enabled flag - mark as an explicit admin decision so the
+            // auto-written-false migration does not clear a deliberate opt-out.
             $enabledValue = (bool) $data['_enabled'];
 
-            // Ensure _enabled is at the root level and routes exist
             $jsonData = [
                 '_enabled' => $enabledValue,
+                '_enabled_explicit' => true,
                 'routes' => $config['routes'] ?? [],
             ];
 
@@ -321,7 +322,7 @@ class RateLimitController
     {
         $data = json_decode($request->getContent(), true);
 
-        if (json_last_error() !== JSON_ERROR_NONE) {
+        if (json_last_error() !== JSON_ERROR_NONE || !is_array($data)) {
             return ApiResponse::error('Invalid JSON data', 'INVALID_JSON', 400);
         }
 
@@ -513,7 +514,7 @@ class RateLimitController
     {
         $data = json_decode($request->getContent(), true);
 
-        if (json_last_error() !== JSON_ERROR_NONE) {
+        if (json_last_error() !== JSON_ERROR_NONE || !is_array($data)) {
             return ApiResponse::error('Invalid JSON data', 'INVALID_JSON', 400);
         }
 

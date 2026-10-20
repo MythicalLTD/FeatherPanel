@@ -13,9 +13,13 @@ it under the terms of the GNU Affero General Public License as published
 See the LICENSE file or <https://www.gnu.org/licenses/>.
 */
 
+'use client';
+
 import React, { ComponentType } from 'react';
+import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { LucideIcon } from 'lucide-react';
+import { AdminBreadcrumbs } from '@/components/admin/AdminBreadcrumbs';
 
 interface PageHeaderProps {
     title: string;
@@ -26,24 +30,40 @@ interface PageHeaderProps {
 }
 
 export function PageHeader({ title, description, icon: Icon, actions, className }: PageHeaderProps) {
-    return (
-        <div className={cn('flex flex-wrap items-end justify-between gap-x-6 gap-y-4 pt-4', className)}>
-            <div className='flex max-w-full min-w-0 items-center gap-4 sm:gap-6'>
+    // Every page header sits on the same glass card (admin, account, server, WebSpace...), so the
+    // top of a page looks the same wherever you are.
+    const pathname = usePathname() ?? '';
+    const withCrumbs = pathname.startsWith('/admin/');
+    const row = (
+        <div className='flex flex-wrap items-center justify-between gap-x-6 gap-y-3'>
+            <div className='flex max-w-full min-w-0 items-center gap-3 sm:gap-4'>
                 {Icon && (
-                    <div className='bg-primary/10 text-primary border-primary/20 flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border sm:h-20 sm:w-20'>
-                        <Icon className='h-7 w-7 sm:h-10 sm:w-10' />
+                    <div className='fp-icon-tile flex h-10 w-10 shrink-0 items-center justify-center rounded-xl sm:h-12 sm:w-12'>
+                        <Icon className='h-5 w-5 sm:h-6 sm:w-6' />
                     </div>
                 )}
-                <div className='min-w-0 space-y-1 sm:space-y-2'>
-                    <h1 className='text-2xl font-bold tracking-tight sm:text-3xl lg:text-4xl'>{title}</h1>
+                <div className='min-w-0 space-y-1'>
+                    <h1 className='text-xl font-semibold tracking-tight sm:text-2xl'>{title}</h1>
                     {description && (
-                        <div className='text-muted-foreground text-sm font-medium [overflow-wrap:anywhere] opacity-80 sm:text-base lg:text-lg'>
+                        <div className='text-muted-foreground max-w-3xl text-sm [overflow-wrap:anywhere]'>
                             {description}
                         </div>
                     )}
                 </div>
             </div>
-            {actions && <div className='flex max-w-full flex-wrap items-center gap-2'>{actions}</div>}
+            {actions && (
+                <div className='fp-page-header-actions flex max-w-full flex-wrap items-center gap-2 [&>div]:max-w-full [&>div]:flex-wrap'>
+                    {actions}
+                </div>
+            )}
+        </div>
+    );
+    return (
+        <div data-fp-page-header className={cn('fp-surface w-full rounded-2xl border p-4 sm:p-5', className)}>
+            {withCrumbs ? (
+                <AdminBreadcrumbs className='mb-3 border-b border-[var(--fp-surface-border)] pb-2.5' />
+            ) : null}
+            {row}
         </div>
     );
 }

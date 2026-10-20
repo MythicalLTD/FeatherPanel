@@ -21,7 +21,7 @@ import axios, { AxiosError } from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { Globe, Lock, Settings2, Info, Plus } from 'lucide-react';
 
-import { PageHeader } from '@/components/featherui/PageHeader';
+import { ServerPageHeader } from '@/components/server/ServerPageHeader';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { FormSection } from '@/components/featherui/FormSection';
@@ -29,6 +29,8 @@ import { HeadlessSelect } from '@/components/ui/headless-select';
 import { toast } from 'sonner';
 import { useServerPermissions } from '@/hooks/useServerPermissions';
 import { useSettings } from '@/contexts/SettingsContext';
+import { EmptyState } from '@/components/featherui/EmptyState';
+import { isEnabled } from '@/lib/utils';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import type { SubdomainCreateRequest, SubdomainOverview } from '@/types/server';
@@ -40,7 +42,9 @@ export default function CreateSubdomainPage() {
     const { uuidShort } = useParams() as { uuidShort: string };
     const router = useRouter();
     const { t } = useTranslation();
-    const { loading: settingsLoading } = useSettings();
+    const { settings, loading: settingsLoading } = useSettings();
+    // The sidebar hides this page when admins turn the feature off; reached by URL it says so instead of erroring.
+    const subdomainsEnabled = isEnabled(settings?.server_allow_user_made_subdomains);
     const { hasPermission, loading: permissionsLoading } = useServerPermissions(uuidShort);
     const { getWidgets } = usePluginWidgets('server-subdomains-new');
 
@@ -77,12 +81,13 @@ export default function CreateSubdomainPage() {
     }, [uuidShort, formData.domain_uuid]);
 
     React.useEffect(() => {
-        if (canManage) {
+        if (settingsLoading) return;
+        if (canManage && subdomainsEnabled) {
             fetchData();
         } else {
             setLoading(false);
         }
-    }, [fetchData, canManage]);
+    }, [fetchData, canManage, subdomainsEnabled, settingsLoading]);
 
     const handleCreate = async () => {
         if (!formData.domain_uuid || !formData.subdomain.trim()) {
@@ -116,6 +121,27 @@ export default function CreateSubdomainPage() {
         return <PageLoading />;
     }
 
+    if (!subdomainsEnabled) {
+        return (
+            <div className='space-y-6'>
+                <ServerPageHeader
+                    title={t('serverSubdomains.createButton')}
+                    description={t('serverSubdomains.newSubdomainDescription')}
+                />
+                <EmptyState
+                    icon={Globe}
+                    title={t('serverSubdomains.disabled')}
+                    description={t('serverSubdomains.disabledDescription')}
+                    action={
+                        <Button variant='outline' onClick={() => safeBack(router)}>
+                            {t('common.goBack')}
+                        </Button>
+                    }
+                />
+            </div>
+        );
+    }
+
     if (!canManage) {
         return (
             <div className='flex flex-col items-center justify-center py-24 text-center'>
@@ -136,7 +162,7 @@ export default function CreateSubdomainPage() {
 
     if (availableDomains.length === 0 && !loading) {
         return (
-            <div className='bg-card/40 border-border/5 flex flex-col items-center justify-center space-y-8 rounded-3xl border py-24 text-center backdrop-blur-3xl'>
+            <div className='fp-surface flex flex-col items-center justify-center space-y-8 rounded-xl border py-24 text-center'>
                 <div className='relative'>
                     <div className='bg-primary/20 absolute inset-0 scale-150 rounded-full blur-3xl' />
                     <div className='bg-primary/10 border-primary/20 relative flex h-32 w-32 rotate-3 items-center justify-center rounded-3xl border-2'>
@@ -161,9 +187,9 @@ export default function CreateSubdomainPage() {
     }
 
     return (
-        <div className='mx-auto max-w-6xl space-y-8 pb-16'>
+        <div className='space-y-6 pb-12'>
             <WidgetRenderer widgets={getWidgets('server-subdomains-new', 'top-of-page')} />
-            <PageHeader
+            <ServerPageHeader
                 title={t('serverSubdomains.createButton')}
                 description={t('serverSubdomains.newSubdomainDescription')}
                 actions={
@@ -230,7 +256,7 @@ export default function CreateSubdomainPage() {
                                     {t('serverSubdomains.configuration')}
                                 </h2>
                                 <p className='text-muted-foreground text-[9px] font-bold tracking-widest uppercase opacity-50'>
-                                    Setup
+                                    {t('ui.server.subdomains.new.setup')}
                                 </p>
                             </div>
                         </div>
@@ -300,7 +326,7 @@ export default function CreateSubdomainPage() {
                                     {t('serverSubdomains.guide')}
                                 </h2>
                                 <p className='text-muted-foreground text-[9px] font-bold tracking-widest uppercase italic opacity-50'>
-                                    Info
+                                    {t('ui.server.subdomains.new.info')}
                                 </p>
                             </div>
                         </div>

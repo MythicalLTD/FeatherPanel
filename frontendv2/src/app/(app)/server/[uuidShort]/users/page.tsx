@@ -15,11 +15,14 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { DataTable, RowActionsMenu } from '@/components/featherui/DataTable';
+
 import * as React from 'react';
 import { useParams, useRouter, usePathname } from 'next/navigation';
 import axios, { AxiosError } from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
-import { PageHeader } from '@/components/featherui/PageHeader';
+import { ServerPageHeader } from '@/components/server/ServerPageHeader';
+import { ServerPageTips } from '@/components/server/ServerPageTips';
 import { EmptyState } from '@/components/featherui/EmptyState';
 import {
     Users,
@@ -36,8 +39,6 @@ import {
     CheckCircle2,
 } from 'lucide-react';
 
-import { ResourceCard } from '@/components/featherui/ResourceCard';
-
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { Dialog, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -51,6 +52,10 @@ import type { Subuser, SubuserPagination, SubusersResponse, SubuserPermissionsRe
 import { safeBack } from '@/lib/safe-back';
 import { PageLoading } from '@/components/featherui/PageLoading';
 import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
+import { useFormBaseline } from '@/hooks/useFormBaseline';
+import { useDiscardConfirm } from '@/hooks/useUnsavedChangesGuard';
+import { Sensitive } from '@/components/common/Sensitive';
+import { ListPagination } from '@/components/featherui/ListPagination';
 
 export default function ServerSubusersPage() {
     const { uuidShort } = useParams() as { uuidShort: string };
@@ -91,6 +96,13 @@ export default function ServerSubusersPage() {
     const [availablePermissions, setAvailablePermissions] = React.useState<string[]>([]);
     const [groupedPermissions, setGroupedPermissions] = React.useState<Record<string, { permissions: string[] }>>({});
     const [selectedPermissions, setSelectedPermissions] = React.useState<string[]>([]);
+    const sortedPermissions = React.useMemo(() => [...selectedPermissions].sort(), [selectedPermissions]);
+    const { dirty: permissionsDirty, commit: commitPermissions } = useFormBaseline(sortedPermissions);
+    const guardPermissionsClose = useDiscardConfirm(
+        isPermissionsOpen && permissionsDirty,
+        t('common.unsavedChanges.leaveConfirm'),
+    );
+    const closePermissions = guardPermissionsClose(setIsPermissionsOpen);
     const [savingPermissions, setSavingPermissions] = React.useState(false);
 
     const fetchSubusers = React.useCallback(
@@ -181,6 +193,7 @@ export default function ServerSubusersPage() {
     const openPermissionsDialog = async (sub: Subuser) => {
         setSelectedSubuser(sub);
         setSelectedPermissions(sub.permissions || []);
+        commitPermissions([...(sub.permissions || [])].sort());
         setPermissionsLoadingData(true);
         setIsPermissionsOpen(true);
 
@@ -272,7 +285,7 @@ export default function ServerSubusersPage() {
 
     if (!isEnabled(settings?.server_allow_subusers)) {
         return (
-            <div className='bg-card/40 border-border/5 flex flex-col items-center justify-center space-y-8 rounded-3xl border py-24 text-center backdrop-blur-3xl'>
+            <div className='fp-surface flex flex-col items-center justify-center space-y-8 rounded-xl border py-24 text-center'>
                 <div className='relative'>
                     <div className='absolute inset-0 scale-150 rounded-full bg-red-500/20 blur-3xl' />
                     <div className='relative flex h-32 w-32 rotate-3 items-center justify-center rounded-3xl border-2 border-red-500/20 bg-red-500/10'>
@@ -280,9 +293,7 @@ export default function ServerSubusersPage() {
                     </div>
                 </div>
                 <div className='max-w-md space-y-3 px-4'>
-                    <h2 className='text-3xl font-black tracking-tight uppercase'>
-                        {t('serverSubusers.featureDisabled')}
-                    </h2>
+                    <h2 className='text-3xl font-semibold tracking-tight'>{t('serverSubusers.featureDisabled')}</h2>
                     <p className='text-muted-foreground text-lg leading-relaxed font-medium'>
                         {t('serverSubusers.featureDisabledDescription')}
                     </p>
@@ -314,7 +325,7 @@ export default function ServerSubusersPage() {
                 <div className='mb-6 flex h-20 w-20 items-center justify-center rounded-3xl bg-red-500/10'>
                     <Lock className='h-10 w-10 text-red-500' />
                 </div>
-                <h1 className='text-2xl font-black tracking-tight uppercase'>{t('common.accessDenied')}</h1>
+                <h1 className='text-2xl font-semibold tracking-tight'>{t('common.accessDenied')}</h1>
                 <p className='text-muted-foreground mt-2'>{t('common.noPermission')}</p>
                 <Button variant='outline' className='mt-8' onClick={() => safeBack(router)}>
                     {t('common.goBack')}
@@ -324,10 +335,10 @@ export default function ServerSubusersPage() {
     }
 
     return (
-        <div key={pathname} className='space-y-8 pb-12'>
+        <div key={pathname} className='space-y-6 pb-12'>
             <WidgetRenderer widgets={getWidgets('server-users', 'top-of-page')} />
 
-            <PageHeader
+            <ServerPageHeader
                 title={t('serverSubusers.title')}
                 description={t('serverSubusers.description')}
                 actions={
@@ -402,35 +413,16 @@ export default function ServerSubusersPage() {
                     </div>
 
                     {pagination.total > pagination.per_page && (
-                        <div className='border-border bg-card/50 flex items-center justify-between gap-4 rounded-xl border px-4 py-3'>
-                            <Button
-                                variant='outline'
-                                size='sm'
-                                disabled={pagination.current_page <= 1 || loading}
-                                onClick={() => fetchSubusers(pagination.current_page - 1)}
-                                className='gap-1.5'
-                            >
-                                <ChevronLeft className='h-4 w-4' />
-                                {t('common.previous')}
-                            </Button>
-                            <span className='text-sm font-medium'>
-                                {pagination.current_page} / {pagination.last_page}
-                            </span>
-                            <Button
-                                variant='outline'
-                                size='sm'
-                                disabled={pagination.current_page >= pagination.last_page || loading}
-                                onClick={() => fetchSubusers(pagination.current_page + 1)}
-                                className='gap-1.5'
-                            >
-                                {t('common.next')}
-                                <ChevronRight className='h-4 w-4' />
-                            </Button>
-                        </div>
+                        <ListPagination
+                            page={pagination.current_page}
+                            totalPages={pagination.last_page}
+                            disabled={loading}
+                            onPageChange={(nextPage) => fetchSubusers(nextPage)}
+                        />
                     )}
 
                     {subusers.length === 0 ? (
-                        <div className='bg-card/10 border-border/60 rounded-4xl border border-dashed py-12 text-center'>
+                        <div className='fp-surface border-border/60 rounded-4xl border border-dashed py-12 text-center'>
                             <h3 className='text-xl font-bold'>{t('serverSubusers.noResults')}</h3>
                             <p className='text-muted-foreground mt-1'>{t('serverSubusers.noResultsDescription')}</p>
                             <Button
@@ -445,50 +437,64 @@ export default function ServerSubusersPage() {
                             </Button>
                         </div>
                     ) : (
-                        <div className='grid grid-cols-1 gap-4'>
-                            {subusers.map((sub) => (
-                                <ResourceCard
-                                    key={sub.id}
-                                    icon={Users}
-                                    iconWrapperClassName='bg-primary/10 border-primary/20 text-primary'
-                                    title={sub.username || sub.email}
-                                    description={
-                                        <div className='text-muted-foreground flex items-center gap-2 text-xs font-medium'>
-                                            <Mail className='h-3 w-3' />
-                                            <span>{sub.email}</span>
+                        <DataTable
+                            rows={subusers}
+                            rowKey={(sub) => sub.id}
+                            columns={[
+                                {
+                                    key: 'user',
+                                    header: t('serverSubusers.username'),
+                                    cell: (sub) => (
+                                        <div className='flex min-w-0 items-center gap-3'>
+                                            <span className='fp-icon-tile text-primary flex h-9 w-9 shrink-0 items-center justify-center rounded-xl'>
+                                                <Users className='h-4 w-4' />
+                                            </span>
+                                            <p className='truncate font-medium'>{sub.username || sub.email}</p>
                                         </div>
-                                    }
-                                    actions={
-                                        <div className='flex items-center gap-3'>
-                                            {canUpdate && (
-                                                <Button
-                                                    variant='ghost'
-                                                    size='sm'
-                                                    onClick={() => openPermissionsDialog(sub)}
-                                                    className='h-8 rounded-lg px-3 text-xs hover:bg-white/10'
-                                                >
-                                                    <Shield className='mr-1.5 h-3.5 w-3.5' />
-                                                    {t('serverSubusers.permissions')}
-                                                </Button>
-                                            )}
-                                            {canDelete && (
-                                                <Button
-                                                    variant='destructive'
-                                                    size='sm'
-                                                    onClick={() => {
-                                                        setSelectedSubuser(sub);
-                                                        setIsDeleteOpen(true);
-                                                    }}
-                                                    className='h-8 w-8 p-0'
-                                                >
-                                                    <Trash2 className='h-3.5 w-3.5' />
-                                                </Button>
-                                            )}
-                                        </div>
-                                    }
-                                />
-                            ))}
-                        </div>
+                                    ),
+                                },
+                                {
+                                    key: 'email',
+                                    header: t('serverSubusers.email'),
+                                    className: 'text-muted-foreground',
+                                    cell: (sub) => <Sensitive>{sub.email}</Sensitive>,
+                                },
+                            ]}
+                            mobileCard={(sub) => (
+                                <div className='min-w-0 space-y-1'>
+                                    <p className='truncate font-medium'>{sub.username || sub.email}</p>
+                                    <p className='text-muted-foreground flex items-center gap-1.5 truncate text-xs'>
+                                        <Mail className='h-3 w-3' />
+                                        <Sensitive>{sub.email}</Sensitive>
+                                    </p>
+                                </div>
+                            )}
+                            actions={(sub) =>
+                                (canUpdate || canDelete) && (
+                                    <RowActionsMenu
+                                        items={[
+                                            {
+                                                label: t('serverSubusers.permissions'),
+                                                icon: Shield,
+                                                onClick: () => openPermissionsDialog(sub),
+                                                hidden: !canUpdate,
+                                            },
+                                            {
+                                                label: t('common.delete'),
+                                                icon: Trash2,
+                                                destructive: true,
+                                                separated: canUpdate,
+                                                hidden: !canDelete,
+                                                onClick: () => {
+                                                    setSelectedSubuser(sub);
+                                                    setIsDeleteOpen(true);
+                                                },
+                                            },
+                                        ]}
+                                    />
+                                )
+                            }
+                        />
                     )}
 
                     {pagination.total > pagination.per_page && (
@@ -507,7 +513,7 @@ export default function ServerSubusersPage() {
                                 >
                                     <ChevronLeft className='h-5 w-5' />
                                 </Button>
-                                <div className='bg-secondary/50 border-border/5 flex h-10 items-center rounded-xl border px-4 text-sm font-black'>
+                                <div className='bg-secondary/50 border-border/5 flex h-10 items-center rounded-xl border px-4 text-sm font-semibold'>
                                     {pagination.current_page} / {pagination.last_page}
                                 </div>
                                 <Button
@@ -541,7 +547,7 @@ export default function ServerSubusersPage() {
                 </DialogHeader>
                 <div className='space-y-4 py-4'>
                     <div className='space-y-2'>
-                        <label className='text-muted-foreground text-sm font-bold tracking-wider uppercase'>
+                        <label className='text-muted-foreground text-sm font-bold'>
                             {t('serverSubusers.emailLabel')}
                         </label>
                         <div className='relative'>
@@ -627,10 +633,10 @@ export default function ServerSubusersPage() {
 
             <Dialog
                 open={isPermissionsOpen}
-                onClose={() => setIsPermissionsOpen(false)}
+                onClose={() => closePermissions(false)}
                 onOpenChange={(open) => {
                     if (!open) {
-                        setIsPermissionsOpen(false);
+                        closePermissions(false);
                     }
                 }}
                 className='max-w-3xl'
@@ -640,23 +646,25 @@ export default function ServerSubusersPage() {
                     <DialogDescription>{t('serverSubusers.managePermissionsDescription')}</DialogDescription>
                 </DialogHeader>
                 <div className='space-y-6 pt-4'>
-                    <div className='bg-card/50 border-border/5 flex items-center justify-between rounded-3xl border p-5 backdrop-blur-md'>
+                    <div className='fp-surface flex items-center justify-between rounded-xl border p-5'>
                         <div className='flex items-center gap-4'>
                             <div className='bg-primary/10 border-primary/20 flex h-10 w-10 items-center justify-center rounded-xl border'>
                                 <Mail className='text-primary h-5 w-5' />
                             </div>
                             <div className='flex flex-col'>
-                                <span className='text-muted-foreground text-xs font-black tracking-widest uppercase opacity-50'>
+                                <span className='text-muted-foreground text-xs font-semibold opacity-50'>
                                     {t('serverSubusers.user')}
                                 </span>
-                                <span className='text-sm font-bold tracking-tight'>{selectedSubuser?.email}</span>
+                                <span className='text-sm font-bold tracking-tight'>
+                                    <Sensitive>{selectedSubuser?.email}</Sensitive>
+                                </span>
                             </div>
                         </div>
                         <Button
                             variant='outline'
                             size='sm'
                             onClick={selectAllPermissions}
-                            className='border-border/10 hover:bg-secondary/20 h-10 rounded-xl px-4 text-xs font-bold tracking-wider uppercase'
+                            className='border-border/10 hover:bg-secondary/20 h-10 rounded-xl px-4 text-xs font-bold'
                         >
                             {availablePermissions.every((p) => selectedPermissions.includes(p))
                                 ? t('serverSubusers.deselectAll')
@@ -673,8 +681,8 @@ export default function ServerSubusersPage() {
                         <div className='scrollbar-thin scrollbar-thumb-muted-foreground/10 max-h-[50vh] space-y-6 overflow-y-auto pr-2'>
                             {Object.entries(groupedPermissions).map(([category, data]) => (
                                 <div key={category} className='space-y-4'>
-                                    <div className='bg-card/70 border-border/5 sticky top-0 z-10 -mx-2 border-b px-2 py-3 backdrop-blur-xl'>
-                                        <h4 className='text-primary text-lg font-black tracking-tight uppercase'>
+                                    <div className='fp-chrome-surface border-border/5 sticky top-0 z-10 -mx-2 border-b px-2 py-3 backdrop-blur-xl'>
+                                        <h4 className='text-primary text-lg font-semibold tracking-tight'>
                                             {t(`serverSubusers.permissionCategories.${category}.name`)}
                                         </h4>
                                         <p className='text-muted-foreground text-[10px] leading-relaxed font-medium opacity-70'>
@@ -689,7 +697,7 @@ export default function ServerSubusersPage() {
                                                     'group flex cursor-pointer items-start gap-4 rounded-2xl border p-4 transition-all',
                                                     selectedPermissions.includes(perm)
                                                         ? 'bg-primary/5 border-primary/20'
-                                                        : 'bg-card/30 border-border/5 hover:border-border/20',
+                                                        : 'fp-surface border-border/5 hover:border-border/20',
                                                 )}
                                             >
                                                 <div className='relative mt-1 shrink-0'>
@@ -728,7 +736,7 @@ export default function ServerSubusersPage() {
                         </div>
                     )}
 
-                    <div className='text-primary/80 bg-primary/5 border-primary/10 flex items-center gap-3 rounded-2xl border px-5 py-4 text-xs font-black tracking-widest uppercase'>
+                    <div className='text-primary/80 bg-primary/5 border-primary/10 flex items-center gap-3 rounded-2xl border px-5 py-4 text-xs font-semibold'>
                         <Shield className='h-4 w-4' />
                         {selectedPermissions.length} {t('serverSubusers.permissionsSelected')}
                     </div>
@@ -737,7 +745,7 @@ export default function ServerSubusersPage() {
                         <Button
                             variant='outline'
                             size='default'
-                            onClick={() => setIsPermissionsOpen(false)}
+                            onClick={() => closePermissions(false)}
                             disabled={savingPermissions}
                             className='rounded-2xl'
                         >
@@ -761,6 +769,7 @@ export default function ServerSubusersPage() {
                 </div>
             </Dialog>
             <WidgetRenderer widgets={getWidgets('server-users', 'bottom-of-page')} />
+            <ServerPageTips page='users' />
         </div>
     );
 }

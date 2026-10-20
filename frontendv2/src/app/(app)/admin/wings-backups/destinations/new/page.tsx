@@ -30,15 +30,18 @@ import {
     buildDestinationPayload,
     emptyDestinationForm,
 } from '@/components/admin/wings-backups/DestinationFormFields';
+import { UnsavedChangesBar } from '@/components/featherui/UnsavedChangesBar';
+import { useFormBaseline } from '@/hooks/useFormBaseline';
 
 export default function NewWingsBackupDestinationPage() {
     const { t } = useTranslation();
     const router = useRouter();
     const [form, setForm] = React.useState(emptyDestinationForm);
+    const { dirty: unsaved, restore: restoreForm } = useFormBaseline(form, { trackFromStart: true });
     const [saving, setSaving] = React.useState(false);
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleSubmit = async (e?: React.FormEvent) => {
+        e?.preventDefault();
         if (!form.name.trim()) {
             toast.error(t('adminWingsBackups.nameRequired'));
             return;
@@ -70,7 +73,7 @@ export default function NewWingsBackupDestinationPage() {
             />
             <form onSubmit={handleSubmit} className='space-y-6' data-fp-save-shortcut>
                 <DestinationFormFields form={form} setForm={setForm} disabled={saving} />
-                <div className='bg-card/40 border-border/50 sticky bottom-4 z-10 flex flex-wrap justify-end gap-2 rounded-2xl border p-4 shadow-sm backdrop-blur-md'>
+                <div className='fp-surface sticky bottom-4 z-10 flex flex-wrap justify-end gap-2 rounded-2xl border p-4'>
                     <Button type='button' variant='outline' onClick={() => safeBack(router, '/admin/wings-backups')}>
                         {t('common.cancel')}
                     </Button>
@@ -79,6 +82,17 @@ export default function NewWingsBackupDestinationPage() {
                     </Button>
                 </div>
             </form>
+
+            <UnsavedChangesBar
+                dirty={unsaved}
+                saving={saving}
+                onSave={() => void handleSubmit()}
+                onDiscard={() => {
+                    const saved = restoreForm();
+                    if (saved) setForm(saved);
+                }}
+                saveLabel={t('common.create')}
+            />
         </div>
     );
 }

@@ -61,7 +61,7 @@ export default function LoginForm() {
     const { t } = useTranslation();
     const { settings } = useSettings();
     const showCaptcha = isCaptchaConfigured(settings);
-    const { fetchSession } = useSession();
+    const { user, isSessionChecked, fetchSession } = useSession();
     const { getWidgets, fetchWidgets } = usePluginWidgets('auth-login');
     const loginFormsRootRef = useRef<HTMLDivElement | null>(null);
     /** QR is desktop-only - mounting it on phones starts useless challenges and wrecks the layout. */
@@ -75,6 +75,14 @@ export default function LoginForm() {
     const formGap = authFormGapClass(formDensity);
 
     useEffect(() => {
+        if (!isSessionChecked) return;
+        if (user) {
+            const target = resolvePostLoginPath(searchParams.get('redirect'));
+            window.location.assign(target);
+        }
+    }, [user, isSessionChecked, searchParams]);
+
+    useEffect(() => {
         const mq = window.matchMedia('(min-width: 768px)');
         const apply = () => setIsDesktopLayout(mq.matches);
         apply();
@@ -82,10 +90,9 @@ export default function LoginForm() {
         return () => mq.removeEventListener('change', apply);
     }, []);
 
-    /** Load session after Set-Cookie; soft-nav if ready, otherwise full reload. */
+    /** Load session after Set-Cookie; navigate directly to target. */
     const completeLoginNavigation = async (options?: { delayMs?: number; hardNavigate?: boolean }) => {
         const delayMs = options?.delayMs ?? 0;
-        const hardNavigate = options?.hardNavigate === true;
         const target = resolvePostLoginPath(searchParams.get('redirect'));
 
         let ok = await fetchSession(true);
@@ -95,11 +102,7 @@ export default function LoginForm() {
         }
 
         const navigate = () => {
-            if (hardNavigate || !ok) {
-                window.location.assign(target);
-            } else {
-                router.push(target);
-            }
+            window.location.assign(target);
         };
 
         if (delayMs > 0) {
@@ -1065,9 +1068,7 @@ export default function LoginForm() {
             <div className='w-full space-y-3'>
                 <div className='flex items-center gap-3'>
                     <div className='bg-border/70 h-px flex-1' />
-                    <span className='text-muted-foreground text-[11px] font-semibold tracking-wide uppercase'>
-                        {t('auth.login.or')}
-                    </span>
+                    <span className='text-muted-foreground text-xs font-medium'>{t('auth.login.or')}</span>
                     <div className='bg-border/70 h-px flex-1' />
                 </div>
                 <div className='grid grid-cols-1 gap-2 min-[380px]:grid-cols-2 [&>*:last-child:nth-child(odd)]:min-[380px]:col-span-2'>
@@ -1086,7 +1087,7 @@ export default function LoginForm() {
                 <AuthHeroCard icon={<Building2 className='h-6 w-6' />} title={ssoHeadline} subtitle={ssoSubtitle} />
 
                 <div className='space-y-2'>
-                    <p className='text-muted-foreground text-center text-[10px] font-medium tracking-[0.14em] uppercase'>
+                    <p className='text-muted-foreground text-center text-xs font-medium'>
                         {t('auth.sso.chooseProvider')}
                     </p>
                     {oidcProviders.map((provider) => (
@@ -1171,13 +1172,21 @@ export default function LoginForm() {
             ? t('auth.emailLogin.codeSentTo', { email: emailForLoginCodeSubtitle })
             : t('auth.login.subtitle');
 
+    if (isSessionChecked && user) {
+        return (
+            <div className='flex min-h-[400px] w-full items-center justify-center'>
+                <div className='border-primary h-8 w-8 animate-spin rounded-full border-2 border-t-transparent' />
+            </div>
+        );
+    }
+
     return (
         <div ref={loginFormsRootRef} className='w-full'>
             <WidgetRenderer widgets={getWidgets('auth-login', 'auth-login-top')} />
 
             <div
                 className={cn(
-                    'bg-card/95 flex w-full flex-col overflow-hidden rounded-xl shadow-2xl',
+                    'fp-surface flex w-full flex-col overflow-hidden rounded-2xl border',
                     showQrLogin && 'md:flex-row',
                 )}
             >
@@ -1271,7 +1280,7 @@ export default function LoginForm() {
                                 {/* Multi-step login flow when email login is enabled */}
                                 {isMultiStepEmailLoginFlow ? (
                                     loginStep === 'identifier' ? (
-                                        // Step 1: Enter email/username
+                                        // Enter email/username
                                         <form onSubmit={handleIdentifierSubmit} className='space-y-4'>
                                             <Input
                                                 label={t('auth.login.username')}
@@ -1397,7 +1406,7 @@ export default function LoginForm() {
                                             </form>
                                         )
                                     ) : (
-                                        // Step 2: Password (+ captcha) then sign-in, passkey, or email code
+                                        // Password (+ captcha) then sign-in, passkey, or email code
                                         <form onSubmit={handlePasswordLoginFromMethod} className='space-y-4'>
                                             <Input
                                                 label={t('auth.login.password')}
@@ -1725,7 +1734,7 @@ export default function LoginForm() {
                 </div>
 
                 {showQrLogin ? (
-                    <div className='border-border/30 bg-muted/20 flex w-[17.5rem] shrink-0 items-center justify-center border-l px-5 py-8 lg:w-[19rem]'>
+                    <div className='fp-surface-inset flex w-[17.5rem] shrink-0 items-center justify-center border-l px-5 py-8 lg:w-[19rem]'>
                         <LoginQrPanel />
                     </div>
                 ) : null}

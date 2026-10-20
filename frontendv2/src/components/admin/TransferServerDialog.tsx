@@ -27,6 +27,9 @@ import { toast } from 'sonner';
 import { AlertTriangle, ArrowLeftRight, ChevronRight, Loader2, Search, ShieldCheck } from 'lucide-react';
 import { ApiAllocation, ApiNode, ApiServer } from '@/types/adminServerTypes';
 import { supportsDaemonFeature, type DaemonCapabilitiesMap, type DaemonType } from '@/lib/daemonCapabilities';
+import { useIpMask } from '@/hooks/useIpMask';
+import { Sensitive } from '@/components/common/Sensitive';
+import { maskEndpoint } from '@/lib/ip-mask';
 
 interface TransferServerDialogProps {
     server: ApiServer | null;
@@ -37,6 +40,7 @@ interface TransferServerDialogProps {
 
 export function TransferServerDialog({ server, open, onOpenChange, onCompleted }: TransferServerDialogProps) {
     const { t } = useTranslation();
+    const ipMask = useIpMask();
 
     const [nodes, setNodes] = useState<ApiNode[]>([]);
     const [nodeSearch, setNodeSearch] = useState('');
@@ -253,7 +257,7 @@ export function TransferServerDialog({ server, open, onOpenChange, onCompleted }
                         <p className='text-muted-foreground text-sm'>
                             <span className='text-foreground font-medium'>{server.name}</span>
                             <span className='text-muted-foreground/50 mx-2'>·</span>
-                            {server.node?.name || 'Unknown'}
+                            {server.node?.name || t('common.unknown')}
                         </p>
                     )}
 
@@ -269,9 +273,13 @@ export function TransferServerDialog({ server, open, onOpenChange, onCompleted }
                             disabled={submitting}
                         >
                             <span className={selectedNode ? 'text-foreground font-medium' : 'text-muted-foreground'}>
-                                {selectedNode
-                                    ? `${selectedNode.name} (${selectedNode.fqdn})`
-                                    : t('admin.servers.transfer.select_node')}
+                                {selectedNode ? (
+                                    <>
+                                        {selectedNode.name} (<Sensitive>{selectedNode.fqdn}</Sensitive>)
+                                    </>
+                                ) : (
+                                    t('admin.servers.transfer.select_node')
+                                )}
                             </span>
                             <ChevronRight className='text-muted-foreground h-4 w-4' />
                         </Button>
@@ -420,9 +428,11 @@ export function TransferServerDialog({ server, open, onOpenChange, onCompleted }
                                         selectedAllocation ? 'text-foreground font-medium' : 'text-muted-foreground'
                                     }
                                 >
-                                    {selectedAllocation
-                                        ? `${selectedAllocation.ip}:${selectedAllocation.port}`
-                                        : t('admin.servers.transfer.select_allocation')}
+                                    {selectedAllocation ? (
+                                        <Sensitive>{`${selectedAllocation.ip}:${selectedAllocation.port}`}</Sensitive>
+                                    ) : (
+                                        t('admin.servers.transfer.select_allocation')
+                                    )}
                                 </span>
                                 <ChevronRight className='text-muted-foreground h-4 w-4' />
                             </Button>
@@ -510,7 +520,9 @@ export function TransferServerDialog({ server, open, onOpenChange, onCompleted }
                                     <div className='flex items-center justify-between'>
                                         <div>
                                             <p className='text-sm font-bold'>{node.name}</p>
-                                            <p className='text-muted-foreground text-xs'>{node.fqdn}</p>
+                                            <p className='text-muted-foreground text-xs'>
+                                                <Sensitive>{node.fqdn}</Sensitive>
+                                            </p>
                                         </div>
                                         {selectedNode?.id === node.id && (
                                             <ShieldCheck className='text-primary h-5 w-5' />
@@ -574,10 +586,11 @@ export function TransferServerDialog({ server, open, onOpenChange, onCompleted }
                                     <div className='flex items-center justify-between'>
                                         <div>
                                             <p className='text-sm font-bold'>
-                                                {allc.ip}:{allc.port}
+                                                <Sensitive>{maskEndpoint(allc.ip, allc.port, false)}</Sensitive>
                                             </p>
                                             <p className='text-muted-foreground text-xs'>
-                                                {allc.ip_alias || 'No Alias'}
+                                                {ipMask.ipLike(allc.ip_alias) ||
+                                                    t('ui.components.admin.transferServerDialog.noAlias')}
                                             </p>
                                         </div>
                                         {selectedAllocation?.id === allc.id && (

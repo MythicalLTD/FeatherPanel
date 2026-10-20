@@ -264,6 +264,17 @@ export function useServersWebSocket() {
             return new Promise<void>((resolve, reject) => {
                 const ws = new WebSocket(connectionString);
                 state.websocket = ws;
+                let settled = false;
+                const settleOk = () => {
+                    if (settled) return;
+                    settled = true;
+                    resolve();
+                };
+                const settleErr = (err: Error) => {
+                    if (settled) return;
+                    settled = true;
+                    reject(err);
+                };
 
                 ws.onopen = () => {
                     ws.send(
@@ -284,12 +295,12 @@ export function useServersWebSocket() {
                             state.wingsStatus = 'healthy';
                             requestServerStats(serverUuid);
                             setupStatsInterval(serverUuid);
-                            resolve();
+                            settleOk();
                         } else if (data.event === 'auth_error') {
                             state.connectionStatus = 'disconnected';
                             state.wingsStatus = 'error';
                             ws.close();
-                            reject(new Error('Authentication failed'));
+                            settleErr(new Error('Authentication failed'));
                         } else if (data.event === 'status') {
                             const newStatus = data.args?.[0] || null;
                             updateServerLiveData(serverUuid, { status: newStatus });
@@ -352,7 +363,8 @@ export function useServersWebSocket() {
                         state.statsInterval = null;
                     }
 
-                    reject(new Error('WebSocket error'));
+                    // Wings/node down is common; reconnect loop handles it without console spam.
+                    settleErr(new Error('WebSocket error'));
                 };
             });
         },
@@ -448,7 +460,9 @@ export function useServersWebSocket() {
                     return;
                 }
 
-                console.error(`Connection error for server ${serverUuid}:`, error);
+                if (state.reconnectAttempts === 0) {
+                    console.debug(`Wings unreachable for server ${serverUuid}:`, error);
+                }
 
                 if (state.reconnectAttempts < MAX_RECONNECT_ATTEMPTS && scheduleReconnectRef.current) {
                     scheduleReconnectRef.current(serverUuid);

@@ -121,18 +121,6 @@ use App\Plugins\Events\Events\UserApiClientEvent;
     type: 'object',
     properties: [
         new OA\Property(property: 'valid', type: 'boolean', description: 'Whether the API client is valid'),
-        new OA\Property(property: 'api_client', type: 'object', properties: [
-            new OA\Property(property: 'id', type: 'integer'),
-            new OA\Property(property: 'name', type: 'string'),
-            new OA\Property(property: 'user_uuid', type: 'string'),
-            new OA\Property(property: 'created_at', type: 'string', format: 'date-time'),
-        ]),
-        new OA\Property(property: 'user', type: 'object', properties: [
-            new OA\Property(property: 'id', type: 'integer'),
-            new OA\Property(property: 'username', type: 'string'),
-            new OA\Property(property: 'email', type: 'string'),
-            new OA\Property(property: 'uuid', type: 'string'),
-        ]),
     ]
 )]
 #[OA\Schema(
@@ -154,6 +142,7 @@ class ApiClientController
     private const OAUTH2_DEVICE_EXPIRES_IN = 900;
     private const OAUTH2_DEVICE_POLL_INTERVAL = 5;
     private const OAUTH2_DEVICE_USER_CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    private const OAUTH2_REQUEST_EXPIRES_IN = 86400; // 24h validity for interactive consent requests
 
     #[OA\Get(
         path: '/api/user/api-clients',
@@ -213,6 +202,9 @@ class ApiClientController
 
         if ($page < 1) {
             $page = 1;
+        }
+        if ($limit < 1) {
+            $limit = 150;
         }
 
         // Get user's API clients with pagination and search
@@ -334,14 +326,9 @@ class ApiClientController
             return ApiResponse::error('You are not allowed to access this resource!', 'INVALID_ACCOUNT_TOKEN', 400, []);
         }
 
-        // Check if API key creation is allowed (unless user has bypass permission)
-        $app = App::getInstance(true);
-        $config = $app->getConfig();
-        $allowApiKeysCreate = $config->getSetting(ConfigInterface::USER_ALLOW_API_KEYS_CREATE, 'true') === 'true';
-        $hasBypassPermission = PermissionHelper::hasPermission($user['uuid'], Permissions::ADMIN_API_BYPASS_RESTRICTIONS);
-
-        if (!$allowApiKeysCreate && !$hasBypassPermission) {
-            return ApiResponse::error('You are not allowed to create API keys!', 'API_KEY_CREATION_NOT_ALLOWED', 403, []);
+        $notAllowed = $this->ensureApiKeyCreationAllowed($user);
+        if ($notAllowed !== null) {
+            return $notAllowed;
         }
 
         $data = json_decode($request->getContent(), true);
@@ -352,7 +339,7 @@ class ApiClientController
         // Validate required fields
         $required = ['name'];
         foreach ($required as $field) {
-            if (!isset($data[$field]) || trim($data[$field]) === '') {
+            if (!isset($data[$field]) || !is_scalar($data[$field]) || trim((string) $data[$field]) === '') {
                 return ApiResponse::error("Missing required field: $field", 'MISSING_REQUIRED_FIELD', 400);
             }
         }
@@ -439,13 +426,9 @@ class ApiClientController
             return ApiResponse::error('You are not allowed to access this resource!', 'INVALID_ACCOUNT_TOKEN', 400, []);
         }
 
-        $app = App::getInstance(true);
-        $config = $app->getConfig();
-        $allowApiKeysCreate = $config->getSetting(ConfigInterface::USER_ALLOW_API_KEYS_CREATE, 'true') === 'true';
-        $hasBypassPermission = PermissionHelper::hasPermission($user['uuid'], Permissions::ADMIN_API_BYPASS_RESTRICTIONS);
-
-        if (!$allowApiKeysCreate && !$hasBypassPermission) {
-            return ApiResponse::error('You are not allowed to create API keys!', 'API_KEY_CREATION_NOT_ALLOWED', 403, []);
+        $notAllowed = $this->ensureApiKeyCreationAllowed($user);
+        if ($notAllowed !== null) {
+            return $notAllowed;
         }
 
         $data = json_decode($request->getContent(), true);
@@ -453,6 +436,9 @@ class ApiClientController
             return ApiResponse::error('Invalid request data', 'INVALID_REQUEST_DATA', 400);
         }
 
+        if (isset($data['name']) && !is_scalar($data['name'])) {
+            return ApiResponse::error('Name must be a string', 'INVALID_DATA_TYPE', 400);
+        }
         $name = trim((string) ($data['name'] ?? 'VS Code'));
         if ($name === '' || strlen($name) > 191) {
             return ApiResponse::error('Name must be between 1 and 191 characters', 'INVALID_NAME_LENGTH', 400);
@@ -662,6 +648,10 @@ class ApiClientController
 
         if (empty($validData)) {
             return ApiResponse::error('No valid fields to update', 'NO_VALID_FIELDS', 400);
+        }
+
+        if (isset($validData['name']) && !is_string($validData['name'])) {
+            return ApiResponse::error('Name must be a string', 'INVALID_DATA_TYPE', 400);
         }
 
         if (isset($validData['name']) && (strlen($validData['name']) < 1 || strlen($validData['name']) > 191)) {
@@ -1002,7 +992,7 @@ class ApiClientController
     #[OA\Post(
         path: '/api/user/api-clients/validate',
         summary: 'Validate API client',
-        description: 'Validate an API client by public key and return associated user information. This endpoint does not require authentication.',
+        description: 'Validate an API client by public key. This endpoint does not require authentication and only reports whether the key belongs to a valid API client (`valid`); no owner data is returned (FP-19).',
         tags: ['User - API Clients'],
         requestBody: new OA\RequestBody(
             required: true,
@@ -1022,7 +1012,7 @@ class ApiClientController
     public function validateApiClient(Request $request): Response
     {
         $data = json_decode($request->getContent(), true);
-        if ($data == null || !isset($data['public_key'])) {
+        if ($data == null || !isset($data['public_key']) || !is_string($data['public_key'])) {
             return ApiResponse::error('Public key is required', 'PUBLIC_KEY_REQUIRED', 400);
         }
 
@@ -1034,30 +1024,25 @@ class ApiClientController
         // Find the API client by public key
         $apiClient = ApiClient::getApiClientByPublicKey($publicKey);
         if (!$apiClient) {
-            return ApiResponse::error('Invalid API client', 'INVALID_API_CLIENT', 404);
+            // FP-19: this endpoint is reachable without authentication, so the
+            // answer is reduced to a boolean. The status code (404) stays as it
+            // was to not break external apps that only look at it.
+            return ApiResponse::error('Invalid API client', 'INVALID_API_CLIENT', 404, [
+                'valid' => false,
+            ]);
         }
 
         // Get user information
         $user = User::getUserByUuid($apiClient['user_uuid']);
         if (!$user) {
-            return ApiResponse::error('API client user not found', 'USER_NOT_FOUND', 404);
+            return ApiResponse::error('API client user not found', 'USER_NOT_FOUND', 404, [
+                'valid' => false,
+            ]);
         }
 
-        // Return validation result (without sensitive data)
+        // FP-19: no owner data (id/name/uuid/username/email) is returned any more.
         return ApiResponse::success([
             'valid' => true,
-            'api_client' => [
-                'id' => $apiClient['id'],
-                'name' => $apiClient['name'],
-                'user_uuid' => $apiClient['user_uuid'],
-                'created_at' => $apiClient['created_at'],
-            ],
-            'user' => [
-                'id' => $user['id'],
-                'username' => $user['username'],
-                'email' => $user['email'],
-                'uuid' => $user['uuid'],
-            ],
         ], 'API client validated successfully', 200);
     }
 
@@ -1419,8 +1404,7 @@ class ApiClientController
             'notify_foreign_ip' => $normalized['notify_foreign_ip'],
             'request_state' => null,
             'request_nonce' => $normalized['mode'],
-            // Kept for schema compatibility; no expiry logic is enforced.
-            'expires_at' => date('Y-m-d H:i:s', strtotime('+10 years')),
+            'expires_at' => gmdate('Y-m-d H:i:s', time() + self::OAUTH2_REQUEST_EXPIRES_IN),
         ]);
 
         if ($authorizationId === false) {
@@ -1481,6 +1465,7 @@ class ApiClientController
         if ($authorization['user_uuid'] !== $user['uuid']) {
             return ApiResponse::error('You are not allowed to approve this request', 'UNAUTHORIZED_ACCESS', 403);
         }
+        // Expiry only blocks pending requests; approved/denied results stay replayable.
         if ($authorization['status'] !== 'pending') {
             if ($authorization['status'] === 'approved') {
                 $approvedApiClient = ApiClient::getApiClientById((int) $authorization['api_client_id']);
@@ -1497,6 +1482,9 @@ class ApiClientController
             }
 
             return ApiResponse::error('Authorization request is no longer pending', 'AUTHORIZATION_NOT_PENDING', 400);
+        }
+        if ($this->oauth2RequestExpired($authorization)) {
+            return ApiResponse::error('Authorization request has expired', 'AUTHORIZATION_REQUEST_EXPIRED', 400);
         }
 
         $publicKey = $this->generateApiKey();
@@ -1570,6 +1558,7 @@ class ApiClientController
         if ($authorization['user_uuid'] !== $user['uuid']) {
             return ApiResponse::error('You are not allowed to deny this request', 'UNAUTHORIZED_ACCESS', 403);
         }
+        // Expiry only blocks pending requests; approved/denied results stay replayable.
         if ($authorization['status'] !== 'pending') {
             $mode = $this->resolveOAuth2Mode($authorization);
             if ($authorization['status'] === 'denied') {
@@ -1583,6 +1572,9 @@ class ApiClientController
             }
 
             return ApiResponse::error('Authorization request is no longer pending', 'AUTHORIZATION_NOT_PENDING', 400);
+        }
+        if ($this->oauth2RequestExpired($authorization)) {
+            return ApiResponse::error('Authorization request has expired', 'AUTHORIZATION_REQUEST_EXPIRED', 400);
         }
 
         OAuth2ApiAuthorization::updateAuthorization((int) $authorization['id'], [
@@ -1642,13 +1634,19 @@ class ApiClientController
         ], 'Authorization code exchanged', 200);
     }
 
+    /**
+     * Personal API keys (including the ones used for MCP) follow the panel-wide
+     * `user_allow_api_keys_create` setting. When an admin turns that off, the
+     * dedicated `user.api_keys.create` permission still allows it for a role.
+     * `admin.api.bypass_restrictions` only lifts rate limits and is not used here;
+     * what a key can do on admin routes is still limited by the owner's permissions.
+     */
     private function ensureApiKeyCreationAllowed(array $user): ?Response
     {
         $app = App::getInstance(true);
         $config = $app->getConfig();
         $allowApiKeysCreate = $config->getSetting(ConfigInterface::USER_ALLOW_API_KEYS_CREATE, 'true') === 'true';
-        $hasBypassPermission = PermissionHelper::hasPermission($user['uuid'], Permissions::ADMIN_API_BYPASS_RESTRICTIONS);
-        if (!$allowApiKeysCreate && !$hasBypassPermission) {
+        if (!$allowApiKeysCreate && !PermissionHelper::hasPermission($user['uuid'], Permissions::USER_API_KEYS_CREATE, $user)) {
             return ApiResponse::error('You are not allowed to create API keys!', 'API_KEY_CREATION_NOT_ALLOWED', 403, []);
         }
 
@@ -1779,6 +1777,21 @@ class ApiClientController
         return $prefix . bin2hex(random_bytes(32));
     }
 
+    /**
+     * Whether a stored OAuth2 authorization request has passed its expiry.
+     */
+    private function oauth2RequestExpired(array $authorization): bool
+    {
+        $expiresAt = $authorization['expires_at'] ?? null;
+        if (!is_string($expiresAt) || $expiresAt === '') {
+            return false;
+        }
+
+        $timestamp = strtotime($expiresAt);
+
+        return $timestamp !== false && $timestamp < time();
+    }
+
     private function resolveOAuth2Mode(array $authorization): string
     {
         $mode = (string) ($authorization['request_nonce'] ?? 'user');
@@ -1796,6 +1809,12 @@ class ApiClientController
      */
     private function normalizeOAuth2DeviceRequest(array $data): array | Response
     {
+        foreach (['name', 'allowedips', 'alertCors', 'appName', 'appLogo', 'description'] as $field) {
+            if (isset($data[$field]) && !is_scalar($data[$field])) {
+                return ApiResponse::error("Field {$field} must be a string", 'INVALID_DATA_TYPE', 400);
+            }
+        }
+
         $name = trim((string) ($data['name'] ?? ''));
         $allowedIpsInput = (string) ($data['allowedips'] ?? '');
         $alertCorsInput = (string) ($data['alertCors'] ?? 'false');

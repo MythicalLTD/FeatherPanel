@@ -21,7 +21,7 @@ import { EggVariableInput } from '@/components/server/EggVariableInput';
 import { useParams, useRouter, usePathname } from 'next/navigation';
 import axios, { AxiosError } from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
-import { PageHeader } from '@/components/featherui/PageHeader';
+import { ServerPageHeader } from '@/components/server/ServerPageHeader';
 import { PageCard } from '@/components/featherui/PageCard';
 import {
     Zap,
@@ -49,6 +49,7 @@ import { cn, isEnabled } from '@/lib/utils';
 import { buildSpellDockerImageOptions, resolveSpellDefaultDockerImage } from '@/lib/spellDockerImages';
 import type { Variable, Server, CustomVariable } from '@/types/server';
 import { PageLoading } from '@/components/featherui/PageLoading';
+import { UnsavedChangesBar } from '@/components/featherui/UnsavedChangesBar';
 import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 
 interface ServerResponse {
@@ -85,6 +86,9 @@ export default function ServerStartupPage() {
     const [availableDockerImages, setAvailableDockerImages] = React.useState<{ name: string; value: string }[]>([]);
     const [spellDefaultDockerImage, setSpellDefaultDockerImage] = React.useState('');
     const [defaultStartupCommand, setDefaultStartupCommand] = React.useState('');
+    // Image the form starts from after normalising to an allowed option, so loading alone never
+    // counts as an unsaved change.
+    const [imageBaseline, setImageBaseline] = React.useState('');
 
     const [form, setForm] = React.useState({
         startup: '',
@@ -168,14 +172,18 @@ export default function ServerStartupPage() {
 
                     const allowedValues = imageOptions.map((img) => img.value);
 
+                    let initialImage = currentImage;
                     if (currentImage && allowedValues.includes(currentImage)) {
-                        setForm((prev) => ({ ...prev, image: currentImage }));
+                        initialImage = currentImage;
                     } else if (defaultImage) {
-                        setForm((prev) => ({ ...prev, image: defaultImage }));
+                        initialImage = defaultImage;
                     } else if (allowedValues.length > 0) {
-                        setForm((prev) => ({ ...prev, image: allowedValues[0] }));
+                        initialImage = allowedValues[0];
                     }
+                    setForm((prev) => ({ ...prev, image: initialImage }));
+                    setImageBaseline(initialImage);
                 } catch {
+                    setImageBaseline(s.image || s.docker_image || '');
                     setAvailableDockerImages([]);
                     setSpellDefaultDockerImage('');
                 }
@@ -346,12 +354,14 @@ export default function ServerStartupPage() {
     const hasChanges = () => {
         if (!server) return false;
         const startupChanged = form.startup !== (server.startup || '');
-        const imageChanged = canUpdateDockerImage && form.image !== (server.image || server.docker_image || '');
+        const imageChanged = canUpdateDockerImage && form.image !== imageBaseline;
         const variablesChanged = variables
             .filter((v) => isEnabled(v.user_editable))
             .some((v) => variableValues[v.variable_id] !== (v.variable_value ?? ''));
         return startupChanged || imageChanged || variablesChanged;
     };
+    const unsaved = hasChanges();
+    const hasVariableErrors = Object.keys(variableErrors).length > 0;
 
     if (permissionsLoading || settingsLoading) {
         return <PageLoading />;
@@ -359,7 +369,7 @@ export default function ServerStartupPage() {
 
     if (!canRead) {
         return (
-            <div className='bg-card/40 border-border/5 flex flex-col items-center justify-center space-y-8 rounded-3xl border py-24 text-center backdrop-blur-3xl'>
+            <div className='fp-surface flex flex-col items-center justify-center space-y-8 rounded-xl border py-24 text-center'>
                 <div className='relative'>
                     <div className='absolute inset-0 scale-150 rounded-full bg-red-500/20 blur-3xl' />
                     <div className='relative flex h-32 w-32 rotate-3 items-center justify-center rounded-3xl border-2 border-red-500/20 bg-red-500/10'>
@@ -396,10 +406,10 @@ export default function ServerStartupPage() {
     }
 
     return (
-        <div key={pathname} className='mx-auto max-w-6xl space-y-8 pb-16 font-sans'>
+        <div key={pathname} className='space-y-6 pb-12 font-sans'>
             <WidgetRenderer widgets={getWidgets('server-startup', 'top-of-page')} />
 
-            <PageHeader
+            <ServerPageHeader
                 title={t('serverStartup.title')}
                 description={t('serverStartup.description')}
                 actions={
@@ -409,7 +419,7 @@ export default function ServerStartupPage() {
                             size='default'
                             onClick={() => fetchData()}
                             disabled={loading || saving}
-                            className='order-2 border border-transparent bg-transparent text-[10px] hover:border-white/10 hover:bg-white/5 sm:order-1'
+                            className='hover:border-border hover:bg-muted/60 order-2 border border-transparent bg-transparent text-[10px] sm:order-1'
                             aria-label={t('common.refresh')}
                         >
                             <RefreshCw className={cn('h-3 w-3 sm:mr-2', loading && 'animate-spin')} />
@@ -419,7 +429,7 @@ export default function ServerStartupPage() {
                             variant='default'
                             size='default'
                             onClick={handleSave}
-                            disabled={saving || !hasChanges() || Object.keys(variableErrors).length > 0}
+                            disabled={saving || !unsaved || hasVariableErrors}
                             data-fp-save-shortcut
                             loading={saving}
                             className='order-1 w-full sm:order-2 sm:w-auto'
@@ -543,7 +553,7 @@ export default function ServerStartupPage() {
                             </div>
                         )}
 
-                        <div className='mt-10 space-y-6 border-t border-white/5 pt-8'>
+                        <div className='border-border/50 mt-10 space-y-6 border-t pt-8'>
                             <div className='flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between'>
                                 <div>
                                     <h3 className='text-sm font-black tracking-widest uppercase'>
@@ -647,7 +657,7 @@ export default function ServerStartupPage() {
                                                 }))
                                             }
                                             disabled={customVariableSaving}
-                                            className='mt-0.5 h-4 w-4 rounded border-white/20 bg-white/5'
+                                            className='bg-muted/40 mt-0.5 h-4 w-4 rounded border-white/20'
                                         />
                                         <span>{t('serverStartup.customEnv.encrypt')}</span>
                                     </label>
@@ -659,7 +669,11 @@ export default function ServerStartupPage() {
                 </div>
 
                 <div className='space-y-8 lg:col-span-4'>
-                    <PageCard title={t('serverStartup.dockerImage')} description='Containerization' icon={Container}>
+                    <PageCard
+                        title={t('serverStartup.dockerImage')}
+                        description={t('ui.server.startup.containerization')}
+                        icon={Container}
+                    >
                         <div className='space-y-6'>
                             {allowCustomDockerImage ? (
                                 <div className='space-y-2.5'>
@@ -779,7 +793,10 @@ export default function ServerStartupPage() {
                             </p>
 
                             <Button
-                                onClick={() => router.push(`/server/${uuidShort}/startup/transfer/spell`)}
+                                onClick={() => {
+                                    if (unsaved && !window.confirm(t('common.unsavedChanges.leaveConfirm'))) return;
+                                    router.push(`/server/${uuidShort}/startup/transfer/spell`);
+                                }}
                                 className='bg-primary/10 hover:bg-primary/20 border-primary/20 text-primary w-full border'
                                 size='default'
                                 variant='outline'
@@ -793,6 +810,18 @@ export default function ServerStartupPage() {
                 </div>
             </div>
             <WidgetRenderer widgets={getWidgets('server-startup', 'bottom-of-page')} />
+
+            <UnsavedChangesBar
+                dirty={unsaved}
+                onSave={() => void handleSave()}
+                onDiscard={() => {
+                    setVariableErrors({});
+                    void fetchData();
+                }}
+                saving={saving}
+                saveDisabled={hasVariableErrors}
+                description={hasVariableErrors ? t('common.unsavedChanges.invalidDescription') : undefined}
+            />
         </div>
     );
 }

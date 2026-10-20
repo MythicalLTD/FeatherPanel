@@ -49,6 +49,7 @@ import {
 } from 'lucide-react';
 import { StarDisplay, StarRatingInput, mythicCloudErrorMessage } from '@/app/(app)/admin/feathercloud/products/_shared';
 import { getApiErrorMessage } from '@/lib/api-errors';
+import { ListPagination } from '@/components/featherui/ListPagination';
 
 interface OnlineSpell {
     id?: string | number | null;
@@ -418,7 +419,7 @@ export default function SpellsPage() {
                             disabled={onlineLoading}
                         >
                             <RefreshCw className={cn('mr-2 h-4 w-4', onlineLoading && 'animate-spin')} />
-                            Refresh
+                            {t('common.refresh')}
                         </Button>
                     </div>
                 }
@@ -428,16 +429,18 @@ export default function SpellsPage() {
             <WidgetRenderer widgets={getWidgets('admin-feathercloud-spells', 'before-content')} />
 
             <div className='grid gap-3 sm:grid-cols-3'>
-                <div className='bg-card/60 rounded-2xl px-4 py-3'>
-                    <p className='text-muted-foreground text-xs'>Shown</p>
+                <div className='fp-surface rounded-xl border px-4 py-3'>
+                    <p className='text-muted-foreground text-xs'>{t('ui.admin.feathercloud.spells.shown')}</p>
                     <p className='mt-1 text-sm font-medium'>{onlineSpells.length}</p>
                 </div>
-                <div className='bg-card/60 rounded-2xl px-4 py-3'>
-                    <p className='text-muted-foreground text-xs'>Catalog</p>
+                <div className='fp-surface rounded-xl border px-4 py-3'>
+                    <p className='text-muted-foreground text-xs'>{t('ui.admin.feathercloud.spells.catalog')}</p>
                     <p className='mt-1 text-sm font-medium'>{onlinePagination?.total_records ?? '-'}</p>
                 </div>
-                <div className='bg-card/60 rounded-2xl px-4 py-3'>
-                    <p className='text-muted-foreground text-xs'>Installed matches</p>
+                <div className='fp-surface rounded-xl border px-4 py-3'>
+                    <p className='text-muted-foreground text-xs'>
+                        {t('ui.admin.feathercloud.spells.installedMatches')}
+                    </p>
                     <p className='mt-1 text-sm font-medium'>
                         {onlineSpells.filter((spell) => installedSpellIds.includes(spell.name)).length}
                     </p>
@@ -469,7 +472,7 @@ export default function SpellsPage() {
                         onChange={(e) => setChannel(e.target.value)}
                         aria-label={t('admin.marketplace.spells.aria.channel')}
                     >
-                        <option value=''>All channels</option>
+                        <option value=''>{t('ui.admin.feathercloud.spells.allChannels')}</option>
                         <option value='mythicalsystems'>Mythic</option>
                         <option value='pterodactyl'>Pterodactyl</option>
                     </select>
@@ -479,11 +482,11 @@ export default function SpellsPage() {
                         onChange={(e) => setSort(e.target.value)}
                         aria-label={t('admin.marketplace.spells.aria.sort')}
                     >
-                        <option value='downloads'>Downloads</option>
-                        <option value='rating'>Rating</option>
-                        <option value='reviews'>Reviews</option>
-                        <option value='newest'>Newest</option>
-                        <option value='name'>Name</option>
+                        <option value='downloads'>{t('ui.admin.feathercloud.spells.downloads')}</option>
+                        <option value='rating'>{t('ui.admin.feathercloud.spells.rating')}</option>
+                        <option value='reviews'>{t('ui.admin.feathercloud.spells.reviews')}</option>
+                        <option value='newest'>{t('ui.admin.feathercloud.spells.newest')}</option>
+                        <option value='name'>{t('ui.admin.feathercloud.spells.name')}</option>
                     </select>
                     <Button size='sm' onClick={() => runSpellsSearch()} disabled={onlineLoading}>
                         <Search className='mr-2 h-4 w-4' />
@@ -538,8 +541,8 @@ export default function SpellsPage() {
                                 <article
                                     key={spell.identifier}
                                     className={cn(
-                                        'bg-card/80 ring-border/40 flex flex-col overflow-hidden rounded-2xl shadow-sm ring-1 transition',
-                                        'hover:bg-card hover:shadow-md',
+                                        'fp-surface hover:border-primary/30 flex flex-col overflow-hidden rounded-2xl border transition-colors',
+                                        'hover:border-primary/30',
                                     )}
                                 >
                                     <div className='flex flex-1 flex-col space-y-3 p-4'>
@@ -565,13 +568,13 @@ export default function SpellsPage() {
                                             </div>
                                             <div className='flex shrink-0 flex-col items-end gap-1'>
                                                 {installed ? (
-                                                    <span className='rounded-md bg-blue-500/15 px-1.5 py-0.5 text-[10px] font-medium text-blue-600 dark:text-blue-400'>
+                                                    <span className='bg-primary/10 text-primary rounded-md px-1.5 py-0.5 text-[10px] font-medium'>
                                                         {t('admin.marketplace.plugins.installed')}
                                                     </span>
                                                 ) : null}
                                                 {spell.verified ? (
                                                     <span className='rounded-md bg-emerald-500/15 px-1.5 py-0.5 text-[10px] font-medium text-emerald-600 dark:text-emerald-400'>
-                                                        Verified
+                                                        {t('ui.admin.feathercloud.spells.verified')}
                                                     </span>
                                                 ) : null}
                                             </div>
@@ -599,7 +602,9 @@ export default function SpellsPage() {
                                             <span className='inline-flex items-center gap-1.5'>
                                                 <StarDisplay rating={avg} />
                                                 <span>
-                                                    {avg > 0 ? avg.toFixed(1) : 'No ratings'}
+                                                    {avg > 0
+                                                        ? avg.toFixed(1)
+                                                        : t('ui.admin.feathercloud.spells.noRatings')}
                                                     {reviewCount > 0 ? ` · ${reviewCount}` : ''}
                                                 </span>
                                             </span>
@@ -699,7 +704,7 @@ export default function SpellsPage() {
 
                     <div className='-mr-2 flex-1 space-y-6 overflow-y-auto pr-2'>
                         {selectedSpell && !selectedSpell.verified && (
-                            <div className='flex items-start gap-4 rounded-2xl border border-blue-500/30 bg-blue-500/5 p-5'>
+                            <div className='fp-surface flex items-start gap-4 rounded-2xl border p-5'>
                                 <Info className='mt-0.5 h-5 w-5 shrink-0 text-blue-600' />
                                 <div className='space-y-1'>
                                     <p className='text-sm font-bold text-blue-700'>
@@ -713,7 +718,7 @@ export default function SpellsPage() {
                         )}
 
                         {installedSpellIds.includes(selectedSpell?.name || '') && (
-                            <div className='flex items-start gap-4 rounded-2xl border border-blue-500/30 bg-blue-500/5 p-5'>
+                            <div className='fp-surface flex items-start gap-4 rounded-2xl border p-5'>
                                 <Info className='mt-0.5 h-5 w-5 shrink-0 text-blue-600' />
                                 <div className='space-y-1'>
                                     <p className='text-sm font-bold text-blue-700'>
@@ -767,7 +772,7 @@ export default function SpellsPage() {
                             {realmInstallMode === 'new' ? (
                                 <div className='space-y-4'>
                                     <div className='space-y-2'>
-                                        <label className='text-muted-foreground text-xs font-bold tracking-wide uppercase'>
+                                        <label className='text-muted-foreground text-xs font-medium'>
                                             {t('admin.marketplace.spells.dialog.new_realm_name')}
                                         </label>
                                         <Input
@@ -781,7 +786,7 @@ export default function SpellsPage() {
                                         />
                                     </div>
                                     <div className='space-y-2'>
-                                        <label className='text-muted-foreground text-xs font-bold tracking-wide uppercase'>
+                                        <label className='text-muted-foreground text-xs font-medium'>
                                             {t('admin.marketplace.spells.dialog.new_realm_description')}
                                         </label>
                                         <Textarea
@@ -808,31 +813,11 @@ export default function SpellsPage() {
                                     </div>
 
                                     {realmsPagination && realmsPagination.total_pages > 1 && (
-                                        <div className='border-border bg-muted/30 flex items-center justify-between gap-2 rounded-lg border px-3 py-2'>
-                                            <Button
-                                                variant='outline'
-                                                size='sm'
-                                                disabled={realmsPage === 1}
-                                                onClick={() => setRealmsPage((p) => p - 1)}
-                                                className='h-8 gap-1'
-                                            >
-                                                <ChevronLeft className='h-3 w-3' />
-                                                {t('common.previous')}
-                                            </Button>
-                                            <span className='text-xs font-medium'>
-                                                {realmsPage} / {realmsPagination.total_pages}
-                                            </span>
-                                            <Button
-                                                variant='outline'
-                                                size='sm'
-                                                disabled={realmsPage === realmsPagination.total_pages}
-                                                onClick={() => setRealmsPage((p) => p + 1)}
-                                                className='h-8 gap-1'
-                                            >
-                                                {t('common.next')}
-                                                <ChevronRight className='h-3 w-3' />
-                                            </Button>
-                                        </div>
+                                        <ListPagination
+                                            page={realmsPage}
+                                            totalPages={realmsPagination.total_pages}
+                                            onPageChange={(nextPage) => setRealmsPage(nextPage)}
+                                        />
                                     )}
 
                                     <div className='custom-scrollbar max-h-[300px] space-y-2 overflow-y-auto pr-2'>
@@ -932,7 +917,7 @@ export default function SpellsPage() {
                         >
                             {installingId ? (
                                 <>
-                                    <RefreshCw className='mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white' />
+                                    <RefreshCw className='mr-2 h-4 w-4 animate-spin rounded-full border-2 border-[var(--fp-surface-border)] border-t-white' />
                                     {t('admin.marketplace.spells.dialog.installing')}
                                 </>
                             ) : (
@@ -951,7 +936,7 @@ export default function SpellsPage() {
                     <SheetHeader>
                         <SheetTitle className='flex items-center gap-2'>
                             <Star className='h-4 w-4 fill-amber-400 text-amber-400' />
-                            Reviews
+                            {t('ui.admin.feathercloud.spells.reviews')}
                         </SheetTitle>
                         <SheetDescription>
                             {reviewSpell?.name}
@@ -977,15 +962,17 @@ export default function SpellsPage() {
                                             {(reviewsMeta?.reviewCount ?? 0) === 1 ? '' : 's'}
                                         </span>
                                     </p>
-                                    <p className='text-muted-foreground text-xs'>Community rating on Mythic</p>
+                                    <p className='text-muted-foreground text-xs'>
+                                        {t('ui.admin.feathercloud.spells.communityRatingOnMythic')}
+                                    </p>
                                 </div>
                             </div>
                         )}
 
                         <div className='bg-muted/25 space-y-4 rounded-2xl p-4 sm:p-5'>
                             <div>
-                                <p className='text-muted-foreground mb-2 text-xs font-semibold tracking-wide uppercase'>
-                                    Your rating
+                                <p className='text-foreground mb-2 text-sm font-semibold'>
+                                    {t('ui.admin.feathercloud.spells.yourRating')}
                                 </p>
                                 <StarRatingInput
                                     value={reviewRating}
@@ -994,21 +981,21 @@ export default function SpellsPage() {
                                 />
                             </div>
                             <div>
-                                <p className='text-muted-foreground mb-2 text-xs font-semibold tracking-wide uppercase'>
-                                    Comment
+                                <p className='text-foreground mb-2 text-sm font-semibold'>
+                                    {t('ui.admin.feathercloud.spells.comment')}
                                 </p>
                                 <Textarea
                                     rows={3}
                                     value={reviewComment}
                                     onChange={(e) => setReviewComment(e.target.value)}
-                                    placeholder='Share your experience (5–1000 characters)'
+                                    placeholder={t('ui.admin.feathercloud.spells.shareYourExperience51000Characters')}
                                     disabled={savingReview}
                                 />
                             </div>
                             <div className='flex flex-wrap gap-2'>
                                 <Button onClick={() => void submitEggReview()} disabled={savingReview}>
                                     {savingReview ? <Loader2 className='mr-2 h-4 w-4 animate-spin' /> : null}
-                                    Save review
+                                    {t('ui.admin.feathercloud.spells.saveReview')}
                                 </Button>
                                 <Button
                                     variant='outline'
@@ -1016,17 +1003,20 @@ export default function SpellsPage() {
                                     disabled={savingReview}
                                 >
                                     <Trash2 className='mr-2 h-4 w-4' />
-                                    Delete mine
+                                    {t('ui.admin.feathercloud.spells.deleteMine')}
                                 </Button>
                             </div>
                         </div>
 
                         {reviewsLoading ? (
                             <div className='text-muted-foreground flex items-center gap-2 py-6 text-sm'>
-                                <Loader2 className='h-4 w-4 animate-spin' /> Loading reviews…
+                                <Loader2 className='h-4 w-4 animate-spin' />{' '}
+                                {t('ui.admin.feathercloud.spells.loadingReviews')}
                             </div>
                         ) : eggReviews.length === 0 ? (
-                            <p className='text-muted-foreground text-sm'>No reviews yet. Be the first.</p>
+                            <p className='text-muted-foreground text-sm'>
+                                {t('ui.admin.feathercloud.spells.noReviewsYetBeTheFirst')}
+                            </p>
                         ) : (
                             <ul className='space-y-3'>
                                 {eggReviews.map((r) => {
@@ -1036,7 +1026,9 @@ export default function SpellsPage() {
                                             <div className='flex flex-wrap items-center gap-2'>
                                                 <StarDisplay rating={Number(r.rating || 0)} />
                                                 <span className='font-medium'>
-                                                    {r.user?.username || r.user?.name || 'User'}
+                                                    {r.user?.username ||
+                                                        r.user?.name ||
+                                                        t('ui.admin.feathercloud.spells.user')}
                                                 </span>
                                                 {when ? (
                                                     <span className='text-muted-foreground text-xs'>{when}</span>
@@ -1054,7 +1046,7 @@ export default function SpellsPage() {
 
                     <SheetFooter className='mt-6'>
                         <Button variant='ghost' onClick={() => setReviewsOpen(false)}>
-                            Close
+                            {t('common.close')}
                         </Button>
                     </SheetFooter>
                 </div>

@@ -21,7 +21,7 @@ import axios, { AxiosError } from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { ListCheck, Plus, Lock } from 'lucide-react';
 
-import { PageHeader } from '@/components/featherui/PageHeader';
+import { ServerPageHeader } from '@/components/server/ServerPageHeader';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { FormSection } from '@/components/featherui/FormSection';
@@ -47,6 +47,8 @@ import {
 } from '@/components/server/schedule/container-shell-payload';
 import { PageLoading } from '@/components/featherui/PageLoading';
 import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
+import { UnsavedChangesBar } from '@/components/featherui/UnsavedChangesBar';
+import { useFormBaseline } from '@/hooks/useFormBaseline';
 
 export default function CreateTaskPage() {
     const { uuidShort, id: scheduleId } = useParams() as { uuidShort: string; id: string };
@@ -67,6 +69,10 @@ export default function CreateTaskPage() {
     });
     const [backup, setBackup] = React.useState<BackupFields>(emptyBackupFields());
     const [containerShell, setContainerShell] = React.useState<ContainerShellFields>(emptyContainerShellFields());
+    const { dirty: unsaved, restore: restoreSaved } = useFormBaseline(
+        { form, backup, containerShell },
+        { trackFromStart: true },
+    );
     const { getWidgets, fetchWidgets } = usePluginWidgets('server-tasks-new');
 
     // Container Shell runs arbitrary commands in the container: it needs the admin switch and console access.
@@ -178,9 +184,9 @@ export default function CreateTaskPage() {
     }
 
     return (
-        <div className='mx-auto max-w-4xl space-y-8 pb-16'>
+        <div className='space-y-6 pb-12'>
             <WidgetRenderer widgets={getWidgets('server-tasks-new', 'top-of-page')} />
-            <PageHeader
+            <ServerPageHeader
                 title={t('serverTasks.createTask')}
                 description={t('serverTasks.createTaskDescription')}
                 actions={
@@ -254,7 +260,7 @@ export default function CreateTaskPage() {
                                 {form.action === 'backup' ? t('serverTasks.backupSettings') : t('serverTasks.payload')}
                             </h2>
                             <p className='text-muted-foreground text-[9px] font-bold tracking-widest uppercase opacity-50'>
-                                Configuration
+                                {t('ui.server.schedules.tasks.new.configuration')}
                             </p>
                         </div>
                     </div>
@@ -325,9 +331,11 @@ export default function CreateTaskPage() {
                             <ListCheck className='text-primary h-5 w-5' />
                         </div>
                         <div className='space-y-0.5'>
-                            <h2 className='text-xl font-black tracking-tight uppercase italic'>Options</h2>
+                            <h2 className='text-xl font-black tracking-tight uppercase italic'>
+                                {t('ui.server.schedules.tasks.new.options')}
+                            </h2>
                             <p className='text-muted-foreground text-[9px] font-bold tracking-widest uppercase opacity-50'>
-                                Execution
+                                {t('ui.server.schedules.tasks.new.execution')}
                             </p>
                         </div>
                     </div>
@@ -367,6 +375,20 @@ export default function CreateTaskPage() {
                 </FormSection>
             </form>
             <WidgetRenderer widgets={getWidgets('server-tasks-new', 'bottom-of-page')} />
+
+            <UnsavedChangesBar
+                dirty={unsaved}
+                saving={saving}
+                onSave={() => void handleCreate()}
+                onDiscard={() => {
+                    const saved = restoreSaved();
+                    if (!saved) return;
+                    setForm(saved.form);
+                    setBackup(saved.backup);
+                    setContainerShell(saved.containerShell);
+                }}
+                saveLabel={t('common.create')}
+            />
         </div>
     );
 }

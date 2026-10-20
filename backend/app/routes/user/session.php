@@ -20,6 +20,7 @@ use RateLimit\Rate;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RouteCollection;
 use App\Controllers\User\User\SessionController;
+use App\Controllers\User\User\UiPreferencesController;
 
 return function (RouteCollection $routes): void {
     App::getInstance(true)->registerAuthRoute(
@@ -74,6 +75,28 @@ return function (RouteCollection $routes): void {
         ['PATCH'],
         Rate::perMinute(30), // Default: Admin can override in ratelimit.json
         'user-session'
+    );
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'preferences-ui',
+        '/api/user/preferences/ui',
+        function (Request $request) {
+            return (new UiPreferencesController())->get($request);
+        },
+        ['GET'],
+        Rate::perMinute(60), // Default: Admin can override in ratelimit.json
+        'user-ui-preferences'
+    );
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'preferences-ui-update',
+        '/api/user/preferences/ui',
+        function (Request $request) {
+            return (new UiPreferencesController())->update($request);
+        },
+        ['PATCH'],
+        Rate::perMinute(60), // Default: Admin can override in ratelimit.json
+        'user-ui-preferences'
     );
     App::getInstance(true)->registerAuthRoute(
         $routes,

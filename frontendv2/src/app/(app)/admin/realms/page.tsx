@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { TipCard, TipGrid } from '@/components/featherui/TipCard';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
@@ -24,10 +25,9 @@ import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { Textarea } from '@/components/featherui/Textarea';
-import { PageCard } from '@/components/featherui/PageCard';
-import { ResourceCard } from '@/components/featherui/ResourceCard';
+import { ResourceCard, ResourceTable } from '@/components/featherui/ResourceCard';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
-import { EmptyState } from '@/components/featherui/EmptyState';
+import { ListEmptyState } from '@/components/featherui/ListEmptyState';
 import { Sheet, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from '@/components/ui/sheet';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
@@ -35,6 +35,9 @@ import { Sparkles, Plus, Search, Pencil, Trash2, ChevronLeft, ChevronRight, Fold
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { usePersistedListFilters } from '@/hooks/usePersistedListFilters';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
+import { useFormBaseline } from '@/hooks/useFormBaseline';
+import { useDiscardConfirm } from '@/hooks/useUnsavedChangesGuard';
+import { ListPagination } from '@/components/featherui/ListPagination';
 
 interface Realm {
     id: number;
@@ -66,7 +69,7 @@ export default function RealmsPage() {
     const { fetchWidgets, getWidgets } = usePluginWidgets('admin-realms');
     const [loading, setLoading] = useState(true);
     const [realms, setRealms] = useState<Realm[]>([]);
-    const { filters, patchFilters, hydrated } = usePersistedListFilters(
+    const { filters, patchFilters, hydrated, resetFilters, isFiltered } = usePersistedListFilters(
         REALMS_LIST_FILTERS_KEY,
         REALMS_LIST_FILTERS_DEFAULTS,
     );
@@ -87,6 +90,13 @@ export default function RealmsPage() {
 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [newRealm, setNewRealm] = useState({ name: '', description: '' });
+    const editedFields = editingRealm ? { name: editingRealm.name, description: editingRealm.description || '' } : null;
+    const { dirty: editDirty, commit: commitEdit } = useFormBaseline(editedFields);
+    const { dirty: createDirty } = useFormBaseline(newRealm, { trackFromStart: true });
+    const guardClose = useDiscardConfirm(
+        (editOpen && editDirty) || (createOpen && createDirty),
+        t('common.unsavedChanges.leaveConfirm'),
+    );
     const [refreshKey, setRefreshKey] = useState(0);
 
     useEffect(() => {
@@ -206,7 +216,7 @@ export default function RealmsPage() {
 
             <WidgetRenderer widgets={getWidgets('admin-realms', 'after-header')} />
 
-            <div className='bg-card/40 flex flex-col items-center gap-4 rounded-2xl p-4 shadow-sm backdrop-blur-md sm:flex-row'>
+            <div className='fp-surface flex flex-col items-center gap-4 rounded-2xl border p-4 sm:flex-row'>
                 <div className='group relative w-full flex-1'>
                     <Search className='text-muted-foreground group-focus-within:text-primary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transition-colors' />
                     <Input
@@ -219,44 +229,27 @@ export default function RealmsPage() {
             </div>
 
             {pagination.totalPages > 1 && !loading && (
-                <div className='border-border bg-card/50 mb-4 flex items-center justify-between gap-4 rounded-xl border px-4 py-3'>
-                    <Button
-                        variant='outline'
-                        size='sm'
-                        disabled={page === 1}
-                        onClick={() => patchFilters({ page: page - 1 })}
-                        className='gap-1.5'
-                    >
-                        <ChevronLeft className='h-4 w-4' />
-                        {t('common.previous')}
-                    </Button>
-                    <span className='text-sm font-medium'>
-                        {page} / {pagination.totalPages}
-                    </span>
-                    <Button
-                        variant='outline'
-                        size='sm'
-                        disabled={page === pagination.totalPages}
-                        onClick={() => patchFilters({ page: page + 1 })}
-                        className='gap-1.5'
-                    >
-                        {t('common.next')}
-                        <ChevronRight className='h-4 w-4' />
-                    </Button>
-                </div>
+                <ListPagination
+                    page={page}
+                    totalPages={pagination.totalPages}
+                    onPageChange={(nextPage) => patchFilters({ page: nextPage })}
+                    className='mb-4'
+                />
             )}
 
             {loading ? (
                 <TableSkeleton count={5} />
             ) : realms.length === 0 ? (
-                <EmptyState
+                <ListEmptyState
                     icon={Sparkles}
-                    title={t('admin.realms.no_results')}
-                    description={t('admin.realms.search_placeholder')}
+                    title={t('emptyStates.realms.title')}
+                    description={t('emptyStates.realms.description')}
                     action={<Button onClick={() => setCreateOpen(true)}>{t('admin.realms.create')}</Button>}
+                    filtered={isFiltered}
+                    onClearFilters={resetFilters}
                 />
             ) : (
-                <div className='grid grid-cols-1 gap-4'>
+                <ResourceTable>
                     <WidgetRenderer widgets={getWidgets('admin-realms', 'before-list')} />
                     {realms.map((realm) => (
                         <ResourceCard
@@ -266,7 +259,7 @@ export default function RealmsPage() {
                             icon={Sparkles}
                             description={
                                 <div className='text-muted-foreground mt-1 text-sm'>
-                                    {realm.description || 'No description'}
+                                    {realm.description || t('ui.admin.realms.noDescription')}
                                 </div>
                             }
                             actions={
@@ -276,6 +269,7 @@ export default function RealmsPage() {
                                         variant='ghost'
                                         onClick={() => {
                                             setEditingRealm({ ...realm });
+                                            commitEdit({ name: realm.name, description: realm.description || '' });
                                             setEditOpen(true);
                                         }}
                                     >
@@ -296,7 +290,7 @@ export default function RealmsPage() {
                             }
                         />
                     ))}
-                </div>
+                </ResourceTable>
             )}
 
             {pagination.totalPages > 1 && (
@@ -323,20 +317,20 @@ export default function RealmsPage() {
                 </div>
             )}
 
-            <div className='grid grid-cols-1 gap-6 pt-6 md:grid-cols-2'>
-                <PageCard title={t('admin.realms.help.what_are_realms.title')} icon={Sparkles}>
+            <TipGrid>
+                <TipCard title={t('admin.realms.help.what_are_realms.title')} icon={Sparkles}>
                     <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.realms.help.what_are_realms.description')}
                     </p>
-                </PageCard>
-                <PageCard title={t('admin.realms.help.organize_spells.title')} icon={FolderTree}>
+                </TipCard>
+                <TipCard title={t('admin.realms.help.organize_spells.title')} icon={FolderTree}>
                     <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.realms.help.organize_spells.description')}
                     </p>
-                </PageCard>
-            </div>
+                </TipCard>
+            </TipGrid>
 
-            <Sheet open={createOpen} onOpenChange={setCreateOpen}>
+            <Sheet open={createOpen} onOpenChange={guardClose(setCreateOpen)}>
                 <div className='space-y-6'>
                     <SheetHeader>
                         <SheetTitle>{t('admin.realms.form.create_title')}</SheetTitle>
@@ -368,7 +362,7 @@ export default function RealmsPage() {
                 </div>
             </Sheet>
 
-            <Sheet open={editOpen} onOpenChange={setEditOpen}>
+            <Sheet open={editOpen} onOpenChange={guardClose(setEditOpen)}>
                 <div className='space-y-6'>
                     <SheetHeader>
                         <SheetTitle>{t('admin.realms.form.edit_title')}</SheetTitle>

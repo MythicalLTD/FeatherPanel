@@ -27,6 +27,7 @@ import { formatDateInTz } from '@/lib/dateUtils';
 import { Ticket, UserData, UserMail } from '../page';
 import React from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { Sensitive } from '@/components/common/Sensitive';
 
 interface TicketSidebarProps {
     ticket: Ticket;
@@ -75,9 +76,8 @@ export function TicketSidebar({
         <div className='h-full space-y-6 overflow-y-auto pr-1 pb-20'>
             {userDetails ? (
                 <>
-                    <Card className='bg-card/30 border-border/10 overflow-hidden shadow-sm backdrop-blur-md'>
-                        <div className='from-primary/10 via-primary/5 border-border/5 group/avatar relative overflow-hidden border-b bg-linear-to-br to-transparent p-6 text-center'>
-                            <div className='bg-primary/5 absolute inset-0 scale-150 animate-pulse rounded-full blur-3xl transition-transform duration-1000 group-hover/avatar:scale-110' />
+                    <Card className='fp-surface overflow-hidden border'>
+                        <div className='group/avatar relative overflow-hidden border-b p-6 text-center'>
                             <div className='relative space-y-3'>
                                 <div className='relative inline-block'>
                                     <Avatar className='border-background mx-auto h-20 w-20 border-4 transition-all duration-500 group-hover/avatar:scale-105'>
@@ -92,7 +92,7 @@ export function TicketSidebar({
                                         {userDetails.username}
                                     </h3>
                                     <p className='text-muted-foreground text-[10px] font-black tracking-widest uppercase opacity-60'>
-                                        {userDetails.email}
+                                        <Sensitive>{userDetails.email}</Sensitive>
                                     </p>
                                 </div>
                                 <div className='flex justify-center gap-2 pt-1'>
@@ -249,7 +249,7 @@ export function TicketSidebar({
                                     <Button
                                         variant='outline'
                                         size='sm'
-                                        className='h-9 w-full rounded-xl text-xs font-bold tracking-wide uppercase'
+                                        className='h-9 w-full rounded-xl text-xs font-semibold'
                                     >
                                         <Eye className='mr-2 h-3 w-3' />
                                         {t('admin.tickets.sidebar.labels.profile')}
@@ -343,7 +343,7 @@ export function TicketSidebar({
                         </Tabs>
                     </Card>
 
-                    <Card className='bg-card/30 border-border/10 space-y-3 p-5 shadow-sm backdrop-blur-md'>
+                    <Card className='fp-surface space-y-3 border p-5'>
                         <div className='border-border/5 flex items-center gap-2 border-b pb-2'>
                             <Settings className='text-primary h-4 w-4' />
                             <h4 className='text-foreground text-[10px] font-black tracking-widest uppercase'>
@@ -380,7 +380,7 @@ export function TicketSidebar({
                 </Card>
             )}
 
-            <Card className='bg-card/50 border-border/10 space-y-3 p-4 shadow-sm backdrop-blur-sm'>
+            <Card className='fp-surface space-y-3 border p-4'>
                 <div className='border-border/5 flex items-center gap-2 border-b pb-2'>
                     <Info className='text-primary h-3.5 w-3.5' />
                     <h4 className='text-foreground text-[10px] font-black tracking-widest uppercase'>

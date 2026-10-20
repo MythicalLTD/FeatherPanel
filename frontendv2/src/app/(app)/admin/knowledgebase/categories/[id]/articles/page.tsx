@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { TipCard, TipGrid } from '@/components/featherui/TipCard';
 import { useState, useEffect, useCallback, useRef, use } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
@@ -43,7 +44,7 @@ import {
     X,
 } from 'lucide-react';
 import { PageHeader } from '@/components/featherui/PageHeader';
-import { ResourceCard, type ResourceBadge } from '@/components/featherui/ResourceCard';
+import { ResourceCard, ResourceTable, type ResourceBadge } from '@/components/featherui/ResourceCard';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
 import { EmptyState } from '@/components/featherui/EmptyState';
 import { Button } from '@/components/featherui/Button';
@@ -55,6 +56,7 @@ import { Select } from '@/components/ui/select-native';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
+import { ListPagination } from '@/components/featherui/ListPagination';
 
 interface Category {
     id: number;
@@ -448,7 +450,7 @@ export default function CategoryArticlesPage({ params }: { params: Promise<{ id:
             <WidgetRenderer widgets={getWidgets('admin-knowledgebase-category-articles', 'after-header')} />
 
             {!isReorderMode && (
-                <div className='bg-card/40 flex flex-col items-center gap-4 rounded-2xl p-4 shadow-sm backdrop-blur-md sm:flex-row'>
+                <div className='fp-surface flex flex-col items-center gap-4 rounded-2xl border p-4 sm:flex-row'>
                     <div className='group relative w-full flex-1'>
                         <Search className='text-muted-foreground group-focus-within:text-primary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transition-colors' />
                         <Input
@@ -464,31 +466,12 @@ export default function CategoryArticlesPage({ params }: { params: Promise<{ id:
             <WidgetRenderer widgets={getWidgets('admin-knowledgebase-category-articles', 'before-list')} />
 
             {pagination.totalPages > 1 && !loading && !isReorderMode && (
-                <div className='border-border bg-card/50 mb-4 flex items-center justify-between gap-4 rounded-xl border px-4 py-3'>
-                    <Button
-                        variant='outline'
-                        size='sm'
-                        disabled={!pagination.hasPrev}
-                        onClick={() => setPagination((p) => ({ ...p, page: p.page - 1 }))}
-                        className='gap-1.5'
-                    >
-                        <ChevronLeft className='h-4 w-4' />
-                        {t('common.previous')}
-                    </Button>
-                    <span className='text-sm font-medium'>
-                        {pagination.page} / {pagination.totalPages}
-                    </span>
-                    <Button
-                        variant='outline'
-                        size='sm'
-                        disabled={!pagination.hasNext}
-                        onClick={() => setPagination((p) => ({ ...p, page: p.page + 1 }))}
-                        className='gap-1.5'
-                    >
-                        {t('common.next')}
-                        <ChevronRight className='h-4 w-4' />
-                    </Button>
-                </div>
+                <ListPagination
+                    page={pagination.page}
+                    totalPages={pagination.totalPages}
+                    onPageChange={(nextPage) => setPagination((p) => ({ ...p, page: nextPage }))}
+                    className='mb-4'
+                />
             )}
 
             {loading ? (
@@ -508,7 +491,7 @@ export default function CategoryArticlesPage({ params }: { params: Promise<{ id:
                 // Reorder Mode UI - Improved styling
                 <div className='space-y-6'>
                     {hasOrderChanges && (
-                        <div className='flex items-center gap-2 rounded-2xl border border-amber-500/20 bg-amber-500/10 p-4 text-sm text-amber-600'>
+                        <div className='flex items-center gap-2 rounded-2xl border border-amber-500/25 bg-amber-500/[0.06] p-4 text-sm text-amber-600'>
                             <AlertCircle className='h-4 w-4' />
                             {t('admin.knowledgebase.order.unsaved_changes')}
                         </div>
@@ -598,7 +581,7 @@ export default function CategoryArticlesPage({ params }: { params: Promise<{ id:
                 </div>
             ) : (
                 // Normal Mode UI
-                <div className='grid grid-cols-1 gap-6'>
+                <ResourceTable>
                     {articles.map((article) => {
                         const IconComponent = ({ className }: { className?: string }) => (
                             <div
@@ -682,7 +665,7 @@ export default function CategoryArticlesPage({ params }: { params: Promise<{ id:
                             />
                         );
                     })}
-                </div>
+                </ResourceTable>
             )}
 
             {pagination.totalPages > 1 && !isReorderMode && (
@@ -712,23 +695,23 @@ export default function CategoryArticlesPage({ params }: { params: Promise<{ id:
             )}
 
             {!isReorderMode && (
-                <div className='grid grid-cols-1 gap-6 pt-10 md:grid-cols-2 lg:grid-cols-3'>
-                    <PageCard title={t('admin.knowledgebase.help.managing.title')} icon={Layout}>
+                <TipGrid>
+                    <TipCard title={t('admin.knowledgebase.help.managing.title')} icon={Layout}>
                         <p className='text-muted-foreground text-sm leading-relaxed'>
                             {t('admin.knowledgebase.help.managing.description')}
                         </p>
-                    </PageCard>
-                    <PageCard title={t('admin.knowledgebase.help.content.title')} icon={Info}>
+                    </TipCard>
+                    <TipCard title={t('admin.knowledgebase.help.content.title')} icon={Info}>
                         <p className='text-muted-foreground text-sm leading-relaxed'>
                             {t('admin.knowledgebase.help.content.description')}
                         </p>
-                    </PageCard>
-                    <PageCard title={t('admin.knowledgebase.help.attachments.title')} icon={Shield} variant='danger'>
+                    </TipCard>
+                    <TipCard title={t('admin.knowledgebase.help.attachments.title')} icon={Shield} variant='danger'>
                         <p className='text-muted-foreground text-sm leading-relaxed'>
                             {t('admin.knowledgebase.help.attachments.description')}
                         </p>
-                    </PageCard>
-                </div>
+                    </TipCard>
+                </TipGrid>
             )}
 
             <Sheet open={createOpen} onOpenChange={setCreateOpen}>
@@ -756,7 +739,7 @@ export default function CategoryArticlesPage({ params }: { params: Promise<{ id:
                                     {iconPreview ? (
                                         <Image
                                             src={iconPreview}
-                                            alt='Preview'
+                                            alt={t('common.preview')}
                                             width={64}
                                             height={64}
                                             className='h-full w-full object-cover'

@@ -51,6 +51,7 @@ import {
     ClipboardCheck,
     UserCircle,
 } from 'lucide-react';
+import { useIpMask } from '@/hooks/useIpMask';
 
 function BlockingChecksList({ checks, title }: { checks: InfrastructureCheck[]; title: string }) {
     if (checks.length === 0) return null;
@@ -103,6 +104,7 @@ type WebSpaceChoiceKind = 'node' | 'plate' | 'package';
 
 export default function CreateWebSpacePage() {
     const { t } = useTranslation();
+    const privacyMask = useIpMask();
     const router = useRouter();
 
     const [currentStep, setCurrentStep] = useState(1);
@@ -244,7 +246,9 @@ export default function CreateWebSpacePage() {
                     : []),
                 {
                     label: t('admin.webSpaces.form.owner_id'),
-                    value: selectedOwner ? `${selectedOwner.username} (${selectedOwner.email})` : undefined,
+                    value: selectedOwner
+                        ? `${selectedOwner.username} (${privacyMask.text(selectedOwner.email)})`
+                        : undefined,
                 },
                 { label: t('admin.webSpaces.form.ssl'), value: t(form.ssl ? 'common.yes' : 'common.no') },
                 {
@@ -537,8 +541,8 @@ export default function CreateWebSpacePage() {
                 </div>
             )}
 
-            <div className='bg-card/50 border-border/50 mt-8 mb-12 rounded-2xl border p-6 backdrop-blur-xl'>
-                <StepIndicator steps={wizardSteps} currentStep={currentStep} />
+            <div className='fp-surface mt-8 mb-12 rounded-2xl border p-6'>
+                <StepIndicator steps={wizardSteps} currentStep={currentStep} onStepClick={setCurrentStep} />
                 {loadingOptions && (
                     <p className='text-muted-foreground mt-4 flex items-center gap-2 text-sm'>
                         <Loader2 className='h-4 w-4 animate-spin' />
@@ -563,7 +567,7 @@ export default function CreateWebSpacePage() {
                                     </Label>
                                     <PickerTrigger
                                         value={selectedNode?.name}
-                                        detail={selectedNode?.fqdn}
+                                        detail={privacyMask.text(selectedNode?.fqdn)}
                                         placeholder={t('admin.webSpaces.form.web_node_placeholder')}
                                         disabled={loadingOptions || nodes.length === 0}
                                         onClick={() => setChoicePicker('node')}
@@ -588,7 +592,7 @@ export default function CreateWebSpacePage() {
                                         {t('admin.webSpaces.webplate_help')}
                                     </p>
                                     {plates.length === 0 && !loadingOptions && (
-                                        <div className='rounded-xl border border-amber-500/30 bg-amber-500/10 p-4'>
+                                        <div className='rounded-xl border border-amber-500/25 bg-amber-500/[0.06] p-4'>
                                             <p className='text-sm font-medium text-amber-700 dark:text-amber-300'>
                                                 {t('admin.webSpaces.create_webplate_first')}
                                             </p>
@@ -796,7 +800,7 @@ export default function CreateWebSpacePage() {
                                     <div className='flex gap-2'>
                                         <PickerTrigger
                                             value={selectedOwner?.username}
-                                            detail={selectedOwner?.email}
+                                            detail={privacyMask.text(selectedOwner?.email)}
                                             placeholder={t('admin.servers.form.select_owner')}
                                             onClick={openOwnerModal}
                                         />
@@ -900,7 +904,7 @@ export default function CreateWebSpacePage() {
                 )}
             </div>
 
-            <div className='bg-card/50 border-border/50 mt-8 flex flex-wrap items-center justify-between gap-3 rounded-2xl border p-4 backdrop-blur-xl sm:p-6'>
+            <div className='fp-surface mt-8 flex flex-wrap items-center justify-between gap-3 rounded-2xl border p-4 sm:p-6'>
                 <Button
                     type='button'
                     variant='outline'

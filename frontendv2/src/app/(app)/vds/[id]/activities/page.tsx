@@ -19,7 +19,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter, usePathname } from 'next/navigation';
 import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
-import { useDateFormatOptions } from '@/contexts/PreferencesContext';
+import { useDateFormatOptions, useHideServerIps } from '@/contexts/PreferencesContext';
+import { HIDDEN_IP_PLACEHOLDER, maskIpsInText } from '@/lib/ip-mask';
 import { formatDateTimeInTz, formatRelativeTime } from '@/lib/dateUtils';
 import { useVmInstance } from '@/contexts/VmInstanceContext';
 import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
@@ -58,6 +59,7 @@ import { EmptyState } from '@/components/featherui/EmptyState';
 import { ResourceCard } from '@/components/featherui/ResourceCard';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
+import { ListPagination } from '@/components/featherui/ListPagination';
 
 interface VmActivityUser {
     username: string;
@@ -118,6 +120,7 @@ export default function VdsActivitiesPage() {
     const pathname = usePathname();
     const { t } = useTranslation();
     const dateOpts = useDateFormatOptions();
+    const hideIps = useHideServerIps();
     const { instance, loading: instanceLoading, hasPermission } = useVmInstance();
     const { fetchWidgets, getWidgets } = usePluginWidgets('vds-activities');
 
@@ -254,6 +257,7 @@ export default function VdsActivitiesPage() {
     };
 
     const rawJson = selectedItem?.metadata ? JSON.stringify(selectedItem.metadata, null, 2) : '';
+    const displayRawJson = maskIpsInText(rawJson, hideIps);
 
     const filterOptions = [
         { id: 'all', name: t('serverActivities.allEvents') },
@@ -309,9 +313,9 @@ export default function VdsActivitiesPage() {
             <PageHeader
                 title={t('navigation.items.activities')}
                 description={
-                    <div className='flex items-center gap-3'>
+                    <div className='flex flex-wrap items-center gap-x-3 gap-y-2'>
                         <span>{t('vds.activities.description')}</span>
-                        <span className='bg-primary/5 text-primary border-primary/20 rounded-full border px-3 py-1 text-[10px] font-black tracking-widest uppercase'>
+                        <span className='bg-primary/5 text-primary border-primary/20 rounded-full border px-3 py-1 text-[10px] font-black tracking-widest whitespace-nowrap uppercase'>
                             {pagination.total_records} {t('serverActivities.events')}
                         </span>
                     </div>
@@ -333,7 +337,7 @@ export default function VdsActivitiesPage() {
             />
 
             <div className='flex flex-col gap-4 md:flex-row'>
-                <div className='group relative flex-1'>
+                <div className='group relative w-full min-w-0 flex-1'>
                     <Search className='text-muted-foreground/80 group-focus-within:text-foreground absolute top-1/2 left-4 h-5 w-5 -translate-y-1/2 transition-colors' />
                     <Input
                         placeholder={t('serverActivities.searchPlaceholder')}
@@ -373,31 +377,13 @@ export default function VdsActivitiesPage() {
             </div>
 
             {pagination.total_records > pagination.per_page && (
-                <div className='border-border bg-card/50 mb-4 flex items-center justify-between gap-4 rounded-xl border px-4 py-3'>
-                    <Button
-                        variant='glass'
-                        size='sm'
-                        disabled={!pagination.has_prev || loading}
-                        onClick={() => changePage(pagination.current_page - 1)}
-                        className='gap-1.5'
-                    >
-                        <ChevronLeft className='h-4 w-4' />
-                        {t('common.previous')}
-                    </Button>
-                    <span className='text-sm font-medium'>
-                        {pagination.current_page} / {pagination.total_pages}
-                    </span>
-                    <Button
-                        variant='glass'
-                        size='sm'
-                        disabled={!pagination.has_next || loading}
-                        onClick={() => changePage(pagination.current_page + 1)}
-                        className='gap-1.5'
-                    >
-                        {t('common.next')}
-                        <ChevronRight className='h-4 w-4' />
-                    </Button>
-                </div>
+                <ListPagination
+                    page={pagination.current_page}
+                    totalPages={pagination.total_pages}
+                    disabled={loading}
+                    onPageChange={(nextPage) => changePage(nextPage)}
+                    className='mb-4'
+                />
             )}
 
             {activities.length === 0 ? (
@@ -466,7 +452,7 @@ export default function VdsActivitiesPage() {
                                             <div className='text-muted-foreground flex items-center gap-2'>
                                                 <Globe className='h-4 w-4 opacity-50' />
                                                 <span className='font-mono text-xs font-bold italic opacity-60'>
-                                                    {activity.ip}
+                                                    {hideIps ? HIDDEN_IP_PLACEHOLDER : activity.ip}
                                                 </span>
                                             </div>
                                         )}
@@ -583,12 +569,12 @@ export default function VdsActivitiesPage() {
                                         <DialogTitle className='text-4xl leading-none font-black tracking-tighter uppercase'>
                                             {formatEvent(selectedItem.event)}
                                         </DialogTitle>
-                                        <span className='rounded-full border border-white/5 bg-white/10 px-4 py-1.5 text-xs font-black tracking-[0.2em] uppercase opacity-40'>
+                                        <span className='border-border/50 bg-muted/60 rounded-full border px-4 py-1.5 text-xs font-black tracking-[0.2em] uppercase opacity-40'>
                                             #{selectedItem.id}
                                         </span>
                                     </div>
                                     <DialogDescription className='text-xl font-medium opacity-70'>
-                                        VDS Activity -{' '}
+                                        {t('ui.vds.activities.vDSActivity')}{' '}
                                         {selectedItem.timestamp
                                             ? formatDateTimeInTz(selectedItem.timestamp, dateOpts)
                                             : '-'}
@@ -599,24 +585,24 @@ export default function VdsActivitiesPage() {
 
                         <div className='grid grid-cols-1 gap-8 xl:grid-cols-2'>
                             <div className='space-y-6'>
-                                <div className='flex items-center justify-between border-b border-white/5 pb-4'>
+                                <div className='border-border/50 flex items-center justify-between border-b pb-4'>
                                     <h3 className='text-primary flex items-center gap-3 text-xs font-black tracking-[0.3em] uppercase'>
                                         <div className='bg-primary h-4 w-1.5 rounded-full' />
-                                        Metadata
+                                        {t('ui.vds.activities.metadata')}
                                     </h3>
                                 </div>
                                 <div className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
-                                    <div className='flex shrink-0 flex-col gap-2 rounded-3xl border border-white/5 bg-white/5 p-5'>
+                                    <div className='border-border/50 bg-muted/40 flex shrink-0 flex-col gap-2 rounded-3xl border p-5'>
                                         <span className='text-primary/50 text-[10px] font-black tracking-widest uppercase'>
-                                            User
+                                            {t('ui.vds.activities.user')}
                                         </span>
                                         <span className='text-lg font-bold'>
                                             {selectedItem.user?.username || t('serverActivities.details.system')}
                                         </span>
                                     </div>
-                                    <div className='flex shrink-0 flex-col gap-2 rounded-3xl border border-white/5 bg-white/5 p-5'>
+                                    <div className='border-border/50 bg-muted/40 flex shrink-0 flex-col gap-2 rounded-3xl border p-5'>
                                         <span className='text-primary/50 text-[10px] font-black tracking-widest uppercase'>
-                                            Timestamp
+                                            {t('ui.vds.activities.timestamp')}
                                         </span>
                                         <span className='text-lg font-bold'>
                                             {selectedItem.timestamp
@@ -625,24 +611,29 @@ export default function VdsActivitiesPage() {
                                         </span>
                                     </div>
                                     {selectedItem.ip && (
-                                        <div className='col-span-2 flex flex-col gap-2 rounded-3xl border border-white/5 bg-white/5 p-5'>
+                                        <div className='border-border/50 bg-muted/40 col-span-2 flex flex-col gap-2 rounded-3xl border p-5'>
                                             <span className='text-primary/50 text-[10px] font-black tracking-widest uppercase'>
-                                                IP Address
+                                                {t('ui.vds.activities.iPAddress')}
                                             </span>
-                                            <span className='font-mono text-lg font-bold'>{selectedItem.ip}</span>
+                                            <span className='font-mono text-lg font-bold'>
+                                                {hideIps ? HIDDEN_IP_PLACEHOLDER : selectedItem.ip}
+                                            </span>
                                         </div>
                                     )}
                                     {selectedItem.metadata &&
                                         Object.entries(selectedItem.metadata).map(([k, v]) => (
                                             <div
                                                 key={k}
-                                                className='group flex flex-col gap-2 rounded-3xl border border-white/5 bg-white/5 p-5 transition-all hover:bg-white/10'
+                                                className='group border-border/50 bg-muted/40 hover:bg-muted/70 flex flex-col gap-2 rounded-3xl border p-5 transition-all'
                                             >
                                                 <span className='text-primary/50 decoration-primary/20 text-[10px] font-black tracking-widest uppercase underline decoration-2 underline-offset-4'>
                                                     {k}
                                                 </span>
                                                 <span className='font-mono text-base leading-tight font-bold break-all opacity-90 group-hover:opacity-100'>
-                                                    {typeof v === 'object' ? JSON.stringify(v) : String(v)}
+                                                    {maskIpsInText(
+                                                        typeof v === 'object' ? JSON.stringify(v) : String(v),
+                                                        hideIps,
+                                                    )}
                                                 </span>
                                             </div>
                                         ))}
@@ -650,37 +641,37 @@ export default function VdsActivitiesPage() {
                             </div>
 
                             <div className='space-y-6'>
-                                <div className='flex items-center justify-between border-b border-white/5 pb-4'>
+                                <div className='border-border/50 flex items-center justify-between border-b pb-4'>
                                     <h3 className='text-primary flex items-center gap-3 text-xs font-black tracking-[0.3em] uppercase'>
                                         <div className='bg-primary h-4 w-1.5 rounded-full' />
-                                        Raw Payload
+                                        {t('ui.vds.activities.rawPayload')}
                                     </h3>
                                     <Button
                                         variant='glass'
                                         size='sm'
-                                        className='h-8 border-white/5 px-4 font-black tracking-wider uppercase opacity-40 hover:opacity-100'
+                                        className='border-border/50 h-8 px-4 font-black tracking-wider uppercase opacity-40 hover:opacity-100'
                                         onClick={() => {
                                             navigator.clipboard.writeText(rawJson);
                                             toast.success(t('vds.activities.payload_copied'));
                                         }}
                                     >
                                         <Copy className='mr-2 h-3.5 w-3.5' />
-                                        Copy
+                                        {t('common.copy')}
                                     </Button>
                                 </div>
                                 <pre className='custom-scrollbar max-h-[500px] overflow-x-auto rounded-4xl border border-white/5 bg-black/40 p-8 font-mono text-sm leading-relaxed text-emerald-400 backdrop-blur-3xl'>
-                                    {rawJson || '// No additional metadata'}
+                                    {displayRawJson || '// No additional metadata'}
                                 </pre>
                             </div>
                         </div>
 
-                        <DialogFooter className='mt-4 flex items-center justify-end border-t border-white/5 pt-8'>
+                        <DialogFooter className='border-border/50 mt-4 flex items-center justify-end border-t pt-8'>
                             <Button
                                 size='default'
                                 className='h-14 rounded-2xl px-12 font-black tracking-[0.2em] uppercase'
                                 onClick={() => setDetailsOpen(false)}
                             >
-                                Close
+                                {t('common.close')}
                             </Button>
                         </DialogFooter>
                     </div>

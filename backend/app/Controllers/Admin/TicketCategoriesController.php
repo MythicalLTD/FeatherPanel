@@ -19,6 +19,7 @@ namespace App\Controllers\Admin;
 
 use App\App;
 use App\Chat\Activity;
+use App\Chat\Database;
 use App\Chat\TicketCategory;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
@@ -247,10 +248,16 @@ class TicketCategoriesController
             return ApiResponse::error('Invalid JSON data', 'INVALID_JSON', 400);
         }
 
+        foreach ($data as $field => $value) {
+            if ($value !== null && !is_scalar($value)) {
+                return ApiResponse::error('Field ' . $field . ' must be a string', 'INVALID_DATA_TYPE', 400);
+            }
+        }
+
         $requiredFields = ['name'];
         $missingFields = [];
         foreach ($requiredFields as $field) {
-            if (!isset($data[$field]) || trim($data[$field]) === '') {
+            if (!isset($data[$field]) || !is_scalar($data[$field]) || trim((string) $data[$field]) === '') {
                 $missingFields[] = $field;
             }
         }
@@ -341,8 +348,19 @@ class TicketCategoriesController
             return ApiResponse::error('Invalid JSON data', 'INVALID_JSON', 400);
         }
 
+        foreach ($data as $field => $value) {
+            if ($value !== null && !is_scalar($value)) {
+                return ApiResponse::error('Field ' . $field . ' must be a string', 'INVALID_DATA_TYPE', 400);
+            }
+        }
+
         if (empty($data)) {
             return ApiResponse::error('No data to update', 'NO_DATA', 400);
+        }
+
+        $unknownFields = Database::unknownColumns(TicketCategory::getTableName(), $data);
+        if ($unknownFields !== []) {
+            return ApiResponse::error('Unknown field(s): ' . implode(', ', $unknownFields), 'UNKNOWN_FIELDS', 400);
         }
 
         $updated = TicketCategory::update($id, $data);

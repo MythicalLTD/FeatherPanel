@@ -128,9 +128,13 @@ class Spell
         }
 
         $pdo = Database::getPdoConnection();
+        $data = Database::filterColumns(self::$table, $data);
+        if ($data === []) {
+            return false;
+        }
         $fields = array_keys($data);
         $placeholders = array_map(fn ($f) => ':' . $f, $fields);
-        $sql = 'INSERT INTO ' . self::$table . ' (' . implode(',', $fields) . ') VALUES (' . implode(',', $placeholders) . ')';
+        $sql = 'INSERT INTO ' . self::$table . ' (`' . implode('`, `', $fields) . '`) VALUES (' . implode(',', $placeholders) . ')';
         $stmt = $pdo->prepare($sql);
         if ($stmt->execute($data)) {
             return $hasId ? $data['id'] : (int) $pdo->lastInsertId();
@@ -430,6 +434,10 @@ class Spell
         }
 
         $pdo = Database::getPdoConnection();
+        $data = Database::filterColumns(self::$table, $data);
+        if ($data === []) {
+            return false;
+        }
         $fields = array_keys($data);
         $set = array_map(fn ($f) => "`$f` = :$f", $fields);
         $sql = 'UPDATE ' . self::$table . ' SET ' . implode(',', $set) . ' WHERE uuid = :uuid';
@@ -478,6 +486,10 @@ class Spell
         }
 
         $pdo = Database::getPdoConnection();
+        $data = Database::filterColumns(self::$table, $data);
+        if ($data === []) {
+            return false;
+        }
         $fields = array_keys($data);
         $set = array_map(fn ($f) => "`$f` = :$f", $fields);
         $sql = 'UPDATE ' . self::$table . ' SET ' . implode(',', $set) . ' WHERE id = :id';
@@ -693,8 +705,11 @@ class Spell
 
     public static function count(array $conditions): int
     {
+        if (Database::unknownColumns(self::$table, $conditions) !== []) {
+            return 0;
+        }
         $pdo = Database::getPdoConnection();
-        $stmt = $pdo->prepare('SELECT COUNT(*) FROM ' . self::$table . ' WHERE ' . implode(' AND ', array_map(fn ($k) => "$k = :$k", array_keys($conditions))));
+        $stmt = $pdo->prepare('SELECT COUNT(*) FROM ' . self::$table . ' WHERE ' . implode(' AND ', array_map(fn ($k) => "`$k` = :$k", array_keys($conditions))));
         $stmt->execute($conditions);
 
         return (int) $stmt->fetchColumn();

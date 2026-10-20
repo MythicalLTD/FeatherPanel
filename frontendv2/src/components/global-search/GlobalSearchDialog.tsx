@@ -31,6 +31,7 @@ import { groupGlobalSearchResults, type GlobalSearchCategory, type GlobalSearchR
 import { isReactIconComponent } from '@/lib/iconLibrary';
 import type { GlobalSearchEntityContext } from '@/lib/global-search-context';
 import { cn } from '@/lib/utils';
+import { ModuleBadge } from '@/components/ui/module-badge';
 
 function formatGroupLabel(value?: string): string | undefined {
     if (!value) return undefined;
@@ -94,7 +95,7 @@ export function GlobalSearchTrigger({
             type='button'
             onClick={() => setOpen(true)}
             className={cn(
-                'group text-muted-foreground hover:text-foreground focus-visible:ring-ring focus-visible:ring-offset-background flex min-w-0 items-center gap-2 transition-all focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
+                'group text-muted-foreground hover:text-foreground focus-visible:ring-ring focus-visible:ring-offset-background @container flex min-w-0 items-center gap-2 transition-all focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
                 isModern
                     ? 'bg-muted/15 hover:bg-muted/25 border-border/35 hover:border-primary/30 w-full rounded-xl border px-3 py-2 shadow-sm'
                     : 'hover:bg-accent/50 border-border/35 bg-muted/10 hidden w-full rounded-xl border px-3 py-2 md:flex',
@@ -106,7 +107,7 @@ export function GlobalSearchTrigger({
             <span className='truncate text-left text-sm'>{t('globalSearch.placeholder')}</span>
             <kbd
                 className={cn(
-                    'border-border/60 bg-background/80 ml-auto hidden shrink-0 rounded-md border px-1.5 py-0.5 text-[10px] font-medium tracking-wide uppercase opacity-70 lg:inline',
+                    'border-border/60 bg-background/80 ml-auto hidden shrink-0 rounded-md border px-1.5 py-0.5 text-[10px] font-medium tracking-wide uppercase opacity-70 @[18rem]:inline',
                 )}
             >
                 {t('globalSearch.shortcut')}
@@ -356,6 +357,9 @@ export default function GlobalSearchDialog() {
                                                             <p className='text-foreground truncate text-sm font-medium'>
                                                                 {result.title}
                                                             </p>
+                                                            {result.module ? (
+                                                                <ModuleBadge module={result.module} />
+                                                            ) : null}
                                                             {result.contextTag ? (
                                                                 <span className='border-primary/20 bg-background/80 text-primary max-w-[8rem] shrink-0 truncate rounded-full border px-2 py-0.5 text-[10px] font-medium'>
                                                                     {result.contextTag}

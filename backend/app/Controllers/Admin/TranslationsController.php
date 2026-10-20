@@ -576,7 +576,7 @@ class TranslationsController
     public function setEnabled(Request $request): Response
     {
         $data = json_decode($request->getContent(), true);
-        if (json_last_error() !== JSON_ERROR_NONE) {
+        if (json_last_error() !== JSON_ERROR_NONE || !is_array($data)) {
             return ApiResponse::error('Invalid JSON in request body', 'INVALID_JSON', 400);
         }
 
@@ -782,12 +782,19 @@ class TranslationsController
     private function getLanguageMapping(): array
     {
         static $mapping = null;
+        static $mappingMtime = null;
 
-        if ($mapping !== null) {
+        $mappingPath = APP_PUBLIC . '/translations/mapping.json';
+
+        // Cached for the process lifetime, which spans many requests under
+        // FrankenPHP worker mode: re-read the file when it changed.
+        clearstatcache(true, $mappingPath);
+        $mtime = @filemtime($mappingPath);
+        if ($mapping !== null && $mtime === $mappingMtime) {
             return $mapping;
         }
 
-        $mappingPath = APP_PUBLIC . '/translations/mapping.json';
+        $mappingMtime = $mtime;
         $mapping = [];
 
         if (file_exists($mappingPath)) {

@@ -21,7 +21,7 @@ import axios, { AxiosError } from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { Calendar, Plus, ExternalLink, Lock } from 'lucide-react';
 
-import { PageHeader } from '@/components/featherui/PageHeader';
+import { ServerPageHeader } from '@/components/server/ServerPageHeader';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { FormSection } from '@/components/featherui/FormSection';
@@ -39,6 +39,8 @@ import type { ScheduleCreateRequest } from '@/types/server';
 import { safeBack } from '@/lib/safe-back';
 import { PageLoading } from '@/components/featherui/PageLoading';
 import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
+import { UnsavedChangesBar } from '@/components/featherui/UnsavedChangesBar';
+import { useFormBaseline } from '@/hooks/useFormBaseline';
 
 export default function CreateSchedulePage() {
     const { uuidShort } = useParams() as { uuidShort: string };
@@ -63,6 +65,7 @@ export default function CreateSchedulePage() {
         only_when_online: 0,
         is_active: 1,
     });
+    const { dirty: unsaved, restore: restoreForm } = useFormBaseline(formData, { trackFromStart: true });
 
     React.useEffect(() => {
         // Reflect a late-arriving user preference (PreferencesContext loads
@@ -79,8 +82,8 @@ export default function CreateSchedulePage() {
 
     const { getWidgets, fetchWidgets } = usePluginWidgets('server-schedules-new');
 
-    const handleCreate = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleCreate = async (e?: React.FormEvent) => {
+        e?.preventDefault();
 
         if (!formData.name.trim()) {
             toast.error(t('serverSchedules.nameRequired'));
@@ -136,8 +139,8 @@ export default function CreateSchedulePage() {
     }
 
     return (
-        <div className='mx-auto max-w-4xl space-y-8 pb-16'>
-            <PageHeader
+        <div className='space-y-6 pb-12'>
+            <ServerPageHeader
                 title={t('serverSchedules.createSchedule')}
                 description={t('serverSchedules.createScheduleDescription')}
                 actions={
@@ -179,7 +182,7 @@ export default function CreateSchedulePage() {
                                 {t('serverSchedules.name')}
                             </h2>
                             <p className='text-muted-foreground text-[9px] font-bold tracking-widest uppercase opacity-50'>
-                                Basic Info
+                                {t('ui.server.schedules.new.basicInfo')}
                             </p>
                         </div>
                     </div>
@@ -214,7 +217,7 @@ export default function CreateSchedulePage() {
                                     {t('serverSchedules.cronExpression')}
                                 </h2>
                                 <p className='text-muted-foreground text-[9px] font-bold tracking-widest uppercase opacity-50'>
-                                    Schedule Timing
+                                    {t('ui.server.schedules.new.scheduleTiming')}
                                 </p>
                             </div>
                         </div>
@@ -364,8 +367,8 @@ export default function CreateSchedulePage() {
                                 value={String(formData.is_active)}
                                 onChange={(val) => setFormData({ ...formData, is_active: Number(val) })}
                                 options={[
-                                    { id: '1', name: 'Enabled - Schedule will run automatically' },
-                                    { id: '0', name: 'Disabled - Schedule will not run' },
+                                    { id: '1', name: t('ui.server.schedules.new.enabledScheduleWillRunAutomatically') },
+                                    { id: '0', name: t('ui.server.schedules.new.disabledScheduleWillNotRun') },
                                 ]}
                                 disabled={saving}
                                 buttonClassName='h-12 bg-secondary/50 border-border/10 focus:border-primary/50 rounded-xl text-sm font-extrabold transition-all'
@@ -401,6 +404,17 @@ export default function CreateSchedulePage() {
                     </Button>
                 </div>
             </form>
+
+            <UnsavedChangesBar
+                dirty={unsaved}
+                saving={saving}
+                onSave={() => void handleCreate()}
+                onDiscard={() => {
+                    const saved = restoreForm();
+                    if (saved) setFormData(saved);
+                }}
+                saveLabel={t('common.create')}
+            />
         </div>
     );
 }

@@ -21,7 +21,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/featherui/Button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { ResourceCard } from '@/components/featherui/ResourceCard';
+import { ResourceCard, ResourceTable } from '@/components/featherui/ResourceCard';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
 import { EmptyState } from '@/components/featherui/EmptyState';
 import {
@@ -39,6 +39,7 @@ import axios from 'axios';
 import { toast } from 'sonner';
 import { getApiErrorMessage } from '@/lib/api-errors';
 import { cn } from '@/lib/utils';
+import { ListPagination } from '@/components/featherui/ListPagination';
 
 interface CronLog {
     id: number;
@@ -191,33 +192,14 @@ const LogsTab = () => {
             ) : (
                 <>
                     {pagination.totalPages > 1 && (
-                        <div className='border-border bg-card/50 mb-4 flex items-center justify-between gap-4 rounded-xl border px-4 py-3'>
-                            <Button
-                                variant='outline'
-                                size='sm'
-                                disabled={pagination.page === 1}
-                                onClick={() => setPagination({ ...pagination, page: pagination.page - 1 })}
-                                className='gap-1.5'
-                            >
-                                <ChevronLeft className='h-4 w-4' />
-                                {t('common.previous')}
-                            </Button>
-                            <span className='text-sm font-medium'>
-                                {pagination.page} / {pagination.totalPages}
-                            </span>
-                            <Button
-                                variant='outline'
-                                size='sm'
-                                disabled={pagination.page === pagination.totalPages}
-                                onClick={() => setPagination({ ...pagination, page: pagination.page + 1 })}
-                                className='gap-1.5'
-                            >
-                                {t('common.next')}
-                                <ChevronRight className='h-4 w-4' />
-                            </Button>
-                        </div>
+                        <ListPagination
+                            page={pagination.page}
+                            totalPages={pagination.totalPages}
+                            onPageChange={(nextPage) => setPagination({ ...pagination, page: nextPage })}
+                            className='mb-4'
+                        />
                     )}
-                    <div className='grid grid-cols-1 gap-6'>
+                    <ResourceTable>
                         {logs.map((log) => (
                             <ResourceCard
                                 key={log.execution_id}
@@ -286,7 +268,7 @@ const LogsTab = () => {
                                 }
                             />
                         ))}
-                    </div>
+                    </ResourceTable>
                     {pagination.totalPages > 1 && (
                         <div className='mt-8 flex items-center justify-center gap-2'>
                             <Button
@@ -368,11 +350,11 @@ const LogsTab = () => {
                                 <div className='space-y-4'>
                                     <h4 className='flex items-center gap-2 text-sm font-semibold'>
                                         <Server className='text-primary h-4 w-4' />
-                                        Server Scan History
+                                        {t('ui.admin.featherzerotrust.tabs.logsTab.serverScanHistory')}
                                     </h4>
                                     {scanLogs.length === 0 ? (
                                         <p className='text-muted-foreground text-sm italic'>
-                                            No individual server logs found.
+                                            {t('ui.admin.featherzerotrust.tabs.logsTab.noIndividualServerLogsFound')}
                                         </p>
                                     ) : (
                                         <div className='space-y-3'>
@@ -403,7 +385,9 @@ const LogsTab = () => {
                                                     <div className='border-border/30 mt-3 grid grid-cols-3 gap-2 border-t pt-3'>
                                                         <div>
                                                             <div className='text-muted-foreground text-[10px]'>
-                                                                Files Scanned
+                                                                {t(
+                                                                    'ui.admin.featherzerotrust.tabs.logsTab.filesScanned',
+                                                                )}
                                                             </div>
                                                             <div className='text-xs font-semibold'>
                                                                 {log.files_scanned.toLocaleString()}
@@ -411,7 +395,7 @@ const LogsTab = () => {
                                                         </div>
                                                         <div>
                                                             <div className='text-muted-foreground text-[10px]'>
-                                                                Detections
+                                                                {t('ui.admin.featherzerotrust.tabs.logsTab.detections')}
                                                             </div>
                                                             <div
                                                                 className={cn(
@@ -424,7 +408,7 @@ const LogsTab = () => {
                                                         </div>
                                                         <div>
                                                             <div className='text-muted-foreground text-[10px]'>
-                                                                Duration
+                                                                {t('ui.admin.featherzerotrust.tabs.logsTab.duration')}
                                                             </div>
                                                             <div className='text-xs font-semibold'>
                                                                 {formatDuration(log.duration_seconds)}

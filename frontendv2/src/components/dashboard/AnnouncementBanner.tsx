@@ -20,11 +20,42 @@ import { useNotifications } from '@/contexts/NotificationContext';
 import { useTranslation } from '@/contexts/TranslationContext';
 import type { Notification } from '@/types/notification';
 import { cn } from '@/lib/utils';
-import ReactMarkdown from 'react-markdown';
+import { Suspense, lazy } from 'react';
+import { ChunkErrorBoundary } from '@/components/common/ChunkErrorBoundary';
 
-export function AnnouncementBanner({ serverId }: { serverId?: number | null } = {}) {
-    const { notifications, dismissNotification } = useNotifications();
+// Markdown renderer is only needed when an announcement is actually shown; keep it out of the
+// dashboard and server layout bundles. Until it loads (or if the chunk fails) the raw text is
+// shown, so an announcement never appears without its message.
+const ReactMarkdown = lazy(() => import('react-markdown'));
+
+function AnnouncementMessage({ markdown }: { markdown: string }) {
+    const plain = <p className='whitespace-pre-line'>{markdown}</p>;
+    return (
+        <ChunkErrorBoundary fallback={() => plain}>
+            <Suspense fallback={plain}>
+                <ReactMarkdown>{markdown}</ReactMarkdown>
+            </Suspense>
+        </ChunkErrorBoundary>
+    );
+}
+
+export function AnnouncementBanner({
+    serverId,
+    compact = false,
+    initialNotifications,
+}: {
+    serverId?: number | null;
+    /** Dashboard side column: tighter cards, no outer margin. */
+    compact?: boolean;
+    /**
+     * Announcements fetched on the server for the first paint. Used until the client fetch
+     * finishes, so the banner is in the HTML instead of pushing the page down after load.
+     */
+    initialNotifications?: Notification[] | null;
+} = {}) {
+    const { notifications: liveNotifications, loading, dismissNotification } = useNotifications();
     const { t } = useTranslation();
+    const notifications = loading && initialNotifications ? initialNotifications : liveNotifications;
 
     const visibleNotifications =
         serverId != null ? notifications.filter((n) => n.server_id == null || n.server_id === serverId) : notifications;
@@ -62,7 +93,7 @@ export function AnnouncementBanner({ serverId }: { serverId?: number | null } = 
     };
 
     return (
-        <div className='mb-6 space-y-4'>
+        <div className={compact ? 'space-y-3' : 'mb-6 space-y-4'}>
             {visibleNotifications.map((notification) => {
                 const Icon = getTypeIcon(notification.type);
                 const styles = getTypeStyles(notification.type);
@@ -71,7 +102,8 @@ export function AnnouncementBanner({ serverId }: { serverId?: number | null } = 
                     <div
                         key={notification.id}
                         className={cn(
-                            'relative overflow-hidden rounded-xl border p-4 shadow-sm transition-all',
+                            'relative overflow-hidden rounded-xl border shadow-sm transition-all',
+                            compact ? 'p-3' : 'p-4',
                             styles,
                         )}
                     >
@@ -79,12 +111,17 @@ export function AnnouncementBanner({ serverId }: { serverId?: number | null } = 
                             <div className='flex-1'>
                                 <div className='mb-1 flex items-center gap-2'>
                                     <Icon className='h-5 w-5 opacity-80' />
-                                    <h3 className='text-sm font-semibold tracking-wide uppercase opacity-90'>
+                                    <h3
+                                        className={cn(
+                                            'text-sm font-semibold opacity-90',
+                                            !compact && 'tracking-wide uppercase',
+                                        )}
+                                    >
                                         {notification.title}
                                     </h3>
                                 </div>
                                 <div className='prose prose-sm dark:prose-invert prose-p:my-0 prose-headings:my-1 prose-a:text-inherit prose-a:underline max-w-none pl-7 text-sm opacity-90'>
-                                    <ReactMarkdown>{notification.message_markdown}</ReactMarkdown>
+                                    <AnnouncementMessage markdown={notification.message_markdown} />
                                 </div>
                             </div>
 

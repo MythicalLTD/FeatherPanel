@@ -162,7 +162,7 @@ const ScannerTab = () => {
 
                 const results = data.data.results.map((r: BatchScanResult & Record<string, unknown>) => ({
                     server_uuid: r.server_uuid,
-                    server_name: selectedServers.find((s) => s.uuid === r.server_uuid)?.name || 'Unknown',
+                    server_name: selectedServers.find((s) => s.uuid === r.server_uuid)?.name || t('common.unknown'),
                     result: r.detections || r.detections_count ? r : null,
                     error: r.error || null,
                 }));
@@ -200,7 +200,7 @@ const ScannerTab = () => {
     return (
         <div className='space-y-6'>
             <div className='grid grid-cols-1 gap-6 lg:grid-cols-3'>
-                <Card className='border-border/50 bg-card/30 backdrop-blur-sm lg:col-span-2'>
+                <Card className='fp-surface border lg:col-span-2'>
                     <CardHeader>
                         <CardTitle className='flex items-center gap-2 text-lg'>
                             <Activity className='text-primary h-5 w-5' />
@@ -232,7 +232,7 @@ const ScannerTab = () => {
                                     className={cn(
                                         'group relative overflow-hidden rounded-2xl border-2 p-4 text-left transition-all',
                                         scanMode === mode.id
-                                            ? 'border-primary bg-primary/5 shadow-[0_0_20px_rgba(var(--primary),0.1)]'
+                                            ? 'border-primary bg-primary/5'
                                             : 'border-border/50 hover:border-primary/30 hover:bg-muted/30',
                                     )}
                                 >
@@ -290,7 +290,7 @@ const ScannerTab = () => {
                     </CardContent>
                 </Card>
 
-                <Card className='border-border/50 bg-card/30 backdrop-blur-sm'>
+                <Card className='fp-surface border'>
                     <CardHeader>
                         <CardTitle className='text-muted-foreground flex items-center justify-between text-sm font-medium tracking-wider uppercase'>
                             {t('admin.featherzerotrust.scanner.targets')}
@@ -381,7 +381,7 @@ const ScannerTab = () => {
                                 style={{ width: `${Math.min((scanProgress.filesScanned / 1500) * 100, 98)}%` }}
                             />
                         </div>
-                        <div className='rounded-lg border border-white/5 bg-black/50 p-3 font-mono text-[10px] text-green-500/80'>
+                        <div className='fp-surface-inset rounded-lg border p-3 font-mono text-[10px] text-green-500/80'>
                             <div className='flex items-center gap-2'>
                                 <span className='opacity-50'>CUR_DIR:</span>
                                 <span className='truncate'>{scanProgress.currentDirectory}</span>
@@ -451,14 +451,14 @@ const ScannerTab = () => {
                                             return (
                                                 <div
                                                     key={i}
-                                                    className='flex items-start gap-4 rounded-xl border border-red-500/20 bg-red-500/5 p-3'
+                                                    className='flex items-start gap-4 rounded-xl border border-red-500/25 bg-red-500/[0.06] p-3'
                                                 >
                                                     <div className='rounded-lg bg-red-500/20 p-2 text-red-500'>
                                                         <AlertTriangle className='h-4 w-4' />
                                                     </div>
                                                     <div className='min-w-0'>
                                                         <div className='text-sm font-bold text-red-200'>
-                                                            {detection.file_name || 'Unknown'}
+                                                            {detection.file_name || t('common.unknown')}
                                                         </div>
                                                         <div className='truncate font-mono text-[10px] text-red-500/80'>
                                                             {detection.file_path || 'N/A'}
@@ -504,7 +504,7 @@ const ScannerTab = () => {
                                             <div className='mt-2 flex items-center gap-6'>
                                                 <div className='flex flex-col'>
                                                     <span className='text-muted-foreground text-[10px] uppercase'>
-                                                        Files
+                                                        {t('ui.admin.featherzerotrust.tabs.scannerTab.files')}
                                                     </span>
                                                     <span className='text-xs font-bold'>
                                                         {r.result?.files_scanned || 0}
@@ -512,7 +512,7 @@ const ScannerTab = () => {
                                                 </div>
                                                 <div className='flex flex-col'>
                                                     <span className='text-muted-foreground text-[10px] uppercase'>
-                                                        Detections
+                                                        {t('ui.admin.featherzerotrust.tabs.scannerTab.detections')}
                                                     </span>
                                                     <span
                                                         className={cn(

@@ -23,6 +23,7 @@ use App\Chat\ServerDatabase;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Chat\DatabaseInstance;
+use App\Helpers\ClickHouseHttp;
 use App\CloudFlare\CloudFlareRealIP;
 use App\Plugins\Events\Events\DatabasesEvent;
 use Symfony\Component\HttpFoundation\Request;
@@ -170,12 +171,16 @@ class DatabasesController
             new OA\Response(response: 403, description: 'Forbidden - Insufficient permissions'),
         ]
     )]
+    /**
+     * GET /api/admin/databases - lists registered database hosts.
+     */
     public function index(Request $request): Response
     {
-        $page = $request->query->get('page', 1);
-        $limit = $request->query->get('limit', 10);
-        $search = $request->query->get('search', '');
-        $nodeId = $request->query->get('node_id');
+        $query = $request->query->all();
+        $page = max(1, (int) (is_scalar($query['page'] ?? null) ? $query['page'] : 1));
+        $limit = max(1, min(100, (int) (is_scalar($query['limit'] ?? null) ? $query['limit'] : 10)));
+        $search = is_scalar($query['search'] ?? null) ? (string) $query['search'] : '';
+        $nodeId = is_scalar($query['node_id'] ?? null) ? $query['node_id'] : null;
 
         $databases = DatabaseInstance::searchDatabases(
             (int) $page,
@@ -255,6 +260,9 @@ class DatabasesController
             new OA\Response(response: 404, description: 'Database not found'),
         ]
     )]
+    /**
+     * GET /api/admin/databases/{id} - returns one database host.
+     */
     public function show(Request $request, int $id): Response
     {
         $database = DatabaseInstance::getDatabaseWithNode($id);
@@ -294,6 +302,9 @@ class DatabasesController
             new OA\Response(response: 500, description: 'Internal server error - Failed to create database'),
         ]
     )]
+    /**
+     * POST /api/admin/databases - registers a new remote database host.
+     */
     public function create(Request $request): Response
     {
         $data = json_decode($request->getContent(), true);
@@ -310,7 +321,7 @@ class DatabasesController
 
         $missingFields = [];
         foreach ($requiredFields as $field) {
-            if (!isset($data[$field]) || trim($data[$field]) === '') {
+            if (!isset($data[$field]) || !is_scalar($data[$field]) || trim((string) $data[$field]) === '') {
                 $missingFields[] = $field;
             }
         }
@@ -394,7 +405,7 @@ class DatabasesController
         }
 
         // Validate database_type
-        $allowedTypes = ['mysql', 'postgresql', 'mariadb', 'mongodb'];
+        $allowedTypes = ['mysql', 'postgresql', 'mariadb', 'mongodb', 'redis', 'clickhouse'];
         if (!in_array($data['database_type'], $allowedTypes)) {
             return ApiResponse::error('Invalid database type. Allowed types: ' . implode(', ', $allowedTypes), 'INVALID_DATABASE_TYPE');
         }
@@ -487,6 +498,9 @@ class DatabasesController
             new OA\Response(response: 500, description: 'Internal server error - Failed to update database'),
         ]
     )]
+    /**
+     * PUT /api/admin/databases/{id} - updates an existing database host configuration.
+     */
     public function update(Request $request, int $id): Response
     {
         $database = DatabaseInstance::getDatabaseById($id);
@@ -582,7 +596,7 @@ class DatabasesController
 
         // Validate database_type if updating
         if (isset($data['database_type'])) {
-            $allowedTypes = ['mysql', 'postgresql', 'mariadb', 'mongodb', 'redis'];
+            $allowedTypes = ['mysql', 'postgresql', 'mariadb', 'mongodb', 'redis', 'clickhouse'];
             if (!in_array($data['database_type'], $allowedTypes)) {
                 return ApiResponse::error('Invalid database type. Allowed types: ' . implode(', ', $allowedTypes), 'INVALID_DATABASE_TYPE');
             }
@@ -646,6 +660,9 @@ class DatabasesController
             new OA\Response(response: 500, description: 'Internal server error - Failed to delete database'),
         ]
     )]
+    /**
+     * DELETE /api/admin/databases/{id} - removes a database host.
+     */
     public function delete(Request $request, int $id): Response
     {
         $database = DatabaseInstance::getDatabaseById($id);
@@ -749,6 +766,9 @@ class DatabasesController
             new OA\Response(response: 404, description: 'Node not found'),
         ]
     )]
+    /**
+     * GET /api/admin/databases/node/{nodeId} - lists hosts bound to a node.
+     */
     public function getByNode(Request $request, int $nodeId): Response
     {
         // Check if node exists
@@ -840,6 +860,9 @@ class DatabasesController
             new OA\Response(response: 404, description: 'Database not found'),
         ]
     )]
+    /**
+     * POST /api/admin/databases/{id}/health-check - re-tests connectivity of a host.
+     */
     public function healthCheck(Request $request, int $id): Response
     {
         $database = DatabaseInstance::getDatabaseById($id);
@@ -883,6 +906,9 @@ class DatabasesController
             new OA\Response(response: 403, description: 'Forbidden - Insufficient permissions'),
         ]
     )]
+    /**
+     * POST /api/admin/databases/test - connectivity check for unsaved credentials.
+     */
     public function testConnection(Request $request): Response
     {
         $data = json_decode($request->getContent(), true);
@@ -895,7 +921,7 @@ class DatabasesController
         $missingFields = [];
 
         foreach ($requiredFields as $field) {
-            if (!isset($data[$field]) || trim($data[$field]) === '') {
+            if (!isset($data[$field]) || !is_scalar($data[$field]) || trim((string) $data[$field]) === '') {
                 $missingFields[] = $field;
             }
         }
@@ -913,6 +939,9 @@ class DatabasesController
         ], 'Connection test completed', 200);
     }
 
+    /**
+     * Dispatches a live connectivity check to the handler matching the database type.
+     */
     private function testDatabaseConnection(array $data): array
     {
         $startTime = microtime(true);
@@ -933,6 +962,15 @@ class DatabasesController
                         "pgsql:host={$data['database_host']};port={$data['database_port']}",
                         $data['database_username'],
                         $data['database_password'],
+                        $startTime
+                    );
+
+                case 'clickhouse':
+                    return $this->testClickHouseConnection(
+                        (string) $data['database_host'],
+                        (int) $data['database_port'],
+                        (string) $data['database_username'],
+                        (string) $data['database_password'],
                         $startTime
                     );
 
@@ -963,6 +1001,9 @@ class DatabasesController
         }
     }
 
+    /**
+     * Verifies credentials by opening a MongoDB driver connection.
+     */
     private function testMongoConnection(string $host, int $port, string $username, string $password, float $startTime): array
     {
         try {
@@ -988,6 +1029,45 @@ class DatabasesController
         }
     }
 
+    /**
+     * Verifies credentials against a ClickHouse HTTP(S) endpoint and returns latency + server version.
+     *
+     * Uses the same transport rules as provisioning (verified HTTPS for non-local
+     * hosts, no redirects) and only reports success for an HTTP 200 whose body
+     * is a ClickHouse version string.
+     */
+    private function testClickHouseConnection(string $host, int $port, string $username, string $password, float $startTime): array
+    {
+        try {
+            $res = ClickHouseHttp::request($host, $port, $username, $password, 'SELECT version()', 10);
+            $responseTime = round((microtime(true) - $startTime) * 1000, 2);
+            $version = trim($res['body']);
+
+            if ($res['error'] !== '' || $res['code'] !== 200 || $res['exception'] !== null || !preg_match('/^\d+(\.\d+)+$/', $version)) {
+                $detail = $res['error'] !== '' ? $res['error'] : substr($version, 0, 200);
+
+                return [
+                    'success' => false,
+                    'message' => 'Connection failed: HTTP ' . $res['code'] . ' ' . $detail,
+                    'response_time' => $responseTime,
+                ];
+            }
+
+            return ['success' => true, 'message' => 'Successful (ClickHouse ' . $version . ')', 'response_time' => $responseTime];
+        } catch (\Exception $e) {
+            $responseTime = round((microtime(true) - $startTime) * 1000, 2);
+
+            return [
+                'success' => false,
+                'message' => 'Connection failed: ' . $e->getMessage(),
+                'response_time' => $responseTime,
+            ];
+        }
+    }
+
+    /**
+     * Verifies credentials through a plain PDO connect (MySQL/MariaDB/PostgreSQL).
+     */
     private function testPDOConnection(string $dsn, string $username, string $password, float $startTime): array
     {
         try {
@@ -1033,6 +1113,8 @@ class DatabasesController
         return match ($databaseType) {
             'mysql', 'mariadb' => 3306,
             'postgresql' => 5432,
+            'mongodb' => 27017,
+            'clickhouse' => 8123,
             default => 3306,
         };
     }

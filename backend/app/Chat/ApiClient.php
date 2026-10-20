@@ -27,8 +27,8 @@ class ApiClient
     /**
      * Explicit versioned marker stored ahead of ciphertext in private_key.
      * decryptValue() heuristically treats any base64 blob whose decoded length is
-     * at least a 24-byte nonce as ciphertext — including normal fp_ keys and
-     * other base64-shaped legacy plaintext — so unmarked rows must never be
+     * at least a 24-byte nonce as ciphertext - including normal fp_ keys and
+     * other base64-shaped legacy plaintext - so unmarked rows must never be
      * passed through decryptValue().
      */
     public const PRIVATE_KEY_ENC_PREFIX = 'enc:v1:';
@@ -86,9 +86,13 @@ class ApiClient
         $data = array_merge($data, self::preparePrivateKeyForStorage($data['private_key']));
 
         $pdo = Database::getPdoConnection();
+        $data = Database::filterColumns(self::$table, $data);
+        if ($data === []) {
+            return false;
+        }
         $fields = array_keys($data);
         $placeholders = array_map(fn ($f) => ':' . $f, $fields);
-        $sql = 'INSERT INTO ' . self::$table . ' (' . implode(',', $fields) . ') VALUES (' . implode(',', $placeholders) . ')';
+        $sql = 'INSERT INTO ' . self::$table . ' (`' . implode('`, `', $fields) . '`) VALUES (' . implode(',', $placeholders) . ')';
         $stmt = $pdo->prepare($sql);
         if ($stmt->execute($data)) {
             return (int) $pdo->lastInsertId();
@@ -227,6 +231,12 @@ class ApiClient
             $sql .= ' WHERE ' . implode(' AND ', $where);
         }
 
+        // Security: only known columns may reach the ORDER BY clause.
+        if (!in_array($sortBy, ['id', 'name', 'created_at', 'updated_at'], true)) {
+            $sortBy = 'id';
+        }
+        $sortOrder = strtoupper($sortOrder) === 'DESC' ? 'DESC' : 'ASC';
+
         $sql .= " ORDER BY $sortBy $sortOrder";
         $offset = max(0, ($page - 1) * $limit);
         $sql .= ' LIMIT :limit OFFSET :offset';
@@ -284,7 +294,7 @@ class ApiClient
 
                 return false;
             }
-            $set = implode(', ', array_map(fn ($f) => "$f = :$f", $fields));
+            $set = implode(', ', array_map(fn ($f) => "`$f` = :$f", $fields));
             $sql = 'UPDATE ' . self::$table . ' SET ' . $set . ' WHERE id = :id';
             $stmt = $pdo->prepare($sql);
             $data['id'] = $id;

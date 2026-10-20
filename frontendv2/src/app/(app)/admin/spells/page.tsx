@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { TipCard, TipGrid } from '@/components/featherui/TipCard';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import axios from 'axios';
@@ -24,9 +25,9 @@ import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { PageCard } from '@/components/featherui/PageCard';
-import { ResourceCard } from '@/components/featherui/ResourceCard';
+import { ResourceCard, ResourceTable } from '@/components/featherui/ResourceCard';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
-import { EmptyState } from '@/components/featherui/EmptyState';
+import { ListEmptyState } from '@/components/featherui/ListEmptyState';
 import { Select } from '@/components/ui/select-native';
 import {
     Dialog,
@@ -64,6 +65,7 @@ import {
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { usePersistedListFilters } from '@/hooks/usePersistedListFilters';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
+import { ListPagination } from '@/components/featherui/ListPagination';
 
 interface Spell {
     id: number;
@@ -110,7 +112,7 @@ export default function SpellsPage() {
     const urlRealmId = searchParams?.get('realm_id') ?? '';
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const { filters, patchFilters, hydrated } = usePersistedListFilters(
+    const { filters, patchFilters, hydrated, resetFilters, isFiltered } = usePersistedListFilters(
         SPELLS_LIST_FILTERS_KEY,
         SPELLS_LIST_FILTERS_DEFAULTS,
     );
@@ -444,7 +446,7 @@ export default function SpellsPage() {
             <WidgetRenderer widgets={getWidgets('admin-spells', 'after-header')} />
 
             {!isReorderMode && (
-                <div className='bg-card/40 flex flex-col items-center gap-4 rounded-2xl p-4 shadow-sm backdrop-blur-md sm:flex-row'>
+                <div className='fp-surface flex flex-col items-center gap-4 rounded-2xl border p-4 sm:flex-row'>
                     <div className='group relative w-full flex-1'>
                         <Search className='text-muted-foreground group-focus-within:text-primary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transition-colors' />
                         <Input
@@ -475,48 +477,31 @@ export default function SpellsPage() {
             )}
 
             {pagination.totalPages > 1 && !loading && !isReorderMode && (
-                <div className='border-border bg-card/50 mb-4 flex items-center justify-between gap-4 rounded-xl border px-4 py-3'>
-                    <Button
-                        variant='outline'
-                        size='sm'
-                        disabled={!pagination.hasPrev}
-                        onClick={() => patchFilters({ page: page - 1 })}
-                        className='gap-1.5'
-                    >
-                        <ChevronLeft className='h-4 w-4' />
-                        {t('common.previous')}
-                    </Button>
-                    <span className='text-sm font-medium'>
-                        {page} / {pagination.totalPages}
-                    </span>
-                    <Button
-                        variant='outline'
-                        size='sm'
-                        disabled={!pagination.hasNext}
-                        onClick={() => patchFilters({ page: page + 1 })}
-                        className='gap-1.5'
-                    >
-                        {t('common.next')}
-                        <ChevronRight className='h-4 w-4' />
-                    </Button>
-                </div>
+                <ListPagination
+                    page={page}
+                    totalPages={pagination.totalPages}
+                    onPageChange={(nextPage) => patchFilters({ page: nextPage })}
+                    className='mb-4'
+                />
             )}
 
             {loading ? (
                 <TableSkeleton count={5} />
             ) : spells.length === 0 ? (
-                <EmptyState
+                <ListEmptyState
                     icon={Sparkles}
-                    title={t('admin.spells.no_results')}
-                    description={t('admin.spells.search_placeholder')}
+                    title={t('emptyStates.spells.title')}
+                    description={t('emptyStates.spells.description')}
                     action={
                         <Button onClick={() => router.push('/admin/spells/create')}>{t('admin.spells.create')}</Button>
                     }
+                    filtered={isFiltered}
+                    onClearFilters={resetFilters}
                 />
             ) : isReorderMode ? (
                 <div className='space-y-6'>
                     {hasOrderChanges && (
-                        <div className='flex items-center gap-2 rounded-2xl border border-amber-500/20 bg-amber-500/10 p-4 text-sm text-amber-600'>
+                        <div className='flex items-center gap-2 rounded-2xl border border-amber-500/25 bg-amber-500/[0.06] p-4 text-sm text-amber-600'>
                             <AlertCircle className='h-4 w-4' />
                             {t('admin.spells.order.unsaved_changes')}
                         </div>
@@ -563,13 +548,13 @@ export default function SpellsPage() {
                     </PageCard>
                 </div>
             ) : (
-                <div className='grid grid-cols-1 gap-4'>
+                <ResourceTable>
                     <WidgetRenderer widgets={getWidgets('admin-spells', 'before-list')} />
                     {spells.map((spell) => (
                         <ResourceCard
                             key={spell.id}
                             title={spell.name}
-                            subtitle={spell.realm_name || 'No realm'}
+                            subtitle={spell.realm_name || t('ui.admin.spells.noRealm')}
                             icon={Sparkles}
                             badges={
                                 spell.author
@@ -583,7 +568,7 @@ export default function SpellsPage() {
                             }
                             description={
                                 <div className='text-muted-foreground mt-1 line-clamp-2 text-sm'>
-                                    {spell.description || 'No description'}
+                                    {spell.description || t('ui.admin.spells.noDescription')}
                                 </div>
                             }
                             actions={
@@ -610,7 +595,7 @@ export default function SpellsPage() {
                             }
                         />
                     ))}
-                </div>
+                </ResourceTable>
             )}
 
             {pagination.totalPages > 1 && !isReorderMode && (
@@ -638,36 +623,36 @@ export default function SpellsPage() {
             )}
 
             {!isReorderMode && (
-                <PageCard title={t('admin.spells.help.cross_compatible.title')} icon={Sparkles} variant='default'>
+                <TipCard title={t('admin.spells.help.cross_compatible.title')} icon={Sparkles} variant='default'>
                     <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.spells.help.cross_compatible.description')}
                     </p>
-                </PageCard>
+                </TipCard>
             )}
 
             {!isReorderMode && (
-                <div className='grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4'>
-                    <PageCard title={t('admin.spells.help.what_are_spells.title')} icon={BookOpen}>
+                <TipGrid>
+                    <TipCard title={t('admin.spells.help.what_are_spells.title')} icon={BookOpen}>
                         <p className='text-muted-foreground text-sm leading-relaxed'>
                             {t('admin.spells.help.what_are_spells.description')}
                         </p>
-                    </PageCard>
-                    <PageCard title={t('admin.spells.help.how_to_use.title')} icon={Box}>
+                    </TipCard>
+                    <TipCard title={t('admin.spells.help.how_to_use.title')} icon={Box}>
                         <p className='text-muted-foreground text-sm leading-relaxed'>
                             {t('admin.spells.help.how_to_use.description')}
                         </p>
-                    </PageCard>
-                    <PageCard title={t('admin.spells.help.under_the_hood.title')} icon={Wrench}>
+                    </TipCard>
+                    <TipCard title={t('admin.spells.help.under_the_hood.title')} icon={Wrench}>
                         <p className='text-muted-foreground text-sm leading-relaxed'>
                             {t('admin.spells.help.under_the_hood.description')}
                         </p>
-                    </PageCard>
-                    <PageCard title={t('admin.spells.help.sources.title')} icon={GitBranch}>
+                    </TipCard>
+                    <TipCard title={t('admin.spells.help.sources.title')} icon={GitBranch}>
                         <p className='text-muted-foreground text-sm leading-relaxed'>
                             {t('admin.spells.help.sources.description')}
                         </p>
-                    </PageCard>
-                </div>
+                    </TipCard>
+                </TipGrid>
             )}
 
             <Dialog
@@ -701,7 +686,7 @@ export default function SpellsPage() {
                     </div>
                     <DialogFooter>
                         <Button variant='outline' onClick={() => setImportDialogOpen(false)} disabled={importing}>
-                            Cancel
+                            {t('common.cancel')}
                         </Button>
                         <Button onClick={handleImportDialogSubmit} loading={importing}>
                             {t('admin.spells.import')}

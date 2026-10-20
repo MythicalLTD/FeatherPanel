@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { AdminPageTips } from '@/components/admin/AdminPageTips';
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import axios from 'axios';
@@ -28,6 +29,7 @@ import { toast } from 'sonner';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
+import { UnsavedChangesBar } from '@/components/featherui/UnsavedChangesBar';
 
 interface RateLimitConfig {
     _enabled?: boolean;
@@ -310,7 +312,7 @@ export default function RateLimitsPage() {
                 <div className='overflow-x-auto'>
                     <table className='w-full'>
                         <thead>
-                            <tr className='border-b border-white/5 text-left'>
+                            <tr className='border-b border-[var(--fp-surface-border)] text-left'>
                                 <th className='text-muted-foreground p-4 font-medium'>
                                     {t('admin.rate_limits.routes.table.route')}
                                 </th>
@@ -348,7 +350,7 @@ export default function RateLimitsPage() {
                                 Object.entries(rateLimits).map(([route, config]) => (
                                     <tr
                                         key={route}
-                                        className='border-b border-white/5 transition-colors last:border-0 hover:bg-white/5'
+                                        className='border-b border-[var(--fp-surface-border)] transition-colors last:border-0 hover:bg-white/5'
                                     >
                                         <td className='p-4 font-medium'>{route}</td>
                                         <td className='p-4'>
@@ -435,7 +437,16 @@ export default function RateLimitsPage() {
                     </table>
                 </div>
             </PageCard>
+            <AdminPageTips page='rate-limits' />
+
             <WidgetRenderer widgets={getWidgets('admin-rate-limits', 'bottom-of-page')} />
+
+            <UnsavedChangesBar
+                dirty={changedRoutes.size > 0}
+                saving={saving}
+                onSave={() => void handleSaveAll()}
+                onDiscard={() => void fetchRateLimits()}
+            />
         </div>
     );
 }

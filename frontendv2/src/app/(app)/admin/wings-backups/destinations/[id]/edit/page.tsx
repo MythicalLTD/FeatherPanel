@@ -32,6 +32,8 @@ import {
     type DestinationFormState,
     type DestinationType,
 } from '@/components/admin/wings-backups/DestinationFormFields';
+import { UnsavedChangesBar } from '@/components/featherui/UnsavedChangesBar';
+import { useFormBaseline } from '@/hooks/useFormBaseline';
 
 export default function EditWingsBackupDestinationPage() {
     const { t } = useTranslation();
@@ -39,6 +41,7 @@ export default function EditWingsBackupDestinationPage() {
     const params = useParams();
     const id = Number(params?.id);
     const [form, setForm] = React.useState<DestinationFormState>(emptyDestinationForm);
+    const { dirty: unsaved, markClean, restore: restoreForm } = useFormBaseline(form);
     const [loading, setLoading] = React.useState(true);
     const [saving, setSaving] = React.useState(false);
 
@@ -54,6 +57,7 @@ export default function EditWingsBackupDestinationPage() {
                     type: (dest.type as DestinationType) || 'sftp',
                     base_path: dest.base_path ?? '',
                 }));
+                markClean();
             } catch (error) {
                 toast.error(getApiErrorMessage(error, t, 'adminWingsBackups.destinationLoadFailed'));
                 router.push('/admin/wings-backups');
@@ -61,10 +65,10 @@ export default function EditWingsBackupDestinationPage() {
                 setLoading(false);
             }
         })();
-    }, [id, router, t]);
+    }, [id, router, t, markClean]);
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleSubmit = async (e?: React.FormEvent) => {
+        e?.preventDefault();
         if (!form.name.trim()) {
             toast.error(t('adminWingsBackups.nameRequired'));
             return;
@@ -101,7 +105,7 @@ export default function EditWingsBackupDestinationPage() {
             />
             <form onSubmit={handleSubmit} className='space-y-6' data-fp-save-shortcut>
                 <DestinationFormFields form={form} setForm={setForm} disabled={saving} editMode />
-                <div className='bg-card/40 border-border/50 sticky bottom-4 z-10 flex flex-wrap justify-end gap-2 rounded-2xl border p-4 shadow-sm backdrop-blur-md'>
+                <div className='fp-surface sticky bottom-4 z-10 flex flex-wrap justify-end gap-2 rounded-2xl border p-4'>
                     <Button type='button' variant='outline' onClick={() => safeBack(router, '/admin/wings-backups')}>
                         {t('common.cancel')}
                     </Button>
@@ -110,6 +114,16 @@ export default function EditWingsBackupDestinationPage() {
                     </Button>
                 </div>
             </form>
+
+            <UnsavedChangesBar
+                dirty={unsaved}
+                saving={saving}
+                onSave={() => void handleSubmit()}
+                onDiscard={() => {
+                    const saved = restoreForm();
+                    if (saved) setForm(saved);
+                }}
+            />
         </div>
     );
 }

@@ -54,13 +54,7 @@ class PluginManager
      */
     public function getLoadedMemoryPlugins(): array
     {
-        try {
-            return $this->plugins;
-        } catch (\Exception $e) {
-            $this->logger->error('Failed to get plugin names: ' . $e->getMessage());
-
-            return [];
-        }
+        return $this->plugins;
     }
 
     /**

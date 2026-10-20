@@ -22,6 +22,7 @@ use App\Chat\Server;
 use App\Chat\ServerDatabase;
 use App\Chat\DatabaseInstance;
 use App\Helpers\ServerGateway;
+use App\Helpers\RemoteDatabaseProvisioner;
 use App\Plugins\Events\Events\ServerEvent;
 
 /**
@@ -261,37 +262,7 @@ class CreateDatabaseTool implements ToolInterface
      */
     private function createDatabaseOnHost(array $databaseHost, string $databaseName, string $username, string $password): void
     {
-        $options = [
-            \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
-            \PDO::ATTR_TIMEOUT => 10,
-        ];
-
-        switch ($databaseHost['database_type']) {
-            case 'mysql':
-            case 'mariadb':
-                $safeDbName = '`' . str_replace('`', '``', $databaseName) . '`';
-                $safeUser = '`' . str_replace('`', '``', $username) . '`';
-                $dsn = "mysql:host={$databaseHost['database_host']};port={$databaseHost['database_port']}";
-                $pdo = new \PDO($dsn, $databaseHost['database_username'], $databaseHost['database_password'], $options);
-
-                $pdo->exec("CREATE DATABASE IF NOT EXISTS {$safeDbName} CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
-                $pdo->exec("CREATE USER IF NOT EXISTS {$safeUser}@'%' IDENTIFIED BY '{$password}'");
-                $pdo->exec("GRANT ALL PRIVILEGES ON {$safeDbName}.* TO {$safeUser}@'%'");
-                $pdo->exec('FLUSH PRIVILEGES');
-                break;
-
-            case 'postgresql':
-                $dsn = "pgsql:host={$databaseHost['database_host']};port={$databaseHost['database_port']}";
-                $pdo = new \PDO($dsn, $databaseHost['database_username'], $databaseHost['database_password'], $options);
-
-                $pdo->exec("CREATE DATABASE {$databaseName}");
-                $pdo->exec("CREATE USER {$username} WITH PASSWORD '{$password}'");
-                $pdo->exec("GRANT ALL PRIVILEGES ON DATABASE {$databaseName} TO {$username}");
-                break;
-
-            default:
-                throw new \Exception('Unsupported database type: ' . $databaseHost['database_type']);
-        }
+        RemoteDatabaseProvisioner::create($databaseHost, $databaseName, $username, $password, '%', 0);
     }
 
     /**
@@ -300,31 +271,7 @@ class CreateDatabaseTool implements ToolInterface
     private function deleteDatabaseFromHost(array $databaseHost, string $databaseName, string $username): void
     {
         try {
-            $options = [
-                \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
-                \PDO::ATTR_TIMEOUT => 10,
-            ];
-
-            switch ($databaseHost['database_type']) {
-                case 'mysql':
-                case 'mariadb':
-                    $safeDbName = '`' . str_replace('`', '``', $databaseName) . '`';
-                    $safeUser = '`' . str_replace('`', '``', $username) . '`';
-                    $dsn = "mysql:host={$databaseHost['database_host']};port={$databaseHost['database_port']}";
-                    $pdo = new \PDO($dsn, $databaseHost['database_username'], $databaseHost['database_password'], $options);
-
-                    $pdo->exec("DROP DATABASE IF EXISTS {$safeDbName}");
-                    $pdo->exec("DROP USER IF EXISTS {$safeUser}@'%'");
-                    break;
-
-                case 'postgresql':
-                    $dsn = "pgsql:host={$databaseHost['database_host']};port={$databaseHost['database_port']}";
-                    $pdo = new \PDO($dsn, $databaseHost['database_username'], $databaseHost['database_password'], $options);
-
-                    $pdo->exec("DROP DATABASE IF EXISTS {$databaseName}");
-                    $pdo->exec("DROP USER IF EXISTS {$username}");
-                    break;
-            }
+            RemoteDatabaseProvisioner::delete($databaseHost, $databaseName, $username, '%');
         } catch (\Exception $e) {
             // Log but don't throw - rollback failure is not critical
             $this->app->getLogger()->warning('Failed to rollback database creation: ' . $e->getMessage());

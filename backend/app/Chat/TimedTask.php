@@ -106,7 +106,7 @@ class TimedTask
         $pdo = Database::getPdoConnection();
         $fields = array_keys($insert);
         $placeholders = array_map(fn ($f) => ':' . $f, $fields);
-        $sql = 'INSERT INTO ' . self::$table . ' (' . implode(',', $fields) . ') VALUES (' . implode(',', $placeholders) . ')';
+        $sql = 'INSERT INTO ' . self::$table . ' (`' . implode('`, `', $fields) . '`) VALUES (' . implode(',', $placeholders) . ')';
         $stmt = $pdo->prepare($sql);
         if ($stmt->execute($insert)) {
             return (int) $pdo->lastInsertId();
@@ -133,7 +133,7 @@ class TimedTask
             return false;
         }
 
-        $set = implode(', ', array_map(fn ($f) => "$f = :$f", array_keys($update)));
+        $set = implode(', ', array_map(fn ($f) => "`$f` = :$f", array_keys($update)));
         $update['id'] = $id;
 
         $pdo = Database::getPdoConnection();

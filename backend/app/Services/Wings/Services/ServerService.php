@@ -259,9 +259,7 @@ class ServerService
         }
     }
 
-    // ========================================
     // File Management Methods
-    // ========================================
 
     /**
      * List items in a directory.
@@ -306,7 +304,7 @@ class ServerService
 
     /**
      * Search files with advanced filters.
-     * FeatherWings uses GET; Calagopus wings-rs uses POST — retry with POST on 404/405/501.
+     * FeatherWings uses GET; Calagopus wings-rs uses POST - retry with POST on 404/405/501.
      *
      * @param array<string,mixed> $filters
      */
@@ -346,7 +344,7 @@ class ServerService
     public function listArchiveDirectory(string $serverUuid, string $directory, string $file, string $innerPath = ''): WingsResponse
     {
         try {
-            // Calagopus mounts archives as a virtual filesystem — list the joined path.
+            // Calagopus mounts archives as a virtual filesystem - list the joined path.
             if ($this->connection->isWingsRs()) {
                 $base = rtrim($directory === '' ? '/' : $directory, '/');
                 if ($base === '') {
@@ -839,7 +837,7 @@ class ServerService
                         'to' => $destination,
                     ]]);
                     if (!$rename->isSuccessful()) {
-                        // The copy succeeded but the rename to the final destination didn't —
+                        // The copy succeeded but the rename to the final destination didn't -
                         // remove the orphaned temporary copy so it isn't left behind.
                         $this->deleteFiles($serverUuid, '/', [$temporaryDestination]);
                         $skipped[] = $this->skippedFileEntry($destination);
@@ -1035,9 +1033,7 @@ class ServerService
         }
     }
 
-    // ========================================
     // Backup Methods
-    // ========================================
 
     /**
      * Create backup.
@@ -1104,9 +1100,7 @@ class ServerService
         }
     }
 
-    // ========================================
     // WebSocket JWT Management
-    // ========================================
 
     /**
      * Add JWT tokens to WebSocket deny list.
@@ -1157,9 +1151,7 @@ class ServerService
         }
     }
 
-    // ========================================
     // Server Sync
-    // ========================================
 
     /**
      * Synchronize server configuration.
@@ -1431,9 +1423,7 @@ class ServerService
         }
     }
 
-    // ========================================
     // Firewall Management
-    // ========================================
 
     /**
      * Get all firewall rules for a server.
@@ -1537,9 +1527,7 @@ class ServerService
         }
     }
 
-    // ========================================
     // Proxy Management
-    // ========================================
 
     /**
      * Create a reverse proxy configuration.
@@ -1602,9 +1590,7 @@ class ServerService
         }
     }
 
-    // ========================================
     // Server Import Management
-    // ========================================
 
     /**
      * Import server files from a remote SFTP or FTP server.
@@ -1622,9 +1608,7 @@ class ServerService
         }
     }
 
-    // ========================================
     // FastDL Management
-    // ========================================
 
     /**
      * Get FastDL configuration for a server.

@@ -20,10 +20,12 @@ namespace App\Services\Chatbot\Tools;
 use App\App;
 use App\Chat\Node;
 use App\Chat\Server;
+use App\SubuserPermissions;
 use App\Chat\ServerActivity;
 use App\Services\Wings\Wings;
 use App\Helpers\ServerGateway;
 use App\Helpers\WingsUrlHelper;
+use App\Helpers\SubuserPermissionChecker;
 use App\Plugins\Events\Events\ServerFilesEvent;
 
 /**
@@ -88,6 +90,15 @@ class DeleteFilesTool implements ToolInterface
             return [
                 'success' => false,
                 'error' => 'Access denied to server',
+                'action_type' => 'delete_files',
+            ];
+        }
+
+        // Enforce the same subuser permission as the REST file delete endpoint.
+        if (!SubuserPermissionChecker::hasPermission((int) $user['id'], (int) $server['id'], SubuserPermissions::FILE_DELETE)) {
+            return [
+                'success' => false,
+                'error' => 'You do not have permission to perform this action',
                 'action_type' => 'delete_files',
             ];
         }

@@ -19,6 +19,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { AdminPageTips } from '@/components/admin/AdminPageTips';
 import { useCallback, useEffect, useState } from 'react';
 import axios from 'axios';
 import { Loader2, Package, Plus, Trash2 } from 'lucide-react';
@@ -30,6 +31,7 @@ import { PageCard } from '@/components/featherui/PageCard';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { Label } from '@/components/ui/label';
+import { ListEmptyState } from '@/components/featherui/ListEmptyState';
 
 interface HostingPackage {
     id: number;
@@ -199,7 +201,12 @@ export default function HostingPackagesPage() {
                 {loading ? (
                     <Loader2 className='text-muted-foreground h-6 w-6 animate-spin' />
                 ) : packages.length === 0 ? (
-                    <p className='text-muted-foreground text-sm'>{t('admin.hostingPackages.empty')}</p>
+                    <ListEmptyState
+                        icon={Package}
+                        title={t('emptyStates.hostingPackages.title')}
+                        description={t('emptyStates.hostingPackages.description')}
+                        className='border-0 bg-transparent py-8'
+                    />
                 ) : (
                     <ul className='divide-border divide-y'>
                         {packages.map((pkg) => (
@@ -219,6 +226,7 @@ export default function HostingPackagesPage() {
                     </ul>
                 )}
             </PageCard>
+            <AdminPageTips page='hosting-packages' />
         </div>
     );
 }

@@ -21,10 +21,29 @@ use App\App;
 
 class ConfigFactory
 {
+    /** Long-running CLI processes never reset the cache, so it also expires. */
+    private const REQUEST_CACHE_MAX_AGE = 5.0;
     private \PDO $db;
     private array $cache = [];
 
     private string $table_name = 'featherpanel_settings';
+
+    /**
+     * Settings of the current request, shared by every ConfigFactory instance
+     * (App::getConfig() returns a new one per call). Loaded with one query on
+     * first use; null marks a setting that does not exist, so a missing
+     * setting does not cost a query per lookup either.
+     *
+     * @var array<string, string|null>
+     */
+    private static array $requestCache = [];
+
+    private static bool $requestCacheLoaded = false;
+
+    private static float $requestCacheLoadedAt = 0.0;
+
+    /** @var array<string, string|null> decrypted values of */
+    private static array $requestCacheDecrypted = [];
 
     public function __construct(\PDO $db)
     {
@@ -33,6 +52,17 @@ class ConfigFactory
         } catch (\Exception $e) {
             throw new \Exception('Failed to connect to the MYSQL Server! ', $e->getMessage());
         }
+    }
+
+    /**
+     * Forget the cached settings (called before every request, see RequestLifecycle).
+     */
+    public static function resetRequestCache(): void
+    {
+        self::$requestCache = [];
+        self::$requestCacheLoaded = false;
+        self::$requestCacheLoadedAt = 0.0;
+        self::$requestCacheDecrypted = [];
     }
 
     /**
@@ -49,17 +79,29 @@ class ConfigFactory
         if (isset($this->cache[$name])) {
             return $this->cache[$name];
         }
-        $stmt = $this->db->prepare("SELECT * FROM {$this->table_name} WHERE name = :name LIMIT 1");
-        $stmt->execute(['name' => $name]);
-        $result = $stmt->fetch(\PDO::FETCH_ASSOC);
-        if ($result) {
-            // Store the result in the cache
-            $this->cache[$name] = App::getInstance(true)->decryptValue($result['value']);
 
-            return $this->cache[$name];
+        if (self::$requestCacheLoaded && microtime(true) - self::$requestCacheLoadedAt > self::REQUEST_CACHE_MAX_AGE) {
+            self::resetRequestCache();
         }
+        if (!self::$requestCacheLoaded) {
+            $this->loadRequestCache();
+        }
+        if (!array_key_exists($name, self::$requestCache)) {
+            // The setting does not exist.
+            return $fallback ?? null;
+        }
+        if (!array_key_exists($name, self::$requestCacheDecrypted)) {
+            // Decrypt on first use only: most requests read a handful of settings.
+            $raw = self::$requestCache[$name];
+            self::$requestCacheDecrypted[$name] = $raw === null ? null : App::getInstance(true)->decryptValue($raw);
+        }
+        $value = self::$requestCacheDecrypted[$name];
+        if ($value === null) {
+            return $fallback ?? null;
+        }
+        $this->cache[$name] = $value;
 
-        return $fallback ?? null;
+        return $value;
     }
 
     public function getSettings(array $columns = []): array
@@ -100,6 +142,12 @@ class ConfigFactory
      */
     public function setSetting(string $name, ?string $value): bool
     {
+        if (self::$requestCacheLoaded) {
+            // Keep the plaintext: there is nothing to decrypt.
+            self::$requestCache[$name] = $value;
+            self::$requestCacheDecrypted[$name] = $value;
+        }
+
         if ($value === null) {
             // Delete the setting from the database if value is null
             $stmt = $this->db->prepare("DELETE FROM {$this->table_name} WHERE name = :name");
@@ -156,5 +204,21 @@ class ConfigFactory
         $ref = new \ReflectionClass(ConfigInterface::class);
 
         return $ref->getConstants();
+    }
+
+    /**
+     * Load every setting with a single query.
+     */
+    private function loadRequestCache(): void
+    {
+        $cache = [];
+        $stmt = $this->db->query("SELECT name, value FROM {$this->table_name}");
+        foreach ($stmt->fetchAll(\PDO::FETCH_ASSOC) as $row) {
+            $cache[(string) $row['name']] = $row['value'] === null ? null : (string) $row['value'];
+        }
+        self::$requestCache = $cache;
+        self::$requestCacheDecrypted = [];
+        self::$requestCacheLoaded = true;
+        self::$requestCacheLoadedAt = microtime(true);
     }
 }

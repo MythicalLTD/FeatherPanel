@@ -15,7 +15,17 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { createContext, useContext, useEffect, useLayoutEffect, useState, ReactNode, useCallback, useRef } from 'react';
+import {
+    createContext,
+    useContext,
+    useEffect,
+    useLayoutEffect,
+    useState,
+    ReactNode,
+    useCallback,
+    useMemo,
+    useRef,
+} from 'react';
 import type { AxiosError } from 'axios';
 import { useRouter } from 'next/navigation';
 import api, { getFeatherpanelApiErrorMessage } from '@/lib/api';
@@ -335,7 +345,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         return await fetchSession(true);
     }, [fetchSession]);
 
-    const logout = async () => {
+    const logout = useCallback(async () => {
         try {
             try {
                 await api.delete('/user/auth/logout');
@@ -348,13 +358,16 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         } finally {
             router.push('/auth/logout');
         }
-    };
+    }, [clearSession, router]);
 
-    const hasPermission = (permission: string): boolean => {
-        if (!permissions) return false;
-        if (permissions.includes(PermissionsClass.ADMIN_ROOT)) return true;
-        return permissions.includes(permission);
-    };
+    const hasPermission = useCallback(
+        (permission: string): boolean => {
+            if (!permissions) return false;
+            if (permissions.includes(PermissionsClass.ADMIN_ROOT)) return true;
+            return permissions.includes(permission);
+        },
+        [permissions],
+    );
 
     useEffect(() => {
         let cancelled = false;
@@ -395,24 +408,34 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         void fetchSession(true, true);
     }, [fetchSession, isPublicNoAuthRoute, pluginPathsLoaded]);
 
-    return (
-        <SessionContext.Provider
-            value={{
-                user,
-                permissions,
-                adminTicketStats,
-                isLoading,
-                isSessionChecked,
-                fetchSession,
-                refreshSession,
-                clearSession,
-                logout,
-                hasPermission,
-            }}
-        >
-            {children}
-        </SessionContext.Provider>
+    const contextValue = useMemo(
+        () => ({
+            user,
+            permissions,
+            adminTicketStats,
+            isLoading,
+            isSessionChecked,
+            fetchSession,
+            refreshSession,
+            clearSession,
+            logout,
+            hasPermission,
+        }),
+        [
+            user,
+            permissions,
+            adminTicketStats,
+            isLoading,
+            isSessionChecked,
+            fetchSession,
+            refreshSession,
+            clearSession,
+            logout,
+            hasPermission,
+        ],
     );
+
+    return <SessionContext.Provider value={contextValue}>{children}</SessionContext.Provider>;
 }
 
 export function useSession() {

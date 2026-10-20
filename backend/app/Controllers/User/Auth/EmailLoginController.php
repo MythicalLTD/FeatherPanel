@@ -23,8 +23,10 @@ use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
 use App\CloudFlare\CloudFlareRealIP;
+use App\Helpers\AccountLockoutHelper;
 use App\Mail\templates\EmailLoginCode;
 use App\Plugins\Events\Events\AuthEvent;
+use App\Helpers\PasswordResetTokenHelper;
 use App\Helpers\TwoFactorChallengeHelper;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -102,7 +104,7 @@ class EmailLoginController
 
         // Validate Turnstile if enabled
         if ($config->getSetting(ConfigInterface::TURNSTILE_ENABLED, 'false') == 'true') {
-            if (!isset($data['turnstile_token']) || trim($data['turnstile_token']) === '') {
+            if (!isset($data['turnstile_token']) || !is_scalar($data['turnstile_token']) || trim((string) $data['turnstile_token']) === '') {
                 return ApiResponse::error('Captcha token is required', 'CAPTCHA_TOKEN_REQUIRED');
             }
             if (!\App\Helpers\CaptchaHelper::validate($data['turnstile_token'], CloudFlareRealIP::getRealIP())) {
@@ -162,7 +164,7 @@ class EmailLoginController
 
         // Check if email verification is required
         $requiresEmailVerification = $config->getSetting(ConfigInterface::REGISTRATION_REQUIRE_EMAIL_VERIFICATION, 'false') === 'true';
-        $isEmailVerified = !isset($userInfo['mail_verify']) || $userInfo['mail_verify'] === null || trim((string) $userInfo['mail_verify']) === '';
+        $isEmailVerified = PasswordResetTokenHelper::isEmailVerified($userInfo['mail_verify'] ?? null);
         if ($requiresEmailVerification && !$isEmailVerified) {
             return ApiResponse::error('Email verification is required before login. Please verify your email first.', 'EMAIL_NOT_VERIFIED', 403);
         }
@@ -270,8 +272,12 @@ class EmailLoginController
             return ApiResponse::error('Missing required fields: ' . implode(', ', $missingFields), 'MISSING_REQUIRED_FIELDS');
         }
 
-        $email = trim($data['email']);
-        $code = trim($data['code']);
+        if (!is_scalar($data['email']) || !is_scalar($data['code'])) {
+            return ApiResponse::error('Email and code must be strings', 'INVALID_DATA_TYPE');
+        }
+
+        $email = trim((string) $data['email']);
+        $code = trim((string) $data['code']);
 
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             return ApiResponse::error('Invalid email address format', 'INVALID_EMAIL');
@@ -300,7 +306,27 @@ class EmailLoginController
             return ApiResponse::error('No active login code found. Please request a new code.', 'NO_ACTIVE_CODE', 401);
         }
 
-        if ($storedCode !== $code) {
+        // A 6-digit code is only 10^6 guesses: cap wrong guesses per account
+        // (the per-IP rate limit alone does not stop a distributed attack).
+        // The attempt is reserved before comparing so parallel requests count too.
+        $lockoutId = 'email_login:' . $userInfo['uuid'];
+        if (!AccountLockoutHelper::reserveHardLockAttempt($lockoutId, maxAttempts: 5, lockoutSeconds: 900)) {
+            // Burn the code: the owner has to request a new one after the lockout.
+            User::updateUser($userInfo['uuid'], [
+                'email_login_code' => null,
+                'email_login_expires' => null,
+            ]);
+            $retryAfter = max(1, AccountLockoutHelper::getLockoutRemaining($lockoutId));
+
+            return ApiResponse::error(
+                'Too many invalid codes. Try again in ' . (int) ceil($retryAfter / 60) . ' minute(s).',
+                'ACCOUNT_LOCKED',
+                429,
+                ['retry_after' => $retryAfter]
+            );
+        }
+
+        if (!hash_equals((string) $storedCode, $code)) {
             // Emit failed login event
             global $eventManager;
             if (isset($eventManager) && $eventManager !== null) {
@@ -327,6 +353,8 @@ class EmailLoginController
 
             return ApiResponse::error('Code has expired. Please request a new code.', 'CODE_EXPIRED', 401);
         }
+
+        AccountLockoutHelper::clear($lockoutId);
 
         // Check if 2FA is enabled
         if (isset($userInfo['two_fa_enabled']) && $userInfo['two_fa_enabled'] == 'true') {

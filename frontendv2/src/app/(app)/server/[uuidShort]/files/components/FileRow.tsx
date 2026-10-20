@@ -13,6 +13,8 @@ by the Free Software Foundation, either version 3 of the License, or
 See the LICENSE file or <https://www.gnu.org/licenses/>.
 */
 
+import { RowActionsMenu } from '@/components/featherui/DataTable';
+import { FileThumbnail } from './FileThumbnail';
 import { FileObject } from '@/types/server';
 import { formatFileSize } from '@/lib/utils';
 import { formatDateTimeInTz, formatRelativeTime, parseApiDate } from '@/lib/dateUtils';
@@ -20,7 +22,6 @@ import { useDateFormatOptions } from '@/contexts/PreferencesContext';
 import {
     Folder,
     FileText,
-    MoreVertical,
     Code,
     FileEdit,
     Eye,
@@ -34,17 +35,11 @@ import {
     PackageSearch,
     Share2,
     type LucideIcon,
+    CopyPlus,
+    Info,
 } from 'lucide-react';
 import { isTrashShortcut } from '@/lib/feather-trash';
 import Link from 'next/link';
-import { Button } from '@/components/featherui/Button';
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 import { isBinaryLikeFileName, isDecompressibleArchiveFileName } from '@/lib/binary-like-file-names';
@@ -90,6 +85,8 @@ interface FileRowProps {
     onDragEnd?: (file: FileObject, event: React.DragEvent) => void;
     onDropFiles?: (destinationFolder: FileObject, event: React.DragEvent) => void;
     onContextMenuOpen?: (file: FileObject) => void;
+    /** Render as a grid tile instead of a list row. */
+    grid?: boolean;
     canEdit: boolean;
     canDelete: boolean;
     canDownload: boolean;
@@ -181,13 +178,13 @@ function RowContextMenu({
         <div
             ref={menuRef}
             role='menu'
-            className='border-border/40 bg-card/95 animate-in fade-in zoom-in-95 fixed z-1000 min-w-48 overflow-hidden rounded-xl border p-1 shadow-2xl backdrop-blur-xl duration-100 focus:outline-none'
+            className='fp-menu-surface animate-in fade-in zoom-in-95 fixed z-1000 min-w-48 overflow-hidden rounded-xl border p-1 shadow-2xl duration-100 focus:outline-none'
             style={{ left: state.x, top: state.y }}
             onContextMenu={(e) => e.preventDefault()}
         >
             {actions.map((a, idx) => (
                 <React.Fragment key={a.key}>
-                    {a.separatorBefore && idx > 0 && <div className='bg-border/40 -mx-1 my-1 h-px' />}
+                    {a.separatorBefore && idx > 0 && <div className='-mx-1 my-1 h-px bg-[var(--fp-surface-border)]' />}
                     <button
                         type='button'
                         role='menuitem'
@@ -223,6 +220,7 @@ export function FileRow({
     onDragEnd,
     onDropFiles,
     onContextMenuOpen,
+    grid = false,
     canEdit,
     canDelete,
     canDownload,
@@ -252,8 +250,18 @@ export function FileRow({
     const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
 
     useEffect(() => {
-        if (isAnchor && rowRef.current) {
-            rowRef.current.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        const row = rowRef.current;
+        if (!isAnchor || !row) return;
+        // Scroll only the page's own scroll container. Element.scrollIntoView() also scrolls
+        // overflow-hidden ancestors, which could shift the whole shell and hide the top bar.
+        const container = row.closest<HTMLElement>('.fp-shell-main');
+        if (!container) return;
+        const rowRect = row.getBoundingClientRect();
+        const boxRect = container.getBoundingClientRect();
+        if (rowRect.top < boxRect.top) {
+            container.scrollBy({ top: rowRect.top - boxRect.top - 8, behavior: 'smooth' });
+        } else if (rowRect.bottom > boxRect.bottom) {
+            container.scrollBy({ top: rowRect.bottom - boxRect.bottom + 8, behavior: 'smooth' });
         }
     }, [isAnchor]);
 
@@ -297,6 +305,7 @@ export function FileRow({
             items.push({ key: 'download-directory', label: t('files.row.download_folder'), Icon: Download });
         }
         if (canEdit) {
+            items.push({ key: 'duplicate', label: t('files.row.duplicate'), Icon: CopyPlus });
             items.push({ key: 'copy', label: t('files.row.copy'), Icon: Copy });
             items.push({ key: 'move', label: t('files.row.move'), Icon: FileIcon });
         }
@@ -313,6 +322,7 @@ export function FileRow({
             items.push({ key: 'compress', label: t('files.row.compress'), Icon: Archive });
             items.push({ key: 'permissions', label: t('files.row.permissions'), Icon: Settings });
         }
+        items.push({ key: 'info', label: t('files.row.info'), Icon: Info, separatorBefore: true });
         if (canDelete) {
             items.push({
                 key: 'delete',
@@ -427,7 +437,9 @@ export function FileRow({
             onDrop={handleDrop}
             onContextMenu={handleContextMenu}
             className={cn(
-                'group flex cursor-pointer items-center gap-3 border-b border-gray-200 bg-transparent px-4 py-3 transition-all select-none hover:bg-gray-50 active:scale-[0.995] dark:border-white/5 dark:hover:bg-white/5',
+                grid
+                    ? 'group fp-surface hover:border-primary/40 relative flex cursor-pointer flex-col items-center gap-2 rounded-xl border px-3 pt-8 pb-3 text-center transition-all select-none'
+                    : 'group hover:bg-primary/5 flex min-h-14 cursor-pointer items-center gap-3 bg-transparent px-4 py-2.5 transition-colors select-none',
                 selected && 'bg-primary/5 dark:bg-primary/10',
                 isAnchor && 'ring-primary/40 ring-1 ring-inset',
                 isDragging && 'opacity-40',
@@ -435,7 +447,10 @@ export function FileRow({
             )}
             onClick={handleRowClick}
         >
-            <div className='pointer-events-auto shrink-0' onClick={(e) => e.stopPropagation()}>
+            <div
+                className={cn('pointer-events-auto shrink-0', grid && 'absolute top-2.5 left-2.5')}
+                onClick={(e) => e.stopPropagation()}
+            >
                 <Checkbox
                     checked={selected}
                     disabled={virtualTrash}
@@ -444,32 +459,72 @@ export function FileRow({
                 />
             </div>
 
-            <div
-                className={cn(
-                    'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-white/5 transition-all group-hover:scale-110',
-                    virtualTrash
-                        ? 'border-primary/20 bg-primary/10 text-primary'
-                        : file.isFile
-                          ? 'bg-gray-100 text-gray-500 dark:bg-white/5 dark:text-gray-400'
-                          : 'bg-amber-500/10 text-amber-500',
-                )}
-            >
-                {virtualTrash ? (
-                    <Trash2 className='h-4.5 w-4.5' />
-                ) : file.isFile ? (
-                    isImageName(file.name) ? (
-                        <Eye className='h-4.5 w-4.5' />
-                    ) : canBrowseArchive ? (
-                        <Archive className='h-4.5 w-4.5' />
+            {grid && file.isFile && isImageName(file.name) ? (
+                <FileThumbnail
+                    serverUuid={serverUuid}
+                    path={
+                        currentDirectory.endsWith('/')
+                            ? `${currentDirectory}${file.name}`
+                            : `${currentDirectory}/${file.name}`
+                    }
+                    size={file.size}
+                    fallback={
+                        <div
+                            className={cn(
+                                'flex shrink-0 items-center justify-center rounded-lg border border-[var(--fp-surface-border)] transition-all',
+                                grid ? 'h-12 w-12' : 'h-9 w-9',
+                                virtualTrash
+                                    ? 'border-primary/20 bg-primary/10 text-primary'
+                                    : file.isFile
+                                      ? 'bg-muted text-muted-foreground'
+                                      : 'bg-amber-500/10 text-amber-500',
+                            )}
+                        >
+                            {virtualTrash ? (
+                                <Trash2 className='h-4.5 w-4.5' />
+                            ) : file.isFile ? (
+                                isImageName(file.name) ? (
+                                    <Eye className='h-4.5 w-4.5' />
+                                ) : canBrowseArchive ? (
+                                    <Archive className='h-4.5 w-4.5' />
+                                ) : (
+                                    <FileText className='h-4.5 w-4.5' />
+                                )
+                            ) : (
+                                <Folder className='h-4.5 w-4.5 fill-amber-500/10' />
+                            )}
+                        </div>
+                    }
+                />
+            ) : (
+                <div
+                    className={cn(
+                        'flex shrink-0 items-center justify-center rounded-lg border border-[var(--fp-surface-border)] transition-all',
+                        grid ? 'h-12 w-12' : 'h-9 w-9',
+                        virtualTrash
+                            ? 'border-primary/20 bg-primary/10 text-primary'
+                            : file.isFile
+                              ? 'bg-muted text-muted-foreground'
+                              : 'bg-amber-500/10 text-amber-500',
+                    )}
+                >
+                    {virtualTrash ? (
+                        <Trash2 className='h-4.5 w-4.5' />
+                    ) : file.isFile ? (
+                        isImageName(file.name) ? (
+                            <Eye className='h-4.5 w-4.5' />
+                        ) : canBrowseArchive ? (
+                            <Archive className='h-4.5 w-4.5' />
+                        ) : (
+                            <FileText className='h-4.5 w-4.5' />
+                        )
                     ) : (
-                        <FileText className='h-4.5 w-4.5' />
-                    )
-                ) : (
-                    <Folder className='h-4.5 w-4.5 fill-amber-500/10' />
-                )}
-            </div>
+                        <Folder className='h-4.5 w-4.5 fill-amber-500/10' />
+                    )}
+                </div>
+            )}
 
-            <div className='pointer-events-auto min-w-0 flex-1 overflow-hidden'>
+            <div className={cn('pointer-events-auto min-w-0 overflow-hidden', grid ? 'w-full' : 'flex-1')}>
                 {(() => {
                     const fullPath = currentDirectory.endsWith('/')
                         ? `${currentDirectory}${file.name}`
@@ -575,7 +630,12 @@ export function FileRow({
                         );
                     }
                 })()}
-                <div className='text-muted-foreground flex items-center gap-2 text-[10px] font-medium tracking-wider uppercase sm:hidden'>
+                <div
+                    className={cn(
+                        'text-muted-foreground flex items-center gap-2 text-xs',
+                        grid ? 'justify-center' : 'sm:hidden',
+                    )}
+                >
                     <span>{formatListEntrySizeMobile(file, t('files.row.folder_label'))}</span>
                     <span className='opacity-30'>•</span>
                     <span title={modifiedTitle}>{modifiedRelative}</span>
@@ -583,52 +643,37 @@ export function FileRow({
             </div>
 
             <div
-                className='text-muted-foreground hidden w-[5.5rem] shrink-0 text-right text-xs font-semibold tabular-nums sm:block'
-                style={{ opacity: 0.8 }}
+                className={cn(
+                    'text-muted-foreground hidden w-[5.5rem] shrink-0 text-right text-xs tabular-nums',
+                    !grid && 'sm:block',
+                )}
             >
                 {formatListEntrySize(file)}
             </div>
 
             <div
-                className='text-muted-foreground hidden w-[9rem] shrink-0 truncate text-right text-xs font-semibold sm:block'
-                style={{ opacity: 0.8 }}
+                className={cn(
+                    'text-muted-foreground hidden w-[9rem] shrink-0 truncate text-right text-xs',
+                    !grid && 'sm:block',
+                )}
                 title={modifiedTitle}
             >
                 {modifiedRelative}
             </div>
 
-            <div className='flex w-9 shrink-0 justify-end'>
-                <DropdownMenu>
-                    <DropdownMenuTrigger
-                        as={Button}
-                        variant='ghost'
-                        size='icon'
-                        className='text-muted-foreground hover:text-foreground h-8 w-8 transition-colors hover:bg-black/5 dark:hover:bg-white/10'
-                        onClick={(e: React.MouseEvent) => {
-                            e.stopPropagation();
-                        }}
-                    >
-                        <MoreVertical className='h-4 w-4' />
-                    </DropdownMenuTrigger>
-
-                    <DropdownMenuContent align='end' className='w-48'>
-                        {menuActions.map((a, idx) => (
-                            <React.Fragment key={a.key}>
-                                {a.separatorBefore && idx > 0 && <DropdownMenuSeparator />}
-                                <DropdownMenuItem
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        onAction(a.key, file);
-                                    }}
-                                    className={a.danger ? 'text-red-500 focus:text-red-500' : undefined}
-                                >
-                                    <a.Icon className='mr-2 h-4 w-4' />
-                                    {a.label}
-                                </DropdownMenuItem>
-                            </React.Fragment>
-                        ))}
-                    </DropdownMenuContent>
-                </DropdownMenu>
+            <div
+                className={cn('flex w-9 shrink-0 justify-end', grid && 'absolute top-2 right-2')}
+                onClick={(e) => e.stopPropagation()}
+            >
+                <RowActionsMenu
+                    items={menuActions.map((a) => ({
+                        label: a.label,
+                        icon: a.Icon,
+                        destructive: a.danger,
+                        separated: a.separatorBefore,
+                        onClick: () => onAction(a.key, file),
+                    }))}
+                />
             </div>
 
             {contextMenu && (

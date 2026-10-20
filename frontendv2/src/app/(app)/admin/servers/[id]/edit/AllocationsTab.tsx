@@ -18,18 +18,22 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import { useState, useCallback, useEffect } from 'react';
 import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { useHideServerIps } from '@/contexts/PreferencesContext';
+import { maskEndpoint, maskIpLike } from '@/lib/ip-mask';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Button } from '@/components/featherui/Button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { Plug, Search, Trash2, RefreshCw, Star } from 'lucide-react';
-import { ServerAllocations, SelectedEntities } from './types';
+import { Allocation, ServerAllocations, SelectedEntities } from './types';
+import { Sensitive } from '@/components/common/Sensitive';
 
 interface AllocationsTabProps {
     serverId: string;
     selectedEntities: SelectedEntities;
     openAllocationModal: (mode: 'primary' | 'assign') => void;
     refreshTrigger?: number;
+    onPrimaryChanged?: (allocation: Allocation) => void;
 }
 
 export function AllocationsTab({
@@ -37,8 +41,10 @@ export function AllocationsTab({
     selectedEntities,
     openAllocationModal,
     refreshTrigger = 0,
+    onPrimaryChanged,
 }: AllocationsTabProps) {
     const { t } = useTranslation();
+    const hideIps = useHideServerIps();
     const [loading, setLoading] = useState(false);
     const [serverAllocations, setServerAllocations] = useState<ServerAllocations>({
         allocations: [],
@@ -82,11 +88,13 @@ export function AllocationsTab({
         }
     };
 
-    const setPrimaryAllocation = async (allocationId: number) => {
-        setSettingPrimaryId(allocationId);
+    const setPrimaryAllocation = async (allocation: Allocation) => {
+        setSettingPrimaryId(allocation.id);
         try {
-            await axios.post(`/api/admin/servers/${serverId}/allocations/${allocationId}/primary`);
+            await axios.post(`/api/admin/servers/${serverId}/allocations/${allocation.id}/primary`);
             toast.success(t('admin.servers.edit.allocations.primary_success'));
+            // Keep edit-form primary in sync so Save Changes does not revert it.
+            onPrimaryChanged?.(allocation);
             fetchServerAllocations();
         } catch (error) {
             console.error('Error setting primary allocation:', error);
@@ -133,7 +141,13 @@ export function AllocationsTab({
                                 <div className='flex items-center gap-2'>
                                     <Plug className='text-primary h-4 w-4' />
                                     <span className='text-foreground font-mono font-medium'>
-                                        {selectedEntities.allocation.ip}:{selectedEntities.allocation.port}
+                                        <Sensitive>
+                                            {maskEndpoint(
+                                                selectedEntities.allocation.ip,
+                                                selectedEntities.allocation.port,
+                                                false,
+                                            )}
+                                        </Sensitive>
                                     </span>
                                 </div>
                             ) : (
@@ -176,10 +190,11 @@ export function AllocationsTab({
                                     <Plug className='text-muted-foreground h-4 w-4 shrink-0' />
                                     <div className='min-w-0'>
                                         <div className='font-mono font-medium'>
-                                            {allocation.ip}:{allocation.port}
+                                            <Sensitive>{maskEndpoint(allocation.ip, allocation.port, false)}</Sensitive>
                                         </div>
                                         <div className='text-muted-foreground text-xs'>
-                                            {allocation.ip_alias || t('admin.servers.edit.allocations.no_alias')}
+                                            {maskIpLike(allocation.ip_alias, hideIps) ||
+                                                t('admin.servers.edit.allocations.no_alias')}
                                         </div>
                                         {allocation.notes && (
                                             <div
@@ -198,7 +213,7 @@ export function AllocationsTab({
                                             type='button'
                                             variant='outline'
                                             size='sm'
-                                            onClick={() => setPrimaryAllocation(allocation.id)}
+                                            onClick={() => setPrimaryAllocation(allocation)}
                                             loading={settingPrimaryId === allocation.id}
                                             disabled={deletingId === allocation.id}
                                         >

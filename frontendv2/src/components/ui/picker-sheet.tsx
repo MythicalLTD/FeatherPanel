@@ -21,6 +21,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { Search as SearchIcon, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ListPagination } from '@/components/featherui/ListPagination';
 
 export interface PickerPagination {
     current_page: number;
@@ -104,31 +105,11 @@ export function PickerSheet({
                             </div>
 
                             {pagination && pagination.total_pages > 1 && onPageChange ? (
-                                <div className='border-border bg-muted/30 flex items-center justify-between gap-2 rounded-lg border px-3 py-2'>
-                                    <Button
-                                        variant='outline'
-                                        size='sm'
-                                        disabled={!pagination.has_prev}
-                                        onClick={() => onPageChange(pagination.current_page - 1)}
-                                        className='h-8 gap-1'
-                                    >
-                                        <ChevronLeft className='h-3 w-3' />
-                                        {t('common.previous')}
-                                    </Button>
-                                    <span className='text-xs font-medium'>
-                                        {pagination.current_page} / {pagination.total_pages}
-                                    </span>
-                                    <Button
-                                        variant='outline'
-                                        size='sm'
-                                        disabled={!pagination.has_next}
-                                        onClick={() => onPageChange(pagination.current_page + 1)}
-                                        className='h-8 gap-1'
-                                    >
-                                        {t('common.next')}
-                                        <ChevronRight className='h-3 w-3' />
-                                    </Button>
-                                </div>
+                                <ListPagination
+                                    page={pagination.current_page}
+                                    totalPages={pagination.total_pages}
+                                    onPageChange={(nextPage) => onPageChange(nextPage)}
+                                />
                             ) : null}
 
                             <div className='max-h-[calc(100vh-300px)] space-y-2 overflow-y-auto'>{children}</div>

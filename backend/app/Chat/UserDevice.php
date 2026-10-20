@@ -254,10 +254,13 @@ class UserDevice
             return $ok;
         }
 
+        // A new device usually fires several requests at once; whichever loses the race just
+        // counts as another hit instead of failing on the unique key.
         $insert = $pdo->prepare(
             'INSERT INTO ' . self::$table
             . ' (user_uuid, device_hash, signal_hash, signals, ip_address, user_agent, first_seen, last_seen, hit_count)
-               VALUES (:user_uuid, :device_hash, :signal_hash, :signals, :ip_address, :user_agent, NOW(), NOW(), 1)'
+               VALUES (:user_uuid, :device_hash, :signal_hash, :signals, :ip_address, :user_agent, NOW(), NOW(), 1)
+             ON DUPLICATE KEY UPDATE last_seen = NOW(), hit_count = hit_count + 1'
         );
 
         $ok = $insert->execute([

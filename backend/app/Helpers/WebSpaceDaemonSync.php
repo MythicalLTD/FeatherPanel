@@ -22,6 +22,84 @@ use App\Chat\WebPlate;
 class WebSpaceDaemonSync
 {
     /**
+     * Daemon reported the WebSpace UUID is unknown (never created / wiped locally).
+     *
+     * @param array<string, mixed> $daemon FeatherQuilldClient response
+     */
+    public static function isMissingOnDaemon(array $daemon): bool
+    {
+        if ((int) ($daemon['status'] ?? 0) === 404) {
+            return true;
+        }
+
+        $error = strtolower((string) ($daemon['error'] ?? ''));
+        $body = $daemon['body'] ?? null;
+        $detail = '';
+        if (is_array($body)) {
+            $detail = strtolower((string) ($body['error'] ?? $body['message'] ?? $body['error_message'] ?? ''));
+        } elseif (is_string($body)) {
+            $detail = strtolower($body);
+        }
+
+        $haystack = $error . ' ' . $detail;
+
+        return str_contains($haystack, 'not found') && str_contains($haystack, 'webspace');
+    }
+
+    /**
+     * Sync config to the daemon. If the WebSpace is missing there (e.g. create failed with
+     * daemon_sync_failed), POST /api/webspaces create so the daemon can pull config from the panel.
+     *
+     * @param array<string, mixed> $webNode
+     *
+     * @return array{ok: bool, status: int, body: mixed, error: ?string, created?: bool}
+     */
+    public static function syncOrCreate(
+        array $webNode,
+        string $uuid,
+        bool $startOnCompletion = true,
+        bool $skipScripts = false,
+    ): array {
+        $sync = FeatherQuilldClient::syncWebSpace($webNode, $uuid);
+        if ($sync['ok'] || !self::isMissingOnDaemon($sync)) {
+            return $sync;
+        }
+
+        $create = FeatherQuilldClient::createWebSpace($webNode, $uuid, $startOnCompletion, $skipScripts);
+        if ($create['ok']) {
+            $create['created'] = true;
+        }
+
+        return $create;
+    }
+
+    /**
+     * Reinstall on the daemon. If the WebSpace was never created there, fall back to create.
+     *
+     * @param array<string, mixed> $webNode
+     *
+     * @return array{ok: bool, status: int, body: mixed, error: ?string, created?: bool}
+     */
+    public static function reinstallOrCreate(
+        array $webNode,
+        string $uuid,
+        bool $wipeFiles = true,
+        bool $startOnCompletion = false,
+    ): array {
+        $reinstall = FeatherQuilldClient::reinstallWebSpace($webNode, $uuid, $wipeFiles, $startOnCompletion);
+        if ($reinstall['ok'] || !self::isMissingOnDaemon($reinstall)) {
+            return $reinstall;
+        }
+
+        $create = FeatherQuilldClient::createWebSpace($webNode, $uuid, $startOnCompletion, false);
+        if ($create['ok']) {
+            $create['created'] = true;
+        }
+
+        return $create;
+    }
+
+    /**
      * Sync panel WebSpace settings to FeatherQuilld and optionally recreate runtime when image changed.
      *
      * @param array<string, mixed> $webNode
@@ -32,13 +110,18 @@ class WebSpaceDaemonSync
      */
     public static function syncAfterUpdate(array $webNode, array $space, array $previousSpace, ?array $previousPlateOverride = null): array
     {
-        $sync = FeatherQuilldClient::syncWebSpace($webNode, (string) $space['uuid']);
+        $sync = self::syncOrCreate($webNode, (string) $space['uuid']);
         if (!$sync['ok']) {
             return [
                 'ok' => false,
                 'sync' => $sync,
                 'error' => $sync['error'] ?? 'Daemon sync failed',
             ];
+        }
+
+        // Fresh create already provisions runtime; skip recreate-on-diff.
+        if (!empty($sync['created'])) {
+            return ['ok' => true, 'sync' => $sync];
         }
 
         $previousImage = trim((string) ($previousSpace['image'] ?? ''));

@@ -357,7 +357,7 @@ class ServerScheduleController
         // Validate required fields
         $required = ['name', 'cron_day_of_week', 'cron_month', 'cron_day_of_month', 'cron_hour', 'cron_minute'];
         foreach ($required as $field) {
-            if (!isset($body[$field]) || trim($body[$field]) === '') {
+            if (!isset($body[$field]) || !is_scalar($body[$field]) || trim((string) $body[$field]) === '') {
                 return ApiResponse::error("Missing required field: {$field}", 'MISSING_REQUIRED_FIELD', 400);
             }
         }
@@ -517,6 +517,29 @@ class ServerScheduleController
         $body = json_decode($request->getContent(), true);
         if (!$body) {
             return ApiResponse::error('Invalid request body', 'INVALID_REQUEST_BODY', 400);
+        }
+
+        // Only the documented schedule fields may be updated; this blocks re-homing a
+        // schedule onto another server via the raw server_id column.
+        $body = array_intersect_key($body, array_flip([
+            'name',
+            'cron_day_of_week',
+            'cron_month',
+            'cron_day_of_month',
+            'cron_hour',
+            'cron_minute',
+            'timezone',
+            'only_when_online',
+            'is_active',
+        ]));
+        if (empty($body)) {
+            return ApiResponse::error('No updatable fields provided', 'INVALID_REQUEST_BODY', 400);
+        }
+
+        foreach ($body as $field => $value) {
+            if ($value !== null && !is_scalar($value)) {
+                return ApiResponse::error("Field {$field} must be a string or number", 'INVALID_DATA_TYPE', 400);
+            }
         }
 
         // If a timezone was supplied, validate it up-front (and recompute next_run_at below).
@@ -1195,7 +1218,7 @@ class ServerScheduleController
 
         $required = ['name', 'cron_day_of_week', 'cron_month', 'cron_day_of_month', 'cron_hour', 'cron_minute'];
         foreach ($required as $field) {
-            if (!isset($body[$field]) || trim((string) $body[$field]) === '') {
+            if (!isset($body[$field]) || !is_scalar($body[$field]) || trim((string) $body[$field]) === '') {
                 return ApiResponse::error("Missing required field: {$field}", 'MISSING_REQUIRED_FIELD', 400);
             }
         }
@@ -1222,7 +1245,7 @@ class ServerScheduleController
             if (!isset($task['action']) || !in_array($task['action'], $validActions, true)) {
                 return ApiResponse::error("Task at index {$index} has an invalid or missing action", 'INVALID_TASK_ACTION', 400);
             }
-            if (!isset($task['payload'])) {
+            if (!isset($task['payload']) || !is_scalar($task['payload'])) {
                 return ApiResponse::error("Task at index {$index} is missing payload", 'MISSING_TASK_PAYLOAD', 400);
             }
             if (!isset($task['sequence_id']) || !is_numeric($task['sequence_id'])) {

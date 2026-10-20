@@ -203,14 +203,15 @@ class ServerFilesController
             $path = $this->getPathFromQuery();
             $search = trim((string) ($_GET['search'] ?? ''));
 
-            $wings = $this->createWingsConnection($node);
+            // Short timeout: offline nodes should fail fast (not burn FPM workers for 30s+).
+            $wings = $this->createWingsConnection($node, 8);
             $response = $wings->getServer()->listDirectory($server['uuid'], $path, true);
 
             if (!$response->isSuccessful()) {
                 $error = $response->getError();
                 if ($this->isWingsConnectionUnavailableError($error)) {
                     return ApiResponse::error(
-                        'Wings Connection Unavailable. Please contact the support team. Technical details: ' . $error,
+                        'Could not reach the node. It may be offline or Wings may be down.',
                         'WINGS_CONNECTION_UNAVAILABLE',
                         503
                     );
@@ -236,7 +237,7 @@ class ServerFilesController
             } elseif (isset($contents['entries']) && is_array($contents['entries'])) {
                 $contents = array_values($contents['entries']);
             } elseif (array_is_list($contents)) {
-                // FeatherWings flat list — keep as-is
+                // FeatherWings flat list - keep as-is
             } elseif (isset($contents['files']) && is_array($contents['files']) && array_is_list($contents['files'])) {
                 $contents = $contents['files'];
             } else {
@@ -270,7 +271,7 @@ class ServerFilesController
                 'limit' => self::MAX_LIST_ITEMS,
                 'total' => $total,
             ], 'Files fetched successfully');
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             return $this->handleWingsError($e, 'fetch files');
         }
     }
@@ -322,7 +323,7 @@ class ServerFilesController
                 $error = $response->getError();
                 if ($this->isWingsConnectionUnavailableError($error)) {
                     return ApiResponse::error(
-                        'Wings Connection Unavailable. Please contact the support team. Technical details: ' . $error,
+                        'Could not reach the node. It may be offline or Wings may be down.',
                         'WINGS_CONNECTION_UNAVAILABLE',
                         503
                     );
@@ -711,9 +712,7 @@ class ServerFilesController
             // Log activity
             $this->logActivity($server, $node, 'file_written', [
                 'path' => $path,
-
                 'content_length' => strlen($content),
-                'file_exists' => file_exists($path),
             ], $user);
 
             // Emit event
@@ -1472,6 +1471,9 @@ class ServerFilesController
             // Get optional name and extension (default to generated name and tar.gz)
             $name = $data['name'] ?? '';
             $extension = $data['extension'] ?? 'tar.gz';
+            if (!is_string($name) || !is_string($extension)) {
+                return ApiResponse::error('Fields name and extension must be strings', 'INVALID_DATA_TYPE', 400);
+            }
 
             // For large archives, process asynchronously to avoid Cloudflare timeout (100s limit)
             // Return immediately to client, then process in background
@@ -1927,6 +1929,9 @@ class ServerFilesController
             $fileName = $data['fileName'] ?? null;
             $foreground = $data['foreground'] ?? false;
             $useHeader = $data['useHeader'] ?? true;
+            if (($fileName !== null && !is_string($fileName)) || !is_scalar($foreground) || !is_scalar($useHeader)) {
+                return ApiResponse::error('Invalid fileName, foreground or useHeader value', 'INVALID_DATA_TYPE', 400);
+            }
 
             $wings = $this->createWingsConnection($node);
             $response = $wings->getServer()->pullFile(
@@ -2487,7 +2492,7 @@ class ServerFilesController
             }
 
             // Get the filename from query parameters or use a default
-            $filename = $_GET['filename'] ?? 'uploaded_file';
+            $filename = isset($_GET['filename']) && is_string($_GET['filename']) && $_GET['filename'] !== '' ? $_GET['filename'] : 'uploaded_file';
 
             // Combine path and filename
             $fullPath = rtrim($path, '/') . '/' . $filename;
@@ -2901,18 +2906,25 @@ class ServerFilesController
     /**
      * Helper method to handle Wings API errors.
      */
-    private function handleWingsError(\Exception $e, string $operation): Response
+    private function handleWingsError(\Throwable $e, string $operation): Response
     {
         $error = $e->getMessage();
-        $statusCode = $e->getCode() ?: 500;
+        $statusCode = is_int($e->getCode()) && $e->getCode() >= 400 && $e->getCode() < 600
+            ? $e->getCode()
+            : 500;
 
-        // Surface a clear, user-friendly message when Wings cannot be reached.
-        if ($e instanceof \App\Services\Wings\Exceptions\WingsConnectionException) {
-            $message = 'Wings Connection Unavailable. Please contact the support team. Technical details: ' . $error;
-
+        // Offline / unreachable node - stable code, no raw stack or curl dump for the client.
+        if (
+            $e instanceof \App\Services\Wings\Exceptions\WingsConnectionException
+            || $this->isWingsConnectionUnavailableError($error)
+        ) {
             App::getInstance(true)->getLogger()->error("Wings connection unavailable during {$operation}: {$error}");
 
-            return ApiResponse::error($message, 'WINGS_CONNECTION_UNAVAILABLE', 503);
+            return ApiResponse::error(
+                'Could not reach the node. It may be offline or Wings may be down.',
+                'WINGS_CONNECTION_UNAVAILABLE',
+                503
+            );
         }
 
         // Map Wings error codes to user-friendly messages
@@ -2931,7 +2943,7 @@ class ServerFilesController
 
         App::getInstance(true)->getLogger()->error("Failed to {$operation}: {$error}");
 
-        return ApiResponse::error($message, strtoupper($operation) . '_FAILED', $statusCode);
+        return ApiResponse::error($message, strtoupper(str_replace(' ', '_', $operation)) . '_FAILED', $statusCode);
     }
 
     /**
@@ -2942,10 +2954,20 @@ class ServerFilesController
         $needle = strtolower($error);
 
         return str_contains($needle, 'connection failed')
-            || str_contains($needle, 'could not connect to server')
+            || str_contains($needle, 'could not connect')
+            || str_contains($needle, 'failed to connect')
+            || str_contains($needle, 'connection refused')
+            || str_contains($needle, 'network is unreachable')
+            || str_contains($needle, 'name or service not known')
+            || str_contains($needle, 'nodename nor servname')
             || str_contains($needle, 'curl error 7')
+            || str_contains($needle, 'curl error 28')
+            || str_contains($needle, 'curl error 35')
             || str_contains($needle, 'timed out')
-            || str_contains($needle, 'curl error 28');
+            || str_contains($needle, 'timeout')
+            || str_contains($needle, 'all retry attempts failed')
+            || str_contains($needle, 'wings connection unavailable')
+            || str_contains($needle, 'failed to reach the node');
     }
 
     /**
@@ -2968,7 +2990,9 @@ class ServerFilesController
      */
     private function getPathFromQuery(string $default = '/'): string
     {
-        return $_GET['path'] ?? $default;
+        $path = $_GET['path'] ?? null;
+
+        return is_string($path) && $path !== '' ? $path : $default;
     }
 
     /**
@@ -2989,6 +3013,12 @@ class ServerFilesController
         foreach ($requiredFields as $field) {
             if (!isset($data[$field])) {
                 throw new \Exception("Missing required field: {$field}", 400);
+            }
+
+            // List fields carry arrays; every other required field is a path/name string.
+            $expectsArray = in_array($field, ['files', 'ids', 'entries'], true);
+            if ($expectsArray ? !is_array($data[$field]) : !is_string($data[$field])) {
+                throw new \Exception("Invalid type for field: {$field}", 400);
             }
         }
 

@@ -20,20 +20,22 @@ import axios from 'axios';
 import { toast } from 'sonner';
 import {
     ArrowLeft,
+    CheckCircle2,
     CheckSquare,
+    Link2,
     Download,
     Info,
     Loader2,
     Package,
     RefreshCw,
     Search,
-    Square,
     Star,
     Store,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { PageHeader } from '@/components/featherui/PageHeader';
-import { PageCard } from '@/components/featherui/PageCard';
+import { StatusDot } from '@/components/featherui/DataTable';
+import { TipCard, TipGrid } from '@/components/featherui/TipCard';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { EmptyState } from '@/components/featherui/EmptyState';
@@ -312,99 +314,102 @@ export default function MythicProductsPage() {
             />
 
             {credentialsError ? (
-                <PageCard
-                    title={t('admin.marketplace.plugins.not_linked.title')}
-                    description={credentialsError}
-                    icon={Package}
-                >
+                <section className='fp-surface flex flex-col items-center gap-4 rounded-2xl border px-6 py-12 text-center'>
+                    <div className='fp-icon-tile flex h-12 w-12 items-center justify-center rounded-xl'>
+                        <Link2 className='h-6 w-6' />
+                    </div>
+                    <div className='max-w-md space-y-1'>
+                        <h2 className='text-lg font-semibold'>{t('admin.marketplace.plugins.not_linked.title')}</h2>
+                        <p className='text-muted-foreground text-sm'>{credentialsError}</p>
+                    </div>
                     <Button onClick={() => router.push('/admin/cloud-management')}>
                         {t('admin.marketplace.plugins.not_linked.action')}
                     </Button>
-                </PageCard>
+                </section>
             ) : (
                 <>
-                    <div className='flex flex-col gap-3 sm:flex-row sm:items-center'>
+                    <div className='fp-surface flex flex-col gap-2 rounded-xl border p-2 lg:flex-row lg:items-center'>
                         <div className='relative min-w-0 flex-1'>
                             <Search className='text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2' />
                             <Input
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
                                 placeholder={t('admin.marketplace.plugins.search_placeholder')}
-                                className='pl-9'
+                                className='border-0 bg-transparent pl-9 shadow-none focus-visible:ring-0'
                             />
                         </div>
-                        <div className='flex gap-2'>
-                            {(['all', 'free', 'paid'] as const).map((key) => (
-                                <Button
-                                    key={key}
-                                    size='sm'
-                                    variant={priceFilter === key ? 'default' : 'outline'}
-                                    onClick={() => setPriceFilter(key)}
-                                >
-                                    {priceFilterLabel(key)}
-                                </Button>
-                            ))}
-                        </div>
-                    </div>
-
-                    <div className='flex flex-wrap items-center justify-between gap-3'>
-                        <p className='text-muted-foreground text-sm'>
-                            <span className='text-foreground font-medium'>{filtered.length}</span>
-                            {' / '}
-                            <span className='text-foreground font-medium'>{catalog.length}</span>{' '}
-                            {t('admin.marketplace.plugins.catalog_suffix')}
-                            {updatesAvailable > 0 ? (
-                                <>
-                                    {' · '}
-                                    <span className='font-medium text-amber-600 dark:text-amber-400'>
-                                        {t(
-                                            updatesAvailable === 1
-                                                ? 'admin.marketplace.plugins.updates_available_one'
-                                                : 'admin.marketplace.plugins.updates_available_other',
-                                            { count: String(updatesAvailable) },
+                        <div className='flex flex-wrap items-center gap-2 px-1'>
+                            <div className='fp-surface-inset inline-flex rounded-lg border p-0.5'>
+                                {(['all', 'free', 'paid'] as const).map((key) => (
+                                    <button
+                                        key={key}
+                                        type='button'
+                                        onClick={() => setPriceFilter(key)}
+                                        className={cn(
+                                            'rounded-md px-3 py-1 text-xs font-medium transition-colors',
+                                            priceFilter === key
+                                                ? 'bg-primary/10 text-primary'
+                                                : 'text-muted-foreground hover:text-foreground',
                                         )}
-                                    </span>
-                                </>
+                                    >
+                                        {priceFilterLabel(key)}
+                                    </button>
+                                ))}
+                            </div>
+                            <span className='text-muted-foreground px-1 text-xs whitespace-nowrap'>
+                                {t('admin.marketplace.plugins.count_of', {
+                                    shown: String(filtered.length),
+                                    total: String(catalog.length),
+                                })}
+                            </span>
+                            {updatesAvailable > 0 ? (
+                                <StatusDot tone='warning'>
+                                    {t(
+                                        updatesAvailable === 1
+                                            ? 'admin.marketplace.plugins.updates_available_one'
+                                            : 'admin.marketplace.plugins.updates_available_other',
+                                        { count: String(updatesAvailable) },
+                                    )}
+                                </StatusDot>
                             ) : null}
-                        </p>
-                        <div className='flex flex-wrap gap-2'>
                             <Button
                                 size='sm'
-                                variant='outline'
+                                variant='ghost'
                                 onClick={() => setSelected(new Set(actionableSlugs))}
                                 disabled={actionableSlugs.length === 0}
                             >
                                 <CheckSquare className='mr-2 h-4 w-4' />
                                 {t('admin.marketplace.plugins.select_actionable')}
                             </Button>
-                            <Button
-                                size='sm'
-                                variant='outline'
-                                onClick={() => setSelected(new Set())}
-                                disabled={!selected.size}
-                            >
-                                <Square className='mr-2 h-4 w-4' />
-                                {t('admin.marketplace.plugins.clear_selection')}
-                            </Button>
-                            <Button
-                                size='sm'
-                                onClick={() => void installSelected()}
-                                disabled={bulkInstalling || !selected.size}
-                            >
-                                {bulkInstalling ? (
-                                    <Loader2 className='mr-2 h-4 w-4 animate-spin' />
-                                ) : (
-                                    <Download className='mr-2 h-4 w-4' />
-                                )}
-                                {t('admin.marketplace.plugins.apply_selected', { count: String(selected.size) })}
-                            </Button>
                         </div>
                     </div>
 
+                    {selected.size > 0 ? (
+                        <div className='fp-surface border-primary/30 flex flex-wrap items-center justify-between gap-3 rounded-xl border px-4 py-2.5'>
+                            <p className='text-sm'>
+                                {t('admin.marketplace.plugins.selected_count', { count: String(selected.size) })}
+                            </p>
+                            <div className='flex gap-2'>
+                                <Button size='sm' variant='ghost' onClick={() => setSelected(new Set())}>
+                                    {t('admin.marketplace.plugins.clear_selection')}
+                                </Button>
+                                <Button size='sm' onClick={() => void installSelected()} disabled={bulkInstalling}>
+                                    {bulkInstalling ? (
+                                        <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                                    ) : (
+                                        <Download className='mr-2 h-4 w-4' />
+                                    )}
+                                    {t('admin.marketplace.plugins.apply_selected', { count: String(selected.size) })}
+                                </Button>
+                            </div>
+                        </div>
+                    ) : null}
+
                     {loading ? (
-                        <div className='text-muted-foreground flex items-center gap-2 text-sm'>
-                            <Loader2 className='h-4 w-4 animate-spin' />{' '}
-                            {t('admin.marketplace.plugins.loading_catalog')}
+                        <div className='grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4' aria-busy='true'>
+                            {Array.from({ length: 6 }).map((_, i) => (
+                                <div key={i} className='fp-surface h-80 animate-pulse rounded-2xl border' />
+                            ))}
                         </div>
                     ) : filtered.length === 0 ? (
                         <EmptyState
@@ -417,11 +422,10 @@ export default function MythicProductsPage() {
                             icon={Store}
                         />
                     ) : (
-                        <div className='grid gap-5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4'>
+                        <div className='grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4'>
                             {filtered.map((item) => {
                                 const p = item.product!;
                                 const slug = productSlug(p);
-                                const identifier = pluginIdentifier(p);
                                 const banner = bannerUrl(p);
                                 const installable = canInstallItem(item);
                                 const local = resolveInstalledPlugin(p, installedPlugins);
@@ -438,129 +442,102 @@ export default function MythicProductsPage() {
                                 const checked = selected.has(slug);
                                 const avg = Number(p.average_rating || 0);
                                 const reviewCount = Number(p.review_count || 0);
+                                const initial = (p.name || slug || '?').trim().charAt(0).toUpperCase();
 
                                 return (
                                     <article
                                         key={slug}
                                         className={cn(
-                                            'bg-card/80 group overflow-hidden rounded-2xl shadow-sm ring-1 ring-transparent transition',
-                                            'hover:bg-card hover:shadow-md',
-                                            checked ? 'ring-primary/50' : 'ring-border/40',
+                                            'fp-surface group flex flex-col overflow-hidden rounded-2xl border transition-colors',
+                                            'hover:border-primary/30',
+                                            checked && 'border-primary/50',
                                         )}
                                     >
-                                        <button
-                                            type='button'
-                                            className='block w-full text-left'
-                                            onClick={() => goDetail(slug)}
-                                        >
-                                            <div className='bg-muted relative aspect-[16/9] overflow-hidden'>
-                                                {banner ? (
-                                                    // eslint-disable-next-line @next/next/no-img-element
-                                                    <img
-                                                        src={banner}
-                                                        alt=''
-                                                        className='h-full w-full object-cover transition duration-300 group-hover:scale-[1.02]'
-                                                    />
-                                                ) : (
-                                                    <div className='flex h-full items-center justify-center'>
-                                                        <Package className='text-muted-foreground h-8 w-8' />
-                                                    </div>
-                                                )}
-                                                <span
-                                                    className={cn(
-                                                        'absolute top-2.5 right-2.5 rounded-md px-2 py-0.5 text-[11px] font-semibold shadow-sm',
-                                                        isFree
-                                                            ? 'bg-emerald-600 text-white'
-                                                            : 'bg-background/90 text-foreground backdrop-blur-sm',
-                                                    )}
-                                                >
-                                                    {priceLabel}
-                                                </span>
-                                            </div>
-                                            <div className='space-y-2.5 p-4'>
-                                                <div className='flex items-start gap-2.5'>
-                                                    {p.icon_url ? (
+                                        <div className='relative'>
+                                            <button
+                                                type='button'
+                                                className='block w-full text-left'
+                                                onClick={() => goDetail(slug)}
+                                                aria-label={p.name}
+                                            >
+                                                <div className='fp-surface-inset relative aspect-[16/9] overflow-hidden border-b'>
+                                                    {banner ? (
                                                         // eslint-disable-next-line @next/next/no-img-element
                                                         <img
-                                                            src={p.icon_url}
+                                                            src={banner}
                                                             alt=''
-                                                            className='h-9 w-9 shrink-0 rounded-lg object-cover'
+                                                            className='h-full w-full object-cover transition duration-300 group-hover:scale-[1.02]'
                                                         />
-                                                    ) : null}
-                                                    <div className='min-w-0'>
-                                                        <h3 className='truncate text-sm font-semibold'>{p.name}</h3>
-                                                        {identifier ? (
-                                                            <p className='text-muted-foreground truncate font-mono text-[11px]'>
-                                                                {identifier}
-                                                            </p>
-                                                        ) : null}
-                                                        <p className='text-muted-foreground line-clamp-2 text-xs'>
-                                                            {p.tagline}
-                                                        </p>
-                                                        {installed && local?.version ? (
-                                                            <p className='text-muted-foreground mt-1 text-[11px]'>
-                                                                {latest
-                                                                    ? t(
-                                                                          'admin.marketplace.plugins.labels.versions_line',
-                                                                          {
-                                                                              installed: local.version,
-                                                                              store: latest,
-                                                                          },
-                                                                      )
-                                                                    : t(
-                                                                          'admin.marketplace.plugins.labels.installed_version',
-                                                                          {
-                                                                              version: local.version,
-                                                                          },
-                                                                      )}
-                                                            </p>
-                                                        ) : latest ? (
-                                                            <p className='text-muted-foreground mt-1 text-[11px]'>
-                                                                {t('admin.marketplace.plugins.labels.latest_version', {
-                                                                    version: latest,
-                                                                })}
-                                                            </p>
-                                                        ) : null}
-                                                    </div>
+                                                    ) : (
+                                                        <div className='from-primary/10 flex h-full items-center justify-center bg-linear-to-br to-transparent'>
+                                                            <span className='text-primary/70 text-4xl font-semibold'>
+                                                                {initial}
+                                                            </span>
+                                                        </div>
+                                                    )}
                                                 </div>
-                                                <div className='flex items-center justify-between gap-2'>
-                                                    <div className='text-muted-foreground flex min-w-0 items-center gap-2 text-[11px]'>
-                                                        {p.seller?.profile_photo_url ? (
-                                                            // eslint-disable-next-line @next/next/no-img-element
-                                                            <img
-                                                                src={p.seller.profile_photo_url}
-                                                                alt=''
-                                                                className='h-4 w-4 rounded-full'
-                                                            />
-                                                        ) : null}
-                                                        <span className='truncate'>
-                                                            {t('admin.marketplace.plugins.labels.by_author', {
-                                                                author:
-                                                                    p.seller?.name ||
-                                                                    t(
-                                                                        'admin.marketplace.plugins.labels.default_seller',
-                                                                    ),
-                                                            })}
-                                                        </span>
-                                                    </div>
-                                                    <div className='flex shrink-0 items-center gap-1'>
-                                                        {updateAvailable ? (
-                                                            <span className='rounded-md bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 dark:text-amber-400'>
-                                                                {t('admin.marketplace.plugins.labels.update')}
-                                                            </span>
-                                                        ) : installed ? (
-                                                            <span className='rounded-md bg-blue-500/15 px-1.5 py-0.5 text-[10px] font-medium text-blue-600 dark:text-blue-400'>
-                                                                {t('admin.marketplace.plugins.labels.installed')}
-                                                            </span>
-                                                        ) : null}
-                                                        {item.owned ? (
-                                                            <span className='rounded-md bg-emerald-500/15 px-1.5 py-0.5 text-[10px] font-medium text-emerald-600 dark:text-emerald-400'>
-                                                                {t('admin.marketplace.plugins.labels.owned')}
-                                                            </span>
-                                                        ) : null}
-                                                    </div>
+                                            </button>
+                                            <span
+                                                className={cn(
+                                                    'absolute top-2.5 right-2.5 rounded-md border px-2 py-0.5 text-xs font-medium backdrop-blur-md',
+                                                    isFree
+                                                        ? 'border-emerald-500/30 bg-emerald-500/15 text-emerald-300'
+                                                        : 'border-white/10 bg-black/50 text-white',
+                                                )}
+                                            >
+                                                {priceLabel}
+                                            </span>
+                                            {actionable ? (
+                                                <div className='absolute top-2.5 left-2.5 rounded-md border border-white/10 bg-black/50 p-1 backdrop-blur-md'>
+                                                    <Checkbox
+                                                        checked={checked}
+                                                        disabled={busy}
+                                                        aria-label={t('admin.marketplace.plugins.select_one')}
+                                                        onCheckedChange={(v) =>
+                                                            setSelected((prev) => {
+                                                                const next = new Set(prev);
+                                                                if (v) next.add(slug);
+                                                                else next.delete(slug);
+                                                                return next;
+                                                            })
+                                                        }
+                                                    />
                                                 </div>
-                                                <div className='flex items-center gap-1.5 text-[11px]'>
+                                            ) : null}
+                                        </div>
+
+                                        <div className='flex flex-1 flex-col gap-3 p-4'>
+                                            <div className='flex items-start gap-3'>
+                                                {p.icon_url ? (
+                                                    // eslint-disable-next-line @next/next/no-img-element
+                                                    <img
+                                                        src={p.icon_url}
+                                                        alt=''
+                                                        className='h-10 w-10 shrink-0 rounded-lg object-cover'
+                                                    />
+                                                ) : (
+                                                    <div className='fp-icon-tile flex h-10 w-10 shrink-0 items-center justify-center rounded-lg'>
+                                                        <Package className='h-5 w-5' />
+                                                    </div>
+                                                )}
+                                                <div className='min-w-0'>
+                                                    <h3 className='truncate font-semibold'>{p.name}</h3>
+                                                    <p className='text-muted-foreground truncate text-xs'>
+                                                        {t('admin.marketplace.plugins.labels.by_author', {
+                                                            author:
+                                                                p.seller?.name ||
+                                                                t('admin.marketplace.plugins.labels.default_seller'),
+                                                        })}
+                                                    </p>
+                                                </div>
+                                            </div>
+
+                                            <p className='text-muted-foreground line-clamp-2 min-h-10 text-sm'>
+                                                {p.tagline}
+                                            </p>
+
+                                            <div className='mt-auto flex flex-wrap items-center justify-between gap-2 text-xs'>
+                                                <span className='inline-flex items-center gap-1.5'>
                                                     <StarDisplay
                                                         rating={avg}
                                                         ariaLabel={t('admin.marketplace.plugins.detail.rating_stars', {
@@ -569,40 +546,58 @@ export default function MythicProductsPage() {
                                                     />
                                                     <span className='text-muted-foreground'>
                                                         {avg > 0
-                                                            ? avg.toFixed(1)
+                                                            ? `${avg.toFixed(1)}${reviewCount > 0 ? ` (${reviewCount})` : ''}`
                                                             : t('admin.marketplace.plugins.labels.no_ratings')}
-                                                        {reviewCount > 0 ? ` · ${reviewCount}` : ''}
                                                     </span>
-                                                </div>
+                                                </span>
+                                                {installed && local?.version ? (
+                                                    <span className='text-muted-foreground font-mono'>
+                                                        v{local.version}
+                                                        {updateAvailable && latest ? ` > v${latest}` : ''}
+                                                    </span>
+                                                ) : latest ? (
+                                                    <span className='text-muted-foreground font-mono'>v{latest}</span>
+                                                ) : null}
                                             </div>
-                                        </button>
-                                        <div className='flex items-center gap-2 px-4 pb-3.5'>
-                                            <Checkbox
-                                                checked={checked}
-                                                disabled={!actionable || busy}
-                                                onCheckedChange={(v) =>
-                                                    setSelected((prev) => {
-                                                        const next = new Set(prev);
-                                                        if (v) next.add(slug);
-                                                        else next.delete(slug);
-                                                        return next;
-                                                    })
-                                                }
-                                            />
+
+                                            <div className='flex flex-wrap gap-x-3 gap-y-1'>
+                                                {updateAvailable ? (
+                                                    <StatusDot tone='warning'>
+                                                        {t('admin.marketplace.plugins.labels.update')}
+                                                    </StatusDot>
+                                                ) : installed ? (
+                                                    <StatusDot tone='success'>
+                                                        {t('admin.marketplace.plugins.labels.installed')}
+                                                    </StatusDot>
+                                                ) : (
+                                                    <StatusDot tone='muted'>
+                                                        {t('admin.marketplace.plugins.labels.not_installed')}
+                                                    </StatusDot>
+                                                )}
+                                                {item.owned ? (
+                                                    <StatusDot tone='success'>
+                                                        {t('admin.marketplace.plugins.labels.owned')}
+                                                    </StatusDot>
+                                                ) : null}
+                                            </div>
+                                        </div>
+
+                                        <div className='flex items-center gap-2 border-t px-4 py-3'>
                                             <Button
                                                 size='sm'
-                                                variant='outline'
+                                                variant='ghost'
                                                 className='flex-1'
                                                 onClick={() => goDetail(slug)}
                                             >
-                                                <Info className='mr-1 h-3.5 w-3.5' />
+                                                <Info className='mr-1.5 h-3.5 w-3.5' />
                                                 {t('admin.marketplace.plugins.labels.info')}
                                             </Button>
                                             <Button
                                                 size='sm'
-                                                variant='outline'
+                                                variant='ghost'
                                                 onClick={() => goDetail(slug, 'reviews')}
                                                 title={t('admin.marketplace.plugins.labels.reviews')}
+                                                aria-label={t('admin.marketplace.plugins.labels.reviews')}
                                             >
                                                 <Star
                                                     className={cn(
@@ -615,25 +610,25 @@ export default function MythicProductsPage() {
                                             </Button>
                                             <Button
                                                 size='sm'
+                                                className='flex-1'
+                                                variant={actionable ? 'default' : 'outline'}
                                                 disabled={!actionable || busy}
                                                 onClick={() => void installOrUpdate(slug)}
-                                                title={
-                                                    updateAvailable
-                                                        ? t('admin.marketplace.plugins.actions.update_to', {
-                                                              version: latest,
-                                                          })
-                                                        : installed
-                                                          ? t('admin.marketplace.plugins.actions.already_up_to_date')
-                                                          : t('admin.marketplace.plugins.actions.install')
-                                                }
                                             >
                                                 {installingSlug === slug ? (
-                                                    <Loader2 className='h-3.5 w-3.5 animate-spin' />
+                                                    <Loader2 className='mr-1.5 h-3.5 w-3.5 animate-spin' />
                                                 ) : updateAvailable ? (
-                                                    <RefreshCw className='h-3.5 w-3.5' />
+                                                    <RefreshCw className='mr-1.5 h-3.5 w-3.5' />
+                                                ) : installed ? (
+                                                    <CheckCircle2 className='mr-1.5 h-3.5 w-3.5' />
                                                 ) : (
-                                                    <Download className='h-3.5 w-3.5' />
+                                                    <Download className='mr-1.5 h-3.5 w-3.5' />
                                                 )}
+                                                {updateAvailable
+                                                    ? t('admin.marketplace.plugins.actions.update')
+                                                    : installed
+                                                      ? t('admin.marketplace.plugins.labels.installed')
+                                                      : t('admin.marketplace.plugins.actions.install')}
                                             </Button>
                                         </div>
                                     </article>
@@ -641,6 +636,18 @@ export default function MythicProductsPage() {
                             })}
                         </div>
                     )}
+
+                    <TipGrid>
+                        <TipCard title={t('admin.marketplace.plugins.tips.install_title')}>
+                            <p>{t('admin.marketplace.plugins.tips.install_body')}</p>
+                        </TipCard>
+                        <TipCard title={t('admin.marketplace.plugins.tips.updates_title')}>
+                            <p>{t('admin.marketplace.plugins.tips.updates_body')}</p>
+                        </TipCard>
+                        <TipCard title={t('admin.marketplace.plugins.tips.trust_title')} variant='warning'>
+                            <p>{t('admin.marketplace.plugins.tips.trust_body')}</p>
+                        </TipCard>
+                    </TipGrid>
                 </>
             )}
         </div>

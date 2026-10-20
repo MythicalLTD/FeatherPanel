@@ -15,17 +15,19 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { TipCard, TipGrid } from '@/components/featherui/TipCard';
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
+import { useLiveRefresh } from '@/hooks/useLiveRefresh';
+import { realtimeTopics } from '@/lib/realtime';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
-import { ResourceCard, type ResourceBadge } from '@/components/featherui/ResourceCard';
+import { ResourceCard, ResourceTable, type ResourceBadge } from '@/components/featherui/ResourceCard';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
-import { EmptyState } from '@/components/featherui/EmptyState';
-import { PageCard } from '@/components/featherui/PageCard';
+import { ListEmptyState } from '@/components/featherui/ListEmptyState';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { usePersistedListFilters } from '@/hooks/usePersistedListFilters';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
@@ -66,6 +68,8 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Dialog, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
+import { Sensitive } from '@/components/common/Sensitive';
+import { ListPagination } from '@/components/featherui/ListPagination';
 
 interface WebSpace {
     uuid: string;
@@ -127,7 +131,7 @@ export default function WebSpacesPage() {
     const { t } = useTranslation();
     const router = useRouter();
 
-    const { filters, patchFilters, resetFilters, hydrated } = usePersistedListFilters(
+    const { filters, patchFilters, resetFilters, hydrated, isFiltered } = usePersistedListFilters(
         WEBSPACES_LIST_FILTERS_KEY,
         WEBSPACES_LIST_FILTERS_DEFAULTS,
     );
@@ -212,13 +216,15 @@ export default function WebSpacesPage() {
 
     const hasInstalling = spaces.some((s) => s.status === 'installing' || s.status === 'reinstalling');
 
-    useEffect(() => {
-        if (!hasInstalling) return;
-        const id = setInterval(() => {
-            void fetchSpaces();
-        }, 5000);
-        return () => clearInterval(id);
-    }, [hasInstalling, fetchSpaces]);
+    // Live: the daemon reports install / transfer results and the panel pushes an event.
+    // Polling while something installs is the fallback without the hub.
+    useLiveRefresh({
+        topics: [realtimeTopics.adminWebspaces],
+        types: ['webspaces.updated'],
+        refresh: () => void fetchSpaces(),
+        poll: hasInstalling,
+        pollMs: 5000,
+    });
 
     const handleDeleteClick = (e: React.MouseEvent, uuid: string) => {
         e.stopPropagation();
@@ -377,7 +383,7 @@ export default function WebSpacesPage() {
 
             <WidgetRenderer widgets={getWidgets('admin-webspaces', 'after-header')} />
 
-            <div className='bg-card/50 border-border flex flex-col items-stretch gap-4 rounded-2xl border p-4 shadow-sm backdrop-blur-md'>
+            <div className='fp-surface flex flex-col items-stretch gap-4 rounded-2xl border p-4'>
                 <div className='group relative w-full flex-1'>
                     <Search className='text-muted-foreground group-focus-within:text-primary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transition-colors' />
                     <Input
@@ -441,48 +447,32 @@ export default function WebSpacesPage() {
             {loading ? (
                 <TableSkeleton count={5} />
             ) : spaces.length === 0 ? (
-                <EmptyState
+                <ListEmptyState
                     icon={AppWindow}
-                    title={t('admin.webSpaces.no_results')}
-                    description={t('admin.webSpaces.empty_desc')}
+                    title={t('emptyStates.webspaces.title')}
+                    description={t('emptyStates.webspaces.description')}
                     action={
                         <Button size='sm' onClick={() => router.push('/admin/webspaces/create')}>
                             <Plus className='mr-2 h-4 w-4' />
                             {t('admin.webSpaces.create')}
                         </Button>
                     }
+                    filtered={isFiltered}
+                    onClearFilters={resetFilters}
                 />
             ) : (
                 <>
                     {pagination.totalPages > 1 && (
-                        <div className='border-border bg-card/50 mb-4 flex items-center justify-between gap-4 rounded-xl border px-4 py-3'>
-                            <Button
-                                variant='outline'
-                                size='sm'
-                                disabled={!pagination.hasPrev}
-                                onClick={() => patchFilters({ page: page - 1 })}
-                                className='gap-1.5'
-                            >
-                                <ChevronLeft className='h-4 w-4' />
-                                {t('common.previous')}
-                            </Button>
-                            <span className='text-sm font-medium'>
-                                {page} / {pagination.totalPages}
-                                {pagination.total > 0 && ` (${pagination.total} ${t('common.total')})`}
-                            </span>
-                            <Button
-                                variant='outline'
-                                size='sm'
-                                disabled={!pagination.hasNext}
-                                onClick={() => patchFilters({ page: page + 1 })}
-                                className='gap-1.5'
-                            >
-                                {t('common.next')}
-                                <ChevronRight className='h-4 w-4' />
-                            </Button>
-                        </div>
+                        <ListPagination
+                            page={page}
+                            totalPages={pagination.totalPages}
+                            totalItems={pagination.total}
+                            pageSize={pageSize}
+                            onPageChange={(nextPage) => patchFilters({ page: nextPage })}
+                            className='mb-4'
+                        />
                     )}
-                    <div className='grid grid-cols-1 gap-4'>
+                    <ResourceTable>
                         {spaces.map((space) => {
                             const state = space.state || 'stopped';
                             const busy = powering?.startsWith(space.uuid);
@@ -546,7 +536,7 @@ export default function WebSpacesPage() {
                                             {space.ssl && (
                                                 <div className='text-muted-foreground flex items-center gap-1.5 text-xs'>
                                                     <Shield className='h-3.5 w-3.5' />
-                                                    <span>SSL</span>
+                                                    <span>{t('ui.admin.webspaces.sSL')}</span>
                                                 </div>
                                             )}
                                         </div>
@@ -617,7 +607,7 @@ export default function WebSpacesPage() {
                                 />
                             );
                         })}
-                    </div>
+                    </ResourceTable>
 
                     {pagination.totalPages > 1 && (
                         <div className='mt-8 flex items-center justify-center gap-2'>
@@ -645,25 +635,25 @@ export default function WebSpacesPage() {
                 </>
             )}
 
-            <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
-                <PageCard title={t('admin.webSpaces.help.managing.title')} icon={AppWindow}>
+            <TipGrid>
+                <TipCard title={t('admin.webSpaces.help.managing.title')} icon={AppWindow}>
                     <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.webSpaces.help.managing.description')}
                     </p>
-                </PageCard>
-                <PageCard title={t('admin.webSpaces.help.resources.title')} icon={Layers}>
+                </TipCard>
+                <TipCard title={t('admin.webSpaces.help.resources.title')} icon={Layers}>
                     <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.webSpaces.help.resources.description')}
                     </p>
-                </PageCard>
-                <PageCard title={t('admin.webSpaces.help.tips.title')} icon={HelpCircle} className='md:col-span-2'>
+                </TipCard>
+                <TipCard title={t('admin.webSpaces.help.tips.title')} icon={HelpCircle} className='md:col-span-2'>
                     <ul className='text-muted-foreground list-inside list-disc space-y-1 text-sm leading-relaxed'>
                         <li>{t('admin.webSpaces.help.tips.item1')}</li>
                         <li>{t('admin.webSpaces.help.tips.item2')}</li>
                         <li>{t('admin.webSpaces.help.tips.item3')}</li>
                     </ul>
-                </PageCard>
-            </div>
+                </TipCard>
+            </TipGrid>
 
             <AlertDialog open={confirmDeleteUuid !== null} onOpenChange={() => setConfirmDeleteUuid(null)}>
                 <AlertDialogContent>
@@ -737,7 +727,9 @@ export default function WebSpacesPage() {
                                 >
                                     <div className='flex flex-col'>
                                         <span className='font-semibold'>{user.username}</span>
-                                        <span className='text-muted-foreground text-xs'>{user.email}</span>
+                                        <span className='text-muted-foreground text-xs'>
+                                            <Sensitive>{user.email}</Sensitive>
+                                        </span>
                                     </div>
                                 </button>
                             ))
@@ -784,7 +776,9 @@ export default function WebSpacesPage() {
                                     <div className='flex flex-col'>
                                         <span className='font-semibold'>{node.name}</span>
                                         {node.fqdn && (
-                                            <span className='text-muted-foreground text-xs'>{node.fqdn}</span>
+                                            <span className='text-muted-foreground text-xs'>
+                                                <Sensitive>{node.fqdn}</Sensitive>
+                                            </span>
                                         )}
                                     </div>
                                 </button>

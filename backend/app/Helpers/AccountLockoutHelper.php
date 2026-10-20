@@ -29,8 +29,10 @@ use App\Plugins\Events\Events\AuthEvent;
  * Login uses escalating delays (does not deny the account owner). 2FA uses a
  * hard lockout because a 6-digit TOTP code has a much smaller keyspace.
  *
- * Fails open (does not block login) if Redis is unavailable, matching the
- * behavior of RateLimitMiddleware, so a Redis outage never locks everyone out.
+ * Redis is the primary counter store. When Redis is unreachable the same
+ * counters/locks are kept in a small file-backed store instead of dropping the
+ * protection entirely: a Redis outage is exactly the moment an attacker would
+ * like to have no counters at all.
  */
 class AccountLockoutHelper
 {
@@ -58,7 +60,7 @@ class AccountLockoutHelper
         try {
             $redis = self::getRedis();
             if ($redis === null) {
-                return 0;
+                return FileCounterStore::ttl(self::lockKey($identifier));
             }
 
             try {
@@ -97,7 +99,7 @@ class AccountLockoutHelper
         try {
             $redis = self::getRedis();
             if ($redis === null) {
-                return 0;
+                return FileCounterStore::get(self::countKey($identifier));
             }
 
             $count = $redis->get(self::countKey($identifier));
@@ -118,8 +120,8 @@ class AccountLockoutHelper
      * caller may proceed; on success call clear(), on failure the counter
      * already reflects this attempt.
      *
-     * Fails closed (returns false) if Redis is unavailable — do not allow
-     * unbounded 2FA verification attempts without a working counter store.
+     * Fails closed (returns false) when no counter store is usable - do not
+     * allow unbounded 2FA verification attempts without a working counter store.
      */
     public static function reserveHardLockAttempt(
         string $identifier,
@@ -127,13 +129,17 @@ class AccountLockoutHelper
         ?int $lockoutSeconds = null,
     ): bool {
         try {
-            $redis = self::getRedis();
-            if ($redis === null) {
-                return false;
-            }
-
             $maxAttempts ??= self::MAX_ATTEMPTS;
             $lockoutSeconds ??= self::LOCKOUT_SECONDS;
+
+            $redis = self::getRedis();
+            if ($redis === null) {
+                if (!FileCounterStore::available()) {
+                    return false;
+                }
+
+                return self::reserveHardLockAttemptViaFileStore($identifier, $maxAttempts, $lockoutSeconds);
+            }
 
             $script = <<<'LUA'
 if redis.call('EXISTS', KEYS[2]) == 1 then
@@ -204,13 +210,27 @@ LUA;
         bool $hardLock = true,
     ): void {
         try {
-            $redis = self::getRedis();
-            if ($redis === null) {
-                return;
-            }
-
             $maxAttempts ??= self::MAX_ATTEMPTS;
             $lockoutSeconds ??= self::LOCKOUT_SECONDS;
+
+            $redis = self::getRedis();
+            if ($redis === null) {
+                if (!FileCounterStore::available()) {
+                    return;
+                }
+
+                $count = FileCounterStore::increment(self::countKey($identifier), self::ATTEMPT_WINDOW_SECONDS);
+                if ($hardLock && $count >= $maxAttempts) {
+                    FileCounterStore::setEx(self::lockKey($identifier), $lockoutSeconds);
+                    self::emitAuthEvent(AuthEvent::onAuthAccountLocked(), [
+                        'identifier' => $identifier,
+                        'lockout_seconds' => $lockoutSeconds,
+                        'attempts' => $count,
+                    ]);
+                }
+
+                return;
+            }
 
             $count = self::incrementFailureCount($redis, $identifier);
             if ($count === null) {
@@ -230,7 +250,7 @@ LUA;
                 }
             }
         } catch (\Throwable $e) {
-            // Fail open: never let Redis errors break authentication.
+            // Fail open: never let counter errors break authentication.
         }
     }
 
@@ -242,6 +262,18 @@ LUA;
         try {
             $redis = self::getRedis();
             if ($redis === null) {
+                if (!FileCounterStore::available()) {
+                    return;
+                }
+
+                $wasLocked = FileCounterStore::exists(self::lockKey($identifier));
+                FileCounterStore::delete([self::countKey($identifier), self::lockKey($identifier)]);
+                if ($wasLocked) {
+                    self::emitAuthEvent(AuthEvent::onAuthAccountUnlocked(), [
+                        'identifier' => $identifier,
+                    ]);
+                }
+
                 return;
             }
 
@@ -266,13 +298,53 @@ LUA;
         try {
             $redis = self::getRedis();
             if ($redis === null) {
-                return false;
+                return FileCounterStore::exists(self::lockKey($identifier));
             }
 
             return (bool) $redis->exists(self::lockKey($identifier));
         } catch (\Throwable $e) {
             return false;
         }
+    }
+
+    /**
+     * File-backed equivalent of the Redis Lua reservation script: same order of
+     * checks (locked first, counter second), same threshold semantics.
+     */
+    private static function reserveHardLockAttemptViaFileStore(string $identifier, int $maxAttempts, int $lockoutSeconds): bool
+    {
+        if (FileCounterStore::exists(self::lockKey($identifier))) {
+            self::emitAuthEvent(AuthEvent::onAuthAccountLocked(), [
+                'identifier' => $identifier,
+                'lockout_seconds' => $lockoutSeconds,
+                'already_locked' => true,
+            ]);
+
+            return false;
+        }
+
+        $count = FileCounterStore::increment(self::countKey($identifier), self::ATTEMPT_WINDOW_SECONDS);
+        if ($count <= 0) {
+            // Store not usable - fail closed like the Redis-less path did before.
+            return false;
+        }
+
+        if ($count > $maxAttempts) {
+            FileCounterStore::setEx(self::lockKey($identifier), $lockoutSeconds);
+
+            return false;
+        }
+
+        if ($count >= $maxAttempts) {
+            FileCounterStore::setEx(self::lockKey($identifier), $lockoutSeconds);
+            self::emitAuthEvent(AuthEvent::onAuthAccountLocked(), [
+                'identifier' => $identifier,
+                'lockout_seconds' => $lockoutSeconds,
+                'attempts' => $count,
+            ]);
+        }
+
+        return true;
     }
 
     /**

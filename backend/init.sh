@@ -158,5 +158,11 @@ echo ""
 echo "🚀 FeatherPanel Docker is ready to work! 🚀"
 echo ""
 
+# PHP mode (worker by default, FRANKENPHP_WORKER=false for classic) and worker pool sizes.
+. /etc/caddy/caddy/frankenphp-env.sh
+# Worker restart stamps (plugin install/remove, .env changes) live here.
+mkdir -p /var/www/html/storage/caches/runtime
+chown www-data:www-data /var/www/html/storage/caches/runtime 2>/dev/null || true
+
 # Start FrankenPHP (Caddy + PHP) and cron via supervisord
 exec /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf

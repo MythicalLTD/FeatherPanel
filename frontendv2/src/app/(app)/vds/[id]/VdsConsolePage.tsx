@@ -29,6 +29,7 @@ import { toast } from 'sonner';
 import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 import VdsPerformance from '@/components/vds/VdsPerformance';
 import VdsInfoCards, { VdsNetworkCard } from '@/components/vds/VdsInfoCards';
+import { VncConsole } from '@/components/vds/VncConsole';
 import {
     Play,
     Square,
@@ -44,6 +45,7 @@ import {
     Lock,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Sensitive } from '@/components/common/Sensitive';
 
 interface VmStatus {
     status?: string;
@@ -166,6 +168,7 @@ export default function VdsConsolePage() {
     const [statusLoading, setStatusLoading] = useState(false);
     const [powering, setPowering] = useState<string | null>(null);
     const [vncLoading, setVncLoading] = useState(false);
+    const [vncUrl, setVncUrl] = useState<string | null>(null);
     const [showAccessPassword, setShowAccessPassword] = useState(false);
     const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const statusInFlightRef = useRef(false);
@@ -306,6 +309,12 @@ export default function VdsConsolePage() {
         }
     };
 
+    /**
+     * Requests a VNC ticket and opens the console.
+     *
+     * Panel-proxied mode (`wss_url`) embeds noVNC in-page; the legacy
+     * `pve_redirect_url` mode still opens Proxmox in a new tab.
+     */
     const openVnc = async () => {
         if (!id) return;
         setVncLoading(true);
@@ -316,7 +325,7 @@ export default function VdsConsolePage() {
                 if (payload.pve_redirect_url) {
                     window.open(payload.pve_redirect_url, '_blank', 'noopener,noreferrer');
                 } else if (payload.wss_url) {
-                    toast.info(t('vds.console.toast.vnc_wss', { url: payload.wss_url }));
+                    setVncUrl(payload.wss_url);
                 }
             } else {
                 toast.error(getApiErrorMessageFromPayload(data, t, 'vds.console.toast.vnc_failed'));
@@ -371,7 +380,7 @@ export default function VdsConsolePage() {
               ? instance.memory * 1024 * 1024
               : 0);
     // Proxmox returns disk=0 for QEMU VMs when the guest agent isn't reporting
-    // filesystem usage — treat 0 as "no data" (null) rather than "0 bytes used".
+    // filesystem usage - treat 0 as "no data" (null) rather than "0 bytes used".
     const diskUsed = vmStatus?.disk ? vmStatus.disk : null;
     const diskMax =
         vmStatus?.maxdisk ||
@@ -399,7 +408,7 @@ export default function VdsConsolePage() {
                     <div className='mt-1 flex flex-wrap items-center gap-2'>
                         <StatusBadge status={liveStatus} t={t} />
                         <span className='text-muted-foreground/70 border-border/30 rounded-md border px-2 py-0.5 text-xs font-medium'>
-                            VMID {instance.vmid}
+                            {t('ui.vds.vdsConsolePage.vMIDVmid', { vmid: String(instance.vmid) })}
                         </span>
                         <span className='text-muted-foreground/70 border-border/30 rounded-md border px-2 py-0.5 text-xs font-medium'>
                             {instance.vm_type?.toUpperCase() ?? 'QEMU'}
@@ -407,7 +416,7 @@ export default function VdsConsolePage() {
                         {ip && (
                             <span className='text-muted-foreground/70 flex items-center gap-1 font-mono text-xs'>
                                 <Globe className='h-3.5 w-3.5' />
-                                {ip}
+                                <Sensitive>{ip}</Sensitive>
                             </span>
                         )}
                     </div>
@@ -610,6 +619,17 @@ export default function VdsConsolePage() {
                     />
                 </div>
             </div>
+
+            {vncUrl && (
+                <div className='relative'>
+                    <div className='absolute top-2 right-2 z-20'>
+                        <Button variant='glass' size='sm' onClick={() => setVncUrl(null)}>
+                            {t('vds.console.close_console')}
+                        </Button>
+                    </div>
+                    <VncConsole url={vncUrl} />
+                </div>
+            )}
 
             <WidgetRenderer widgets={getVdsWidgets('after-stats')} />
 

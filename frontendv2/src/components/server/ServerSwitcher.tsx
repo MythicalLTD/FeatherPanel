@@ -41,6 +41,7 @@ import {
 import { filesApi } from '@/lib/files-api';
 import { displayStatus, getStatusDotColor } from '@/lib/server-utils';
 import type { Server } from '@/types/server';
+import { safeCssUrl } from '@/lib/safe-css-url';
 
 const SWITCHER_TAB_KEY = 'featherpanel_server_switcher_tab';
 
@@ -59,7 +60,7 @@ function ServerAvatar({ server, className }: { server: Server; className?: strin
                     'ring-border/40 shrink-0 overflow-hidden rounded-md bg-cover bg-center ring-1',
                     className,
                 )}
-                style={{ backgroundImage: `url(${banner})` }}
+                style={{ backgroundImage: safeCssUrl(banner) }}
                 role='img'
                 aria-label={server.name}
             />

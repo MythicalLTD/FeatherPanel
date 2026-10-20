@@ -16,12 +16,15 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import { useTranslation } from '@/contexts/TranslationContext';
+import { HideIpsToggle } from '@/components/preferences/HideIpsToggle';
+import { maskEndpoint } from '@/lib/ip-mask';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Button } from '@/components/featherui/Button';
 import { Label } from '@/components/ui/label';
 import { Network, Search, MapPin, Server, Plug } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { StepProps, Location, Node, Allocation } from './types';
+import { Sensitive } from '@/components/common/Sensitive';
 
 interface Step2Props extends StepProps {
     locations: Location[];
@@ -142,7 +145,7 @@ export function Step2Allocation({
                                             {selectedEntities.node.name}
                                         </span>
                                         <span className='text-muted-foreground text-xs'>
-                                            ({selectedEntities.node.fqdn})
+                                            (<Sensitive>{selectedEntities.node.fqdn}</Sensitive>)
                                         </span>
                                     </div>
                                 ) : (
@@ -182,7 +185,13 @@ export function Step2Allocation({
                                     <div className='flex items-center gap-2'>
                                         <Plug className='text-primary h-4 w-4' />
                                         <span className='text-foreground font-medium'>
-                                            {selectedEntities.allocation.ip}:{selectedEntities.allocation.port}
+                                            <Sensitive>
+                                                {maskEndpoint(
+                                                    selectedEntities.allocation.ip,
+                                                    selectedEntities.allocation.port,
+                                                    false,
+                                                )}
+                                            </Sensitive>
                                         </span>
                                     </div>
                                 ) : (
@@ -197,6 +206,8 @@ export function Step2Allocation({
                         </div>
                         <p className='text-muted-foreground text-xs'>{t('admin.servers.form.allocation_help')}</p>
                     </div>
+
+                    <HideIpsToggle />
                 </div>
             </PageCard>
         </div>

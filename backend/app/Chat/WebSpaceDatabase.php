@@ -152,6 +152,10 @@ class WebSpaceDatabase
         }
 
         $pdo = Database::getPdoConnection();
+        $data = Database::filterColumns(self::$table, $data);
+        if ($data === []) {
+            return false;
+        }
         $fields = array_keys($data);
         $setClause = implode(', ', array_map(static fn ($f) => '`' . str_replace('`', '``', $f) . '` = :' . $f, $fields));
         $sql = 'UPDATE ' . self::$table . ' SET ' . $setClause . ' WHERE id = :id';

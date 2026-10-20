@@ -21,10 +21,11 @@ import { Dialog, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { cn } from '@/lib/utils';
-import { Mail, RefreshCw, Clock, ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react';
+import { Mail, RefreshCw, Clock, RotateCcw } from 'lucide-react';
 import axios from 'axios';
 import { toast } from 'sonner';
 import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
+import { ListPagination } from '@/components/featherui/ListPagination';
 
 interface MailItem {
     id: number;
@@ -259,40 +260,17 @@ export default function MailTab() {
             </div>
 
             {pagination && pagination.total_pages > 1 && (
-                <div className='border-border bg-card/50 flex items-center justify-between gap-4 rounded-xl border px-4 py-3'>
-                    <Button
-                        variant='outline'
-                        size='sm'
-                        disabled={!pagination.has_prev}
-                        onClick={() => fetchMails(pagination.current_page - 1)}
-                        className='gap-1.5'
-                    >
-                        <ChevronLeft className='h-4 w-4' />
-                        {t('common.previous')}
-                    </Button>
-                    <span className='text-sm font-medium'>
-                        {pagination.current_page} / {pagination.total_pages}
-                    </span>
-                    <Button
-                        variant='outline'
-                        size='sm'
-                        disabled={!pagination.has_next}
-                        onClick={() => fetchMails(pagination.current_page + 1)}
-                        className='gap-1.5'
-                    >
-                        {t('common.next')}
-                        <ChevronRight className='h-4 w-4' />
-                    </Button>
-                </div>
+                <ListPagination
+                    page={pagination.current_page}
+                    totalPages={pagination.total_pages}
+                    onPageChange={(nextPage) => fetchMails(nextPage)}
+                />
             )}
 
             {mails.length > 0 ? (
                 <div className='space-y-4'>
                     {mails.map((mail) => (
-                        <div
-                            key={mail.id}
-                            className='border-border/50 bg-card/50 rounded-lg border p-4 backdrop-blur-xl transition-colors'
-                        >
+                        <div key={mail.id} className='fp-surface-inset rounded-xl border p-4 transition-colors'>
                             <div className='mb-3 flex items-start justify-between gap-3'>
                                 <div className='flex-1'>
                                     <h4 className='text-foreground mb-2 text-sm font-semibold'>{mail.subject}</h4>

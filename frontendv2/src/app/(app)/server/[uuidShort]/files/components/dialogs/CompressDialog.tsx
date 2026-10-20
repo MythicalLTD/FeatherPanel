@@ -125,7 +125,7 @@ export function CompressDialog({
                             onChange={(val) => setExtension(String(val))}
                             options={formats}
                             disabled={compressing}
-                            buttonClassName='h-11 bg-white/5 border-white/10 hover:border-primary/50 rounded-xl transition-all'
+                            buttonClassName='h-11 bg-muted/40 border-border/60 hover:border-primary/50 rounded-xl transition-all'
                         />
                     </div>
 
@@ -142,7 +142,7 @@ export function CompressDialog({
                             value={name}
                             onChange={(e) => setName(e.target.value)}
                             disabled={compressing}
-                            className='focus:border-primary/50 h-11 rounded-xl border-white/10 bg-white/5'
+                            className='focus:border-primary/50 border-border/60 bg-muted/40 h-11 rounded-xl'
                         />
                         <p className='text-muted-foreground text-[10px]'>{t('files.dialogs.compress.name_help')}</p>
                     </div>

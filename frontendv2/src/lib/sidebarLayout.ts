@@ -17,8 +17,10 @@ import { cn } from '@/lib/utils';
 import type { ChromeLayout } from '@/hooks/useChromeLayout';
 import {
     DOCK_PANEL_COLLAPSED_CLASS,
+    DOCK_PANEL_EXPANDED_CLASS,
     DOCK_PANEL_LABELS_CLASS,
     DOCK_SHELL_INSET_COLLAPSED_CLASS,
+    DOCK_SHELL_INSET_EXPANDED_CLASS,
     DOCK_SHELL_INSET_LABELS_CLASS,
 } from '@/components/sidebar/MacDock';
 import type { DockDisplay, DockSize, SidebarGlow, SidebarPosition, SidebarStyle } from '@/hooks/useSidebarPreferences';
@@ -30,7 +32,7 @@ export function getChromeGlowClass(glow: SidebarGlow): string {
 }
 
 export function getSidebarSurfaceClass(sidebarStyle: SidebarStyle, sidebarGlow: SidebarGlow): string {
-    const base = sidebarStyle === 'solid' ? 'border-border/50 bg-card' : 'border-border/40 bg-card/55 backdrop-blur-xl';
+    const base = sidebarStyle === 'solid' ? 'border-border/50 bg-card' : 'fp-chrome-surface';
 
     const glowClass = getChromeGlowClass(sidebarGlow);
     if (glowClass) {
@@ -46,14 +48,17 @@ export function getShellContentInset(options: {
     dockDisplay?: DockDisplay;
     dockSize?: DockSize;
 }): string {
-    const { chromeLayout, sidebarPosition, sidebarCollapsed, dockSize = 'md' } = options;
+    const { chromeLayout, sidebarPosition, sidebarCollapsed, dockDisplay = 'icons', dockSize = 'md' } = options;
     const isClassic = chromeLayout === 'classic';
 
     if (sidebarPosition === 'bottom') {
         if (sidebarCollapsed) {
             return DOCK_SHELL_INSET_COLLAPSED_CLASS;
         }
-        return DOCK_SHELL_INSET_LABELS_CLASS[dockSize];
+        if (dockDisplay === 'labels') {
+            return DOCK_SHELL_INSET_LABELS_CLASS[dockSize];
+        }
+        return DOCK_SHELL_INSET_EXPANDED_CLASS[dockSize];
     }
 
     if (sidebarPosition === 'right') {
@@ -94,16 +99,29 @@ export function getDesktopSidebarPanelClass(options: {
     dockDisplay?: DockDisplay;
     dockSize?: DockSize;
 }): string {
-    const { chromeLayout, sidebarPosition, sidebarStyle, sidebarGlow = 'none', collapsed } = options;
+    const {
+        chromeLayout,
+        sidebarPosition,
+        sidebarStyle,
+        sidebarGlow = 'none',
+        collapsed,
+        dockDisplay = 'icons',
+        dockSize = 'md',
+    } = options;
     const glassPanel = getSidebarSurfaceClass(sidebarStyle, sidebarGlow);
 
     if (sidebarPosition === 'bottom') {
-        const heightClass = collapsed ? DOCK_PANEL_COLLAPSED_CLASS : DOCK_PANEL_LABELS_CLASS;
+        const heightClass = collapsed
+            ? DOCK_PANEL_COLLAPSED_CLASS
+            : dockDisplay === 'labels'
+              ? DOCK_PANEL_LABELS_CLASS[dockSize]
+              : DOCK_PANEL_EXPANDED_CLASS[dockSize];
         return cn(
-            'pointer-events-auto flex h-full min-h-0 w-full flex-col overflow-visible rounded-2xl border transition-[height] duration-200 ease-out',
+            // w-auto: the dock hugs its items and the shell centres it; long docks cap at max-w and scroll.
+            'pointer-events-auto flex h-full min-h-0 w-auto min-w-0 flex-col items-center justify-center overflow-visible rounded-2xl border transition-[height] duration-200 ease-out',
             glassPanel,
             heightClass,
-            'max-w-[min(100vw-1.5rem,64rem)]',
+            'max-w-[min(100vw-1.5rem,72rem)]',
             'py-1',
         );
     }

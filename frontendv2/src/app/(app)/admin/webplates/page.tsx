@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { TipCard, TipGrid } from '@/components/featherui/TipCard';
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
@@ -23,10 +24,9 @@ import { getApiErrorMessage } from '@/lib/api-errors';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
-import { PageCard } from '@/components/featherui/PageCard';
-import { ResourceCard } from '@/components/featherui/ResourceCard';
+import { ResourceCard, ResourceTable } from '@/components/featherui/ResourceCard';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
-import { EmptyState } from '@/components/featherui/EmptyState';
+import { ListEmptyState } from '@/components/featherui/ListEmptyState';
 import { toast } from 'sonner';
 import {
     LayoutTemplate,
@@ -58,6 +58,7 @@ import {
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { WEBPLATE_RUNTIMES, type WebPlate } from './types';
+import { ListPagination } from '@/components/featherui/ListPagination';
 
 const FILTERS_KEY = 'featherpanel_admin_webplates_filters_v1';
 const FILTERS_DEFAULTS = {
@@ -71,7 +72,10 @@ export default function WebPlatesPage() {
     const { t } = useTranslation();
     const router = useRouter();
     const { fetchWidgets, getWidgets } = usePluginWidgets('admin-webplates');
-    const { filters, patchFilters, resetFilters, hydrated } = usePersistedListFilters(FILTERS_KEY, FILTERS_DEFAULTS);
+    const { filters, patchFilters, resetFilters, hydrated, isFiltered } = usePersistedListFilters(
+        FILTERS_KEY,
+        FILTERS_DEFAULTS,
+    );
     const { searchQuery, runtime, page, pageSize } = filters;
 
     const [loading, setLoading] = useState(true);
@@ -171,7 +175,7 @@ export default function WebPlatesPage() {
 
             <WidgetRenderer widgets={getWidgets('admin-webplates', 'after-header')} />
 
-            <div className='bg-card/50 border-border flex flex-col items-stretch gap-4 rounded-2xl border p-4 shadow-sm backdrop-blur-md'>
+            <div className='fp-surface flex flex-col items-stretch gap-4 rounded-2xl border p-4'>
                 <div className='flex flex-col gap-3 sm:flex-row sm:items-center'>
                     <div className='group relative w-full flex-1'>
                         <Search className='text-muted-foreground group-focus-within:text-primary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transition-colors' />
@@ -219,48 +223,31 @@ export default function WebPlatesPage() {
             </div>
 
             {pagination.totalPages > 1 && !loading && (
-                <div className='border-border bg-card/50 mb-4 flex items-center justify-between gap-4 rounded-xl border px-4 py-3'>
-                    <Button
-                        variant='outline'
-                        size='sm'
-                        disabled={!pagination.hasPrev}
-                        onClick={() => patchFilters({ page: page - 1 })}
-                        className='gap-1.5'
-                    >
-                        <ChevronLeft className='h-4 w-4' />
-                        {t('common.previous')}
-                    </Button>
-                    <span className='text-sm font-medium'>
-                        {page} / {pagination.totalPages}
-                    </span>
-                    <Button
-                        variant='outline'
-                        size='sm'
-                        disabled={!pagination.hasNext}
-                        onClick={() => patchFilters({ page: page + 1 })}
-                        className='gap-1.5'
-                    >
-                        {t('common.next')}
-                        <ChevronRight className='h-4 w-4' />
-                    </Button>
-                </div>
+                <ListPagination
+                    page={page}
+                    totalPages={pagination.totalPages}
+                    onPageChange={(nextPage) => patchFilters({ page: nextPage })}
+                    className='mb-4'
+                />
             )}
 
             {loading ? (
                 <TableSkeleton count={5} />
             ) : plates.length === 0 ? (
-                <EmptyState
+                <ListEmptyState
                     icon={LayoutTemplate}
-                    title={t('admin.webPlates.no_results')}
-                    description={t('admin.webPlates.search_placeholder')}
+                    title={t('emptyStates.webplates.title')}
+                    description={t('emptyStates.webplates.description')}
                     action={
                         <Button onClick={() => router.push('/admin/webplates/create')}>
                             {t('admin.webPlates.create')}
                         </Button>
                     }
+                    filtered={isFiltered}
+                    onClearFilters={resetFilters}
                 />
             ) : (
-                <div className='grid grid-cols-1 gap-4'>
+                <ResourceTable>
                     <WidgetRenderer widgets={getWidgets('admin-webplates', 'before-list')} />
                     {plates.map((plate) => (
                         <ResourceCard
@@ -318,7 +305,7 @@ export default function WebPlatesPage() {
                             }
                         />
                     ))}
-                </div>
+                </ResourceTable>
             )}
 
             {pagination.totalPages > 1 && (
@@ -345,34 +332,34 @@ export default function WebPlatesPage() {
                 </div>
             )}
 
-            <PageCard title={t('admin.webPlates.help.cross_compatible.title')} icon={LayoutTemplate} variant='default'>
+            <TipCard title={t('admin.webPlates.help.cross_compatible.title')} icon={LayoutTemplate} variant='default'>
                 <p className='text-muted-foreground text-sm leading-relaxed'>
                     {t('admin.webPlates.help.cross_compatible.description')}
                 </p>
-            </PageCard>
+            </TipCard>
 
-            <div className='grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4'>
-                <PageCard title={t('admin.webPlates.help.what_are_webplates.title')} icon={BookOpen}>
+            <TipGrid>
+                <TipCard title={t('admin.webPlates.help.what_are_webplates.title')} icon={BookOpen}>
                     <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.webPlates.help.what_are_webplates.description')}
                     </p>
-                </PageCard>
-                <PageCard title={t('admin.webPlates.help.how_to_use.title')} icon={Box}>
+                </TipCard>
+                <TipCard title={t('admin.webPlates.help.how_to_use.title')} icon={Box}>
                     <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.webPlates.help.how_to_use.description')}
                     </p>
-                </PageCard>
-                <PageCard title={t('admin.webPlates.help.under_the_hood.title')} icon={Wrench}>
+                </TipCard>
+                <TipCard title={t('admin.webPlates.help.under_the_hood.title')} icon={Wrench}>
                     <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.webPlates.help.under_the_hood.description')}
                     </p>
-                </PageCard>
-                <PageCard title={t('admin.webPlates.help.sources.title')} icon={GitBranch}>
+                </TipCard>
+                <TipCard title={t('admin.webPlates.help.sources.title')} icon={GitBranch}>
                     <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.webPlates.help.sources.description')}
                     </p>
-                </PageCard>
-            </div>
+                </TipCard>
+            </TipGrid>
 
             <AlertDialog
                 open={confirmDeleteId !== null}

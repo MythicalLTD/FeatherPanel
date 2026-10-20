@@ -75,13 +75,13 @@ class PluginJsController
                 }
             }
 
-            $jsContent .= "\n// ===== FeatherPanel: Start of Custom JS =====\n";
+            $jsContent .= "\n// FeatherPanel: Start of Custom JS\n";
             $jsContent .= "// This section is reserved for user-defined or system-injected JavaScript.\n";
             $jsContent .= App::getInstance(true)->getConfig()->getSetting(
                 ConfigInterface::CUSTOM_JS,
                 "// dummy script - does nothing\n// Feel free to override the 'custom_js' setting in your configuration."
             ) . "\n";
-            $jsContent .= "// ===== FeatherPanel: End of Custom JS =====\n";
+            $jsContent .= "// FeatherPanel: End of Custom JS\n";
 
             $etag = '"' . hash('sha256', $jsContent) . '"';
             Cache::put($cacheKey, ['body' => $jsContent, 'etag' => $etag], 2);

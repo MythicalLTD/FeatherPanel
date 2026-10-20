@@ -1,5 +1,98 @@
 # Changelog
 
+## v1.5.0 STABLE
+
+### Added
+
+- Added FeatherOS, a browser desktop workspace for managing servers, files, notes, transfers, backups, databases, logs, schedules, terminals, settings, and other panel tools from one place. by @nayskutzu
+- Added a redesigned user dashboard with a greeting hero, server overview, customizable widgets, arrange mode, saved layout preferences, 24-hour resource history, sparklines, trends, and an improved responsive layout. by @nayskutzu
+- Added admin KPI analytics with date ranges, growth, capacity, top consumers, and infrastructure/server/user views. by @nayskutzu
+- Added an admin audit log with searchable activity history and detailed records for administrative actions. by @nayskutzu
+- Added a first-install setup wizard and a setup checklist for new nodes. by @nayskutzu
+- Added a notifications centre in the top bar with an in-panel notification inbox and unread state. by @nayskutzu
+- Added per-device account sessions, including the ability to sign out one device or all other devices. by @nayskutzu
+- Added a guided onboarding tour for new users. by @nayskutzu
+- Added configurable Game, Web Hosting, and VDS modules with module badges and admin controls. by @nayskutzu
+- Added bulk server actions for start, stop, restart, kill, and reinstall. by @nayskutzu
+- Added a shared server-list data table with sorting, filtering, pagination, and consistent layouts across server lists.
+- Added a new file manager with redesigned browsing, breadcrumbs, thumbnails, file information, quick access, bulk actions, trash improvements, file templates, and transfer progress. by @nayskutzu
+- Added cross-server file copy and move with transfer tracking and notifications. by @nayskutzu
+- Added shared admin table layouts and redesigns across users, servers, nodes, roles, API keys, tickets, plugins, mail, knowledgebase, databases, updates, and remaining admin pages. by @nayskutzu
+- Added admin breadcrumbs, section-aware command palette entries, helpful empty states, node setup checklists, and improved server creation defaults and review flow.  by @nayskutzu
+- FrankenPHP worker mode is now the default for `/api/*`: the backend boots once per worker and serves requests from memory (about 2x the throughput and half the latency of classic mode in our benchmark). Chatbot streams and downloads run in a separate small pool; phpMyAdmin, webmail and addon PHP files stay classic. Plugin installs/removals and `.env` changes restart the workers automatically. Set `FRANKENPHP_WORKER=false` to go back to classic mode. Also new: `/api/system/health` for container health checks, a bounded web `memory_limit` (`PHP_MEMORY_LIMIT`, default 512M) and FrankenPHP thread limits (`FRANKENPHP_MAX_THREADS`, `FRANKENPHP_MAX_WAIT_TIME`). by @nayskutzu
+- Live updates: FrankenPHP's built-in Mercure hub pushes server, backup, notification and WebSpace changes to the browser over one event stream per tab (`/api/mercure`), so these pages refresh right away instead of polling every 5-10 seconds. Subscribers get a short-lived token from `POST /api/user/realtime/token` that only covers topics they can access. Keys are generated on first start; set `FEATHERPANEL_MERCURE=off` to turn it off. Without a hub (php-fpm, `php -S`) the pages keep polling as before. by @nayskutzu
+- Faster API: the compiled route table is cached on disk and the routes are only built when it is stale (about 3.2 ms to 0.6 ms per boot), the admin user and server lists no longer run a query per row (211 to 6 and 410 to 10 queries for 50 rows, about 4x and 5x the throughput), new indexes for the activity, server activity and backup lists, one shared database connection per request, `zend.assertions` off and faster response compression (zstd, brotli level 4). by @nayskutzu
+- Source installer and updater: the backend now runs on FrankenPHP (worker mode, Mercure, OPcache) as the `featherpanel-backend` service on `127.0.0.1:8721` behind nginx, installed from the official FrankenPHP packages with all extensions FeatherPanel uses. Updates move existing nginx + php-fpm installs over automatically and roll back if FrankenPHP does not start (`FEATHERPANEL_BACKEND=fpm` keeps php-fpm). Settings live in `/etc/featherpanel/backend.env`. by @nayskutzu
+- Privacy mode: one switch in the top bar, the user menu and Preferences hides IP addresses, ports, hostnames, emails, API keys, SFTP details, database credentials, node addresses and Wings tokens across the user and admin areas. Hidden values show `••••••••` and can be revealed with a click; sensitive inputs are masked until focused. It is stored per account and replaces the hide-IP switch from #258, so accounts that already hid IPs keep it on and the admin default still applies. by @nayskutzu
+- Unsaved changes bar (Discard / Save with a leave-page warning) on every full-page form with a save button: admin users, nodes, spells, roles, webplates, VDS and web nodes, knowledgebase articles, plugin settings and plugin editor, backup schedules and Wings backup policies/destinations, rate limits, AI agent settings, and their create pages; server and webspace schedules and tasks, server database creation, webspace settings and VDS hardware settings. Forms in side panels and dialogs (locations, realms, mail templates, notifications, translations, database hosts, subuser permissions) keep their own Save button and now ask before closing with edits. The server creation wizard warns before leaving. by @nayskutzu
+- New `user.api_keys.create` role permission: lets a role create personal API keys (including MCP keys) when "Allow users to create API keys" is turned off panel-wide. by @nayskutzu
+- Compact server console: slim page header with address chip, server hero with status, address, uptime and node chips, a full-height console with a single-row toolbar (filters, quick rules, search, auto-scroll, clear, fullscreen) and CPU, memory, disk and network cards with sparklines. by @nayskutzu
+- ClickHouse can now be used as a remote database host, including WebSpace database provisioning, dumps and restores (#255). by @Devority
+- Proxmox VNC consoles can now be proxied through the panel, so the Proxmox node is never exposed to the browser (#256). by @Devority
+- ARK: Survival Ascended servers now show their player count, read over RCON (#259). by @Devority
+- Per-user switch to hide server IP addresses in the panel, handy for screen shares and streams (#258). by @redstonerthebest
+- Allocation notes: server users with the allocation update permission can add, edit and remove a short note on each of their server's allocations (up to 255 characters). The note is cleared automatically when the allocation leaves the server, and the admin's own allocation note is left untouched. by @nayskutzu
+
+### Fixed
+
+- Active sessions no longer surface a generic internal-server-error toast when an older installation has not applied the user-session migration yet; the account page keeps working and provides an inline retry state. by @nayskutzu
+- Re-running the source installer no longer replaces `DATABASE_ENCRYPTION_KEY` (which made encrypted data unreadable) or the database password, the default `change-me` database password is replaced by a random one, and the no-SSL nginx config no longer points at a backend that was never set up. by @nayskutzu
+- Hardcoded English in the frontend moved into translations: about 400 strings (page text, placeholders, titles, labels, select options, empty states, the VDS node setup tutorials, the cron editor) are now translatable keys, and 157 dead English fallbacks after existing translation keys were removed. `scan:hardcoded-ui` now covers the whole frontend (JSX text and user-facing attributes as well as toasts, confirms and page titles) and runs in CI; use an `i18n-ignore` comment for intentional English such as code samples. by @nayskutzu
+- Top bar no longer crowds or overlaps at tablet and laptop widths: the search box now shrinks between the page title and the actions instead of being centered on top of them, the keyboard shortcut hint only shows when there is room, and on phones the admin area, privacy mode and appearance buttons move into the user menu. by @nayskutzu
+- API key creation no longer depends on the admin `admin.api.bypass_restrictions` permission. Creation follows the "Allow users to create API keys" setting (or the new `user.api_keys.create` permission), and `admin.api.bypass_restrictions` now does what it says: authenticated users with it skip per-route rate limits, everyone else keeps them. The account page also read the `'true'`/`'false'` setting strings as truthy, so the create button and the profile field toggles ignored a disabled setting. by @nayskutzu
+- Bottom dock: the dock is now centered at every icon size and only as wide as its items; icons sit in fixed-width slots and hover magnification scales the icon in place, so neighbours no longer shift; long labels truncate cleanly with a tooltip (icons-only mode shows tooltips on hover); section pills are replaced by slim dividers and the collapse toggle is a compact icon button. by @nayskutzu
+- Translation placeholders render their values again (`{{name}}` and `{name}`, zero and empty values), e.g. the file manager upload progress showing `UPLOADING {FILE}`. A new `scan:translation-params` step fails the build when a call misses a placeholder value. by @nayskutzu
+- Tab bars that overflow (admin settings, user, node, server, spell and webplate editors) keep every tab reachable with scroll fades, arrow buttons and the active tab kept in view; admin settings uses a dropdown on phones. by @nayskutzu
+- The mobile top bar no longer disappears when opening folders in the file manager, and the file manager toolbar fits on one row on phones. by @nayskutzu
+- Dashboard no longer fires duplicate requests on load (which hit the rate limit and logged `429` errors): the background wrapper stopped remounting the whole page after hydration, identical in-flight GETs are shared, and `429` responses are retried after the `Retry-After` delay the API now sends. by @nayskutzu
+- Aurora background handles WebGL context loss/restore, pauses in hidden tabs, respects reduced motion and frees its context on unmount. by @nayskutzu
+- Service worker ignores non-GET, cross-origin, API and non-http(s) requests instead of failing them, and is no longer registered in development. by @nayskutzu
+- Background and banner images only accept http(s), relative, `data:image` and `blob:` URLs, so pasted `file:///` paths no longer trigger browser security errors. by @nayskutzu
+- Web node setup no longer suggests invalid `bash -s -- featherquilld`. Panel install command now uses `FP_COMPONENT=featherquilld` like Wings. Installer accepts `--quilld-install-only` and positional `featherquilld`. Args are validated before any apt work. Early unconditional `apt upgrade`/`purge`/`autoremove` was removed. Cleanup is opt-in via `--system-cleanup`. by @nayskutzu
+- WebSpace `/sync` and `/reinstall` create on the daemon when it returns 404. Failed first pushes (e.g. `daemon_sync_failed`) can be retried without DELETE + recreate. by @nayskutzu
+- Task updates no longer accept `sequence_id`. Reordering stays on the sequence endpoint. by @nayskutzu
+- Addon packages fail closed when ZipArchive cannot validate entries. by @nayskutzu
+- File-backed rate counters periodically purge expired keys. by @nayskutzu
+- Password reset tokens no longer mark verified accounts as unverified. Legacy tokens keep a compatibility state. by @nayskutzu
+- Rate limiting is on by default when `_enabled` is absent. Auto-written `_enabled: false` is migrated once. by @nayskutzu
+- Safe URL fetches pin the validated IP per hop. IPv4-mapped private addresses are rejected. by @nayskutzu
+- `X-Forwarded-For` is scanned right-to-left. Trusted proxies and Cloudflare are skipped. by @nayskutzu
+- WebSpace share create/delete require `file.update`. Read-only subusers cannot manage shares. by @nayskutzu
+- API client validate returns only `valid`. It uses a stricter unauthenticated rate limit. OAuth2 expiry applies only to pending requests. by @nayskutzu
+- WebSpace listing no longer returns HTTP 500 on a legacy domain conflict, and MongoDB password resets no longer crash (#257). by @Devority
+- The account page now shows the **Disable 2FA** button again; it checked `'1'` instead of `'true'` (#260). by @MyMonsterVR
+- The 2FA setup QR code now has a white margin in dark mode so it can be scanned (#261). by @MyMonsterVR
+- Server disk limits and usage are shown correctly: the server page no longer serves a cached copy of the limits after an admin change, and stopped servers show their real disk usage instead of 0. by @nayskutzu
+- Admins can save servers that have no allocation limit set; the edit form sent it back as empty and every save was rejected. Errors of this kind now show the real reason instead of "Name must be a string". by @nayskutzu
+- Size fields no longer keep the old value when you type a number and then pick the unit (typing 12 and choosing GB used to save 5 GB). by @nayskutzu
+- On phones the sidebar opens from the side you picked in Appearance; the right-hand position used to be ignored. by @nayskutzu
+- Startup, server settings, account profile, admin server edit, admin settings and Wings config show a sticky "unsaved changes" bar with Save and Discard, and ask before you leave with unsaved edits. by @nayskutzu
+- Fixed runtime and console errors across the panel, including invalid list query strings, wrong permission checks, email-login code abuse, Cloudflare IP range matching, ticket attachment names, and WebSpace read-only access. by @nayskutzu
+- Fixed admin and server page layout issues where cards, headers, toasts, borders, or controls could overlap, leave gaps, or render inconsistently. by @nayskutzu
+- Fixed dashboard card packing so widgets fill available space regardless of their order. by @nayskutzu
+- Fixed account, appearance, and server pages to use the shared card and page-header surfaces consistently. by @nayskutzu
+- Bumped the PWA service-worker cache version so updated frontend assets are picked up after the UI redesign. by @nayskutzu
+
+### Improved 
+
+- FeatherOS Terminal now fits saved windows inside the available viewport, starts at a more useful compact size, and uses a single flat macOS-style surface instead of a card nested inside another bordered window. by @nayskutzu
+- The Code Editor can now open a persisted workspace folder from the taskbar welcome screen: choose a server and directory, browse its files in Explorer, and open them into tabs without starting from “No file open.” by @nayskutzu
+- Dock magnification was toned down to a more natural 1.32× maximum. The Code Editor now opens with a VS Code-inspired welcome workspace, activity bar, Explorer panel, file-opening flow, and multi-file workspace guidance. by @nayskutzu
+- Dock magnification now scales only an icon overlay inside a fixed hit slot, so the navbar footprint stays unchanged. FeatherOS app icons were simplified from glossy gradients to a consistent flat color-and-glyph system. by @nayskutzu
+- Refined dock magnification so the dock keeps its normal footprint while the hovered icon scales above the bar and stays in front of neighboring icons. by @nayskutzu
+- FeatherOS Code Editor now includes a workspace explorer, multi-file tabs, dirty-file indicators, Save All, refreshable folder contents, and a fuller Monaco workspace experience. FeatherOS Terminal now uses a macOS-style chrome with traffic-light controls and a darker terminal surface. by @nayskutzu
+- FeatherOS dock magnification now scales icons inside fixed slots so hovering no longer resizes or shifts the whole dock. Finder now has visible multi-selection with Ctrl/Cmd-click, Shift-range selection, Select All/None, and bulk copy, cut, and delete actions. by @nayskutzu
+- Expanded auth customization with four visual presets (Aurora, Glass, Minimal, Contrast) that can be combined with the selectable login templates. by @nayskutzu
+- Added admin-selectable login templates: split, centered, and spotlight layouts, with safe fallback to the split template for existing installations. Removed generic server start/stop copy from the login marketing panel. by @nayskutzu
+- Security Settings now use a clearer status overview for 2FA, active devices, and passkeys, with better grouping and responsive card hierarchy. Login copy was also rewritten to be concise and product-specific instead of generic marketing text. by @nayskutzu
+- Refreshed the dashboard, server pages, authentication pages, account pages, admin pages, marketplace, plugin store, database management, and settings with consistent glass surfaces, borders, spacing, page headers, cards, and dark/light mode treatment. by @nayskutzu
+- Added shared server headers, compact activity lists, server-side activity filters, full-width stat rows, and equal-height console stat cards. by @nayskutzu
+- Improved mobile layouts, responsive tables, navigation, notifications, toasts, focus rings, tab handling, and light-mode contrast across the panel. by @nayskutzu
+- Server announcements are rendered on the server to avoid post-hydration layout shifts. by @nayskutzu
+- Session, settings, notification, and preference contexts now avoid unnecessary rerenders; date-fns locales are loaded on demand to reduce route bundles. by @nayskutzu
+- Error-code messages and active-session errors are translated, and the frontend translation scanners now cover additional user-facing strings. by @nayskutzu
+- The installer prompt handling was improved, and the Pterodactyl importer can be hidden when dismissed or no longer usable. by @nayskutzu
+
 ## v1.4.1 STABLE
 
 ### Fixed

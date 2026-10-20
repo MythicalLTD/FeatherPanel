@@ -391,17 +391,22 @@ class ServersController
             externalId: $externalId ?: null,
         );
 
-        // Add related data to each server
+        // Add related data to each server (one query per relation, not per row)
+        $owners = User::getUsersByIds(array_column($servers, 'owner_id'));
+        $nodes = Node::getNodesByIds(array_column($servers, 'node_id'));
+        $realms = Realm::getByIds(array_column($servers, 'realms_id'));
+        $spells = Spell::getSpellsByIds(array_column($servers, 'spell_id'));
+        $allocations = Allocation::getAllocationsByIds(array_column($servers, 'allocation_id'));
         foreach ($servers as &$server) {
-            $server['owner'] = User::getUserById($server['owner_id']);
-            $server['node'] = Node::getNodeById($server['node_id']);
-            $server['realm'] = Realm::getById($server['realms_id']);
-            $server['spell'] = Spell::getSpellById($server['spell_id']);
-            $server['allocation'] = Allocation::getAllocationById($server['allocation_id']);
+            $server['owner'] = $owners[(int) $server['owner_id']] ?? null;
+            $server['node'] = $nodes[(int) $server['node_id']] ?? null;
+            $server['realm'] = $realms[(int) $server['realms_id']] ?? null;
+            $server['spell'] = $spells[(int) $server['spell_id']] ?? null;
+            $server['allocation'] = $allocations[(int) $server['allocation_id']] ?? null;
 
             // Remove sensitive data from owner
             if ($server['owner']) {
-                unset($server['owner']['password'], $server['owner']['remember_token'], $server['owner']['two_fa_key']);
+                $server['owner'] = User::stripSensitiveFields($server['owner']);
                 $server['owner'] = TimeHelper::normaliseRow($server['owner'], ['last_seen', 'first_seen']);
             }
 
@@ -577,7 +582,7 @@ class ServersController
 
         // Remove sensitive data from related objects
         if ($server['owner']) {
-            unset($server['owner']['password'], $server['owner']['remember_token'], $server['owner']['two_fa_key']);
+            $server['owner'] = User::stripSensitiveFields($server['owner']);
             $server['owner'] = TimeHelper::normaliseRow($server['owner'], ['last_seen', 'first_seen']);
         }
 
@@ -617,6 +622,12 @@ class ServersController
         $data = json_decode($request->getContent(), true);
         if (!is_array($data)) {
             return ApiResponse::error('Invalid request data', 'INVALID_REQUEST', 400);
+        }
+
+        foreach (['name', 'env_variable', 'variable_value'] as $field) {
+            if (isset($data[$field]) && !is_scalar($data[$field])) {
+                return ApiResponse::error("Field {$field} must be a string", 'INVALID_DATA_TYPE', 400);
+            }
         }
 
         $name = trim((string) ($data['name'] ?? ''));
@@ -834,7 +845,7 @@ class ServersController
 
         // Remove sensitive data from related objects
         if ($server['owner']) {
-            unset($server['owner']['password'], $server['owner']['remember_token'], $server['owner']['two_fa_key']);
+            $server['owner'] = User::stripSensitiveFields($server['owner']);
         }
 
         // Remove sensitive node data
@@ -887,11 +898,15 @@ class ServersController
     public function create(Request $request): Response
     {
         $data = json_decode($request->getContent(), true);
-        if (json_last_error() !== JSON_ERROR_NONE) {
+        if (json_last_error() !== JSON_ERROR_NONE || !is_array($data)) {
             return ApiResponse::error('Invalid JSON in request body', 'INVALID_JSON', 400);
         }
 
-        $user = User::getUserById($data['owner_id']);
+        if (!isset($data['owner_id']) || !is_numeric($data['owner_id'])) {
+            return ApiResponse::error('Missing required field: owner_id', 'MISSING_REQUIRED_FIELDS', 400);
+        }
+
+        $user = User::getUserById((int) $data['owner_id']);
         if (!$user) {
             return ApiResponse::error('User not found', 'USER_NOT_FOUND', 404);
         }
@@ -1099,26 +1114,11 @@ class ServersController
         $data['external_id'] = $data['external_id'] ?? null;
         $data['threads'] = $data['threads'] ?? null;
 
-        // Remove variables from data before creating server (variables are handled separately)
-        $serverData = $data;
-        unset($serverData['variables'], $serverData['mount_ids']);
-
-        $serverId = Server::createServer($serverData);
-        if (!$serverId) {
-            return ApiResponse::error('Failed to create server', 'FAILED_TO_CREATE_SERVER', 500);
-        }
-
-        // Claim the allocation for this server
-        $allocationClaimed = Allocation::assignToServer($data['allocation_id'], $serverId);
-        if (!$allocationClaimed) {
-            App::getInstance(true)->getLogger()->error('Failed to claim allocation for server ID: ' . $serverId);
-            // Note: We don't fail the server creation, but log the error
-        }
-
-        // Validate required spell variables
+        // Validate spell variables before anything is written, so an invalid request never
+        // creates a server row or claims the allocation.
         $spellVariables = SpellVariable::getVariablesBySpellId($data['spell_id']);
         $requiredVariables = [];
-        $providedVariables = isset($data['variables']) ? array_keys($data['variables']) : [];
+        $providedVariables = isset($data['variables']) && is_array($data['variables']) ? array_keys($data['variables']) : [];
 
         foreach ($spellVariables as $spellVariable) {
             if (strpos($spellVariable['rules'], 'required') !== false) {
@@ -1128,16 +1128,11 @@ class ServersController
 
         $missingRequiredVariables = array_diff($requiredVariables, $providedVariables);
         if (!empty($missingRequiredVariables)) {
-            Server::hardDeleteServer($serverId);
-
             return ApiResponse::error('Missing required spell variables: ' . implode(', ', $missingRequiredVariables), 'MISSING_REQUIRED_VARIABLES', 400);
         }
 
-        // Handle server variables if provided
-        if (isset($data['variables']) && is_array($data['variables']) && !empty($data['variables'])) {
-            App::getInstance(true)->getLogger()->debug('Processing server variables for server ID: ' . $serverId . ', variables: ' . json_encode($data['variables']));
-
-            $variables = [];
+        $variables = [];
+        if (!empty($providedVariables)) {
             foreach ($data['variables'] as $envVariable => $value) {
                 // Find the spell variable by env_variable
                 $spellVariable = null;
@@ -1157,8 +1152,6 @@ class ServersController
                     if (strpos($spellVariable['rules'], 'required') !== false) {
                         // Check for null or empty string, but allow "0" as a valid value
                         if ($effectiveValue === null || $effectiveValue === '' || trim($effectiveValue) === '') {
-                            Server::hardDeleteServer($serverId);
-
                             return ApiResponse::error('Required variable ' . $spellVariable['name'] . ' cannot be empty', 'REQUIRED_VARIABLE_EMPTY', 400);
                         }
                     }
@@ -1172,26 +1165,34 @@ class ServersController
                     App::getInstance(true)->getLogger()->warning('Spell variable not found for env_variable: ' . $envVariable);
                 }
             }
+        }
 
-            if (!empty($variables)) {
-                App::getInstance(true)->getLogger()->debug('Creating ' . count($variables) . ' server variables for server ID: ' . $serverId);
-                $variablesCreated = ServerVariable::createOrUpdateServerVariables($serverId, $variables);
-                if (!$variablesCreated) {
-                    // Log the error but don't fail the server creation
-                    App::getInstance(true)->getLogger()->error('Failed to create server variables for server ID: ' . $serverId);
-                } else {
-                    App::getInstance(true)->getLogger()->debug('Successfully created server variables for server ID: ' . $serverId);
-                }
+        // Remove variables from data before creating server (variables are handled separately)
+        $serverData = $data;
+        unset($serverData['variables'], $serverData['mount_ids']);
+
+        $serverId = Server::createServer($serverData);
+        if (!$serverId) {
+            return ApiResponse::error('Failed to create server', 'FAILED_TO_CREATE_SERVER', 500);
+        }
+
+        // Claim the allocation for this server
+        $allocationClaimed = Allocation::assignToServer($data['allocation_id'], $serverId);
+        if (!$allocationClaimed) {
+            App::getInstance(true)->getLogger()->error('Failed to claim allocation for server ID: ' . $serverId);
+            // Note: We don't fail the server creation, but log the error
+        }
+
+        if (!empty($variables)) {
+            App::getInstance(true)->getLogger()->debug('Creating ' . count($variables) . ' server variables for server ID: ' . $serverId);
+            $variablesCreated = ServerVariable::createOrUpdateServerVariables($serverId, $variables);
+            if (!$variablesCreated) {
+                // Log the error but don't fail the server creation
+                App::getInstance(true)->getLogger()->error('Failed to create server variables for server ID: ' . $serverId);
             } else {
-                App::getInstance(true)->getLogger()->debug('No valid server variables to create for server ID: ' . $serverId);
+                App::getInstance(true)->getLogger()->debug('Successfully created server variables for server ID: ' . $serverId);
             }
         } else {
-            // Check if there are required variables but no variables provided
-            if (!empty($requiredVariables)) {
-                Server::hardDeleteServer($serverId);
-
-                return ApiResponse::error('Missing required spell variables: ' . implode(', ', $requiredVariables), 'MISSING_REQUIRED_VARIABLES', 400);
-            }
             App::getInstance(true)->getLogger()->info('No server variables provided for server ID: ' . $serverId);
         }
 
@@ -1356,7 +1357,7 @@ class ServersController
         }
 
         $data = json_decode($request->getContent(), true);
-        if (json_last_error() !== JSON_ERROR_NONE) {
+        if (json_last_error() !== JSON_ERROR_NONE || !is_array($data)) {
             return ApiResponse::error('Invalid JSON in request body', 'INVALID_JSON', 400);
         }
 
@@ -1409,7 +1410,13 @@ class ServersController
 
         // Validate data types for numeric fields
         $numericFields = ['node_id', 'owner_id', 'memory', 'swap', 'disk', 'io', 'cpu', 'allocation_id', 'realms_id', 'spell_id', 'allocation_limit', 'database_limit', 'backup_limit'];
+        // Nullable columns: servers created without these limits store NULL, and the edit form sends
+        // that back unchanged. Rejecting it made every save of such a server fail.
+        $nullableNumericFields = ['allocation_limit', 'database_limit'];
         foreach ($data as $field => $value) {
+            if ($value === null && in_array($field, $nullableNumericFields, true)) {
+                continue;
+            }
             if (in_array($field, $numericFields)) {
                 if ($field === 'swap') {
                     if (!is_numeric($value) || (int) $value < -1) {
@@ -1664,6 +1671,11 @@ class ServersController
             unset($serverUpdateData['oom_killer']);
         }
 
+        $unknownFields = Database::unknownColumns(Server::getTableName(), $serverUpdateData);
+        if ($unknownFields !== []) {
+            return ApiResponse::error('Unknown field(s): ' . implode(', ', $unknownFields), 'UNKNOWN_FIELDS', 400);
+        }
+
         // Normalize threads: empty string -> null (leave string if provided)
         if (array_key_exists('threads', $serverUpdateData)) {
             if ($serverUpdateData['threads'] === null) {
@@ -1862,23 +1874,31 @@ class ServersController
                 return ApiResponse::error('Failed to update server. Check server logs for details.', 'FAILED_TO_UPDATE_SERVER', 500);
             }
 
-            if (isset($data['allocation_id']) && $data['allocation_id'] !== $server['allocation_id']) {
-                if (isset($server['allocation_id'])) {
-                    $oldAllocationUnclaimed = Allocation::unassignFromServer($server['allocation_id'], $pdo);
-                    if (!$oldAllocationUnclaimed) {
-                        $pdo->rollBack();
-                        App::getInstance(true)->getLogger()->error('Failed to unclaim old allocation (ID: ' . $server['allocation_id'] . ') for server ID: ' . $id);
+            // Changing primary only updates which allocation is primary.
+            // Never unassign the previous primary here - that drops extra ports on save.
+            if (isset($data['allocation_id']) && (int) $data['allocation_id'] !== (int) $server['allocation_id']) {
+                $newAllocation = Allocation::getById((int) $data['allocation_id']);
+                if (!$newAllocation) {
+                    $pdo->rollBack();
 
-                        return ApiResponse::error('Failed to unassign previous allocation', 'ALLOCATION_UPDATE_FAILED', 500);
-                    }
+                    return ApiResponse::error('Allocation not found', 'ALLOCATION_NOT_FOUND', 404);
                 }
 
-                $newAllocationClaimed = Allocation::assignToServer($data['allocation_id'], $id, $pdo);
-                if (!$newAllocationClaimed) {
+                $newAllocationServerId = (int) ($newAllocation['server_id'] ?? 0);
+                if ($newAllocationServerId !== 0 && $newAllocationServerId !== (int) $id) {
                     $pdo->rollBack();
-                    App::getInstance(true)->getLogger()->error('Failed to claim new allocation (ID: ' . $data['allocation_id'] . ') for server ID: ' . $id);
 
-                    return ApiResponse::error('Failed to claim new allocation', 'ALLOCATION_UPDATE_FAILED', 500);
+                    return ApiResponse::error('Allocation is already assigned to another server', 'ALLOCATION_IN_USE', 400);
+                }
+
+                if ($newAllocationServerId === 0) {
+                    $newAllocationClaimed = Allocation::assignToServer((int) $data['allocation_id'], (int) $id, $pdo);
+                    if (!$newAllocationClaimed) {
+                        $pdo->rollBack();
+                        App::getInstance(true)->getLogger()->error('Failed to claim new allocation (ID: ' . $data['allocation_id'] . ') for server ID: ' . $id);
+
+                        return ApiResponse::error('Failed to claim new allocation', 'ALLOCATION_UPDATE_FAILED', 500);
+                    }
                 }
             }
 
@@ -1958,7 +1978,11 @@ class ServersController
 
                     // If spell changed, trigger reinstall instead of just sync
                     if ($spellChanged) {
+                        $reinstallRequestedAt = new \DateTimeImmutable();
                         $response = $wings->getServer()->reinstallServer($server['uuid']);
+                        if ($response->isSuccessful()) {
+                            Server::markInstalling((int) $server['id'], $reinstallRequestedAt);
+                        }
 
                         // Emit reinstall event
                         global $eventManager;
@@ -2922,7 +2946,7 @@ class ServersController
     public function initiateTransfer(Request $request, int $id): Response
     {
         $data = json_decode($request->getContent(), true);
-        if (json_last_error() !== JSON_ERROR_NONE) {
+        if (json_last_error() !== JSON_ERROR_NONE || !is_array($data)) {
             return ApiResponse::error('Invalid JSON in request body', 'INVALID_JSON', 400);
         }
 

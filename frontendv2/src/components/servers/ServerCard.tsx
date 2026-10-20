@@ -36,6 +36,7 @@ import { StatusBadge } from './StatusBadge';
 import { ResourceBar } from './ResourceBar';
 import { Checkbox } from '@/components/ui/checkbox';
 import { OverflowText } from '@/components/featherui/OverflowText';
+import { safeCssUrl } from '@/lib/safe-css-url';
 
 interface ServerCardProps {
     server: Server;
@@ -86,7 +87,7 @@ export function ServerCard({
         return (
             <div
                 className={cn(
-                    'bg-card/50 border-border/50 group relative flex flex-col items-stretch gap-4 rounded-2xl border p-4 backdrop-blur-xl transition-all sm:flex-row sm:items-center sm:gap-6 sm:p-5 md:p-6',
+                    'fp-surface group relative flex flex-col items-stretch gap-4 rounded-xl border p-4 transition-all sm:flex-row sm:items-center sm:gap-6 sm:p-5 md:p-6',
                     accessible ? 'hover:border-primary' : 'opacity-60',
                 )}
             >
@@ -107,7 +108,9 @@ export function ServerCard({
                         <div
                             className='h-full w-full bg-cover bg-center'
                             style={{
-                                backgroundImage: `url(${resolveAttachmentUrl(server.spell.banner) || server.spell.banner})`,
+                                backgroundImage: safeCssUrl(
+                                    resolveAttachmentUrl(server.spell.banner) || server.spell.banner,
+                                ),
                             }}
                         />
                     </Link>
@@ -258,7 +261,7 @@ export function ServerCard({
     return (
         <div
             className={cn(
-                'group bg-card/50 border-border/50 relative overflow-hidden rounded-2xl border backdrop-blur-xl transition-all',
+                'fp-surface group relative overflow-hidden rounded-xl border transition-all',
                 accessible ? 'hover:border-primary' : 'opacity-60',
             )}
         >
@@ -282,11 +285,13 @@ export function ServerCard({
             )}
             <Link href={serverUrl} className='relative block cursor-pointer'>
                 {server.spell?.banner && (
-                    <div className='relative h-40 overflow-hidden'>
+                    <div className='relative h-28 overflow-hidden sm:h-40'>
                         <div
                             className='absolute inset-0 bg-cover bg-center transition-transform duration-300 group-hover:scale-105'
                             style={{
-                                backgroundImage: `url(${resolveAttachmentUrl(server.spell.banner) || server.spell.banner})`,
+                                backgroundImage: safeCssUrl(
+                                    resolveAttachmentUrl(server.spell.banner) || server.spell.banner,
+                                ),
                             }}
                         />
                         <div className='from-card via-card/60 absolute inset-0 bg-linear-to-t to-transparent' />

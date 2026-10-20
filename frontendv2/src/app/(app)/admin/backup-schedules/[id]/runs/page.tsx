@@ -23,7 +23,7 @@ import { getApiErrorMessage } from '@/lib/api-errors';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
 import { PageLoading } from '@/components/featherui/PageLoading';
-import { ResourceCard } from '@/components/featherui/ResourceCard';
+import { ResourceCard, ResourceTable } from '@/components/featherui/ResourceCard';
 import { EmptyState } from '@/components/featherui/EmptyState';
 import { toast } from 'sonner';
 import { Archive, ArrowLeft, ChevronDown, ChevronRight, ExternalLink } from 'lucide-react';
@@ -124,7 +124,7 @@ export default function BackupScheduleRunsPage() {
                     description={t('adminBackupSchedules.noRunsDescription')}
                 />
             ) : (
-                <div className='grid gap-3'>
+                <ResourceTable>
                     {runs.map((run) => (
                         <div key={run.id} className='space-y-2'>
                             <ResourceCard
@@ -189,7 +189,7 @@ export default function BackupScheduleRunsPage() {
                             )}
                         </div>
                     ))}
-                </div>
+                </ResourceTable>
             )}
         </div>
     );

@@ -23,6 +23,8 @@ import { VmInstance } from '@/lib/vms-api';
 import { HardDrive, Cpu, MemoryStick, Globe, Server, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { OverflowText } from '@/components/featherui/OverflowText';
+import { Sensitive } from '@/components/common/Sensitive';
+import { useTranslation } from '@/contexts/TranslationContext';
 
 interface VmCardProps {
     vm: VmInstance;
@@ -80,6 +82,7 @@ function Spec({ icon: Icon, label, value }: SpecProps) {
 }
 
 export function VmCard({ vm, layout }: VmCardProps) {
+    const { t } = useTranslation();
     // Total vCPUs = sockets × cores
     const totalCores = (vm.cpus ?? 1) * (vm.cores ?? 1);
     const memoryGb = vm.memory ? (vm.memory / 1024).toFixed(vm.memory >= 1024 ? 0 : 1) : null;
@@ -88,7 +91,7 @@ export function VmCard({ vm, layout }: VmCardProps) {
     if (layout === 'list') {
         return (
             <Link href={`/vds/${vm.id}`}>
-                <div className='border-border/40 bg-card/40 hover:bg-card/70 hover:border-primary/30 group flex items-center gap-4 rounded-xl border p-4 backdrop-blur-sm transition-all duration-200'>
+                <div className='fp-surface fp-surface-interactive group flex items-center gap-4 rounded-xl border p-4 transition-all duration-200'>
                     {/* Icon */}
                     <div className='bg-primary/10 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl'>
                         <Server className='text-primary h-5 w-5' />
@@ -104,7 +107,7 @@ export function VmCard({ vm, layout }: VmCardProps) {
                             {vm.ip_address && (
                                 <span className='flex items-center gap-1'>
                                     <Globe className='h-3 w-3' />
-                                    {vm.ip_address}
+                                    <Sensitive>{vm.ip_address}</Sensitive>
                                 </span>
                             )}
                             {nodeName && <span>{nodeName}</span>}
@@ -116,7 +119,13 @@ export function VmCard({ vm, layout }: VmCardProps) {
                     <div className='hidden shrink-0 flex-col gap-1 sm:flex'>
                         {totalCores > 0 && <Spec icon={Cpu} label='vCPU' value={String(totalCores)} />}
                         {memoryGb && <Spec icon={MemoryStick} label='RAM' value={`${memoryGb} GB`} />}
-                        {vm.disk_gb && <Spec icon={HardDrive} label='Disk' value={`${vm.disk_gb} GB`} />}
+                        {vm.disk_gb && (
+                            <Spec
+                                icon={HardDrive}
+                                label={t('ui.components.vms.vmCard.disk')}
+                                value={`${vm.disk_gb} GB`}
+                            />
+                        )}
                     </div>
 
                     {/* Arrow */}
@@ -129,7 +138,7 @@ export function VmCard({ vm, layout }: VmCardProps) {
     // Grid layout
     return (
         <Link href={`/vds/${vm.id}`}>
-            <div className='border-border/40 bg-card/40 hover:bg-card/70 hover:border-primary/30 group flex h-full flex-col rounded-xl border p-4 backdrop-blur-sm transition-all duration-200'>
+            <div className='fp-surface fp-surface-interactive group flex h-full flex-col rounded-xl border p-4 transition-all duration-200'>
                 {/* Header */}
                 <div className='mb-3 flex items-start justify-between gap-2'>
                     <div className='flex min-w-0 flex-1 items-center gap-2.5'>
@@ -146,7 +155,7 @@ export function VmCard({ vm, layout }: VmCardProps) {
                     {vm.ip_address && (
                         <span className='flex items-center gap-1'>
                             <Globe className='h-3 w-3 shrink-0' />
-                            {vm.ip_address}
+                            <Sensitive>{vm.ip_address}</Sensitive>
                         </span>
                     )}
                     {nodeName && <span>{nodeName}</span>}
@@ -162,12 +171,16 @@ export function VmCard({ vm, layout }: VmCardProps) {
                     <div className='bg-background/60 flex flex-col items-center rounded-lg px-2 py-2.5'>
                         <MemoryStick className='text-primary mb-1 h-4 w-4' />
                         <span className='text-foreground text-sm font-bold'>{memoryGb ?? '-'}</span>
-                        <span className='text-muted-foreground text-[10px] tracking-wide uppercase'>GB RAM</span>
+                        <span className='text-muted-foreground text-[10px] tracking-wide uppercase'>
+                            {t('ui.components.vms.vmCard.gBRAM')}
+                        </span>
                     </div>
                     <div className='bg-background/60 flex flex-col items-center rounded-lg px-2 py-2.5'>
                         <HardDrive className='text-primary mb-1 h-4 w-4' />
                         <span className='text-foreground text-sm font-bold'>{vm.disk_gb ?? '-'}</span>
-                        <span className='text-muted-foreground text-[10px] tracking-wide uppercase'>GB Disk</span>
+                        <span className='text-muted-foreground text-[10px] tracking-wide uppercase'>
+                            {t('ui.components.vms.vmCard.gBDisk')}
+                        </span>
                     </div>
                 </div>
 

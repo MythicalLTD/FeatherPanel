@@ -16,7 +16,8 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import { reportPanelInteraction } from '@/lib/panel-analytics';
-import { createContext, useContext, useEffect, useState, useRef, ReactNode, useCallback } from 'react';
+import { createContext, useContext, useEffect, useState, useRef, ReactNode, useCallback, useMemo } from 'react';
+import { isDateFnsLocaleReady, preloadDateFnsLocale } from '@/lib/dateUtils';
 import { isCloudflareChallengeText } from '@/lib/cloudflare-challenge';
 import { useSettings } from '@/contexts/SettingsContext';
 import { writeLocaleCookie } from '@/lib/locale-cookie';
@@ -57,6 +58,7 @@ function translationCacheKey(lang: string): string {
 }
 
 function readCachedTranslations(lang: string): Record<string, unknown> | null {
+    if (process.env.NODE_ENV === 'development') return null;
     if (typeof window === 'undefined') return null;
     try {
         const cached = localStorage.getItem(translationCacheKey(lang));
@@ -99,6 +101,7 @@ function deepMerge(target: Record<string, unknown>, source: Record<string, unkno
 }
 
 function seedClientTranslationCache(lang: string, translations: Record<string, unknown>) {
+    if (process.env.NODE_ENV === 'development') return;
     if (typeof window === 'undefined') return;
     if (Object.keys(translations).length === 0) return;
     try {
@@ -133,9 +136,25 @@ export function TranslationProvider({ children, initialLocale, initialTranslatio
     ]);
     const [loading, setLoading] = useState(false);
     const [ready, setReady] = useState(() => Boolean(ssrTranslations));
+    // Bumped when a lazily loaded date-fns locale arrives, so date labels re-render in it.
+    const [dateLocaleRevision, setDateLocaleRevision] = useState(0);
+
+    useEffect(() => {
+        if (isDateFnsLocaleReady(locale)) return;
+        let alive = true;
+        void preloadDateFnsLocale(locale).then(() => {
+            if (alive) setDateLocaleRevision((r) => r + 1);
+        });
+        return () => {
+            alive = false;
+        };
+    }, [locale]);
 
     const fetchJsonObject = useCallback(async (url: string): Promise<Record<string, unknown> | null> => {
-        const response = await fetch(url, { credentials: 'same-origin' });
+        const response = await fetch(url, {
+            credentials: 'same-origin',
+            ...(process.env.NODE_ENV === 'development' ? { cache: 'no-store' as const } : {}),
+        });
         if (!response.ok) return null;
 
         const contentType = String(response.headers.get('content-type') || '').toLowerCase();
@@ -222,7 +241,8 @@ export function TranslationProvider({ children, initialLocale, initialTranslatio
 
             if (Object.keys(mergedTranslations).length > 0) {
                 setTranslations(mergedTranslations);
-                localStorage.setItem(cacheKey, JSON.stringify(mergedTranslations));
+                if (process.env.NODE_ENV !== 'development')
+                    localStorage.setItem(cacheKey, JSON.stringify(mergedTranslations));
                 setReady(true);
             } else if (cached) {
                 setTranslations(cached);
@@ -236,7 +256,10 @@ export function TranslationProvider({ children, initialLocale, initialTranslatio
 
     const loadAvailableLanguages = useCallback(async () => {
         try {
-            const response = await fetch('/api/system/translations/languages');
+            const response = await fetch(
+                '/api/system/translations/languages',
+                process.env.NODE_ENV === 'development' ? { cache: 'no-store' } : undefined,
+            );
             if (response.ok) {
                 const data = await response.json();
 
@@ -313,19 +336,22 @@ export function TranslationProvider({ children, initialLocale, initialTranslatio
         writeLocaleCookie(adminLocaleDefault);
     }, [settings, isLocaleLocked, adminLocaleDefault, locale]);
 
-    const setLocale = async (newLocale: string) => {
-        if (isLocaleLocked) return;
+    const setLocale = useCallback(
+        async (newLocale: string) => {
+            if (isLocaleLocked) return;
 
-        const normalized = normalizeLocaleCode(newLocale) || DEFAULT_LOCALE;
-        if (normalized !== locale) reportPanelInteraction('panel.preference.change', 'language');
-        setLoading(true);
-        setLocaleState(normalized);
-        localStorage.setItem('locale', normalized);
-        localStorage.setItem(LOCALE_USER_OVERRIDE_KEY, 'true');
-        writeLocaleCookie(normalized);
-        await loadFullTranslations(normalized);
-        setLoading(false);
-    };
+            const normalized = normalizeLocaleCode(newLocale) || DEFAULT_LOCALE;
+            if (normalized !== locale) reportPanelInteraction('panel.preference.change', 'language');
+            setLoading(true);
+            setLocaleState(normalized);
+            localStorage.setItem('locale', normalized);
+            localStorage.setItem(LOCALE_USER_OVERRIDE_KEY, 'true');
+            writeLocaleCookie(normalized);
+            await loadFullTranslations(normalized);
+            setLoading(false);
+        },
+        [isLocaleLocked, locale, loadFullTranslations],
+    );
 
     const t = useCallback(
         (key: string, params?: Record<string, string>): string => {
@@ -345,8 +371,11 @@ export function TranslationProvider({ children, initialLocale, initialTranslatio
             }
 
             if (params) {
-                return value.replace(/\{(\w+)\}/g, (match, paramKey) => {
-                    return params[paramKey] || match;
+                // Accept both `{name}` (panel convention) and `{{name}}` placeholders. Zero and empty
+                // strings are real values, so only fall back to the placeholder when a param is missing.
+                return value.replace(/\{\{\s*(\w+)\s*\}\}|\{(\w+)\}/g, (match, doubleKey, singleKey) => {
+                    const param = (params as Record<string, unknown>)[doubleKey ?? singleKey];
+                    return param === undefined || param === null ? match : String(param);
                 });
             }
 
@@ -355,22 +384,14 @@ export function TranslationProvider({ children, initialLocale, initialTranslatio
         [translations],
     );
 
-    return (
-        <TranslationContext.Provider
-            value={{
-                locale,
-                translations,
-                availableLanguages,
-                setLocale,
-                t,
-                loading,
-                ready,
-                isLocaleLocked,
-            }}
-        >
-            {children}
-        </TranslationContext.Provider>
+    const contextValue = useMemo(
+        () => ({ locale, translations, availableLanguages, setLocale, t, loading, ready, isLocaleLocked }),
+        // dateLocaleRevision: re-render consumers once a lazy date-fns locale has loaded.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [locale, translations, availableLanguages, setLocale, t, loading, ready, isLocaleLocked, dateLocaleRevision],
     );
+
+    return <TranslationContext.Provider value={contextValue}>{children}</TranslationContext.Provider>;
 }
 
 export function useTranslation() {

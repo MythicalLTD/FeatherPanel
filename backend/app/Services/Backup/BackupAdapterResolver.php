@@ -162,7 +162,7 @@ final class BackupAdapterResolver
                     }
                 }
             } catch (\Throwable $e) {
-                // Fall through — do not advertise every Calagopus driver as available.
+                // Fall through - do not advertise every Calagopus driver as available.
             }
 
             // Calagopus has no FeatherWings-style /api/system/backups; default to local wings only.

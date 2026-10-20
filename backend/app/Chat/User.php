@@ -27,11 +27,34 @@ use App\Config\ConfigInterface;
 class User
 {
     /**
+     * Columns that hold secrets (password hash, session token, TOTP secret, one-time codes,
+     * third-party access tokens) and must never be returned to API clients.
+     *
+     * @var string[]
+     */
+    public const SENSITIVE_FIELDS = [
+        'password',
+        'remember_token',
+        'two_fa_key',
+        'mail_verify',
+        'email_login_code',
+        'account_deletion_otp',
+        'discord_oauth2_access_token',
+    ];
+    /**
      * @var string The users table name
      */
     private static string $table = 'featherpanel_users';
 
     private static ?array $columnsCache = null;
+
+    /**
+     * Get the name of the table.
+     */
+    public static function getTableName(): string
+    {
+        return self::$table;
+    }
 
     /**
      * Create a new user.
@@ -152,6 +175,33 @@ class User
         $stmt->execute(['id' => $id]);
 
         return AvatarHelper::enrichUser($stmt->fetch(\PDO::FETCH_ASSOC) ?: null);
+    }
+
+    /**
+     * Fetch users by IDs, keyed by id (one query instead of one per row).
+     *
+     * @param int[] $ids
+     *
+     * @return array<int, array>
+     */
+    public static function getUsersByIds(array $ids): array
+    {
+        $ids = array_values(array_unique(array_filter(array_map('intval', $ids), static fn (int $id): bool => $id > 0)));
+        if ($ids === []) {
+            return [];
+        }
+
+        $pdo = Database::getPdoConnection();
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $stmt = $pdo->prepare('SELECT * FROM ' . self::$table . ' WHERE id IN (' . $placeholders . ')');
+        $stmt->execute($ids);
+
+        $map = [];
+        foreach ($stmt->fetchAll(\PDO::FETCH_ASSOC) as $row) {
+            $map[(int) $row['id']] = AvatarHelper::enrichUser($row);
+        }
+
+        return $map;
     }
 
     /**
@@ -297,6 +347,12 @@ class User
             $sql .= ' WHERE ' . implode(' AND ', $where);
         }
 
+        // Security: only known columns may reach the ORDER BY clause.
+        if (!in_array($sortBy, ['id', 'username', 'email', 'last_seen', 'first_seen'], true)) {
+            $sortBy = 'id';
+        }
+        $sortOrder = strtoupper($sortOrder) === 'DESC' ? 'DESC' : 'ASC';
+
         $sql .= " ORDER BY $sortBy $sortOrder";
         $offset = max(0, ($page - 1) * $limit);
         $sql .= ' LIMIT :limit OFFSET :offset';
@@ -320,6 +376,9 @@ class User
      */
     public static function updateUser(string $uuid, array $data): bool
     {
+        if (array_key_exists('role_id', $data)) {
+            \App\Helpers\PermissionHelper::forgetUser($uuid);
+        }
         try {
             if (empty($data)) {
                 App::getInstance(true)->getLogger()->error('No data to update');
@@ -349,7 +408,7 @@ class User
 
                 return false;
             }
-            $set = implode(', ', array_map(fn ($f) => "$f = :$f", $fields));
+            $set = implode(', ', array_map(fn ($f) => "`$f` = :$f", $fields));
             $sql = 'UPDATE ' . self::$table . ' SET ' . $set . ' WHERE uuid = :uuid';
             $stmt = $pdo->prepare($sql);
             $data['uuid'] = $uuid;
@@ -469,11 +528,35 @@ class User
      */
     public static function getUserByRememberToken(string $rememberToken): ?array
     {
+        if (UserSession::isSessionToken($rememberToken)) {
+            return self::getUserBySessionToken($rememberToken);
+        }
+
         $pdo = Database::getPdoConnection();
         $stmt = $pdo->prepare('SELECT * FROM ' . self::$table . ' WHERE remember_token = :remember_token LIMIT 1');
         $stmt->execute(['remember_token' => $rememberToken]);
 
         return AvatarHelper::enrichUser($stmt->fetch(\PDO::FETCH_ASSOC) ?: null);
+    }
+
+    /**
+     * Remove secret columns from a user row before it is serialized into an API response.
+     *
+     * @param array|null $user The user row
+     *
+     * @return array|null The user row without sensitive fields
+     */
+    public static function stripSensitiveFields(?array $user): ?array
+    {
+        if ($user === null) {
+            return null;
+        }
+
+        foreach (self::SENSITIVE_FIELDS as $field) {
+            unset($user[$field]);
+        }
+
+        return $user;
     }
 
     public static function getColumns(): array
@@ -784,5 +867,27 @@ class User
             'source_devices' => $sourceDevices,
             'potential_alts' => $alts,
         ];
+    }
+
+    /**
+     * Resolve a per-device session token (see UserSession) to its user.
+     * The session only counts while the user's account token is the one it was issued for.
+     */
+    private static function getUserBySessionToken(string $token): ?array
+    {
+        $session = UserSession::findActive($token);
+        if ($session === null) {
+            return null;
+        }
+        $pdo = Database::getPdoConnection();
+        $stmt = $pdo->prepare('SELECT * FROM ' . self::$table . ' WHERE id = :id LIMIT 1');
+        $stmt->execute(['id' => (int) $session['user_id']]);
+        $user = $stmt->fetch(\PDO::FETCH_ASSOC) ?: null;
+        if ($user === null || !hash_equals((string) $session['account_token_hash'], UserSession::hash((string) ($user['remember_token'] ?? '')))) {
+            return null;
+        }
+        UserSession::touch($session, \App\CloudFlare\CloudFlareRealIP::getRealIP());
+
+        return AvatarHelper::enrichUser($user);
     }
 }

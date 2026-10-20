@@ -26,6 +26,7 @@ use App\Plugins\PluginConfig;
 use OpenApi\Attributes as OA;
 use App\Helpers\PanelAssetUrl;
 use App\Config\ConfigInterface;
+use App\Helpers\SafeUrlFetcher;
 use App\Plugins\PluginSettings;
 use App\Helpers\AddonPackageHelper;
 use App\Plugins\PluginDependencies;
@@ -140,7 +141,7 @@ class PluginsController
 
             return ApiResponse::success(['plugins' => $pluginsList], 'Successfully fetched plugins overview', 200);
         } catch (\Exception $e) {
-            return ApiResponse::error('Failed to fetch plugins statistics: ' . $e->getMessage(), 500);
+            return ApiResponse::error('Failed to fetch plugins statistics: ' . $e->getMessage(), 'INTERNAL_SERVER_ERROR', 500);
         }
     }
 
@@ -219,7 +220,7 @@ class PluginsController
                 'allowedOnlyOnSpells' => $allowedSpellIds,
             ], 'Plugin config fetched successfully', 200);
         } catch (\Exception $e) {
-            return ApiResponse::error('Failed to fetch plugin config: ' . $e->getMessage(), 500);
+            return ApiResponse::error('Failed to fetch plugin config: ' . $e->getMessage(), 'INTERNAL_SERVER_ERROR', 500);
         }
     }
 
@@ -260,7 +261,7 @@ class PluginsController
                 'visibility' => $this->buildVisibilityPayload($identifier, $settingsList),
             ], 'Plugin visibility controls fetched successfully', 200);
         } catch (\Exception $e) {
-            return ApiResponse::error('Failed to fetch plugin visibility controls: ' . $e->getMessage(), 500);
+            return ApiResponse::error('Failed to fetch plugin visibility controls: ' . $e->getMessage(), 'INTERNAL_SERVER_ERROR', 500);
         }
     }
 
@@ -311,15 +312,16 @@ class PluginsController
             }
 
             $data = json_decode($request->getContent(), true);
-            if (json_last_error() !== JSON_ERROR_NONE) {
+            if (json_last_error() !== JSON_ERROR_NONE || !is_array($data)) {
                 return ApiResponse::error('Invalid JSON in request body', 'INVALID_JSON', 400);
             }
 
-            if (!isset($data['key']) || empty($data['key'])) {
+            if (!isset($data['key']) || !is_string($data['key']) || $data['key'] === '') {
                 return ApiResponse::error('Missing key parameter', 'MISSING_KEY', 400);
             }
 
-            if (!isset($data['value']) || empty($data['value'])) {
+            // '' and '0' are valid values (cleared field, numeric zero); only a missing value is an error.
+            if (!array_key_exists('value', $data) || !is_scalar($data['value'])) {
                 return ApiResponse::error('Missing value parameter', 'MISSING_VALUE', 400);
             }
 
@@ -404,7 +406,7 @@ class PluginsController
             }
 
             $data = json_decode($request->getContent(), true);
-            if (json_last_error() !== JSON_ERROR_NONE) {
+            if (json_last_error() !== JSON_ERROR_NONE || !is_array($data)) {
                 return ApiResponse::error('Invalid JSON in request body', 'INVALID_JSON', 400);
             }
 
@@ -494,7 +496,7 @@ class PluginsController
             }
 
             $data = json_decode($request->getContent(), true);
-            if (json_last_error() !== JSON_ERROR_NONE) {
+            if (json_last_error() !== JSON_ERROR_NONE || !is_array($data)) {
                 return ApiResponse::error('Invalid JSON in request body', 'INVALID_JSON', 400);
             }
 
@@ -573,6 +575,10 @@ class PluginsController
             return $demoDeny;
         }
 
+        if (!preg_match('/^[a-zA-Z0-9_\-]+$/', $identifier)) {
+            return ApiResponse::error('Invalid addon identifier', 'INVALID_IDENTIFIER', 400);
+        }
+
         try {
             if (!defined('APP_ADDONS_DIR')) {
                 define('APP_ADDONS_DIR', dirname(__DIR__, 3) . '/storage/addons');
@@ -620,12 +626,16 @@ class PluginsController
 
             return ApiResponse::success([], 'Addon uninstalled successfully', 200);
         } catch (\Exception $e) {
-            return ApiResponse::error('Failed to uninstall addon: ' . $e->getMessage(), 500);
+            return ApiResponse::error('Failed to uninstall addon: ' . $e->getMessage(), 'INTERNAL_SERVER_ERROR', 500);
         }
     }
 
     public function export(Request $request, string $identifier): Response
     {
+        if (!preg_match('/^[a-zA-Z0-9_\-]+$/', $identifier)) {
+            return ApiResponse::error('Invalid addon identifier', 'INVALID_IDENTIFIER', 400);
+        }
+
         try {
             // Restrict export to developer mode only.
             $config = App::getInstance(true)->getConfig();
@@ -698,7 +708,7 @@ class PluginsController
                 ]
             );
         } catch (\Exception $e) {
-            return ApiResponse::error('Failed to export addon: ' . $e->getMessage(), 500);
+            return ApiResponse::error('Failed to export addon: ' . $e->getMessage(), 'INTERNAL_SERVER_ERROR', 500);
         }
     }
 
@@ -782,7 +792,7 @@ class PluginsController
 
             return CloudPluginsController::getInstance()->performAddonInstall($tempDir, null);
         } catch (\Exception $e) {
-            return ApiResponse::error('Failed to upload install addon: ' . $e->getMessage(), 500);
+            return ApiResponse::error('Failed to upload install addon: ' . $e->getMessage(), 'INTERNAL_SERVER_ERROR', 500);
         }
     }
 
@@ -833,13 +843,7 @@ class PluginsController
                 return ApiResponse::error('Failed to prepare addons directory', 'ADDONS_DIR_CREATE_FAILED', 500);
             }
 
-            $context = stream_context_create([
-                'http' => [
-                    'timeout' => 30,
-                    'ignore_errors' => true,
-                ],
-            ]);
-            $fileContent = @file_get_contents($url, false, $context);
+            $fileContent = SafeUrlFetcher::fetch($url);
             if ($fileContent === false) {
                 return ApiResponse::error('Failed to download file from URL', 'DOWNLOAD_FAILED', 500);
             }
@@ -857,7 +861,7 @@ class PluginsController
 
             return CloudPluginsController::getInstance()->performAddonInstall($tempDir, null);
         } catch (\Exception $e) {
-            return ApiResponse::error('Failed to install from URL: ' . $e->getMessage(), 500);
+            return ApiResponse::error('Failed to install from URL: ' . $e->getMessage(), 'INTERNAL_SERVER_ERROR', 500);
         }
     }
 
@@ -896,6 +900,10 @@ class PluginsController
     )]
     public function resyncSymlinks(Request $request, string $identifier): Response
     {
+        if (!preg_match('/^[a-zA-Z0-9_\-]+$/', $identifier)) {
+            return ApiResponse::error('Invalid plugin identifier', 'INVALID_IDENTIFIER', 400);
+        }
+
         try {
             if (!defined('APP_ADDONS_DIR')) {
                 define('APP_ADDONS_DIR', dirname(__DIR__, 3) . '/storage/addons');
@@ -963,7 +971,7 @@ class PluginsController
         } catch (\Exception $e) {
             App::getInstance(true)->getLogger()->error('Failed to resync symlinks for ' . $identifier . ': ' . $e->getMessage());
 
-            return ApiResponse::error('Failed to resync symlinks: ' . $e->getMessage(), 500);
+            return ApiResponse::error('Failed to resync symlinks: ' . $e->getMessage(), 'INTERNAL_SERVER_ERROR', 500);
         }
     }
 

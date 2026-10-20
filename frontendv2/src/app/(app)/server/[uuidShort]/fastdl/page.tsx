@@ -22,7 +22,7 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useServerPermissions } from '@/hooks/useServerPermissions';
 import { Button } from '@/components/featherui/Button';
-import { PageHeader } from '@/components/featherui/PageHeader';
+import { ServerPageHeader } from '@/components/server/ServerPageHeader';
 import { PageCard } from '@/components/featherui/PageCard';
 import { EmptyState } from '@/components/featherui/EmptyState';
 import { Input } from '@/components/featherui/Input';
@@ -251,9 +251,9 @@ export default function ServerFastDlPage() {
     }
 
     return (
-        <div className='space-y-8 pb-12'>
+        <div className='space-y-6 pb-12'>
             <WidgetRenderer widgets={getWidgets('server-fastdl', 'top-of-page')} />
-            <PageHeader title={t('serverFastDl.title')} description={t('serverFastDl.description')} />
+            <ServerPageHeader title={t('serverFastDl.title')} description={t('serverFastDl.description')} />
             <WidgetRenderer widgets={getWidgets('server-fastdl', 'after-header')} />
 
             <PageCard

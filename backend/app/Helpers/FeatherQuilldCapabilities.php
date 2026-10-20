@@ -52,7 +52,8 @@ class FeatherQuilldCapabilities
         $configPath = $defaults['config_path'];
         $unit = $defaults['systemd_unit'];
 
-        $installCommand = 'curl -sSL https://get.featherpanel.com/installer.sh | bash -s -- featherquilld';
+        // Match Wings: non-interactive daemon install only; configure/join-data is setup_command (step 2).
+        $installCommand = 'curl -sSL https://get.featherpanel.com/installer.sh | env FP_COMPONENT=featherquilld FP_ACTION=install FP_QUILLD_SKIP_CONFIGURE=true bash';
 
         $joinData = '';
         if ($configYaml !== null && $configYaml !== '') {

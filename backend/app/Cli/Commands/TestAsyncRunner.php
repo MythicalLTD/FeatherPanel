@@ -39,23 +39,23 @@ class TestAsyncRunner extends App implements CommandBuilder
 
         try {
             $redis = new \Redis();
-            $host = $_ENV['REDIS_HOST'] ?? '127.0.0.1';
-            $port = (int) ($_ENV['REDIS_PORT'] ?? 6379);
+            $host = \App\App::env('REDIS_HOST', '127.0.0.1');
+            $port = (int) \App\App::env('REDIS_PORT', '6379');
 
             try {
                 $connected = $redis->connect($host, $port);
                 if (!$connected) {
                     throw new \Exception('Connection returned false');
                 }
-                if (!empty($_ENV['REDIS_PASSWORD'])) {
-                    $redis->auth($_ENV['REDIS_PASSWORD']);
+                if (!empty((string) \App\App::env('REDIS_PASSWORD', ''))) {
+                    $redis->auth((string) \App\App::env('REDIS_PASSWORD', ''));
                 }
             } catch (\Exception $e) {
                 $app->sendOutputWithNewLine('&cFATAL: Redis connection failed: ' . $e->getMessage());
                 $app->sendOutputWithNewLine('&7Checking Redis configuration...');
                 $app->sendOutputWithNewLine('&7REDIS_HOST: ' . $host);
                 $app->sendOutputWithNewLine('&7REDIS_PORT: ' . $port);
-                $app->sendOutputWithNewLine('&7REDIS_PASSWORD: ' . (empty($_ENV['REDIS_PASSWORD']) ? 'NOT SET or EMPTY' : '***'));
+                $app->sendOutputWithNewLine('&7REDIS_PASSWORD: ' . (empty((string) \App\App::env('REDIS_PASSWORD', '')) ? 'NOT SET or EMPTY' : '***'));
                 exit;
             }
 

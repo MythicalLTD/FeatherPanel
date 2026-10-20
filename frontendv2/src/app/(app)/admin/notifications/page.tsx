@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { TipCard, TipGrid } from '@/components/featherui/TipCard';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import ReactMarkdown from 'react-markdown';
@@ -37,13 +38,12 @@ import {
     KeyRound,
 } from 'lucide-react';
 import { PageHeader } from '@/components/featherui/PageHeader';
-import { ResourceCard, type ResourceBadge } from '@/components/featherui/ResourceCard';
-import { EmptyState } from '@/components/featherui/EmptyState';
+import { ResourceCard, ResourceTable, type ResourceBadge } from '@/components/featherui/ResourceCard';
+import { ListEmptyState } from '@/components/featherui/ListEmptyState';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { Textarea } from '@/components/featherui/Textarea';
-import { PageCard } from '@/components/featherui/PageCard';
 import { Sheet, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from '@/components/ui/sheet';
 import { SaveShortcutHint } from '@/components/featherui/SaveShortcutHint';
 import { toast } from 'sonner';
@@ -53,6 +53,11 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { usePersistedListFilters } from '@/hooks/usePersistedListFilters';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
+import { useFormBaseline } from '@/hooks/useFormBaseline';
+import { useDiscardConfirm } from '@/hooks/useUnsavedChangesGuard';
+import { Sensitive } from '@/components/common/Sensitive';
+import { useIpMask } from '@/hooks/useIpMask';
+import { ListPagination } from '@/components/featherui/ListPagination';
 
 interface Notification {
     id: number;
@@ -99,10 +104,11 @@ const NOTIFICATIONS_LIST_FILTERS_DEFAULTS = {
 
 export default function NotificationsPage() {
     const { t } = useTranslation();
+    const privacyMask = useIpMask();
     const { fetchWidgets, getWidgets } = usePluginWidgets('admin-notifications');
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [loading, setLoading] = useState(true);
-    const { filters, patchFilters, hydrated } = usePersistedListFilters(
+    const { filters, patchFilters, hydrated, resetFilters, isFiltered } = usePersistedListFilters(
         NOTIFICATIONS_LIST_FILTERS_KEY,
         NOTIFICATIONS_LIST_FILTERS_DEFAULTS,
     );
@@ -133,6 +139,12 @@ export default function NotificationsPage() {
         server_id: null as number | null,
         send_email: true,
     });
+    const { dirty: editDirty, commit: commitEdit } = useFormBaseline(editingNotification);
+    const { dirty: createDirty } = useFormBaseline(newNotification, { trackFromStart: true });
+    const guardClose = useDiscardConfirm(
+        (editOpen && editDirty) || (createOpen && createDirty),
+        t('common.unsavedChanges.leaveConfirm'),
+    );
 
     const [userSearch, setUserSearch] = useState('');
     const [userOptions, setUserOptions] = useState<AdminUserOption[]>([]);
@@ -358,6 +370,7 @@ export default function NotificationsPage() {
 
     const openEdit = (notification: Notification) => {
         setEditingNotification({ ...notification });
+        commitEdit({ ...notification });
         setEditOpen(true);
     };
 
@@ -422,7 +435,7 @@ export default function NotificationsPage() {
 
             <WidgetRenderer widgets={getWidgets('admin-notifications', 'after-header')} />
 
-            <div className='bg-card/40 flex flex-col items-center gap-4 rounded-2xl p-4 shadow-sm backdrop-blur-md sm:flex-row'>
+            <div className='fp-surface flex flex-col items-center gap-4 rounded-2xl border p-4 sm:flex-row'>
                 <div className='group relative w-full flex-1'>
                     <Search className='text-muted-foreground group-focus-within:text-primary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transition-colors' />
                     <Input
@@ -435,40 +448,21 @@ export default function NotificationsPage() {
             </div>
 
             {pagination.totalPages > 1 && !loading && (
-                <div className='border-border bg-card/50 mb-4 flex items-center justify-between gap-4 rounded-xl border px-4 py-3'>
-                    <Button
-                        variant='outline'
-                        size='sm'
-                        disabled={page === 1}
-                        onClick={() => patchFilters({ page: page - 1 })}
-                        className='gap-1.5'
-                    >
-                        <ChevronLeft className='h-4 w-4' />
-                        {t('common.previous')}
-                    </Button>
-                    <span className='text-sm font-medium'>
-                        {page} / {pagination.totalPages}
-                    </span>
-                    <Button
-                        variant='outline'
-                        size='sm'
-                        disabled={page === pagination.totalPages}
-                        onClick={() => patchFilters({ page: page + 1 })}
-                        className='gap-1.5'
-                    >
-                        {t('common.next')}
-                        <ChevronRight className='h-4 w-4' />
-                    </Button>
-                </div>
+                <ListPagination
+                    page={page}
+                    totalPages={pagination.totalPages}
+                    onPageChange={(nextPage) => patchFilters({ page: nextPage })}
+                    className='mb-4'
+                />
             )}
 
             {loading ? (
                 <TableSkeleton count={3} />
             ) : notifications.length === 0 ? (
-                <EmptyState
+                <ListEmptyState
                     icon={Bell}
-                    title={t('admin.notifications.no_results')}
-                    description={t('admin.notifications.search_placeholder')}
+                    title={t('emptyStates.announcements.title')}
+                    description={t('emptyStates.announcements.description')}
                     action={
                         <Button
                             onClick={() => {
@@ -479,9 +473,11 @@ export default function NotificationsPage() {
                             {t('admin.notifications.create')}
                         </Button>
                     }
+                    filtered={isFiltered}
+                    onClearFilters={resetFilters}
                 />
             ) : (
-                <div className='grid grid-cols-1 gap-4'>
+                <ResourceTable>
                     <WidgetRenderer widgets={getWidgets('admin-notifications', 'before-list')} />
                     {notifications.map((notification) => {
                         const Icon = getTypeIcon(notification.type);
@@ -559,7 +555,7 @@ export default function NotificationsPage() {
                             />
                         );
                     })}
-                </div>
+                </ResourceTable>
             )}
 
             {pagination.totalPages > 1 && (
@@ -588,27 +584,27 @@ export default function NotificationsPage() {
                 </div>
             )}
 
-            <div className='grid grid-cols-1 gap-6 pt-10 md:grid-cols-2 lg:grid-cols-3'>
-                <PageCard title={t('admin.notifications.help.alerts.title')} icon={Bell}>
+            <TipGrid>
+                <TipCard title={t('admin.notifications.help.alerts.title')} icon={Bell}>
                     <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.notifications.help.alerts.description')}
                     </p>
-                </PageCard>
-                <PageCard title={t('admin.notifications.help.markdown.title')} icon={Info}>
+                </TipCard>
+                <TipCard title={t('admin.notifications.help.markdown.title')} icon={Info}>
                     <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.notifications.help.markdown.description')}
                     </p>
-                </PageCard>
-                <PageCard title={t('admin.notifications.help.delivery.title')} icon={KeyRound} variant='danger'>
+                </TipCard>
+                <TipCard title={t('admin.notifications.help.delivery.title')} icon={KeyRound} variant='danger'>
                     <ul className='text-muted-foreground list-inside list-disc space-y-1 text-sm'>
                         <li>{t('admin.notifications.help.delivery.item1')}</li>
                         <li>{t('admin.notifications.help.delivery.item2')}</li>
                         <li>{t('admin.notifications.help.delivery.item3')}</li>
                     </ul>
-                </PageCard>
-            </div>
+                </TipCard>
+            </TipGrid>
 
-            <Sheet open={createOpen} onOpenChange={setCreateOpen}>
+            <Sheet open={createOpen} onOpenChange={guardClose(setCreateOpen)}>
                 <div className='space-y-6'>
                     <SheetHeader>
                         <SheetTitle>{t('admin.notifications.form.create_title')}</SheetTitle>
@@ -705,11 +701,15 @@ export default function NotificationsPage() {
                                                             user_id: user.id,
                                                             server_id: null,
                                                         });
-                                                        setSelectedUserLabel(`${user.username} (${user.email})`);
+                                                        setSelectedUserLabel(
+                                                            `${user.username} (${privacyMask.text(user.email)})`,
+                                                        );
                                                     }}
                                                 >
                                                     <span className='font-medium'>{user.username}</span>
-                                                    <span className='text-muted-foreground text-xs'>{user.email}</span>
+                                                    <span className='text-muted-foreground text-xs'>
+                                                        <Sensitive>{user.email}</Sensitive>
+                                                    </span>
                                                 </button>
                                             ))
                                         )}
@@ -803,7 +803,7 @@ export default function NotificationsPage() {
                 </div>
             </Sheet>
 
-            <Sheet open={editOpen} onOpenChange={setEditOpen}>
+            <Sheet open={editOpen} onOpenChange={guardClose(setEditOpen)}>
                 <div className='space-y-6'>
                     <SheetHeader>
                         <SheetTitle>{t('admin.notifications.form.edit_title')}</SheetTitle>

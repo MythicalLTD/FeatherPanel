@@ -15,8 +15,8 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { useContext, useEffect, useState } from 'react';
-import { CircleUser, Smartphone } from 'lucide-react';
+import { useContext, useEffect, useMemo, useState } from 'react';
+import { CircleUser, Compass, Smartphone } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useSession } from '@/contexts/SessionContext';
 import { useTranslation } from '@/contexts/TranslationContext';
@@ -33,6 +33,9 @@ import { useSidebarPreferences } from '@/hooks/useSidebarPreferences';
 import { NavbarClassicChrome, NavbarModernChrome } from '@/components/NavbarChromeVariants';
 import { ServerSwitcher } from '@/components/server/ServerSwitcher';
 import { WebSpaceSwitcher } from '@/components/webspace/WebSpaceSwitcher';
+import { useSettings } from '@/contexts/SettingsContext';
+import { getAdminNavigationItems, getMainNavigationItems } from '@/config/navigation';
+import { resolveNavigationTitle } from '@/lib/navigation-title';
 
 interface NavbarProps {
     onMenuClick: () => void;
@@ -54,7 +57,23 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
     const serverName = isOnServerPage ? serverContext?.server?.name : null;
     const webSpaceName = isOnWebSpacePage ? webSpaceContext?.webspace?.name : null;
     const isKnowledgeBaseSection = pathname?.startsWith('/dashboard/knowledgebase');
-    const headerTitle = isKnowledgeBaseSection ? t('dashboard.knowledgebase.title') : t('dashboard.title');
+    const { settings } = useSettings();
+    // Title for the current section (e.g. "Users" on /admin/users) instead of always "Dashboard".
+    // Only the static config is used here; permissions do not matter for a label lookup.
+    const sectionTitle = useMemo(() => {
+        if (!pathname || isKnowledgeBaseSection) return null;
+        if (isOnAdminPage) return resolveNavigationTitle(pathname, getAdminNavigationItems(t, settings, true));
+        if (pathname.startsWith('/dashboard'))
+            return resolveNavigationTitle(
+                pathname,
+                getMainNavigationItems(t, settings, () => true),
+                ['/dashboard'],
+            );
+        return null;
+    }, [pathname, isOnAdminPage, isKnowledgeBaseSection, t, settings]);
+    const headerTitle = isKnowledgeBaseSection
+        ? t('dashboard.knowledgebase.title')
+        : (sectionTitle ?? t('dashboard.title'));
     const headerContent = isOnServerPage ? (
         <ServerSwitcher fallbackTitle={serverName ?? undefined} />
     ) : isOnWebSpacePage ? (
@@ -64,6 +83,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
     const userNavigation = [
         { name: t('navbar.profile'), href: '/dashboard/account', icon: CircleUser },
         { name: t('account.loginDevice.menuLabel'), href: '/dashboard/account/login-device', icon: Smartphone },
+        { name: t('onboarding.tour.menu'), href: '/dashboard?tour=1', icon: Compass },
     ];
 
     const handleLogout = async () => {
@@ -138,6 +158,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
         sidebarPosition,
         sidebarTogglePlacement,
         sidebarGlow,
+        settings,
     };
 
     const Chrome = chromeLayout === 'classic' ? NavbarClassicChrome : NavbarModernChrome;

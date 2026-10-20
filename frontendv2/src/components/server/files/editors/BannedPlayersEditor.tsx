@@ -97,9 +97,10 @@ export function BannedPlayersEditor({
             uuid: entry.uuid.trim(),
             name: entry.name.trim(),
             created: entry.created.trim(),
-            source: entry.source.trim() || '(Unknown)',
+            source: entry.source.trim() || t('ui.components.server.files.editors.bannedPlayersEditor.unknown'),
             expires: entry.expires.trim() || 'forever',
-            reason: entry.reason.trim() || 'Banned by an operator.',
+            reason:
+                entry.reason.trim() || t('ui.components.server.files.editors.bannedPlayersEditor.bannedByAnOperator'),
         }));
         onSave(`${JSON.stringify(sanitized, null, 4)}\n`);
     };
@@ -113,7 +114,7 @@ export function BannedPlayersEditor({
     };
 
     return (
-        <Card className='bg-card/50 border-border/50 flex flex-col overflow-hidden rounded-2xl border shadow-sm backdrop-blur-sm'>
+        <Card className='fp-surface flex flex-col overflow-hidden rounded-xl border'>
             <CardHeader className='border-border/10 shrink-0 border-b pb-6'>
                 <div className='flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between'>
                     <div className='space-y-2'>
@@ -204,7 +205,9 @@ export function BannedPlayersEditor({
                                         value={entry.source}
                                         onChange={(e) => updateEntry(index, 'source', e.target.value)}
                                         readOnly={readonly}
-                                        placeholder='(Unknown)'
+                                        placeholder={t(
+                                            'ui.components.server.files.editors.bannedPlayersEditor.unknown',
+                                        )}
                                     />
                                 </div>
                             </div>

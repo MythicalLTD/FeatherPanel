@@ -27,6 +27,14 @@ class TicketMessage
     private static string $table = 'featherpanel_ticket_messages';
 
     /**
+     * Get the name of the table.
+     */
+    public static function getTableName(): string
+    {
+        return self::$table;
+    }
+
+    /**
      * Get all messages for a ticket.
      *
      * @param int $ticketId Ticket ID
@@ -143,6 +151,51 @@ class TicketMessage
             'unread_count' => $unreadCount,
             'has_unread' => $unreadCount > 0,
         ];
+    }
+
+    /**
+     * getUnreadSinceLastReply() for many tickets with one query.
+     *
+     * @param int[] $ticketIds
+     *
+     * @return array<int, array{unread_count:int,has_unread:bool}> keyed by ticket id (every requested id is present)
+     */
+    public static function getUnreadSinceLastReplyForTickets(array $ticketIds, string $userUuid): array
+    {
+        $ticketIds = array_values(array_unique(array_filter(array_map('intval', $ticketIds), static fn (int $id): bool => $id > 0)));
+        $result = [];
+        foreach ($ticketIds as $id) {
+            $result[$id] = ['unread_count' => 0, 'has_unread' => false];
+        }
+        if ($ticketIds === [] || !preg_match('/^[a-f0-9\-]{36}$/i', $userUuid)) {
+            return $result;
+        }
+
+        $placeholders = implode(',', array_fill(0, count($ticketIds), '?'));
+        $sql = '
+            SELECT tm.ticket_id, COUNT(*) AS unread_count
+            FROM ' . self::$table . ' tm
+            LEFT JOIN (
+                SELECT own.ticket_id, MAX(own.created_at) AS last_reply
+                FROM ' . self::$table . ' own
+                WHERE own.user_uuid = ? AND own.ticket_id IN (' . $placeholders . ')
+                GROUP BY own.ticket_id
+            ) mine ON mine.ticket_id = tm.ticket_id
+            WHERE tm.ticket_id IN (' . $placeholders . ')
+              AND tm.is_internal = 0
+              AND tm.user_uuid IS NOT NULL
+              AND tm.user_uuid <> ?
+              AND tm.created_at > COALESCE(mine.last_reply, "1970-01-01 00:00:00")
+            GROUP BY tm.ticket_id
+        ';
+        $stmt = Database::getPdoConnection()->prepare($sql);
+        $stmt->execute([$userUuid, ...$ticketIds, ...$ticketIds, $userUuid]);
+        foreach ($stmt->fetchAll(\PDO::FETCH_ASSOC) as $row) {
+            $count = (int) $row['unread_count'];
+            $result[(int) $row['ticket_id']] = ['unread_count' => $count, 'has_unread' => $count > 0];
+        }
+
+        return $result;
     }
 
     /**

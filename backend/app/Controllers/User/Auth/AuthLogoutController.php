@@ -67,7 +67,21 @@ class AuthLogoutController
 
             return ApiResponse::success([], 'Logged out no user found', 200);
         }
-        if (isset($user['remember_token'])) {
+        if (\App\Chat\UserSession::isSessionToken((string) $_COOKIE['remember_token'])) {
+            // Per-device session: end only this device, other signed-in devices stay signed in.
+            \App\Chat\UserSession::revokeToken((string) $_COOKIE['remember_token']);
+            if (isset($eventManager) && $eventManager !== null) {
+                $eventManager->emit(
+                    AuthEvent::onAuthLogout(),
+                );
+            }
+            Activity::createActivity([
+                'user_uuid' => $user['uuid'],
+                'name' => 'logout',
+                'context' => 'User logged out',
+                'ip_address' => CloudFlareRealIP::getRealIP(),
+            ]);
+        } elseif (isset($user['remember_token'])) {
             $newRememberToken = User::generateAccountToken();
             User::updateUser(
                 $user['uuid'],

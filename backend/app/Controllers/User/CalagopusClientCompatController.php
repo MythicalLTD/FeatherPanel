@@ -1341,6 +1341,43 @@ class CalagopusClientCompatController
     }
 
     /**
+     * Panel-mediated recursive copy for FeatherWings and mixed daemon pairs.
+     *
+     * @param array<string, mixed> $sourceNode
+     * @param array<string, mixed> $sourceServer
+     * @param array<string, mixed> $destinationNode
+     * @param array<string, mixed> $destinationServer
+     * @param array<int, array{from:string,to:string}> $files
+     */
+    public function copyRemoteThroughPanel(
+        array $sourceNode,
+        array $sourceServer,
+        array $destinationNode,
+        array $destinationServer,
+        string $sourceRoot,
+        string $destinationRoot,
+        array $files,
+    ): void {
+        $sourceService = Wings::fromNode($sourceNode, 900)->getServer();
+        $destinationService = Wings::fromNode($destinationNode, 900)->getServer();
+
+        $budget = ['bytes' => 0, 'entries' => 0];
+        foreach ($files as $file) {
+            $source = $this->joinFilePath($sourceRoot, $file['from']);
+            $destination = $this->joinFilePath($destinationRoot, $file['to']);
+            $this->copyRemoteEntryThroughPanel(
+                $sourceService,
+                (string) $sourceServer['uuid'],
+                $source,
+                $destinationService,
+                (string) $destinationServer['uuid'],
+                $destination,
+                $budget
+            );
+        }
+    }
+
+    /**
      * @return array<string, mixed>|null
      */
     private function user(Request $request): ?array
@@ -1622,43 +1659,6 @@ class CalagopusClientCompatController
         }
 
         return rtrim('/' . trim($root, '/'), '/') . '/' . ltrim($path, '/');
-    }
-
-    /**
-     * Panel-mediated recursive copy for FeatherWings and mixed daemon pairs.
-     *
-     * @param array<string, mixed> $sourceNode
-     * @param array<string, mixed> $sourceServer
-     * @param array<string, mixed> $destinationNode
-     * @param array<string, mixed> $destinationServer
-     * @param array<int, array{from:string,to:string}> $files
-     */
-    private function copyRemoteThroughPanel(
-        array $sourceNode,
-        array $sourceServer,
-        array $destinationNode,
-        array $destinationServer,
-        string $sourceRoot,
-        string $destinationRoot,
-        array $files,
-    ): void {
-        $sourceService = Wings::fromNode($sourceNode, 900)->getServer();
-        $destinationService = Wings::fromNode($destinationNode, 900)->getServer();
-
-        $budget = ['bytes' => 0, 'entries' => 0];
-        foreach ($files as $file) {
-            $source = $this->joinFilePath($sourceRoot, $file['from']);
-            $destination = $this->joinFilePath($destinationRoot, $file['to']);
-            $this->copyRemoteEntryThroughPanel(
-                $sourceService,
-                (string) $sourceServer['uuid'],
-                $source,
-                $destinationService,
-                (string) $destinationServer['uuid'],
-                $destination,
-                $budget
-            );
-        }
     }
 
     /**

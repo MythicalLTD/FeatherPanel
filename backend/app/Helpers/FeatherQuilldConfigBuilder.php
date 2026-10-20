@@ -28,7 +28,7 @@ class FeatherQuilldConfigBuilder
 {
     public const DEFAULT_PORT = 8989;
 
-    /** Panel route for runtime config (FeatherQuilld only — not /api/remote/config). */
+    /** Panel route for runtime config (FeatherQuilld only - not /api/remote/config). */
     public const REMOTE_CONFIG_PATH = '/api/quilld-remote/config';
 
     /** Panel route for panel health checks from FeatherQuilld. */

@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { AdminPageTips } from '@/components/admin/AdminPageTips';
 import { APP_MONO_FONT_STACK } from '@/lib/mono-font';
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
@@ -50,6 +51,7 @@ import {
     ExternalLink,
     WifiOff,
 } from 'lucide-react';
+import { Sensitive } from '@/components/common/Sensitive';
 
 // Types
 
@@ -739,7 +741,7 @@ export default function AdminLogsPage() {
                 />
 
                 {/* Mode switcher tabs */}
-                <div className='bg-card/50 border-border/40 flex w-fit items-center gap-1 rounded-2xl border p-1 backdrop-blur-xl'>
+                <div className='fp-surface flex w-fit items-center gap-1 rounded-2xl border p-1'>
                     <button
                         onClick={() => setViewMode('panel')}
                         className={cn(
@@ -768,7 +770,7 @@ export default function AdminLogsPage() {
 
                 {/* Panel logs view */}
                 {viewMode === 'panel' && (
-                    <div className='border-border/50 bg-card/50 overflow-hidden rounded-3xl border backdrop-blur-xl'>
+                    <div className='fp-surface overflow-hidden rounded-3xl border'>
                         {/* Panel toolbar */}
                         <div className='border-border/40 bg-muted/20 flex flex-col gap-3 border-b px-4 py-3 sm:flex-row sm:items-center'>
                             {/* Log type pills */}
@@ -806,7 +808,7 @@ export default function AdminLogsPage() {
                                     <ChevronDown className='h-3 w-3' />
                                 </button>
                                 {panelLineDropdownOpen && (
-                                    <div className='bg-popover border-border absolute top-full left-0 z-50 mt-1 min-w-22.5 overflow-hidden rounded-xl border shadow-xl'>
+                                    <div className='fp-menu-surface absolute top-full left-0 z-50 mt-1 min-w-22.5 overflow-hidden rounded-xl border shadow-xl'>
                                         {LINE_OPTIONS.map((n) => (
                                             <button
                                                 key={n}
@@ -910,7 +912,7 @@ export default function AdminLogsPage() {
 
                 {/* Panel log file inventory */}
                 {viewMode === 'panel' && logFiles.length > 0 && (
-                    <div className='border-border/40 bg-card/30 overflow-hidden rounded-2xl border backdrop-blur-xl'>
+                    <div className='fp-surface overflow-hidden rounded-2xl border'>
                         <div className='border-border/30 flex items-center gap-2 border-b px-4 py-2.5'>
                             <HardDrive className='text-muted-foreground h-3.5 w-3.5' />
                             <span className='text-muted-foreground text-xs font-semibold tracking-wide uppercase'>
@@ -965,7 +967,7 @@ export default function AdminLogsPage() {
 
                 {/* Wings node logs view */}
                 {viewMode === 'wings' && (
-                    <div className='border-border/50 bg-card/50 overflow-hidden rounded-3xl border backdrop-blur-xl'>
+                    <div className='fp-surface overflow-hidden rounded-3xl border'>
                         {/* Wings toolbar */}
                         <div className='border-border/40 bg-muted/20 flex flex-col gap-3 border-b px-4 py-3 sm:flex-row sm:items-center'>
                             {/* Node picker */}
@@ -984,7 +986,7 @@ export default function AdminLogsPage() {
                                     <ChevronDown className='h-3 w-3 shrink-0' />
                                 </button>
                                 {wingsNodeDropdownOpen && nodes.length > 0 && (
-                                    <div className='bg-popover border-border absolute top-full left-0 z-50 mt-1 max-h-60 min-w-50 overflow-hidden overflow-y-auto rounded-xl border shadow-xl'>
+                                    <div className='fp-menu-surface absolute top-full left-0 z-50 mt-1 max-h-60 min-w-50 overflow-hidden overflow-y-auto rounded-xl border shadow-xl'>
                                         {nodes.map((node) => (
                                             <button
                                                 key={node.id}
@@ -1010,7 +1012,7 @@ export default function AdminLogsPage() {
                                                                 : 'text-muted-foreground/50',
                                                         )}
                                                     >
-                                                        {node.fqdn}
+                                                        <Sensitive>{node.fqdn}</Sensitive>
                                                     </div>
                                                 </div>
                                             </button>
@@ -1018,7 +1020,7 @@ export default function AdminLogsPage() {
                                     </div>
                                 )}
                                 {wingsNodeDropdownOpen && !nodesLoading && nodes.length === 0 && (
-                                    <div className='bg-popover border-border text-muted-foreground absolute top-full left-0 z-50 mt-1 min-w-45 rounded-xl border p-3 text-xs shadow-xl'>
+                                    <div className='fp-menu-surface text-muted-foreground absolute top-full left-0 z-50 mt-1 min-w-45 rounded-xl border p-3 text-xs shadow-xl'>
                                         {t('admin.logs.wings_no_nodes')}
                                     </div>
                                 )}
@@ -1034,7 +1036,7 @@ export default function AdminLogsPage() {
                                     <ChevronDown className='h-3 w-3' />
                                 </button>
                                 {wingsLineDropdownOpen && (
-                                    <div className='bg-popover border-border absolute top-full left-0 z-50 mt-1 min-w-22.5 overflow-hidden rounded-xl border shadow-xl'>
+                                    <div className='fp-menu-surface absolute top-full left-0 z-50 mt-1 min-w-22.5 overflow-hidden rounded-xl border shadow-xl'>
                                         {LINE_OPTIONS.map((n) => (
                                             <button
                                                 key={n}
@@ -1063,7 +1065,7 @@ export default function AdminLogsPage() {
                                 <div className='text-muted-foreground/70 hidden items-center gap-3 text-[11px] font-medium lg:flex'>
                                     <span className='flex items-center gap-1'>
                                         <Globe className='h-3 w-3' />
-                                        {selectedNode.fqdn}
+                                        <Sensitive>{selectedNode.fqdn}</Sensitive>
                                     </span>
                                     <span className='flex items-center gap-1'>
                                         <Clock className='h-3 w-3' />
@@ -1156,7 +1158,9 @@ export default function AdminLogsPage() {
                             {selectedNode && (
                                 <>
                                     <span>·</span>
-                                    <span>{selectedNode.fqdn}</span>
+                                    <span>
+                                        <Sensitive>{selectedNode.fqdn}</Sensitive>
+                                    </span>
                                 </>
                             )}
                             <div className='flex-1' />
@@ -1175,7 +1179,7 @@ export default function AdminLogsPage() {
 
                 {/* Wings node switcher grid */}
                 {viewMode === 'wings' && nodes.length > 0 && (
-                    <div className='border-border/40 bg-card/30 overflow-hidden rounded-2xl border backdrop-blur-xl'>
+                    <div className='fp-surface overflow-hidden rounded-2xl border'>
                         <div className='border-border/30 flex items-center gap-2 border-b px-4 py-2.5'>
                             <Server className='text-muted-foreground h-3.5 w-3.5' />
                             <span className='text-muted-foreground text-xs font-semibold tracking-wide uppercase'>
@@ -1215,7 +1219,7 @@ export default function AdminLogsPage() {
                                                 )}
                                             </div>
                                             <div className='text-muted-foreground/60 mt-0.5 truncate text-[11px]'>
-                                                {node.fqdn}
+                                                <Sensitive>{node.fqdn}</Sensitive>
                                             </div>
                                         </div>
                                     </button>
@@ -1225,6 +1229,8 @@ export default function AdminLogsPage() {
                     </div>
                 )}
             </div>
+
+            <AdminPageTips page='logs' />
 
             <WidgetRenderer widgets={getWidgets('admin-logs', 'bottom-of-page')} />
         </>

@@ -35,6 +35,7 @@ use App\Chat\ServerVariable;
 use App\Helpers\ApiResponse;
 use App\Chat\SubdomainDomain;
 use App\Helpers\AppUrlHelper;
+use App\Services\Wings\Wings;
 use OpenApi\Attributes as OA;
 use App\Chat\DatabaseInstance;
 use App\Config\ConfigInterface;
@@ -347,7 +348,9 @@ class ServerUserController
                 $serversById = Server::getServersByIds($subuserServerIds);
                 foreach ($subuserServerIds as $serverId) {
                     $server = $serversById[$serverId] ?? null;
-                    if ($server) {
+                    // A stale subuser row on a server the user now owns (e.g. after an ownership
+                    // transfer) must not list the server twice.
+                    if ($server && (int) ($server['owner_id'] ?? 0) !== (int) $user['id']) {
                         if (
                             empty($search)
                             || stripos($server['name'], $search) !== false
@@ -414,15 +417,7 @@ class ServerUserController
         $realmsById = \App\Chat\Realm::getByIds(array_keys($realmIds));
         $spellsById = Spell::getSpellsByIds(array_keys($spellIds));
         $allocationsById = Allocation::getAllocationsByIds(array_keys($allocationIds));
-        $ownersById = [];
-        if ($ownerIds !== []) {
-            foreach (array_keys($ownerIds) as $ownerId) {
-                $owner = \App\Chat\User::getUserById($ownerId);
-                if ($owner) {
-                    $ownersById[$ownerId] = $owner;
-                }
-            }
-        }
+        $ownersById = $ownerIds !== [] ? \App\Chat\User::getUsersByIds(array_keys($ownerIds)) : [];
 
         // Add related data to each server.
         foreach ($servers as &$server) {
@@ -584,11 +579,17 @@ class ServerUserController
             status: $statusFilter,
         );
 
+        $owners = \App\Chat\User::getUsersByIds(array_column($servers, 'owner_id'));
+        $nodes = Node::getNodesByIds(array_column($servers, 'node_id'));
+        $locations = Location::getByIds(array_column($nodes, 'location_id'));
+        $realms = \App\Chat\Realm::getByIds(array_column($servers, 'realms_id'));
+        $spells = Spell::getSpellsByIds(array_column($servers, 'spell_id'));
+        $allocations = Allocation::getAllocationsByIds(array_column($servers, 'allocation_id'));
         foreach ($servers as &$server) {
             $server['is_subuser'] = false;
             $server['subuser_permissions'] = [];
             $server['subuser_id'] = null;
-            $owner = \App\Chat\User::getUserById($server['owner_id']);
+            $owner = $owners[(int) $server['owner_id']] ?? null;
             $server['owner'] = $owner ? [
                 'id' => $owner['id'],
                 'username' => $owner['username'],
@@ -596,7 +597,7 @@ class ServerUserController
                 'avatar' => $owner['avatar'] ?? null,
             ] : null;
 
-            $node = Node::getNodeById($server['node_id']);
+            $node = $nodes[(int) $server['node_id']] ?? null;
             $caps = DaemonCapabilities::fromNode($node ?? []);
             $server['node'] = [
                 'name' => $node['name'] ?? null,
@@ -609,7 +610,7 @@ class ServerUserController
 
             $location = null;
             if (isset($node['location_id']) && $node['location_id'] > 0) {
-                $locationData = Location::getById((int) $node['location_id']);
+                $locationData = $locations[(int) $node['location_id']] ?? null;
                 if ($locationData) {
                     $location = [
                         'id' => $locationData['id'] ?? null,
@@ -621,19 +622,19 @@ class ServerUserController
             }
             $server['location'] = $location;
 
-            $server['realm'] = \App\Chat\Realm::getById($server['realms_id']);
+            $server['realm'] = $realms[(int) $server['realms_id']] ?? null;
             $server['realm'] = [
                 'name' => $server['realm']['name'] ?? null,
                 'description' => $server['realm']['description'] ?? null,
                 'logo' => $server['realm']['logo'] ?? null,
             ];
-            $server['spell'] = Spell::getSpellById($server['spell_id']);
+            $server['spell'] = $spells[(int) $server['spell_id']] ?? null;
             $server['spell'] = [
                 'name' => $server['spell']['name'] ?? null,
                 'description' => $server['spell']['description'] ?? null,
                 'banner' => $server['spell']['banner'] ?? null,
             ];
-            $server['allocation'] = Allocation::getAllocationById($server['allocation_id']);
+            $server['allocation'] = $allocations[(int) $server['allocation_id']] ?? null;
             $server['allocation'] = [
                 'ip' => $server['allocation']['ip'] ?? null,
                 'port' => $server['allocation']['port'] ?? null,
@@ -677,6 +678,63 @@ class ServerUserController
                 'has_results' => count($servers) > 0,
             ],
         ], 'All other servers fetched successfully', 200);
+    }
+
+    #[OA\Get(
+        path: '/api/user/servers/{uuidShort}/resources',
+        summary: 'Get current resource usage',
+        description: 'Returns the daemon-reported utilization (disk, memory, CPU) for a server, including while it is offline, together with the configured limits from the panel.',
+        tags: ['User - Servers'],
+        parameters: [
+            new OA\Parameter(name: 'uuidShort', in: 'path', required: true, schema: new OA\Schema(type: 'string')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Resource usage'),
+            new OA\Response(response: 404, description: 'Server or node not found'),
+            new OA\Response(response: 502, description: 'Daemon unreachable'),
+        ]
+    )]
+    public function getServerResources(Request $request, string $uuidShort): Response
+    {
+        $server = Server::getServerByUuidShort($uuidShort);
+        if (!$server) {
+            return ApiResponse::error('Server not found', 'NOT_FOUND', 404);
+        }
+
+        // Limits always come from the panel database (MiB); the daemon only reports usage.
+        $limits = [
+            'memory_mb' => (int) ($server['memory'] ?? 0),
+            'disk_mb' => (int) ($server['disk'] ?? 0),
+            'cpu' => (int) ($server['cpu'] ?? 0),
+        ];
+
+        $node = Node::getNodeById((int) $server['node_id']);
+        if (!$node) {
+            return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
+        }
+
+        try {
+            $response = Wings::fromNode($node, 10)->getServer()->getServer($server['uuid']);
+        } catch (\Throwable $e) {
+            App::getInstance(true)->getLogger()->warning('Failed to fetch server resources from daemon: ' . $e->getMessage());
+
+            return ApiResponse::error('Failed to reach the node', 'DAEMON_UNREACHABLE', 502);
+        }
+
+        if (!$response->isSuccessful()) {
+            return ApiResponse::error('Failed to fetch resources from the node', 'DAEMON_ERROR', 502);
+        }
+
+        $data = $response->getData();
+        $utilization = is_array($data) && is_array($data['utilization'] ?? null) ? $data['utilization'] : [];
+
+        return ApiResponse::success([
+            'state' => is_array($data) ? ($data['state'] ?? $utilization['state'] ?? null) : null,
+            'disk_bytes' => isset($utilization['disk_bytes']) ? (int) $utilization['disk_bytes'] : null,
+            'memory_bytes' => isset($utilization['memory_bytes']) ? (int) $utilization['memory_bytes'] : null,
+            'cpu_absolute' => isset($utilization['cpu_absolute']) ? (float) $utilization['cpu_absolute'] : null,
+            'limits' => $limits,
+        ], 'Server resources fetched successfully', 200);
     }
 
     #[OA\Get(
@@ -1144,6 +1202,12 @@ class ServerUserController
         }
 
         // Validate and sanitize input
+        foreach (['name', 'description', 'startup', 'image'] as $field) {
+            if (isset($data[$field]) && !is_scalar($data[$field])) {
+                return ApiResponse::error("Field {$field} must be a string", 'INVALID_DATA_TYPE', 400);
+            }
+        }
+
         $updateData = [];
         $spellChanged = false;
         $oldSpellId = (int) $server['spell_id'];
@@ -1544,7 +1608,7 @@ class ServerUserController
         $updatedServer = Server::getServerById($server['id']);
         $timeout = (int) 30;
         try {
-            $wings = \App\Services\Wings\Wings::fromNode($node, $timeout);
+            $wings = Wings::fromNode($node, $timeout);
 
             // If spell changed, trigger reinstall instead of just sync
             if ($spellChanged) {
@@ -1557,6 +1621,7 @@ class ServerUserController
                     $this->wipeServerFiles($wings, $server['uuid']);
                 }
 
+                $reinstallRequestedAt = new \DateTimeImmutable();
                 $response = $wings->getServer()->reinstallServer($server['uuid']);
             } else {
                 $response = $wings->getServer()->syncServer($server['uuid']);
@@ -1579,6 +1644,8 @@ class ServerUserController
 
             // Emit event if spell changed (reinstall)
             if ($spellChanged) {
+                Server::markInstalling((int) $server['id'], $reinstallRequestedAt);
+
                 global $eventManager;
                 if (isset($eventManager) && $eventManager !== null) {
                     $eventManager->emit(
@@ -1650,6 +1717,12 @@ class ServerUserController
         $data = json_decode($request->getContent(), true);
         if (!is_array($data)) {
             return ApiResponse::error('Invalid request data', 'INVALID_REQUEST', 400);
+        }
+
+        foreach (['name', 'env_variable', 'variable_value'] as $field) {
+            if (isset($data[$field]) && !is_scalar($data[$field])) {
+                return ApiResponse::error("Field {$field} must be a string", 'INVALID_DATA_TYPE', 400);
+            }
         }
 
         $name = trim((string) ($data['name'] ?? ''));
@@ -1845,13 +1918,14 @@ class ServerUserController
         $updatedServer = Server::getServerById($server['id']);
         $timeout = (int) 30;
         try {
-            $wings = \App\Services\Wings\Wings::fromNode($node, $timeout);
+            $wings = Wings::fromNode($node, $timeout);
 
             // Wipe files if requested
             if ($wipeFiles) {
                 $this->wipeServerFiles($wings, $server['uuid']);
             }
 
+            $reinstallRequestedAt = new \DateTimeImmutable();
             $response = $wings->getServer()->reinstallServer($server['uuid']);
 
             if (!$response->isSuccessful()) {
@@ -1868,6 +1942,9 @@ class ServerUserController
 
                 return ApiResponse::error('Failed to send power action to Wings: ' . $error, 'WINGS_ERROR', $response->getStatusCode());
             }
+
+            // Track the reinstall so a daemon restart mid-install ends up as install_failed.
+            Server::markInstalling((int) $server['id'], $reinstallRequestedAt);
         } catch (\Exception $e) {
             App::getInstance(true)->getLogger()->error('Failed to send power action to Wings: ' . $e->getMessage());
 
@@ -1964,7 +2041,7 @@ class ServerUserController
         }
 
         try {
-            $wings = \App\Services\Wings\Wings::fromNode($node, 30);
+            $wings = Wings::fromNode($node, 30);
             $response = $wings->getServer()->abortInstall($server['uuid']);
 
             if (!$response->isSuccessful()) {
@@ -2066,7 +2143,7 @@ class ServerUserController
         ];
 
         try {
-            $wings = \App\Services\Wings\Wings::fromNode($node, 120);
+            $wings = Wings::fromNode($node, 120);
             $response = $wings->getServer()->runServerScript($server['uuid'], $payload);
             if (!$response->isSuccessful()) {
                 return ApiResponse::error('Failed to run script: ' . $response->getError(), 'WINGS_ERROR', $response->getStatusCode() ?: 500);
@@ -2107,7 +2184,7 @@ class ServerUserController
         }
 
         try {
-            $wings = \App\Services\Wings\Wings::fromNode($node, 30);
+            $wings = Wings::fromNode($node, 30);
             $response = $wings->getServer()->getServerVersion($server['uuid']);
             if (!$response->isSuccessful()) {
                 return ApiResponse::error('Failed to get version: ' . $response->getError(), 'WINGS_ERROR', $response->getStatusCode() ?: 500);
@@ -2172,7 +2249,7 @@ class ServerUserController
         ];
 
         try {
-            $wings = \App\Services\Wings\Wings::fromNode($node, 30);
+            $wings = Wings::fromNode($node, 30);
             $response = $wings->getServer()->broadcastWsMessage($server['uuid'], $payload);
             if (!$response->isSuccessful()) {
                 return ApiResponse::error('Failed to broadcast: ' . $response->getError(), 'WINGS_ERROR', $response->getStatusCode() ?: 500);
@@ -2282,7 +2359,7 @@ class ServerUserController
 
         try {
             $timeout = (int) 30;
-            $wings = \App\Services\Wings\Wings::fromNode($node, $timeout);
+            $wings = Wings::fromNode($node, $timeout);
 
             // Send command to Wings daemon
             $response = $wings->getServer()->sendCommands($server['uuid'], [$command]);
@@ -2470,7 +2547,7 @@ class ServerUserController
         if ($nodeInfo) {
             $timeout = (int) 30;
             try {
-                $wings = \App\Services\Wings\Wings::fromNode($nodeInfo, $timeout);
+                $wings = Wings::fromNode($nodeInfo, $timeout);
 
                 $response = $wings->getServer()->deleteServer($server['uuid']);
                 if (!$response->isSuccessful()) {
@@ -2579,7 +2656,7 @@ class ServerUserController
                 $subuserPerms = [];
             }
 
-            // Always include websocket.connect — required for Wings JWT/WebSocket access.
+            // Always include websocket.connect - required for Wings JWT/WebSocket access.
             // generateServerJwt already gates on this permission before minting.
             if (!in_array(SubuserPermissions::WEBSOCKET_CONNECT, $subuserPerms, true) && !in_array('*', $subuserPerms, true)) {
                 $subuserPerms[] = SubuserPermissions::WEBSOCKET_CONNECT;
@@ -2596,7 +2673,7 @@ class ServerUserController
      * Helper method to wipe all server files before reinstall.
      * Lists all files in root directory and deletes them.
      */
-    private function wipeServerFiles(\App\Services\Wings\Wings $wings, string $serverUuid): void
+    private function wipeServerFiles(Wings $wings, string $serverUuid): void
     {
         try {
             // List all files in root directory
@@ -2684,7 +2761,7 @@ class ServerUserController
         }
 
         try {
-            $wings = \App\Services\Wings\Wings::fromNode($node, 30);
+            $wings = Wings::fromNode($node, 30);
             $response = $wings->getServer()->syncServer($server['uuid']);
             if (!$response->isSuccessful()) {
                 return ApiResponse::error('Failed to sync server configuration: ' . $response->getError(), 'WINGS_ERROR', $response->getStatusCode());

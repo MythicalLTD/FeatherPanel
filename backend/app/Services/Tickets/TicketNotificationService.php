@@ -23,11 +23,14 @@ use App\Config\ConfigInterface;
 use App\Mail\templates\TicketClosed;
 use App\Mail\templates\TicketReplied;
 use App\Mail\templates\TicketReopened;
+use App\Services\Notifications\InboxNotifier;
 
 class TicketNotificationService
 {
     public static function notifyReply(array $ticket, array $message, ?string $replierUuid = null): void
     {
+        InboxNotifier::ticketReply($ticket, $message, $replierUuid);
+
         if ((int) ($message['is_internal'] ?? 0) === 1) {
             return;
         }

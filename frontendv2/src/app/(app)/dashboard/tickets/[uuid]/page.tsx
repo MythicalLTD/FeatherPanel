@@ -287,7 +287,7 @@ export default function TicketViewPage() {
         <div className='flex h-[calc(100vh-6rem)] w-full flex-col pt-2 pb-6'>
             <WidgetRenderer widgets={getWidgets('dashboard-tickets-view', 'top-of-page')} />
 
-            <div className='border-border/50 bg-card/60 mb-4 flex shrink-0 items-center justify-between rounded-2xl border p-3 px-1 shadow-[0_10px_30px_-24px_rgba(0,0,0,0.7)] backdrop-blur-xl sm:p-4'>
+            <div className='fp-surface mb-4 flex shrink-0 items-center justify-between rounded-xl border p-3 px-1 sm:p-4'>
                 <div className='flex min-w-0 items-center gap-3'>
                     <Link href='/dashboard/tickets'>
                         <Button variant='ghost' size='icon' className='h-9 w-9 rounded-full'>
@@ -320,7 +320,7 @@ export default function TicketViewPage() {
             <WidgetRenderer widgets={getWidgets('dashboard-tickets-view', 'after-header')} />
 
             <div className='grid min-h-0 flex-1 grid-cols-1 gap-4 xl:grid-cols-12 xl:gap-6'>
-                <div className='bg-card/65 border-border/50 flex h-full flex-col overflow-hidden rounded-2xl border shadow-[0_12px_36px_-24px_rgba(0,0,0,0.75)] backdrop-blur-xl xl:col-span-9 2xl:col-span-10'>
+                <div className='fp-surface flex h-full flex-col overflow-hidden rounded-xl border xl:col-span-9 2xl:col-span-10'>
                     <div className='custom-scrollbar flex-1 space-y-8 overflow-y-auto p-4 sm:p-6 lg:p-8'>
                         <div className='group flex gap-4'>
                             <Avatar className='ring-border/50 bg-primary/10 text-primary mt-1 h-10 w-10 ring-2'>
@@ -473,7 +473,7 @@ export default function TicketViewPage() {
                                                         href={att.url}
                                                         target='_blank'
                                                         rel='noopener noreferrer'
-                                                        className='bg-card/50 border-border/50 hover:border-primary/50 flex items-center gap-2 rounded-lg border px-3 py-2 text-xs backdrop-blur-xl transition-colors'
+                                                        className='fp-surface fp-surface-interactive flex items-center gap-2 rounded-lg border px-3 py-2 text-xs transition-colors'
                                                     >
                                                         <div className='bg-muted text-muted-foreground rounded-md p-1.5'>
                                                             <Paperclip className='h-3.5 w-3.5' />

@@ -16,7 +16,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import QRCode from 'react-qr-code';
 import axios from 'axios';
 import { Check, Loader2, RefreshCw } from 'lucide-react';
@@ -66,9 +66,11 @@ function initials(name: string): string {
 
 export default function LoginQrPanel({ className, compact = false }: { className?: string; compact?: boolean }) {
     const { t } = useTranslation();
-    const router = useRouter();
     const searchParams = useSearchParams();
     const { fetchSession } = useSession();
+
+    const tRef = useRef(t);
+    tRef.current = t;
 
     const [status, setStatus] = useState<QrStatus>('idle');
     const [challenge, setChallenge] = useState<ChallengeState | null>(null);
@@ -91,12 +93,11 @@ export default function LoginQrPanel({ className, compact = false }: { className
             await new Promise((resolve) => setTimeout(resolve, 250));
             ok = await fetchSession(true);
         }
-        if (ok) {
-            router.push(target);
-        } else {
-            window.location.assign(target);
-        }
-    }, [fetchSession, router, searchParams]);
+        window.location.assign(target);
+    }, [fetchSession, searchParams]);
+
+    const completeLoginRef = useRef(completeLogin);
+    completeLoginRef.current = completeLogin;
 
     const startChallenge = useCallback(async () => {
         clearPoll();
@@ -110,7 +111,7 @@ export default function LoginQrPanel({ className, compact = false }: { className
             const response = await authApi.qrStart();
             if (!response.success || !response.data?.challenge_id || !response.data?.desktop_secret) {
                 setStatus('error');
-                setError(getApiErrorMessageFromPayload(response, t, 'auth.qr.error'));
+                setError(getApiErrorMessageFromPayload(response, tRef.current, 'auth.qr.error'));
                 return;
             }
 
@@ -128,21 +129,42 @@ export default function LoginQrPanel({ className, compact = false }: { className
             setStatus('pending');
         } catch (error) {
             setStatus('error');
-            setError(getApiErrorMessage(error, t, 'auth.qr.error'));
+            setError(getApiErrorMessage(error, tRef.current, 'auth.qr.error'));
         }
-    }, [clearPoll, t]);
+    }, [clearPoll]);
+
+    const startChallengeRef = useRef(startChallenge);
+    startChallengeRef.current = startChallenge;
+
+    const ssoToken = searchParams.get('sso_token');
+    const discordToken = searchParams.get('discord_token');
+    const discordLinkToken = searchParams.get('discord_link_token');
 
     useEffect(() => {
-        if (
-            searchParams.get('sso_token') ||
-            searchParams.get('discord_token') ||
-            searchParams.get('discord_link_token')
-        ) {
+        if (ssoToken || discordToken || discordLinkToken) {
             return;
         }
         void startChallenge();
         return () => clearPoll();
-    }, [clearPoll, searchParams, startChallenge]);
+    }, [clearPoll, startChallenge, ssoToken, discordToken, discordLinkToken]);
+
+    useEffect(() => {
+        if (typeof document === 'undefined') return;
+
+        const handleVisibilityChange = () => {
+            if (document.hidden) {
+                clearPoll();
+            } else if (challenge && (status === 'pending' || status === 'scanned')) {
+                clearPoll();
+                void startChallengeRef.current();
+            }
+        };
+
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        return () => {
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+        };
+    }, [challenge, clearPoll, status]);
 
     useEffect(() => {
         if (!challenge) {
@@ -152,7 +174,7 @@ export default function LoginQrPanel({ className, compact = false }: { className
         let cancelled = false;
 
         const poll = async () => {
-            if (cancelled || exchangingRef.current) return;
+            if (cancelled || exchangingRef.current || (typeof document !== 'undefined' && document.hidden)) return;
 
             try {
                 const response = await authApi.qrPoll({
@@ -171,12 +193,12 @@ export default function LoginQrPanel({ className, compact = false }: { className
                         setStatus('expired');
                         setScanner(null);
                         pollTimerRef.current = setTimeout(() => {
-                            void startChallenge();
+                            void startChallengeRef.current();
                         }, 1200);
                         return;
                     }
                     setStatus('error');
-                    setError(getApiErrorMessageFromPayload(response, t, 'auth.qr.error'));
+                    setError(getApiErrorMessageFromPayload(response, tRef.current, 'auth.qr.error'));
                     return;
                 }
 
@@ -194,7 +216,7 @@ export default function LoginQrPanel({ className, compact = false }: { className
                     setStatus('expired');
                     setScanner(null);
                     pollTimerRef.current = setTimeout(() => {
-                        void startChallenge();
+                        void startChallengeRef.current();
                     }, 1200);
                     return;
                 }
@@ -220,16 +242,16 @@ export default function LoginQrPanel({ className, compact = false }: { className
                             exchange_token: String(response.data.exchange_token),
                         });
                         if (exchange.success) {
-                            await completeLogin();
+                            await completeLoginRef.current();
                         } else {
                             exchangingRef.current = false;
                             setStatus('error');
-                            setError(getApiErrorMessageFromPayload(exchange, t, 'auth.qr.error'));
+                            setError(getApiErrorMessageFromPayload(exchange, tRef.current, 'auth.qr.error'));
                         }
                     } catch (error) {
                         exchangingRef.current = false;
                         setStatus('error');
-                        setError(getApiErrorMessage(error, t, 'auth.qr.error'));
+                        setError(getApiErrorMessage(error, tRef.current, 'auth.qr.error'));
                     }
                     return;
                 }
@@ -247,7 +269,7 @@ export default function LoginQrPanel({ className, compact = false }: { className
                         setStatus('expired');
                         setScanner(null);
                         pollTimerRef.current = setTimeout(() => {
-                            void startChallenge();
+                            void startChallengeRef.current();
                         }, 1200);
                         return;
                     }
@@ -261,7 +283,7 @@ export default function LoginQrPanel({ className, compact = false }: { className
             cancelled = true;
             clearPoll();
         };
-    }, [challenge, clearPoll, completeLogin, startChallenge, t]);
+    }, [challenge, clearPoll]);
 
     const qrSize = compact ? 128 : 168;
     const showScanned = status === 'scanned' || status === 'approved';
@@ -349,9 +371,7 @@ export default function LoginQrPanel({ className, compact = false }: { className
 
                         {challenge?.userCode ? (
                             <div className='mt-3 space-y-1'>
-                                <p className='text-muted-foreground text-[10px] font-semibold tracking-[0.14em] uppercase'>
-                                    {t('auth.qr.userCode')}
-                                </p>
+                                <p className='text-muted-foreground text-xs font-medium'>{t('auth.qr.userCode')}</p>
                                 <p className='text-foreground font-mono text-lg tracking-[0.22em]'>
                                     {challenge.userCode}
                                 </p>

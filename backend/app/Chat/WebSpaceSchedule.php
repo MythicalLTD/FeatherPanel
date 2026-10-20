@@ -146,7 +146,7 @@ class WebSpaceSchedule
         $pdo = Database::getPdoConnection();
         $fields = array_keys($data);
         $placeholders = array_map(static fn ($f) => ':' . $f, $fields);
-        $sql = 'INSERT INTO ' . self::$table . ' (' . implode(',', $fields) . ') VALUES (' . implode(',', $placeholders) . ')';
+        $sql = 'INSERT INTO ' . self::$table . ' (`' . implode('`, `', $fields) . '`) VALUES (' . implode(',', $placeholders) . ')';
         $stmt = $pdo->prepare($sql);
         if (!$stmt->execute($data)) {
             return false;
@@ -174,7 +174,7 @@ class WebSpaceSchedule
 
         $data['updated_at'] = date('Y-m-d H:i:s');
         $pdo = Database::getPdoConnection();
-        $set = implode(', ', array_map(static fn ($f) => "$f = :$f", array_keys($data)));
+        $set = implode(', ', array_map(static fn ($f) => "`$f` = :$f", array_keys($data)));
         $stmt = $pdo->prepare('UPDATE ' . self::$table . ' SET ' . $set . ' WHERE id = :id');
         $data['id'] = $id;
 
@@ -247,9 +247,13 @@ class WebSpaceSchedule
         $data['updated_at'] = $data['updated_at'] ?? date('Y-m-d H:i:s');
 
         $pdo = Database::getPdoConnection();
+        $data = Database::filterColumns(self::$tasksTable, $data);
+        if ($data === []) {
+            return false;
+        }
         $fields = array_keys($data);
         $placeholders = array_map(static fn ($f) => ':' . $f, $fields);
-        $sql = 'INSERT INTO ' . self::$tasksTable . ' (' . implode(',', $fields) . ') VALUES (' . implode(',', $placeholders) . ')';
+        $sql = 'INSERT INTO ' . self::$tasksTable . ' (`' . implode('`, `', $fields) . '`) VALUES (' . implode(',', $placeholders) . ')';
         $stmt = $pdo->prepare($sql);
         if (!$stmt->execute($data)) {
             return false;
@@ -277,7 +281,7 @@ class WebSpaceSchedule
 
         $data['updated_at'] = date('Y-m-d H:i:s');
         $pdo = Database::getPdoConnection();
-        $set = implode(', ', array_map(static fn ($f) => "$f = :$f", array_keys($data)));
+        $set = implode(', ', array_map(static fn ($f) => "`$f` = :$f", array_keys($data)));
         $stmt = $pdo->prepare('UPDATE ' . self::$tasksTable . ' SET ' . $set . ' WHERE id = :id');
         $data['id'] = $id;
 
@@ -418,7 +422,7 @@ class WebSpaceSchedule
             return false;
         }
 
-        // Must use one PDO for the whole transaction — createTask() used to open a
+        // Must use one PDO for the whole transaction - createTask() used to open a
         // second connection and deadlock on the DELETE row locks (lock wait timeout).
         $pdo = Database::getPdoConnection();
         try {

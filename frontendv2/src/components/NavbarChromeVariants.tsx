@@ -20,7 +20,9 @@ import { Menu as MenuIcon, Search, ShieldCheck } from 'lucide-react';
 import type { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
 import { CircleUser } from 'lucide-react';
 import { NavbarUserMenu } from '@/components/navbar/NavbarUserMenu';
+import { NotificationBell } from '@/components/navbar/NotificationBell';
 import ThemeCustomizer from '@/components/layout/ThemeCustomizer';
+import { PrivacyModeButton } from '@/components/common/PrivacyModeButton';
 import { useGlobalSearch } from '@/contexts/GlobalSearchContext';
 import { SidebarCollapseToggle } from '@/components/sidebar/SidebarCollapseToggle';
 import { GlobalSearchTrigger } from '@/components/global-search/GlobalSearchDialog';
@@ -28,6 +30,7 @@ import { cn } from '@/lib/utils';
 import type { SidebarPosition, SidebarTogglePlacement, SidebarGlow } from '@/hooks/useSidebarPreferences';
 import { getChromeGlowClass } from '@/lib/sidebarLayout';
 import type { UserInfo } from '@/contexts/SessionContext';
+import type { AppSettings } from '@/types/settings';
 
 export type NavbarChromeProps = {
     onMenuClick: () => void;
@@ -53,6 +56,7 @@ export type NavbarChromeProps = {
     sidebarPosition?: SidebarPosition;
     sidebarTogglePlacement?: SidebarTogglePlacement;
     sidebarGlow?: SidebarGlow;
+    settings?: AppSettings | null;
 };
 
 function shouldShowNavbarSidebarToggle(
@@ -85,14 +89,17 @@ function NavbarSidebarToggleButton({
     );
 }
 
-function NavbarMobileSearchButton({ t }: { t: NavbarChromeProps['t'] }) {
+function NavbarMobileSearchButton({ t, compact }: { t: NavbarChromeProps['t']; compact?: boolean }) {
     const { setOpen } = useGlobalSearch();
 
     return (
         <button
             type='button'
             onClick={() => setOpen(true)}
-            className='text-muted-foreground hover:bg-muted/50 hover:text-foreground focus-visible:ring-ring focus-visible:ring-offset-background flex shrink-0 items-center justify-center rounded-xl p-2 transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none md:hidden'
+            className={cn(
+                'text-muted-foreground hover:bg-muted/50 hover:text-foreground focus-visible:ring-ring focus-visible:ring-offset-background flex shrink-0 items-center justify-center rounded-xl p-2 transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
+                compact ? 'lg:hidden' : 'md:hidden',
+            )}
             aria-label={t('globalSearch.open')}
         >
             <Search className='h-5 w-5' aria-hidden />
@@ -102,19 +109,23 @@ function NavbarMobileSearchButton({ t }: { t: NavbarChromeProps['t'] }) {
 
 function NavbarCenterSearch({ variant, compact }: { variant: 'classic' | 'modern'; compact?: boolean }) {
     return (
+        // A regular flex item between the title and the actions: it shrinks
+        // with the row instead of sitting on top of its neighbours.
         <div
             className={cn(
-                'pointer-events-none absolute inset-y-0 left-1/2 hidden -translate-x-1/2 items-center px-3',
-                compact ? 'lg:flex' : 'md:flex',
-                compact ? 'w-[min(100%,24rem)] lg:w-[min(100%,30rem)]' : 'w-[min(100%,32rem)] lg:w-[min(100%,36rem)]',
+                'hidden min-w-40 items-center',
+                compact
+                    ? 'flex-[0_1_26rem] lg:flex xl:flex-[0_1_30rem]'
+                    : 'flex-[0_1_32rem] md:flex lg:flex-[0_1_36rem]',
             )}
         >
-            <GlobalSearchTrigger variant={variant} className='pointer-events-auto max-w-none' />
+            <GlobalSearchTrigger variant={variant} className='max-w-none' />
         </div>
     );
 }
 
 function NavbarActionsCluster({
+    compactSearch,
     variant,
     showAdminAreaButton,
     adminAreaHref,
@@ -122,6 +133,7 @@ function NavbarActionsCluster({
     t,
     userMenuProps,
 }: {
+    compactSearch?: boolean;
     variant: 'classic' | 'modern';
     showAdminAreaButton: boolean;
     adminAreaHref: string;
@@ -150,7 +162,7 @@ function NavbarActionsCluster({
             type='button'
             onClick={() => router.push(adminAreaHref)}
             className={cn(
-                'text-muted-foreground hover:text-foreground focus-visible:ring-ring focus-visible:ring-offset-background flex shrink-0 items-center gap-2 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
+                'text-muted-foreground hover:text-foreground focus-visible:ring-ring focus-visible:ring-offset-background hidden shrink-0 items-center gap-2 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none sm:flex',
                 isModern
                     ? 'hover:bg-muted/50 rounded-lg px-2 py-1.5 sm:rounded-xl sm:px-2.5 sm:py-2'
                     : 'hover:bg-accent/50 sm:hover:bg-accent rounded-lg p-2 sm:px-3',
@@ -165,27 +177,47 @@ function NavbarActionsCluster({
     if (isModern) {
         return (
             <div className='relative z-10 flex shrink-0 items-center gap-1 sm:gap-2'>
-                <NavbarMobileSearchButton t={t} />
-                <div className='bg-muted/15 sm:bg-muted/20 flex items-center gap-0.5 rounded-xl p-0.5 sm:p-1'>
+                <NavbarMobileSearchButton t={t} compact={compactSearch} />
+                <div className='sm:bg-muted/20 flex items-center gap-0.5 rounded-xl sm:p-1'>
                     {adminButton}
                     {showAdminAreaButton && (
                         <div className='bg-border/50 hidden h-6 w-px sm:block xl:hidden' aria-hidden />
                     )}
-                    <div className='flex items-center [&>button]:rounded-lg sm:[&>button]:rounded-xl'>
-                        <ThemeCustomizer />
+                    <div className='flex items-center [&>button]:rounded-lg sm:[&>button]:rounded-xl [&>div>button]:rounded-lg sm:[&>div>button]:rounded-xl'>
+                        <NotificationBell />
+                        <PrivacyModeButton className='hidden sm:flex' />
+                        <div className='hidden sm:contents'>
+                            <ThemeCustomizer />
+                        </div>
                     </div>
                 </div>
-                <NavbarUserMenu variant='modern' {...userMenuProps} router={router} t={t} />
+                <NavbarUserMenu
+                    variant='modern'
+                    {...userMenuProps}
+                    adminAreaHref={showAdminAreaButton ? adminAreaHref : undefined}
+                    router={router}
+                    t={t}
+                />
             </div>
         );
     }
 
     return (
         <div className='relative z-10 flex shrink-0 items-center gap-x-1.5 sm:gap-x-2 lg:gap-x-3'>
-            <NavbarMobileSearchButton t={t} />
+            <NavbarMobileSearchButton t={t} compact={compactSearch} />
             {adminButton}
-            <ThemeCustomizer />
-            <NavbarUserMenu variant='classic' {...userMenuProps} router={router} t={t} />
+            <NotificationBell />
+            <PrivacyModeButton className='hidden sm:flex' />
+            <div className='hidden sm:flex'>
+                <ThemeCustomizer />
+            </div>
+            <NavbarUserMenu
+                variant='classic'
+                {...userMenuProps}
+                adminAreaHref={showAdminAreaButton ? adminAreaHref : undefined}
+                router={router}
+                t={t}
+            />
         </div>
     );
 }
@@ -235,12 +267,8 @@ function NavbarMainRow({
 
     return (
         <div className='relative flex min-w-0 flex-1 items-center gap-x-2 self-stretch sm:gap-x-3'>
-            <div
-                className={cn(
-                    'flex min-w-0 flex-1 items-center gap-2 pr-2',
-                    headerContent ? 'md:pr-[min(14rem,22%)] lg:pr-[min(18rem,28%)]' : 'md:pr-[min(18rem,28%)]',
-                )}
-            >
+            {/* Title / header content keeps its width (up to 40%); the search shrinks first. */}
+            <div className='flex max-w-[calc(100%-6.5rem)] min-w-0 flex-[1_0_auto] items-center gap-2 sm:max-w-[45%] md:max-w-[40%]'>
                 <div className='min-w-0 flex-1'>
                     {headerContent ?? (
                         <h1
@@ -267,13 +295,10 @@ function NavbarMainRow({
 
             <NavbarCenterSearch variant={variant} compact={Boolean(headerContent)} />
 
-            <div
-                className={cn(
-                    'flex min-w-0 flex-1 items-center justify-end pl-2',
-                    headerContent ? 'md:pl-[min(14rem,22%)] lg:pl-[min(18rem,28%)]' : 'md:pl-[min(18rem,28%)]',
-                )}
-            >
+            {/* Never shrinks below its content, so the search gives way first. */}
+            <div className='flex flex-[1_0_auto] items-center justify-end'>
                 <NavbarActionsCluster
+                    compactSearch={Boolean(headerContent)}
                     variant={variant}
                     showAdminAreaButton={showAdminAreaButton}
                     adminAreaHref={adminAreaHref}
@@ -316,7 +341,10 @@ export function NavbarClassicChrome(props: NavbarChromeProps) {
         >
             <button
                 type='button'
-                className='text-muted-foreground hover:bg-accent/50 hover:text-foreground focus-visible:ring-ring focus-visible:ring-offset-background shrink-0 touch-manipulation rounded-lg p-2.5 transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none active:scale-95 lg:hidden'
+                className={cn(
+                    'text-muted-foreground hover:bg-accent/50 hover:text-foreground focus-visible:ring-ring focus-visible:ring-offset-background shrink-0 touch-manipulation rounded-lg p-2.5 transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none active:scale-95 lg:hidden',
+                    toggleOnRight && 'order-last',
+                )}
                 onClick={onMenuClick}
                 aria-label={t('navbar.openSidebar')}
             >
@@ -387,13 +415,17 @@ export function NavbarModernChrome(props: NavbarChromeProps) {
         >
             <div
                 className={cn(
-                    'border-border/30 bg-card/70 mx-auto flex h-12 max-w-450 items-center gap-x-2 rounded-2xl border px-2.5 backdrop-blur-xl sm:h-13 sm:gap-x-3 sm:px-3.5',
+                    'fp-chrome-surface mx-auto flex h-12 max-w-450 items-center gap-x-2 rounded-2xl border px-2.5 sm:h-13 sm:gap-x-3 sm:px-3.5',
                     navbarGlowClass,
                 )}
             >
                 <button
                     type='button'
-                    className='text-muted-foreground hover:bg-muted/50 hover:text-foreground focus-visible:ring-ring focus-visible:ring-offset-background flex shrink-0 touch-manipulation items-center justify-center rounded-xl border border-transparent p-2 transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none active:scale-95 lg:hidden'
+                    className={cn(
+                        'text-muted-foreground hover:bg-muted/50 hover:text-foreground focus-visible:ring-ring focus-visible:ring-offset-background flex shrink-0 touch-manipulation items-center justify-center rounded-xl border border-transparent p-2 transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none active:scale-95 lg:hidden',
+                        // Mobile drawer opens from the chosen side, so the button that opens it sits there too.
+                        toggleOnRight && 'order-last',
+                    )}
                     onClick={onMenuClick}
                     aria-label={t('navbar.openSidebar')}
                 >

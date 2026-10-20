@@ -1033,12 +1033,8 @@ class WebSpaceFilesController
 
     public function shareFile(Request $request, string $uuidShort): Response
     {
-        $resolved = $this->resolve(
-            $request,
-            $uuidShort,
-            WebSpaceSubuserPermissions::FILE_READ_CONTENT,
-            [WebSpaceSubuserPermissions::FILE_READ],
-        );
+        // Write-level: creating a share is a mutating action (same bar as deleting one).
+        $resolved = $this->resolve($request, $uuidShort, WebSpaceSubuserPermissions::FILE_UPDATE);
         if ($resolved instanceof Response) {
             return $resolved;
         }
@@ -1084,9 +1080,22 @@ class WebSpaceFilesController
 
     public function deleteShareJob(Request $request, string $uuidShort, string $shareId): Response
     {
-        $resolved = $this->resolve($request, $uuidShort, WebSpaceSubuserPermissions::FILE_READ);
+        // Write-level: read-only subusers must not cancel/delete shares.
+        $resolved = $this->resolve($request, $uuidShort, WebSpaceSubuserPermissions::FILE_UPDATE);
         if ($resolved instanceof Response) {
             return $resolved;
+        }
+
+        // Only shares that belong to the resolved WebSpace may be deleted (IDOR guard).
+        $owned = false;
+        foreach (WebSpaceFileShare::listForWebSpace($resolved['uuid']) as $share) {
+            if ((string) ($share['identifier'] ?? '') === $shareId) {
+                $owned = true;
+                break;
+            }
+        }
+        if (!$owned) {
+            return ApiResponse::error('Share job not found', 'NOT_FOUND', 404);
         }
 
         WebSpaceFileShare::delete($shareId);
@@ -1219,13 +1228,13 @@ class WebSpaceFilesController
         // (list/search/pull-jobs return {"data": [...]} or {"data": {"entries": [...]}}).
         // ApiResponse::success() always wraps whatever we pass it in another "data" key, so
         // blindly forwarding the full daemon body for the latter group used to produce
-        // {"data": {"data": [...]}} — the frontend reads response.data and got the wrapper
+        // {"data": {"data": [...]}} - the frontend reads response.data and got the wrapper
         // object instead of the actual list, showing "No Files Found" even though the daemon
         // returned real entries. Unwrap the daemon's own "data" key only when it is the sole
         // top-level key AND itself an array/object, so there is always exactly one "data"
         // envelope for those endpoints. Endpoints that pair "data" with sibling keys (e.g.
         // "ok") keep both intact, and endpoints whose "data" value is a bare scalar (e.g.
-        // files/contents returning {"data": "<file text>"}) are left untouched — the frontend
+        // files/contents returning {"data": "<file text>"}) are left untouched - the frontend
         // already expects that shape as response.data.data for the file editor.
         $body = is_array($daemon['body']) ? $daemon['body'] : ['data' => $daemon['body']];
         if (array_keys($body) === ['data'] && is_array($body['data'])) {

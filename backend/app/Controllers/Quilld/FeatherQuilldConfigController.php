@@ -27,12 +27,12 @@ use Symfony\Component\HttpFoundation\Response;
 /**
  * Serves FeatherQuilld runtime config via GET /api/quilld-remote/config.
  *
- * Separate from FeatherWings (/api/remote/config) — different middleware and credentials.
+ * Separate from FeatherWings (/api/remote/config) - different middleware and credentials.
  */
 class FeatherQuilldConfigController
 {
     /**
-     * GET /api/quilld-remote/config — runtime config YAML for the authenticated web node.
+     * GET /api/quilld-remote/config - runtime config YAML for the authenticated web node.
      */
     public function getConfig(Request $request): Response
     {

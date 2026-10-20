@@ -52,6 +52,7 @@ import { RoleBadge, RoleIconAvatar } from '@/components/RoleBadge';
 import { ROLE_COLOR_PRESETS, randomRoleColor, isDefaultRole, type RoleForm } from '@/lib/role-utils';
 import { toast } from 'sonner';
 import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
+import { UnsavedChangesBar } from '@/components/featherui/UnsavedChangesBar';
 
 interface PermissionNode {
     constant: string;
@@ -74,7 +75,10 @@ interface RoleEditorProps {
     roleId: number | null;
     isYourRole: boolean;
     isSubmitting: boolean;
-    onSave: (e: React.FormEvent) => void;
+    onSave: (e?: React.FormEvent) => void;
+    /** Form fields differ from the saved role (drives the sticky save bar). */
+    unsaved?: boolean;
+    onDiscard?: () => void;
     onDelete?: () => void;
     loadingPermissions: boolean;
     assignedPermissionMap: Map<string, number>;
@@ -99,6 +103,8 @@ export function RoleEditor({
     isYourRole,
     isSubmitting,
     onSave,
+    unsaved = false,
+    onDiscard,
     onDelete,
     loadingPermissions,
     assignedPermissionMap,
@@ -311,19 +317,19 @@ export function RoleEditor({
                     </div>
                     {canEditPermissions && (
                         <div className='grid w-full grid-cols-3 gap-3 sm:ml-auto sm:w-auto sm:min-w-[280px]'>
-                            <div className='bg-card/60 border-border/50 rounded-xl border px-3 py-2 text-center sm:text-left'>
+                            <div className='fp-surface rounded-xl border px-3 py-2 text-center sm:text-left'>
                                 <p className='text-muted-foreground text-[10px] font-bold tracking-wider uppercase'>
                                     {t('admin.roles.stats.assigned')}
                                 </p>
                                 <p className='text-lg font-bold'>{assignedCount}</p>
                             </div>
-                            <div className='bg-card/60 border-border/50 rounded-xl border px-3 py-2 text-center sm:text-left'>
+                            <div className='fp-surface rounded-xl border px-3 py-2 text-center sm:text-left'>
                                 <p className='text-muted-foreground text-[10px] font-bold tracking-wider uppercase'>
                                     {t('admin.roles.stats.total')}
                                 </p>
                                 <p className='text-lg font-bold'>{totalCount}</p>
                             </div>
-                            <div className='bg-card/60 border-border/50 rounded-xl border px-3 py-2 text-center sm:text-left'>
+                            <div className='fp-surface rounded-xl border px-3 py-2 text-center sm:text-left'>
                                 <p className='text-muted-foreground text-[10px] font-bold tracking-wider uppercase'>
                                     {t('admin.roles.stats.coverage')}
                                 </p>
@@ -362,7 +368,7 @@ export function RoleEditor({
                                         value={form.display_name}
                                         onChange={(e) => onDisplayNameChange(e.target.value)}
                                         required
-                                        placeholder='Support Team'
+                                        placeholder={t('ui.components.admin.roleEditor.supportTeam')}
                                         className='h-11'
                                     />
                                 </div>
@@ -477,7 +483,7 @@ export function RoleEditor({
                                             className={cn(
                                                 'aspect-square rounded-xl border-2 transition-all hover:scale-105',
                                                 form.color.toLowerCase() === preset.toLowerCase()
-                                                    ? 'border-foreground scale-105 shadow-md'
+                                                    ? 'scale-105 border-[var(--fp-surface-border)] shadow-md'
                                                     : 'border-transparent opacity-90 hover:opacity-100',
                                             )}
                                             style={{ backgroundColor: preset }}
@@ -611,7 +617,7 @@ export function RoleEditor({
                                         return (
                                             <div
                                                 key={category}
-                                                className='bg-card/40 border-border/60 overflow-hidden rounded-xl border'
+                                                className='fp-surface overflow-hidden rounded-xl border'
                                             >
                                                 <button
                                                     type='button'
@@ -724,6 +730,14 @@ export function RoleEditor({
                     </PageCard>
                 </TabsContent>
             </Tabs>
+
+            <UnsavedChangesBar
+                dirty={unsaved}
+                saving={isSubmitting}
+                onSave={() => onSave()}
+                onDiscard={onDiscard}
+                saveLabel={mode === 'create' ? t('admin.roles.form.submit_create') : undefined}
+            />
         </div>
     );
 }

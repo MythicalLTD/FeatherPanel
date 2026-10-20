@@ -90,7 +90,7 @@ class RegisterController
         $data = json_decode($request->getContent(), true);
 
         if ($config->getSetting(ConfigInterface::TURNSTILE_ENABLED, 'false') == 'true') {
-            if (!isset($data['turnstile_token']) || trim($data['turnstile_token']) === '') {
+            if (!isset($data['turnstile_token']) || !is_scalar($data['turnstile_token']) || trim((string) $data['turnstile_token']) === '') {
                 return ApiResponse::error('Captcha token is required', 'CAPTCHA_TOKEN_REQUIRED');
             }
             if (!\App\Helpers\CaptchaHelper::validate($data['turnstile_token'], CloudFlareRealIP::getRealIP())) {
@@ -111,7 +111,7 @@ class RegisterController
         $requiredFields = ['username', 'email', 'password', 'first_name', 'last_name'];
         $missingFields = [];
         foreach ($requiredFields as $field) {
-            if (!isset($data[$field]) || trim($data[$field]) === '') {
+            if (!isset($data[$field]) || !is_scalar($data[$field]) || trim((string) $data[$field]) === '') {
                 $missingFields[] = $field;
             }
         }
@@ -365,7 +365,7 @@ class RegisterController
             // Set session/cookie
             if (isset($createdUser['remember_token'])) {
                 $token = $createdUser['remember_token'];
-                SessionCookieHelper::set($token, time() + 60 * 60 * 24 * 30);
+                SessionCookieHelper::startSession($createdUser, $token, time() + 60 * 60 * 24 * 30);
                 User::updateUser($createdUser['uuid'], ['last_ip' => CloudFlareRealIP::getRealIP()]);
 
                 // Create login activity (user is automatically logged in)
@@ -417,7 +417,7 @@ class RegisterController
 
         // Return user info and preferences (same format as login)
         return ApiResponse::success([
-            'user' => $createdUser,
+            'user' => User::stripSensitiveFields($createdUser),
             'preferences' => $preferences,
             'requires_email_verification' => false,
         ], 'User registered successfully and logged in', 200);

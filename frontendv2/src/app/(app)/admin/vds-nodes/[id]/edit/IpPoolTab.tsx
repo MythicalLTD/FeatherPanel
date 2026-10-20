@@ -29,6 +29,8 @@ import { toast } from 'sonner';
 import { Plus, Trash2, Search, RefreshCw, Network, Star, ChevronLeft, ChevronRight, Pencil } from 'lucide-react';
 import { getApiErrorMessage } from '@/lib/api-errors';
 import { TabBlankState, TabHintCard, TabTableShell, TabToolbar } from './TabPrimitives';
+import { Sensitive } from '@/components/common/Sensitive';
+import { ListPagination } from '@/components/featherui/ListPagination';
 
 interface VmIp {
     id: number;
@@ -323,31 +325,11 @@ export function IpPoolTab({ nodeId, nodeName }: IpPoolTabProps) {
                     </TabToolbar>
 
                     {pagination.totalPages > 1 && (
-                        <div className='border-border bg-card/50 flex items-center justify-between gap-4 rounded-xl border px-4 py-3'>
-                            <Button
-                                variant='outline'
-                                size='sm'
-                                disabled={!pagination.hasPrev}
-                                onClick={() => setPage((p) => p - 1)}
-                                className='gap-1.5'
-                            >
-                                <ChevronLeft className='h-4 w-4' />
-                                {t('common.previous')}
-                            </Button>
-                            <span className='text-sm font-medium'>
-                                {page} / {pagination.totalPages}
-                            </span>
-                            <Button
-                                variant='outline'
-                                size='sm'
-                                disabled={!pagination.hasNext}
-                                onClick={() => setPage((p) => p + 1)}
-                                className='gap-1.5'
-                            >
-                                {t('common.next')}
-                                <ChevronRight className='h-4 w-4' />
-                            </Button>
-                        </div>
+                        <ListPagination
+                            page={page}
+                            totalPages={pagination.totalPages}
+                            onPageChange={(nextPage) => setPage(nextPage)}
+                        />
                     )}
 
                     {loading ? (
@@ -391,7 +373,9 @@ export function IpPoolTab({ nodeId, nodeName }: IpPoolTabProps) {
                                             </td>
                                             <td className='px-4 py-3'>
                                                 <div className='flex items-center gap-2'>
-                                                    <span className='font-mono'>{ip.ip}</span>
+                                                    <span className='font-mono'>
+                                                        <Sensitive>{ip.ip}</Sensitive>
+                                                    </span>
                                                     {ip.is_primary === 'true' && (
                                                         <span
                                                             className='rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[10px] font-bold text-amber-600 uppercase dark:text-amber-400'
@@ -596,6 +580,7 @@ export function IpPoolTab({ nodeId, nodeName }: IpPoolTabProps) {
                             <Label className='text-sm font-semibold'>{t('admin.vdsNodes.ips.col_ip')}</Label>
                             <Input
                                 placeholder='192.168.1.100'
+                                data-fp-sensitive=''
                                 value={createForm.ip}
                                 className='h-11 font-mono'
                                 onChange={(e) => setCreateForm((p) => ({ ...p, ip: e.target.value }))}
@@ -668,7 +653,12 @@ export function IpPoolTab({ nodeId, nodeName }: IpPoolTabProps) {
                 <div className='mt-8 space-y-6'>
                     <div className='space-y-2'>
                         <Label className='text-sm font-semibold'>{t('admin.vdsNodes.ips.col_ip')}</Label>
-                        <Input value={editForm.ip} disabled className='bg-muted/30 h-11 font-mono' />
+                        <Input
+                            data-fp-sensitive=''
+                            value={editForm.ip}
+                            disabled
+                            className='bg-muted/30 h-11 font-mono'
+                        />
                         <p className='text-muted-foreground text-[10px] italic'>
                             {t('admin.vdsNodes.ips.edit.ip_immutable')}
                         </p>

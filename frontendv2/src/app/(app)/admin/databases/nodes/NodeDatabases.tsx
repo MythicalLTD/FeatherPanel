@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { TipCard } from '@/components/featherui/TipCard';
 import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
@@ -22,8 +23,7 @@ import { getApiErrorMessage } from '@/lib/api-errors';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
-import { PageCard } from '@/components/featherui/PageCard';
-import { ResourceCard } from '@/components/featherui/ResourceCard';
+import { ResourceCard, ResourceTable } from '@/components/featherui/ResourceCard';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
 import { EmptyState } from '@/components/featherui/EmptyState';
 import { Sheet, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from '@/components/ui/sheet';
@@ -45,6 +45,10 @@ import {
 } from 'lucide-react';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
+import { useFormBaseline } from '@/hooks/useFormBaseline';
+import { useDiscardConfirm } from '@/hooks/useUnsavedChangesGuard';
+import { Sensitive } from '@/components/common/Sensitive';
+import { ListPagination } from '@/components/featherui/ListPagination';
 
 interface Database {
     id: number;
@@ -130,6 +134,14 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
     const [adminNodes, setAdminNodes] = useState<Node[]>([]);
     const [webNodes, setWebNodes] = useState<WebNodeOption[]>([]);
     const [webNodeId, setWebNodeId] = useState('');
+    const { dirty: hostFormDirty, markClean: markHostFormClean } = useFormBaseline(
+        { formData, hostScope, scopeNodeId, webNodeId },
+        { trackFromStart: true },
+    );
+    const guardClose = useDiscardConfirm(
+        (createOpen || editOpen) && hostFormDirty,
+        t('common.unsavedChanges.leaveConfirm'),
+    );
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -296,6 +308,7 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
                 database_username: '',
                 database_password: '',
             });
+            markHostFormClean();
             setRefreshKey((prev) => prev + 1);
         } catch (error) {
             console.error('Error creating database:', error);
@@ -414,7 +427,7 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
 
             <WidgetRenderer widgets={getWidgets(slug, 'after-header')} context={widgetContext} />
 
-            <div className='bg-card/40 flex flex-col items-center gap-4 rounded-2xl p-4 shadow-sm backdrop-blur-md sm:flex-row'>
+            <div className='fp-surface flex flex-col items-center gap-4 rounded-2xl border p-4 sm:flex-row'>
                 <div className='group relative w-full flex-1'>
                     <Search className='text-muted-foreground group-focus-within:text-primary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transition-colors' />
                     <Input
@@ -427,31 +440,11 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
             </div>
 
             {pagination.totalPages > 1 && !loading && (
-                <div className='border-border bg-card/50 flex items-center justify-between gap-4 rounded-xl border px-4 py-3'>
-                    <Button
-                        variant='outline'
-                        size='sm'
-                        disabled={!pagination.hasPrev}
-                        onClick={() => setPagination((p) => ({ ...p, page: p.page - 1 }))}
-                        className='gap-1.5'
-                    >
-                        <ChevronLeft className='h-4 w-4' />
-                        {t('common.previous')}
-                    </Button>
-                    <span className='text-sm font-medium'>
-                        {pagination.page} / {pagination.totalPages}
-                    </span>
-                    <Button
-                        variant='outline'
-                        size='sm'
-                        disabled={!pagination.hasNext}
-                        onClick={() => setPagination((p) => ({ ...p, page: p.page + 1 }))}
-                        className='gap-1.5'
-                    >
-                        {t('common.next')}
-                        <ChevronRight className='h-4 w-4' />
-                    </Button>
-                </div>
+                <ListPagination
+                    page={pagination.page}
+                    totalPages={pagination.totalPages}
+                    onPageChange={(nextPage) => setPagination((p) => ({ ...p, page: nextPage }))}
+                />
             )}
 
             {loading ? (
@@ -464,7 +457,7 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
                     action={<Button onClick={() => setCreateOpen(true)}>{t('admin.node_databases.create')}</Button>}
                 />
             ) : (
-                <div className='grid grid-cols-1 gap-4'>
+                <ResourceTable>
                     <WidgetRenderer widgets={getWidgets(slug, 'before-list')} context={widgetContext} />
                     {databases.map((db) => (
                         <ResourceCard
@@ -481,7 +474,7 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
                                 {
                                     label:
                                         db.healthy === undefined
-                                            ? 'Unknown'
+                                            ? t('common.unknown')
                                             : db.healthy
                                               ? t('admin.node_databases.status.healthy')
                                               : t('admin.node_databases.status.unhealthy'),
@@ -500,7 +493,8 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
                                     ? [
                                           {
                                               label: t('admin.node_databases.status.all_nodes'),
-                                              className: 'bg-slate-500/10 text-slate-300 border-slate-500/25',
+                                              className:
+                                                  'bg-slate-500/10 text-slate-300 border-[var(--fp-surface-border)]',
                                           },
                                       ]
                                     : [
@@ -520,7 +514,7 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
                                     </div>
                                     <div className='flex items-center gap-2 truncate'>
                                         <Activity className='h-3 w-3 shrink-0 opacity-50' />
-                                        {db.database_username}
+                                        <Sensitive>{db.database_username}</Sensitive>
                                     </div>
                                 </div>
                             }
@@ -530,7 +524,7 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
                                         size='sm'
                                         variant='ghost'
                                         onClick={() => handleHealthCheck(db)}
-                                        title='Check Health'
+                                        title={t('ui.admin.databases.nodes.nodeDatabases.checkHealth')}
                                     >
                                         <Activity className='h-4 w-4' />
                                     </Button>
@@ -561,6 +555,7 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
                                                 database_username: db.database_username,
                                                 database_password: '',
                                             });
+                                            markHostFormClean();
                                             setEditOpen(true);
                                         }}
                                     >
@@ -578,7 +573,7 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
                             }
                         />
                     ))}
-                </div>
+                </ResourceTable>
             )}
 
             {pagination.totalPages > 1 && (
@@ -606,16 +601,16 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
             )}
 
             <div className='pt-6'>
-                <PageCard title={t('admin.node_databases.help.about_databases.title')} icon={DatabaseIcon}>
+                <TipCard title={t('admin.node_databases.help.about_databases.title')} icon={DatabaseIcon}>
                     <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.node_databases.help.about_databases.description')}
                     </p>
-                </PageCard>
+                </TipCard>
             </div>
 
             <WidgetRenderer widgets={getWidgets(slug, 'bottom-of-page')} context={widgetContext} />
 
-            <Sheet open={createOpen} onOpenChange={setCreateOpen}>
+            <Sheet open={createOpen} onOpenChange={guardClose(setCreateOpen)}>
                 <div className='space-y-6'>
                     <SheetHeader>
                         <SheetTitle>{t('admin.node_databases.form.create_title')}</SheetTitle>
@@ -652,6 +647,7 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
                         <div className='space-y-2'>
                             <Label>{t('admin.node_databases.form.host')}</Label>
                             <Input
+                                data-fp-sensitive=''
                                 value={formData.database_host}
                                 onChange={(e) => setFormData({ ...formData, database_host: e.target.value })}
                                 placeholder={t('admin.node_databases.form.host_placeholder')}
@@ -684,6 +680,7 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
                         <div className='space-y-2'>
                             <Label>{t('admin.node_databases.form.username')}</Label>
                             <Input
+                                data-fp-sensitive=''
                                 value={formData.database_username}
                                 onChange={(e) => setFormData({ ...formData, database_username: e.target.value })}
                                 placeholder={t('admin.node_databases.form.username_placeholder')}
@@ -694,6 +691,7 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
                             <Label>{t('admin.node_databases.form.password')}</Label>
                             <Input
                                 type='password'
+                                data-fp-sensitive=''
                                 value={formData.database_password}
                                 onChange={(e) => setFormData({ ...formData, database_password: e.target.value })}
                                 placeholder={t('admin.node_databases.form.password_placeholder')}
@@ -747,9 +745,11 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
                             )}
                         </div>
                         <div className='space-y-2'>
-                            <Label>Web node (optional)</Label>
+                            <Label>{t('ui.admin.databases.nodes.nodeDatabases.webNodeOptional')}</Label>
                             <Select value={webNodeId} onChange={(e) => setWebNodeId(e.target.value)}>
-                                <option value=''>All web nodes (global)</option>
+                                <option value=''>
+                                    {t('ui.admin.databases.nodes.nodeDatabases.allWebNodesGlobal')}
+                                </option>
                                 {webNodes.map((n) => (
                                     <option key={n.id} value={String(n.id)}>
                                         {n.name}
@@ -757,7 +757,7 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
                                 ))}
                             </Select>
                             <p className='text-muted-foreground text-xs'>
-                                Scope this host to a FeatherQuilld web node, or leave global.
+                                {t('ui.admin.databases.nodes.nodeDatabases.scopeThisHostToAFeatherQuilld')}
                             </p>
                         </div>
                         <SheetFooter>
@@ -769,7 +769,7 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
                 </div>
             </Sheet>
 
-            <Sheet open={editOpen} onOpenChange={setEditOpen}>
+            <Sheet open={editOpen} onOpenChange={guardClose(setEditOpen)}>
                 <div className='space-y-6'>
                     <SheetHeader>
                         <SheetTitle>{t('admin.node_databases.form.edit_title')}</SheetTitle>
@@ -802,6 +802,7 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
                             <div className='space-y-2'>
                                 <Label>{t('admin.node_databases.form.host')}</Label>
                                 <Input
+                                    data-fp-sensitive=''
                                     value={formData.database_host}
                                     onChange={(e) => setFormData({ ...formData, database_host: e.target.value })}
                                     required
@@ -829,6 +830,7 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
                             <div className='space-y-2'>
                                 <Label>{t('admin.node_databases.form.username')}</Label>
                                 <Input
+                                    data-fp-sensitive=''
                                     value={formData.database_username}
                                     onChange={(e) => setFormData({ ...formData, database_username: e.target.value })}
                                     required
@@ -838,6 +840,7 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
                                 <Label>{t('admin.node_databases.form.password')}</Label>
                                 <Input
                                     type='password'
+                                    data-fp-sensitive=''
                                     value={formData.database_password}
                                     onChange={(e) => setFormData({ ...formData, database_password: e.target.value })}
                                     placeholder={t('admin.node_databases.form.password_placeholder')}
@@ -894,9 +897,11 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
                                 )}
                             </div>
                             <div className='space-y-2'>
-                                <Label>Web node (optional)</Label>
+                                <Label>{t('ui.admin.databases.nodes.nodeDatabases.webNodeOptional')}</Label>
                                 <Select value={webNodeId} onChange={(e) => setWebNodeId(e.target.value)}>
-                                    <option value=''>All web nodes (global)</option>
+                                    <option value=''>
+                                        {t('ui.admin.databases.nodes.nodeDatabases.allWebNodesGlobal')}
+                                    </option>
                                     {webNodes.map((n) => (
                                         <option key={n.id} value={String(n.id)}>
                                             {n.name}
@@ -904,7 +909,7 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
                                     ))}
                                 </Select>
                                 <p className='text-muted-foreground text-xs'>
-                                    Scope this host to a FeatherQuilld web node, or leave global.
+                                    {t('ui.admin.databases.nodes.nodeDatabases.scopeThisHostToAFeatherQuilld')}
                                 </p>
                             </div>
                             <SheetFooter>
@@ -943,7 +948,7 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
                                     {t('admin.node_databases.form.host')}
                                 </Label>
                                 <div className='font-mono text-sm'>
-                                    {selectedDatabase.database_host}:{selectedDatabase.database_port}
+                                    <Sensitive>{`${selectedDatabase.database_host}:${selectedDatabase.database_port}`}</Sensitive>
                                 </div>
                             </div>
                             <div className='space-y-1'>
@@ -958,7 +963,9 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
                                 <Label className='text-muted-foreground text-xs uppercase'>
                                     {t('admin.node_databases.form.username')}
                                 </Label>
-                                <div className='font-mono text-sm'>{selectedDatabase.database_username}</div>
+                                <div className='font-mono text-sm'>
+                                    <Sensitive>{selectedDatabase.database_username}</Sensitive>
+                                </div>
                             </div>
                             <div className='space-y-1'>
                                 <Label className='text-muted-foreground text-xs uppercase'>
@@ -982,7 +989,9 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
                                     </div>
                                 </div>
                                 <div className='space-y-1'>
-                                    <Label className='text-muted-foreground text-xs uppercase'>Updated</Label>
+                                    <Label className='text-muted-foreground text-xs uppercase'>
+                                        {t('ui.admin.databases.nodes.nodeDatabases.updated')}
+                                    </Label>
                                     <div className='text-muted-foreground text-sm'>
                                         {new Date(selectedDatabase.updated_at).toLocaleString()}
                                     </div>

@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { AdminPageTips } from '@/components/admin/AdminPageTips';
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import axios from 'axios';
@@ -29,6 +30,7 @@ import { EmptyState } from '@/components/featherui/EmptyState';
 import { Loader2, RefreshCw, ShieldAlert, Search, ExternalLink, Settings } from 'lucide-react';
 import { toast } from 'sonner';
 import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
+import { Sensitive } from '@/components/common/Sensitive';
 
 interface ScanUser {
     uuid: string;
@@ -304,7 +306,9 @@ export default function AbuseIPDBPage() {
                         {results.map((result) => (
                             <div key={result.ip} className='border-border/60 rounded-md border p-4'>
                                 <div className='mb-2 flex flex-wrap items-center gap-2'>
-                                    <code className='text-sm font-semibold'>{result.ip}</code>
+                                    <code className='text-sm font-semibold'>
+                                        <Sensitive>{result.ip}</Sensitive>
+                                    </code>
                                     <Badge variant='destructive'>{result.abuse_confidence_score}%</Badge>
                                     {result.country_code && <Badge variant='secondary'>{result.country_code}</Badge>}
                                     {result.is_tor && <Badge variant='outline'>Tor</Badge>}
@@ -367,6 +371,7 @@ export default function AbuseIPDBPage() {
                     </pre>
                 )}
             </PageCard>
+            <AdminPageTips page='abuseipdb' />
         </div>
     );
 }

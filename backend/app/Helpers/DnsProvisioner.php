@@ -301,7 +301,9 @@ class DnsProvisioner
                     : ['ok' => false, 'error' => 'MX provisioning requires node DNS provider'];
             } elseif ($type === 'TXT') {
                 $txtName = $name === '@' ? $domain : ($name . '.' . $domain);
-                $upsert = $provider->createTxtRecord($zoneId, $txtName, $value);
+                $upsert = $provider instanceof \App\Services\Dns\AcmeDnsCapableInterface
+                    ? $provider->createTxtRecord($zoneId, $txtName, $value)
+                    : $provider->createRecord($zoneId, ['type' => 'TXT', 'name' => $txtName, 'content' => $value, 'ttl' => 120]);
             } else {
                 continue;
             }
@@ -356,7 +358,9 @@ class DnsProvisioner
                 }
             }
             if (!$hasDmarc) {
-                $upsert = $provider->createTxtRecord($zoneId, '_dmarc.' . $domain, $dmarcValue);
+                $upsert = $provider instanceof \App\Services\Dns\AcmeDnsCapableInterface
+                    ? $provider->createTxtRecord($zoneId, '_dmarc.' . $domain, $dmarcValue)
+                    : $provider->createRecord($zoneId, ['type' => 'TXT', 'name' => '_dmarc.' . $domain, 'content' => $dmarcValue, 'ttl' => 120]);
                 if (empty($upsert['ok'])) {
                     $allOk = false;
                 }

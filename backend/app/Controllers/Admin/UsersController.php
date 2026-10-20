@@ -25,6 +25,7 @@ use App\Chat\Spell;
 use App\Chat\Server;
 use App\Chat\WebNode;
 use App\Chat\Activity;
+use App\Chat\Database;
 use App\Chat\MailList;
 use App\Chat\SsoToken;
 use App\Chat\WebSpace;
@@ -150,14 +151,13 @@ use Symfony\Component\HttpFoundation\Response;
         new OA\Property(property: 'created_at', type: 'string', format: 'date-time', description: 'Creation timestamp'),
     ]
 )]
-/* ---------------------------
- * Author: Cassian Gherman Date: 2025-07-25
+/**
+ * Author: Cassian Gherman Date: 2025-07-25.
  *
  * Changes:
  * - Added support so we can get the activities of a user
  * - Added support so we can get the mails the user got!
- *
- * ---------------------------*/
+ */
 class UsersController
 {
     #[OA\Get(
@@ -491,7 +491,7 @@ class UsersController
         ];
 
         $user['email_verified'] = !isset($user['mail_verify']) || trim((string) $user['mail_verify']) === '';
-        unset($user['password'], $user['mail_verify']);
+        $user = User::stripSensitiveFields($user);
 
         $user['activities'] = array_map(function ($activity) use ($app) {
             unset($activity['user_uuid'], $activity['id'], $activity['updated_at']);
@@ -592,7 +592,7 @@ class UsersController
         ];
 
         $user['email_verified'] = !isset($user['mail_verify']) || trim((string) $user['mail_verify']) === '';
-        unset($user['password'], $user['mail_verify']);
+        $user = User::stripSensitiveFields($user);
 
         $user['activities'] = array_map(function ($activity) use ($app) {
             unset($activity['user_uuid'], $activity['id'], $activity['updated_at']);
@@ -664,7 +664,7 @@ class UsersController
         $requiredFields = ['username', 'first_name', 'last_name', 'email', 'password'];
         $missingFields = [];
         foreach ($requiredFields as $field) {
-            if (!isset($data[$field]) || trim($data[$field]) === '') {
+            if (!isset($data[$field]) || !is_scalar($data[$field]) || trim((string) $data[$field]) === '') {
                 $missingFields[] = $field;
             }
         }
@@ -694,6 +694,10 @@ class UsersController
             if ($len > $max) {
                 return ApiResponse::error(ucfirst(str_replace('_', ' ', $field)) . " must be less than $max characters long", 'INVALID_DATA_LENGTH');
             }
+        }
+        // Same charset as registration; login only accepts usernames matching it.
+        if (!preg_match('/^[a-zA-Z0-9_]+$/', $data['username'])) {
+            return ApiResponse::error('Username can only contain letters, numbers, and underscores', 'INVALID_USERNAME_FORMAT');
         }
         // Validate email format
         if (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
@@ -878,6 +882,9 @@ class UsersController
             'password' => [8, 255],
         ];
         foreach ($data as $field => $value) {
+            if ($value !== null && !is_scalar($value)) {
+                return ApiResponse::error(ucfirst(str_replace('_', ' ', $field)) . ' must not be an array or object', 'INVALID_DATA_TYPE', 400);
+            }
             if (isset($lengthRules[$field])) {
                 if (!is_string($value)) {
                     return ApiResponse::error(ucfirst(str_replace('_', ' ', $field)) . ' must be a string', 'INVALID_DATA_TYPE');
@@ -891,6 +898,11 @@ class UsersController
                     return ApiResponse::error(ucfirst(str_replace('_', ' ', $field)) . " must be less than $max characters long", 'INVALID_DATA_LENGTH');
                 }
             }
+        }
+        // Same charset as registration; login only accepts usernames matching it. Existing
+        // (e.g. LDAP-provisioned) names are left alone unless they are being changed.
+        if (isset($data['username']) && $data['username'] !== $user['username'] && !preg_match('/^[a-zA-Z0-9_]+$/', $data['username'])) {
+            return ApiResponse::error('Username can only contain letters, numbers, and underscores', 'INVALID_USERNAME_FORMAT');
         }
         // Validate email format if updating email
         if (isset($data['email'])) {
@@ -960,6 +972,14 @@ class UsersController
             } elseif ($wantsBanned && $wasBanned) {
                 unset($data['banned']);
             }
+        }
+
+        $unknownFields = Database::unknownColumns(User::getTableName(), $data);
+        if ($unknownFields !== []) {
+            return ApiResponse::error('Unknown field(s): ' . implode(', ', $unknownFields), 'UNKNOWN_FIELDS', 400);
+        }
+        if ($data === []) {
+            return ApiResponse::error('No data to update', 'NO_DATA', 400);
         }
 
         $updated = User::updateUser($user['uuid'], $data);
@@ -1153,8 +1173,12 @@ class UsersController
             ownerId: (int) $user['id'],
         );
 
+        $nodes = Node::getNodesByIds(array_column($servers, 'node_id'));
+        $realms = Realm::getByIds(array_column($servers, 'realms_id'));
+        $spells = Spell::getSpellsByIds(array_column($servers, 'spell_id'));
+        $allocations = Allocation::getAllocationsByIds(array_column($servers, 'allocation_id'));
         foreach ($servers as &$server) {
-            $node = Node::getNodeById($server['node_id']);
+            $node = $nodes[(int) $server['node_id']] ?? null;
             $server['node'] = $node ? [
                 'id' => $node['id'],
                 'name' => $node['name'] ?? null,
@@ -1162,19 +1186,19 @@ class UsersController
                 'maintenance_mode' => (bool) ($node['maintenance_mode'] ?? false),
             ] : null;
 
-            $server['realm'] = Realm::getById($server['realms_id']);
+            $server['realm'] = $realms[(int) $server['realms_id']] ?? null;
             $server['realm'] = $server['realm'] ? [
                 'id' => $server['realm']['id'] ?? null,
                 'name' => $server['realm']['name'] ?? null,
             ] : null;
 
-            $server['spell'] = Spell::getSpellById($server['spell_id']);
+            $server['spell'] = $spells[(int) $server['spell_id']] ?? null;
             $server['spell'] = $server['spell'] ? [
                 'id' => $server['spell']['id'] ?? null,
                 'name' => $server['spell']['name'] ?? null,
             ] : null;
 
-            $allocation = Allocation::getAllocationById($server['allocation_id']);
+            $allocation = $allocations[(int) $server['allocation_id']] ?? null;
             $server['allocation'] = $allocation ? [
                 'id' => $allocation['id'],
                 'ip' => $allocation['ip'] ?? null,
@@ -1482,7 +1506,7 @@ class UsersController
             return ApiResponse::error('User not found', 'USER_NOT_FOUND', 404);
         }
 
-        return ApiResponse::success(['user' => $user], 'User fetched successfully', 200);
+        return ApiResponse::success(['user' => User::stripSensitiveFields($user)], 'User fetched successfully', 200);
     }
 
     #[OA\Post(

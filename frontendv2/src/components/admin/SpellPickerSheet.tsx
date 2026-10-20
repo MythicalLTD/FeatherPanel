@@ -253,7 +253,7 @@ export function SpellPickerSheet({
             {pickerMode === 'cloud' ? (
                 <div className='space-y-4'>
                     <div className='flex flex-col gap-3 sm:flex-row'>
-                        <div className='group relative flex-1'>
+                        <div className='group relative w-full min-w-0 flex-1'>
                             <SearchIcon className='text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2' />
                             <Input
                                 placeholder={t('admin.marketplace.spells.search_placeholder')}
@@ -311,7 +311,7 @@ export function SpellPickerSheet({
                                 return (
                                     <article
                                         key={spell.identifier}
-                                        className='bg-card/80 ring-border/40 flex flex-col overflow-hidden rounded-2xl shadow-sm ring-1'
+                                        className='fp-surface ring-border/40 flex flex-col overflow-hidden rounded-2xl border ring-1'
                                     >
                                         <div className='flex flex-1 flex-col gap-3 p-4'>
                                             <div className='flex items-start gap-3'>
@@ -342,7 +342,7 @@ export function SpellPickerSheet({
                                                     ) : null}
                                                     {spell.verified ? (
                                                         <span className='rounded-md bg-emerald-500/15 px-1.5 py-0.5 text-[10px] font-medium text-emerald-600 dark:text-emerald-400'>
-                                                            Verified
+                                                            {t('ui.components.admin.spellPickerSheet.verified')}
                                                         </span>
                                                     ) : null}
                                                 </div>
@@ -367,7 +367,9 @@ export function SpellPickerSheet({
                                                 <span className='inline-flex items-center gap-1.5'>
                                                     <StarDisplay rating={avg} />
                                                     <span>
-                                                        {avg > 0 ? avg.toFixed(1) : 'No ratings'}
+                                                        {avg > 0
+                                                            ? avg.toFixed(1)
+                                                            : t('ui.components.admin.spellPickerSheet.noRatings')}
                                                         {reviewCount > 0 ? ` · ${reviewCount}` : ''}
                                                     </span>
                                                 </span>
@@ -394,7 +396,12 @@ export function SpellPickerSheet({
                                                 )}
                                                 {t('admin.servers.form.spell_install_to_realm')}
                                             </Button>
-                                            <Button size='sm' variant='outline' asChild title='Reviews on marketplace'>
+                                            <Button
+                                                size='sm'
+                                                variant='outline'
+                                                asChild
+                                                title={t('ui.components.admin.spellPickerSheet.reviewsOnMarketplace')}
+                                            >
                                                 <Link
                                                     href={`/admin/feathercloud/spells`}
                                                     target='_blank'
@@ -442,7 +449,7 @@ export function SpellPickerSheet({
                         key={spell.id}
                         type='button'
                         onClick={() => onSelectSpell(spell)}
-                        className='bg-card/80 hover:bg-card ring-border/40 w-full cursor-pointer rounded-2xl p-4 text-left shadow-sm ring-1 transition hover:shadow-md'
+                        className='fp-surface fp-surface-interactive w-full cursor-pointer rounded-xl border p-4 text-left transition hover:shadow-md'
                     >
                         <div className='flex items-start gap-3'>
                             <div className='bg-muted flex h-10 w-10 shrink-0 items-center justify-center rounded-xl'>

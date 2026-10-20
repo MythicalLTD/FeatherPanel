@@ -250,8 +250,8 @@ export function StatusTab({ nodeId }: StatusTabProps) {
                         <Progress value={Math.min(100, Number(cpu))} />
                         {utilization && (
                             <p className='text-muted-foreground text-xs'>
-                                Load {utilization.load_average1?.toFixed(2)} / {utilization.load_average5?.toFixed(2)} /{' '}
-                                {utilization.load_average15?.toFixed(2)}
+                                {t('ui.admin.webNodes.edit.statusTab.load')} {utilization.load_average1?.toFixed(2)} /{' '}
+                                {utilization.load_average5?.toFixed(2)} / {utilization.load_average15?.toFixed(2)}
                             </p>
                         )}
                     </div>

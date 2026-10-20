@@ -27,6 +27,14 @@ class TicketCategory
     private static string $table = 'featherpanel_ticket_categories';
 
     /**
+     * Get the name of the table.
+     */
+    public static function getTableName(): string
+    {
+        return self::$table;
+    }
+
+    /**
      * Get all categories with optional search and pagination.
      *
      * @param string|null $search Search term

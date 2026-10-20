@@ -30,12 +30,15 @@ import { Label } from '@/components/ui/label';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import { Server, ArrowLeft, Save, Search as SearchIcon, MapPin, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
+import { Server, ArrowLeft, Save, Search as SearchIcon, MapPin, Plus } from 'lucide-react';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { safeBack } from '@/lib/safe-back';
 import { defaultDaemonBase, supportsDaemonFeature, type DaemonType } from '@/lib/daemonCapabilities';
 import { DaemonTypeField } from '@/components/admin/DaemonTypeField';
+import { UnsavedChangesBar } from '@/components/featherui/UnsavedChangesBar';
+import { useFormBaseline } from '@/hooks/useFormBaseline';
+import { ListPagination } from '@/components/featherui/ListPagination';
 
 interface Location {
     id: number;
@@ -92,6 +95,7 @@ export default function CreateNodePage() {
         public_ip_v6: '',
         sftp_subdomain: '',
     });
+    const { dirty: unsaved, restore: restoreForm } = useFormBaseline(form, { trackFromStart: true });
 
     const [daemonTypeConfirmed, setDaemonTypeConfirmed] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
@@ -211,8 +215,8 @@ export default function CreateNodePage() {
         return Object.keys(newErrors).length === 0;
     }, [form, daemonTypeConfirmed, t]);
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleSubmit = async (e?: React.FormEvent) => {
+        e?.preventDefault();
         if (!validate()) return;
 
         setLoading(true);
@@ -323,7 +327,7 @@ export default function CreateNodePage() {
                                 <div className='space-y-2'>
                                     <Label className='text-sm font-semibold'>{t('admin.node.form.name')}</Label>
                                     <Input
-                                        placeholder='My Production Node'
+                                        placeholder={t('ui.admin.nodes.create.myProductionNode')}
                                         value={form.name}
                                         onChange={(e) => setForm({ ...form, name: e.target.value })}
                                         error={!!errors.name}
@@ -509,6 +513,7 @@ export default function CreateNodePage() {
                                     <Label className='text-sm font-semibold'>{t('admin.node.form.fqdn')}</Label>
                                     <Input
                                         placeholder='node.example.com'
+                                        data-fp-sensitive=''
                                         value={form.fqdn}
                                         onChange={(e) => setForm({ ...form, fqdn: e.target.value })}
                                         error={!!errors.fqdn}
@@ -619,6 +624,7 @@ export default function CreateNodePage() {
                                     </Label>
                                     <Input
                                         placeholder={t('admin.node.form.sftp_subdomain_placeholder')}
+                                        data-fp-sensitive=''
                                         value={form.sftp_subdomain}
                                         onChange={(e) => setForm({ ...form, sftp_subdomain: e.target.value })}
                                         error={!!errors.sftp_subdomain}
@@ -799,41 +805,16 @@ export default function CreateNodePage() {
                                 </div>
 
                                 {locationPagination.total_pages > 1 && (
-                                    <div className='border-border bg-muted/30 flex items-center justify-between gap-2 rounded-lg border px-3 py-2'>
-                                        <Button
-                                            variant='outline'
-                                            size='sm'
-                                            disabled={!locationPagination.has_prev}
-                                            onClick={() =>
-                                                setLocationPagination((prev) => ({
-                                                    ...prev,
-                                                    current_page: prev.current_page - 1,
-                                                }))
-                                            }
-                                            className='h-8 gap-1'
-                                        >
-                                            <ChevronLeft className='h-3 w-3' />
-                                            {t('common.previous')}
-                                        </Button>
-                                        <span className='text-xs font-medium'>
-                                            {locationPagination.current_page} / {locationPagination.total_pages}
-                                        </span>
-                                        <Button
-                                            variant='outline'
-                                            size='sm'
-                                            disabled={!locationPagination.has_next}
-                                            onClick={() =>
-                                                setLocationPagination((prev) => ({
-                                                    ...prev,
-                                                    current_page: prev.current_page + 1,
-                                                }))
-                                            }
-                                            className='h-8 gap-1'
-                                        >
-                                            {t('common.next')}
-                                            <ChevronRight className='h-3 w-3' />
-                                        </Button>
-                                    </div>
+                                    <ListPagination
+                                        page={locationPagination.current_page}
+                                        totalPages={locationPagination.total_pages}
+                                        onPageChange={(nextPage) =>
+                                            setLocationPagination((prev) => ({
+                                                ...prev,
+                                                current_page: nextPage,
+                                            }))
+                                        }
+                                    />
                                 )}
 
                                 <div className='max-h-[calc(100vh-300px)] space-y-2 overflow-y-auto'>
@@ -928,6 +909,17 @@ export default function CreateNodePage() {
             </Sheet>
 
             <WidgetRenderer widgets={getWidgets('admin-nodes-create', 'bottom-of-page')} />
+
+            <UnsavedChangesBar
+                dirty={unsaved}
+                saving={loading}
+                onSave={() => void handleSubmit()}
+                onDiscard={() => {
+                    const saved = restoreForm();
+                    if (saved) setForm(saved);
+                }}
+                saveLabel={t('common.create')}
+            />
         </div>
     );
 }

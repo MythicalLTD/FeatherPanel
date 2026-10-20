@@ -91,7 +91,7 @@ class DatabaseInstance
                     return false;
                 }
             } elseif ($field === 'database_type') {
-                $allowedTypes = ['mysql', 'postgresql', 'mariadb', 'mongodb', 'redis'];
+                $allowedTypes = ['mysql', 'postgresql', 'mariadb', 'mongodb', 'redis', 'clickhouse'];
                 if (!in_array($data[$field], $allowedTypes)) {
                     $sanitizedData = self::sanitizeDataForLogging($data);
                     App::getInstance(true)->getLogger()->error('Invalid database_type: ' . $data[$field] . ' for database: ' . $data['name'] . ' with data: ' . json_encode($sanitizedData));
@@ -300,6 +300,12 @@ class DatabaseInstance
             $params['node_id'] = $nodeId;
         }
 
+        // Security: only known columns may reach the ORDER BY clause.
+        if (!in_array($sortBy, ['id', 'name', 'node_id', 'database_type', 'database_port', 'database_username', 'database_host', 'database_subdomain', 'created_at', 'updated_at'], true)) {
+            $sortBy = 'name';
+        }
+        $sortOrder = strtoupper($sortOrder) === 'DESC' ? 'DESC' : 'ASC';
+
         $sql .= ' ORDER BY d.' . $sortBy . ' ' . $sortOrder;
         $sql .= ' LIMIT :limit OFFSET :offset';
 
@@ -385,7 +391,7 @@ class DatabaseInstance
 
         // Validate database_type if provided
         if (isset($data['database_type'])) {
-            $allowedTypes = ['mysql', 'postgresql', 'mariadb', 'mongodb', 'redis'];
+            $allowedTypes = ['mysql', 'postgresql', 'mariadb', 'mongodb', 'redis', 'clickhouse'];
             if (!in_array($data['database_type'], $allowedTypes)) {
                 App::getInstance(true)->getLogger()->error('Invalid database_type: ' . $data['database_type'] . ' for database update with data: ' . json_encode($data));
 
@@ -561,6 +567,9 @@ class DatabaseInstance
 
     public static function count(array $conditions = []): int
     {
+        if (Database::unknownColumns(self::$table, $conditions) !== []) {
+            return 0;
+        }
         $pdo = Database::getPdoConnection();
         if ($conditions === []) {
             $stmt = $pdo->query('SELECT COUNT(*) FROM ' . self::$table);
@@ -568,7 +577,7 @@ class DatabaseInstance
             return (int) $stmt->fetchColumn();
         }
 
-        $stmt = $pdo->prepare('SELECT COUNT(*) FROM ' . self::$table . ' WHERE ' . implode(' AND ', array_map(fn ($k) => "$k = :$k", array_keys($conditions))));
+        $stmt = $pdo->prepare('SELECT COUNT(*) FROM ' . self::$table . ' WHERE ' . implode(' AND ', array_map(fn ($k) => "`$k` = :$k", array_keys($conditions))));
         $stmt->execute($conditions);
 
         return (int) $stmt->fetchColumn();

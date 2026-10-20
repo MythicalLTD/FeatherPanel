@@ -22,6 +22,7 @@ import { useSettings } from '@/contexts/SettingsContext';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { cn } from '@/lib/utils';
+import { clearDevelopmentCaches } from '@/lib/development-cache';
 
 interface BeforeInstallPromptEvent extends Event {
     prompt: () => Promise<void>;
@@ -62,7 +63,7 @@ export function PwaInstaller() {
     const { theme } = useTheme();
 
     const enabled = settings?.app_pwa_enabled === 'true';
-    const appName = settings?.app_name?.trim() || 'FeatherPanel';
+    const appName = settings?.app_name?.trim() || 'Panel';
     const logoUrl =
         theme === 'dark'
             ? settings?.app_logo_dark || settings?.app_logo_white || '/assets/logo.png'
@@ -85,25 +86,36 @@ export function PwaInstaller() {
 
     useEffect(() => {
         if (typeof window === 'undefined' || typeof navigator === 'undefined') return;
-
-        if (!enabled) {
-            if ('serviceWorker' in navigator) {
-                void navigator.serviceWorker.getRegistrations().then((regs) => {
-                    for (const reg of regs) {
-                        const script =
-                            reg.active?.scriptURL || reg.installing?.scriptURL || reg.waiting?.scriptURL || '';
-                        if (script.includes('/sw.js')) {
-                            void reg.unregister();
-                        }
-                    }
-                });
-            }
+        if (process.env.NODE_ENV === 'development') {
+            void clearDevelopmentCaches();
             return;
         }
 
+        const unregisterPanelWorker = () => {
+            if (!('serviceWorker' in navigator)) return;
+            void navigator.serviceWorker.getRegistrations().then((regs) => {
+                for (const reg of regs) {
+                    const script = reg.active?.scriptURL || reg.installing?.scriptURL || reg.waiting?.scriptURL || '';
+                    if (script.includes('/sw.js')) {
+                        void reg.unregister();
+                    }
+                }
+            });
+        };
+
+        if (!enabled) {
+            unregisterPanelWorker();
+            return;
+        }
+
+        // In development the worker would sit between the browser and hot reload / dev chunks;
+        // drop any worker left over from a production build instead of registering one.
+        const isDev = process.env.NODE_ENV !== 'production';
+        if (isDev) unregisterPanelWorker();
+
         if (isStandaloneDisplay()) return;
 
-        if ('serviceWorker' in navigator) {
+        if (!isDev && 'serviceWorker' in navigator) {
             void navigator.serviceWorker.register(SW_PATH).catch((error) => {
                 console.warn('SW register failed', error);
             });
