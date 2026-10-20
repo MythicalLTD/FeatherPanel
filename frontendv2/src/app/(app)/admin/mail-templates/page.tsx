@@ -72,6 +72,17 @@ interface Pagination {
     to: number;
 }
 
+function stripHtmlTags(input: string): string {
+    if (!input) return '';
+    let sanitized = input;
+    let previous: string;
+    do {
+        previous = sanitized;
+        sanitized = sanitized.replace(/<[^>]*>/g, '');
+    } while (sanitized !== previous);
+    return sanitized;
+}
+
 const MAIL_TEMPLATES_LIST_FILTERS_KEY = 'featherpanel_admin_mail_templates_filters_v1';
 const MAIL_TEMPLATES_LIST_FILTERS_DEFAULTS = {
     searchQuery: '',
@@ -385,7 +396,7 @@ export default function MailTemplatesPage() {
                                         <div className='flex items-center gap-2 truncate'>
                                             <FileText className='h-3 w-3 shrink-0 opacity-50' />
                                             <span className='truncate italic opacity-70'>
-                                                {template.body.replace(/<[^>]*>?/gm, '').substring(0, 100)}...
+                                                {stripHtmlTags(template.body).substring(0, 100)}...
                                             </span>
                                         </div>
                                     </div>
