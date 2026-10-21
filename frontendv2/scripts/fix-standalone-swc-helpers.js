@@ -47,6 +47,17 @@ function copyDir(src, dest) {
     }
 }
 
+function ensureHelpersAt(dest, source) {
+    copyDir(source, dest);
+    // Next 16 may require either CJS (`_/`) or ESM (`esm/`) subpaths at runtime.
+    for (const sub of ['_', 'esm']) {
+        const from = path.join(source, sub);
+        if (fs.existsSync(from)) {
+            copyDir(from, path.join(dest, sub));
+        }
+    }
+}
+
 if (!fs.existsSync(STANDALONE)) {
     process.exit(0);
 }
@@ -59,22 +70,20 @@ if (sources.length === 0) {
 
 sources.sort();
 const source = sources[sources.length - 1];
-const esmSrc = path.join(source, 'esm');
-if (!fs.existsSync(esmSrc)) {
-    console.warn('fix-standalone-swc-helpers: esm/ missing in', source);
-    process.exit(0);
+
+const dests = new Set(findHelpersDirs(STANDALONE));
+if (dests.size === 0) {
+    const storeName = path.basename(path.dirname(path.dirname(path.dirname(source))));
+    dests.add(path.join(STANDALONE, 'node_modules', '.pnpm', storeName, 'node_modules', '@swc', 'helpers'));
 }
 
-let dests = findHelpersDirs(STANDALONE);
-if (dests.length === 0) {
-    const storeName = path.basename(path.dirname(path.dirname(path.dirname(source))));
-    const dest = path.join(STANDALONE, 'node_modules', '.pnpm', storeName, 'node_modules', '@swc', 'helpers');
-    copyDir(source, dest);
-    dests = [dest];
-}
+// Hoisted path used when Next resolves `@swc/helpers/_/...` from /app/node_modules
+dests.add(path.join(STANDALONE, 'node_modules', '@swc', 'helpers'));
 
 for (const dest of dests) {
-    copyDir(esmSrc, path.join(dest, 'esm'));
+    ensureHelpersAt(dest, source);
 }
 
-console.log(`fix-standalone-swc-helpers: copied ESM helpers into ${dests.length} standalone location(s)`);
+console.log(
+    `fix-standalone-swc-helpers: copied full @swc/helpers (incl. _/ and esm/) into ${dests.size} standalone location(s)`,
+);
