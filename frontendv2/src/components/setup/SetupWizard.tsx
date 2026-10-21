@@ -261,6 +261,17 @@ export function SetupWizard() {
     const skipCurrentStep = async () => {
         setSaving(true);
         const ok = await saveKeys(STEP_KEYS[step.id] ?? []);
+        // Skip on infrastructure lands on "done" — same completion as Finish, or admin links bounce via SetupGate.
+        if (ok && STEPS[stepIndex + 1]?.id === 'done') {
+            try {
+                await completeSetup();
+                void refetchSettings();
+            } catch (error) {
+                toast.error(getApiErrorMessage(error, t, 'setup_wizard.errors.save'));
+                setSaving(false);
+                return;
+            }
+        }
         setSaving(false);
         if (ok) goTo(stepIndex + 1);
     };
@@ -682,7 +693,10 @@ export function SetupWizard() {
                                     doneLabel={t('setup_wizard.infrastructure.done')}
                                 >
                                     <Button asChild variant={counts.nodes > 0 ? 'outline' : 'default'} size='sm'>
-                                        <Link href={counts.nodes > 0 ? '/admin/nodes' : '/admin/nodes/create'}>
+                                        <Link
+                                            href={counts.nodes > 0 ? '/admin/nodes' : '/admin/nodes/create'}
+                                            onClick={() => setSetupDeferred(true)}
+                                        >
                                             {counts.nodes > 0
                                                 ? t('setup_wizard.infrastructure.view_nodes')
                                                 : t('setup_wizard.infrastructure.add_node')}

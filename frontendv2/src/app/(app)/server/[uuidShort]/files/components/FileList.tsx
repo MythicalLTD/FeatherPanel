@@ -122,11 +122,8 @@ export function FileList({
     if (files.length === 0) {
         return (
             <div className='fp-surface text-muted-foreground flex min-h-[420px] flex-col items-center justify-center gap-6 rounded-xl border border-dashed px-6 py-12'>
-                <div className='relative'>
-                    <div className='bg-primary/10 absolute inset-0 -z-10 scale-150 rounded-full blur-2xl' aria-hidden />
-                    <div className='fp-icon-tile text-primary flex h-28 w-28 items-center justify-center rounded-3xl'>
-                        {isSearching ? <SearchX className='h-12 w-12' /> : <FolderOpen className='h-12 w-12' />}
-                    </div>
+                <div className='fp-icon-tile text-primary flex h-28 w-28 items-center justify-center rounded-3xl'>
+                    {isSearching ? <SearchX className='h-12 w-12' /> : <FolderOpen className='h-12 w-12' />}
                 </div>
 
                 <div className='space-y-2 text-center'>

@@ -74,12 +74,8 @@ export function WelcomeWidget({ version, chips = [], updateAvailable }: WelcomeW
     const versionLoading = version === undefined;
 
     return (
-        <section className='fp-surface from-primary/25 via-primary/10 relative min-w-0 overflow-hidden rounded-2xl border bg-linear-to-br p-5 sm:p-6'>
-            <span
-                className='bg-primary/15 pointer-events-none absolute -top-24 -right-16 h-64 w-64 rounded-full blur-2xl'
-                aria-hidden
-            />
-            <div className='relative flex min-w-0 flex-col gap-5 lg:flex-row lg:items-end lg:justify-between'>
+        <section className='fp-surface relative min-w-0 overflow-hidden rounded-2xl border p-5 sm:p-6'>
+            <div className='flex min-w-0 flex-col gap-5 lg:flex-row lg:items-end lg:justify-between'>
                 <div className='min-w-0'>
                     <p className='text-muted-foreground truncate text-xs font-medium'>
                         {settings?.app_name || t('admin.dashboard.title')}

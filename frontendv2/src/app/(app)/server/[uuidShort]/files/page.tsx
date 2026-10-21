@@ -1462,9 +1462,8 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                                         return (
                                             <div
                                                 key={batchKey}
-                                                className='group border-primary/20 bg-primary/5 hover:border-primary/40 relative overflow-hidden rounded-2xl border p-4 text-left backdrop-blur-xl transition-all'
+                                                className='group border-primary/20 bg-primary/5 hover:border-primary/40 relative overflow-hidden rounded-2xl border p-4 text-left transition-all'
                                             >
-                                                <div className='from-primary/10 absolute inset-0 bg-linear-to-br via-transparent to-transparent opacity-0 transition-opacity group-hover:opacity-100' />
                                                 <div className='relative flex flex-col gap-3 text-left'>
                                                     <div className='flex items-center justify-between'>
                                                         <div className='flex min-w-0 items-center gap-2'>
@@ -1540,9 +1539,8 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                                     return (
                                         <div
                                             key={item.id}
-                                            className='group border-primary/20 bg-primary/5 hover:border-primary/40 relative overflow-hidden rounded-2xl border p-4 text-left backdrop-blur-xl transition-all'
+                                            className='group border-primary/20 bg-primary/5 hover:border-primary/40 relative overflow-hidden rounded-2xl border p-4 text-left transition-all'
                                         >
-                                            <div className='from-primary/10 absolute inset-0 bg-linear-to-br via-transparent to-transparent opacity-0 transition-opacity group-hover:opacity-100' />
                                             <div className='relative flex flex-col gap-3 text-left'>
                                                 <div className='flex items-center justify-between'>
                                                     <div className='flex min-w-0 items-center gap-2'>
@@ -1618,9 +1616,8 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                                 {activePulls.map((pull) => (
                                     <div
                                         key={pull.Identifier}
-                                        className='group border-primary/20 bg-primary/5 hover:border-primary/40 relative overflow-hidden rounded-2xl border p-4 text-left backdrop-blur-xl transition-all'
+                                        className='group border-primary/20 bg-primary/5 hover:border-primary/40 relative overflow-hidden rounded-2xl border p-4 text-left transition-all'
                                     >
-                                        <div className='from-primary/10 absolute inset-0 bg-linear-to-br via-transparent to-transparent opacity-0 transition-opacity group-hover:opacity-100' />
                                         <div className='relative flex flex-col gap-3 text-left'>
                                             <div className='flex items-center justify-between'>
                                                 <div className='flex items-center gap-2'>

@@ -1185,7 +1185,7 @@ export default function ChatbotContainer({ open, onClose, mode = 'server', vdsIn
                                                                 </p>
                                                             )}
                                                         <div className='mt-1 flex items-center gap-1.5'>
-                                                            <span className='h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-[0_0_0_3px_rgba(16,185,129,0.14)]' />
+                                                            <span className='h-1.5 w-1.5 rounded-full bg-emerald-500' />
                                                             <span className='text-muted-foreground text-[11px]'>
                                                                 {t('chatbot.readyToHelp')}
                                                             </span>

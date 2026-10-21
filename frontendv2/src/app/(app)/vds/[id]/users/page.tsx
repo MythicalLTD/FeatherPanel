@@ -375,7 +375,7 @@ export default function VdsSubusersPage() {
                                     className={cn(
                                         'flex cursor-pointer items-start gap-4 rounded-2xl border p-4 transition-all',
                                         addPermissions.includes(permKey)
-                                            ? 'bg-primary/5 border-primary/20 shadow-[0_0_20px_-10px_rgba(var(--primary),0.2)]'
+                                            ? 'bg-primary/5 border-primary/20'
                                             : 'bg-card/30 border-border/10 hover:border-border/30',
                                     )}
                                 >
@@ -501,7 +501,7 @@ export default function VdsSubusersPage() {
                             className={cn(
                                 'flex cursor-pointer items-start gap-4 rounded-2xl border p-4 transition-all',
                                 editPerms.includes(permKey)
-                                    ? 'bg-primary/5 border-primary/20 shadow-[0_0_20px_-10px_rgba(var(--primary),0.2)]'
+                                    ? 'bg-primary/5 border-primary/20'
                                     : 'bg-card/30 border-border/10 hover:border-border/30',
                             )}
                         >

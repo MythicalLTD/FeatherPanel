@@ -39,14 +39,6 @@ export function OAuthConsentShell({ children, className }: { children: ReactNode
                 className,
             )}
         >
-            <div
-                aria-hidden='true'
-                className='pointer-events-none absolute inset-0'
-                style={{
-                    background:
-                        'radial-gradient(ellipse at 50% 0%, hsl(var(--primary) / 0.18), transparent 58%), radial-gradient(ellipse at 100% 100%, hsl(var(--primary) / 0.08), transparent 48%)',
-                }}
-            />
             <div className='relative z-10 w-full max-w-xl'>
                 <header className='mb-6 flex items-center justify-between gap-4 px-1'>
                     <div className='flex min-w-0 items-center gap-3'>

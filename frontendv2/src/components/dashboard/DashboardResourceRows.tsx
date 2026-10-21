@@ -514,8 +514,9 @@ export function DashboardServerGaugeCard({
             )}
             <div
                 className={cn(
-                    'from-primary/30 via-primary/10 to-muted relative bg-linear-to-br bg-cover bg-center',
+                    'relative bg-cover bg-center',
                     images ? 'h-24' : 'h-10',
+                    images && banner ? 'bg-muted' : 'bg-muted/60',
                 )}
                 style={
                     images && banner
@@ -523,7 +524,9 @@ export function DashboardServerGaugeCard({
                         : undefined
                 }
             >
-                <span className='from-card/90 absolute inset-0 bg-linear-to-t to-transparent' aria-hidden />
+                {images && banner ? (
+                    <span className='from-card/90 absolute inset-0 bg-linear-to-t to-transparent' aria-hidden />
+                ) : null}
                 {tag && (
                     <span className='bg-background/70 absolute top-2.5 left-2.5 max-w-[60%] truncate rounded-md px-2 py-0.5 text-[11px] font-medium backdrop-blur-sm'>
                         {tag}

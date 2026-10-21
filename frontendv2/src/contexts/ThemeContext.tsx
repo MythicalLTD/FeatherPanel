@@ -201,14 +201,19 @@ function hasUserOverride(key: keyof typeof USER_OVERRIDE_KEYS): boolean {
 
 /** Light mode only supports opaque, non-WebGL backgrounds. */
 function isLightSafeBackgroundType(type: BackgroundType): boolean {
-    return type === 'pattern' || type === 'solid';
+    return type === 'solid' || type === 'pattern';
+}
+
+/** Dot-grid (`pattern`) is retired; map it to a flat solid background. */
+function normalizeBackgroundType(type: BackgroundType): BackgroundType {
+    return type === 'pattern' ? 'solid' : type;
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
     const [mounted, setMounted] = useState(false);
     const [theme, setThemeState] = useState<Theme>('dark');
     const [accentColor, setAccentColorState] = useState('purple');
-    const [backgroundType, setBackgroundTypeState] = useState<BackgroundType>('pattern');
+    const [backgroundType, setBackgroundTypeState] = useState<BackgroundType>('solid');
     const [backgroundAnimatedVariant, setBackgroundAnimatedVariantState] =
         useState<BackgroundAnimatedVariant>('aurora');
     const [backgroundImage, setBackgroundImageState] = useState('');
@@ -250,18 +255,19 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
         // Load initial values from localStorage until public admin settings are available.
         const initialTheme: Theme = saved === 'light' || saved === 'dark' ? saved : prefersDark ? 'dark' : 'light';
-        const parsedBgType: BackgroundType =
+        const parsedBgType: BackgroundType = normalizeBackgroundType(
             savedBgType === 'aurora' ||
-            savedBgType === 'gradient' ||
-            savedBgType === 'solid' ||
-            savedBgType === 'image' ||
-            savedBgType === 'pattern'
+                savedBgType === 'gradient' ||
+                savedBgType === 'solid' ||
+                savedBgType === 'image' ||
+                savedBgType === 'pattern'
                 ? savedBgType
-                : 'pattern';
+                : 'solid',
+        );
         // Light tokens + aurora/image canvas = dark page with dark text. Coerce immediately.
         const initialBgType: BackgroundType =
-            initialTheme === 'light' && !isLightSafeBackgroundType(parsedBgType) ? 'pattern' : parsedBgType;
-        if (initialBgType !== parsedBgType) {
+            initialTheme === 'light' && !isLightSafeBackgroundType(parsedBgType) ? 'solid' : parsedBgType;
+        if (initialBgType !== savedBgType) {
             localStorage.setItem('backgroundType', initialBgType);
         }
 
@@ -310,14 +316,16 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         const imageLock = settings.app_background_lock === 'true';
         const forcedTheme = settings.app_theme_default as Theme;
         const forcedAccent = settings.app_accent_color_default;
-        const forcedBgType = settings.app_background_type_default as BackgroundType;
+        const forcedBgType = normalizeBackgroundType(
+            (settings.app_background_type_default as BackgroundType) || 'solid',
+        );
         const forcedBlur = parseAndClamp(settings.app_backdrop_blur_default ?? '0', 0, 24, 0);
         const forcedDarken = parseAndClamp(settings.app_backdrop_darken_default ?? '0', 0, 100, 0);
         const rawFit = (settings.app_background_image_fit_default ?? 'cover').toLowerCase();
         const forcedFit: BackgroundImageFit =
             rawFit === 'contain' || rawFit === 'fill' ? (rawFit as BackgroundImageFit) : 'cover';
         const validThemes: Theme[] = ['light', 'dark'];
-        const validBgTypes: BackgroundType[] = ['aurora', 'gradient', 'solid', 'image', 'pattern'];
+        const validBgTypes: BackgroundType[] = ['aurora', 'gradient', 'solid', 'image'];
 
         // Locked settings always win; unlocked settings use admin defaults until the user chooses otherwise.
         const shouldUseThemeDefault = settings.app_theme_lock === 'true' || !hasUserOverride('theme');
@@ -349,10 +357,13 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
         // Enforce background type: light mode limits and forced image when background URL is locked.
         const mustUseImageForLockedBg = imageLock && adminBgUrl !== '';
-        if (theme === 'light') {
+        if (backgroundType === 'pattern') {
+            setBackgroundTypeState('solid');
+            localStorage.setItem('backgroundType', 'solid');
+        } else if (theme === 'light') {
             if (!isLightSafeBackgroundType(backgroundType)) {
-                setBackgroundTypeState('pattern');
-                localStorage.setItem('backgroundType', 'pattern');
+                setBackgroundTypeState('solid');
+                localStorage.setItem('backgroundType', 'solid');
             }
         } else if (shouldUseBackgroundTypeDefault || mustUseImageForLockedBg) {
             const targetType: BackgroundType | null = mustUseImageForLockedBg
@@ -443,8 +454,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         localStorage.setItem(USER_OVERRIDE_KEYS.theme, 'true');
         // Sync-coerce so light tokens never paint over aurora/image/black WebGL canvases.
         if (newTheme === 'light' && !isLightSafeBackgroundType(backgroundType)) {
-            setBackgroundTypeState('pattern');
-            localStorage.setItem('backgroundType', 'pattern');
+            setBackgroundTypeState('solid');
+            localStorage.setItem('backgroundType', 'solid');
         }
     };
 
@@ -458,28 +469,31 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     };
 
     const setBackgroundType = (type: BackgroundType) => {
+        const nextType = normalizeBackgroundType(type);
         const adminUrl = (settings?.app_background_image_url ?? '').trim();
         const imageLocked = settings?.app_background_lock === 'true';
         const mustUseImageForLockedBg = Boolean(imageLocked && adminUrl);
         // Light mode cannot host dark-first animated/image canvases.
-        if (theme === 'light' && !isLightSafeBackgroundType(type)) {
+        if (theme === 'light' && !isLightSafeBackgroundType(nextType)) {
             return;
         }
-        if (mustUseImageForLockedBg && type !== 'image') {
+        if (mustUseImageForLockedBg && nextType !== 'image') {
             return;
         }
         if (settings?.app_background_type_lock === 'true') {
             if (!mustUseImageForLockedBg) {
-                const forced = settings.app_background_type_default as BackgroundType;
-                const validBgTypes: BackgroundType[] = ['aurora', 'gradient', 'solid', 'image', 'pattern'];
-                if (!forced || !validBgTypes.includes(forced) || type !== forced) {
+                const forced = normalizeBackgroundType(
+                    (settings.app_background_type_default as BackgroundType) || 'solid',
+                );
+                const validBgTypes: BackgroundType[] = ['aurora', 'gradient', 'solid', 'image'];
+                if (!validBgTypes.includes(forced) || nextType !== forced) {
                     return;
                 }
             }
         }
-        if (type !== backgroundType) reportPanelInteraction('panel.preference.change', 'background');
-        setBackgroundTypeState(type);
-        localStorage.setItem('backgroundType', type);
+        if (nextType !== backgroundType) reportPanelInteraction('panel.preference.change', 'background');
+        setBackgroundTypeState(nextType);
+        localStorage.setItem('backgroundType', nextType);
         localStorage.setItem(USER_OVERRIDE_KEYS.backgroundType, 'true');
     };
 

@@ -28,7 +28,7 @@ export function SetupBanner() {
     if (!pending) return null;
 
     return (
-        <section className='fp-surface border-primary/30 from-primary/15 flex flex-col gap-4 rounded-2xl border bg-linear-to-r to-transparent p-4 sm:flex-row sm:items-center sm:p-5'>
+        <section className='fp-surface border-border flex flex-col gap-4 rounded-2xl border p-4 sm:flex-row sm:items-center sm:p-5'>
             <div className='fp-icon-tile flex h-11 w-11 shrink-0 items-center justify-center rounded-xl'>
                 <Rocket className='h-5 w-5' />
             </div>

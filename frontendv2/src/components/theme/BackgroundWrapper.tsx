@@ -65,9 +65,10 @@ export default function BackgroundWrapper({
         isServerRoute && spellBgMode !== 'off' ? resolveSpellBannerUrl(serverCtx?.server?.spell?.banner) : null;
     const useSpellReplace = Boolean(spellBannerUrl && spellBgMode === 'replace');
     const useSpellBlend = Boolean(spellBannerUrl && spellBgMode === 'blend');
-    // Light mode only paints pattern/solid; never aurora/image/gradient canvases.
+    // Light mode only paints solid; never aurora/image/gradient canvases. Dot-grid is retired.
+    const resolvedBackgroundType = backgroundType === 'pattern' ? 'solid' : backgroundType;
     const effectiveBackgroundType =
-        isLight && backgroundType !== 'pattern' && backgroundType !== 'solid' ? 'pattern' : backgroundType;
+        isLight && resolvedBackgroundType !== 'solid' ? 'solid' : resolvedBackgroundType;
 
     useEffect(() => {
         if (!mounted) return;
@@ -133,14 +134,6 @@ export default function BackgroundWrapper({
             return {
                 background:
                     'linear-gradient(135deg, hsl(var(--primary) / 0.12) 0%, hsl(var(--primary) / 0.04) 50%, hsl(var(--primary) / 0.12) 100%), hsl(var(--background))',
-            };
-        }
-
-        if (effectiveBackgroundType === 'pattern') {
-            return {
-                ...opaqueBase,
-                backgroundImage: 'radial-gradient(circle, hsl(var(--muted-foreground) / 0.1) 1px, transparent 1px)',
-                backgroundSize: '16px 16px',
             };
         }
 

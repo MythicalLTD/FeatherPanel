@@ -382,8 +382,7 @@ export function WidgetRenderer({
                                 <Card
                                     className={cn(
                                         'flex h-full flex-col overflow-hidden transition-all duration-300',
-                                        'from-primary/10 via-primary/5 bg-linear-to-br to-transparent',
-                                        'border-primary/20 hover:border-primary/30',
+                                        'border-border hover:border-border',
                                         widget.card?.variant === 'outline' && 'border-primary/40',
                                         widget.classes?.card,
                                     )}

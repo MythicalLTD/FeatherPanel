@@ -217,14 +217,12 @@ function StaticPreviewTile({
     preview,
     label,
     subtitle,
-    pattern,
 }: {
     active: boolean;
     onClick: () => void;
     preview?: string;
     label: string;
     subtitle?: string;
-    pattern?: boolean;
 }) {
     return (
         <button
@@ -239,7 +237,6 @@ function StaticPreviewTile({
                 className='relative h-28 w-full'
                 style={{
                     background: preview ?? 'hsl(var(--muted))',
-                    backgroundSize: pattern ? '16px 16px' : undefined,
                 }}
             />
             <div className='border-border/40 bg-card/90 space-y-0.5 border-t px-3 py-2.5'>
@@ -786,14 +783,7 @@ export default function AppearanceSettingsPanel() {
                                             subtitle={t('appearance.background.themeGradientDescription')}
                                         />
                                         <StaticPreviewTile
-                                            active={backgroundType === 'pattern'}
-                                            onClick={() => setBackgroundType('pattern')}
-                                            preview={STATIC_BACKGROUND_PREVIEWS.pattern}
-                                            pattern
-                                            label={t('appearance.background.dotPattern')}
-                                        />
-                                        <StaticPreviewTile
-                                            active={backgroundType === 'solid'}
+                                            active={backgroundType === 'solid' || backgroundType === 'pattern'}
                                             onClick={() => setBackgroundType('solid')}
                                             preview={
                                                 backgroundImage.startsWith('#')

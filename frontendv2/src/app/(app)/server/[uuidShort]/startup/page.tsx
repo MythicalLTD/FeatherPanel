@@ -370,11 +370,8 @@ export default function ServerStartupPage() {
     if (!canRead) {
         return (
             <div className='fp-surface flex flex-col items-center justify-center space-y-8 rounded-xl border py-24 text-center'>
-                <div className='relative'>
-                    <div className='absolute inset-0 scale-150 rounded-full bg-red-500/20 blur-3xl' />
-                    <div className='relative flex h-32 w-32 rotate-3 items-center justify-center rounded-3xl border-2 border-red-500/20 bg-red-500/10'>
-                        <Lock className='h-16 w-16 text-red-500' />
-                    </div>
+                <div className='relative flex h-32 w-32 items-center justify-center rounded-3xl border-2 border-red-500/20 bg-red-500/10'>
+                    <Lock className='h-16 w-16 text-red-500' />
                 </div>
                 <div className='max-w-md space-y-3 px-4'>
                     <h2 className='text-3xl font-black tracking-tight uppercase'>
@@ -773,10 +770,9 @@ export default function ServerStartupPage() {
 
                     {canChangeSpell && (
                         <FormSection className='bg-primary/5 border-primary/10 group relative overflow-hidden'>
-                            <div className='bg-primary/10 group-hover:bg-primary/20 pointer-events-none absolute -right-12 -bottom-12 h-48 w-48 blur-3xl transition-all duration-1000' />
                             <div className='relative z-10 flex items-center gap-5'>
-                                <div className='bg-primary/10 border-primary/20 flex h-12 w-12 items-center justify-center rounded-2xl border transition-all duration-500 group-hover:scale-110 group-hover:rotate-3'>
-                                    <Zap className='text-primary fill-primary/20 h-6 w-6' />
+                                <div className='bg-primary/10 border-primary/20 flex h-12 w-12 items-center justify-center rounded-2xl border'>
+                                    <Zap className='text-primary h-6 w-6' />
                                 </div>
                                 <div className='space-y-1'>
                                     <h3 className='text-xl font-black tracking-tight uppercase'>

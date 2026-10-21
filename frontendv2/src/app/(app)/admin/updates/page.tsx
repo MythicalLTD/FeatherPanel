@@ -561,12 +561,7 @@ export default function AdminUpdatesPage() {
                 }
             />
 
-            <section
-                className={cn(
-                    'fp-surface relative overflow-hidden rounded-2xl border bg-linear-to-br to-transparent p-5 sm:p-6',
-                    panelUpdate ? 'from-primary/20 via-primary/5' : 'from-emerald-500/10 via-transparent',
-                )}
-            >
+            <section className='fp-surface relative overflow-hidden rounded-2xl border p-5 sm:p-6'>
                 <div className='flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between'>
                     <div className='flex min-w-0 gap-4'>
                         <div
