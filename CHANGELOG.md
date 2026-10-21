@@ -1,5 +1,24 @@
 # Changelog
 
+## v1.5.1 STABLE
+
+### Security
+
+- Patched critical PHP RCE vulnerabilities CVE-2026-109618 and CVE-2026-109619 ("php2shell") by pinning the Docker base image to `dunglas/frankenphp:1.13.1-php8.5` (PHP 8.5.12). by @nayskutzu
+- Disabled `session.upload_progress` in the container PHP config as defense-in-depth against the upload-progress use-after-free path. by @nayskutzu
+
+### Improved
+
+- Stripped AI-looking glow decoration across the UI: purple blur orbs, primary wash gradients on heroes and cards, status/selection bloom shadows, and decorative empty-state glows. Surfaces now use flat borders and solid backgrounds. by @nayskutzu
+- Removed the dashboard "What's new" announcement card next to the greeting (it duplicated the notification bell). Greeting is full-width. by @nayskutzu
+- Retired the dot-grid (`pattern`) background option. Existing pattern prefs migrate to solid; light mode falls back to solid instead of dots. by @nayskutzu
+
+### Fixed
+
+- Banned IPs list no longer nests inside itself on desktop (which pushed the table into the wrong columns when there were multiple bans), and long IPv6 addresses wrap inside the name column instead of overflowing. by @nayskutzu
+- First-install setup wizard: **Add a node** / **View nodes** no longer bounce back to `/setup` (SetupGate required defer before leaving for admin). Skipping the infrastructure step now completes setup the same way **Finish** does, so done-step links work. by @nayskutzu
+- FeatherOS desktop widgets: **Edit Widgets** stays on until **Done**; leaving the widgets panel with the mouse no longer exits edit mode. by @nayskutzu
+
 ## v1.5.0 STABLE
 
 ### Added

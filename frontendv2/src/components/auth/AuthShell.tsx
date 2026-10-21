@@ -25,7 +25,7 @@ import { useSettings } from '@/contexts/SettingsContext';
 import { parseAuthFooterStyle, parseAuthTemplate, parseAuthVisualPreset } from '@/lib/authPageConfig';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/contexts/TranslationContext';
-import { Gauge, ShieldCheck, Sparkles } from 'lucide-react';
+import { Gauge, Server, ShieldCheck } from 'lucide-react';
 
 /** Kept so older call sites compile. */
 export function AuthAsideSlot({ children }: { children: ReactNode }) {
@@ -35,7 +35,7 @@ export function AuthAsideSlot({ children }: { children: ReactNode }) {
 const FEATURES = [
     { icon: Gauge, key: 'auth.shell.feature_fast' },
     { icon: ShieldCheck, key: 'auth.shell.feature_secure' },
-    { icon: Sparkles, key: 'auth.shell.feature_modern' },
+    { icon: Server, key: 'auth.shell.feature_modern' },
 ] as const;
 
 export default function AuthShell({ children }: { children: ReactNode }) {
@@ -85,10 +85,8 @@ export default function AuthShell({ children }: { children: ReactNode }) {
             data-auth-preset={visualPreset}
             className={cn(
                 'auth-shell relative flex min-h-svh w-full flex-col',
-                visualPreset === 'aurora' &&
-                    'bg-[radial-gradient(circle_at_18%_12%,hsl(var(--primary)/0.2),transparent_34%),radial-gradient(circle_at_82%_82%,hsl(var(--primary)/0.1),transparent_32%)]',
-                visualPreset === 'glass' &&
-                    'bg-[radial-gradient(circle_at_50%_0%,hsl(var(--primary)/0.16),transparent_42%)]',
+                visualPreset === 'aurora' && 'bg-background',
+                visualPreset === 'glass' && 'bg-background',
                 visualPreset === 'contrast' &&
                     'bg-[linear-gradient(135deg,hsl(var(--background)),hsl(var(--muted)/0.4))]',
             )}
@@ -104,7 +102,7 @@ export default function AuthShell({ children }: { children: ReactNode }) {
 
             <main className='relative z-10 flex min-h-svh w-full flex-1'>
                 {showAside ? (
-                    <aside className='from-primary/10 hidden flex-1 flex-col justify-between bg-linear-to-br via-transparent to-transparent p-10 lg:flex xl:p-14'>
+                    <aside className='hidden flex-1 flex-col justify-between p-10 lg:flex xl:p-14'>
                         {brand}
                         <div className='max-w-xl space-y-6'>
                             {asideImage ? (
@@ -152,7 +150,7 @@ export default function AuthShell({ children }: { children: ReactNode }) {
                         showAside &&
                             'lg:fp-chrome-surface lg:max-w-[50rem] lg:flex-none lg:border-l lg:px-10 xl:w-[50rem]',
                         template === 'centered' && 'bg-background/40',
-                        template === 'spotlight' && 'from-primary/[0.06] bg-linear-to-b via-transparent to-transparent',
+                        template === 'spotlight' && 'bg-background/40',
                     )}
                 >
                     <div className={cn('mb-6 flex shrink-0 justify-center', showAside && 'lg:hidden')}>{brand}</div>
@@ -162,7 +160,7 @@ export default function AuthShell({ children }: { children: ReactNode }) {
                                 <div className='border-primary/20 bg-primary/[0.06] mb-5 rounded-2xl border p-5 sm:p-6'>
                                     <div className='flex items-start gap-3'>
                                         <span className='bg-primary/12 text-primary flex h-10 w-10 shrink-0 items-center justify-center rounded-xl'>
-                                            <Sparkles className='h-5 w-5' />
+                                            <Server className='h-5 w-5' />
                                         </span>
                                         <div className='min-w-0'>
                                             <h2 className='text-foreground text-lg font-semibold tracking-tight'>

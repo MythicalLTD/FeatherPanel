@@ -199,8 +199,6 @@ export default function EditSchedulePage() {
             <WidgetRenderer widgets={getWidgets('server-schedules-edit', 'after-header')} />
 
             <form onSubmit={handleUpdate} className='space-y-8' data-fp-save-shortcut>
-                <div className='from-primary/5 pointer-events-none fixed inset-0 -z-10 bg-linear-to-br via-transparent to-blue-500/5' />
-
                 <FormSection>
                     <div className='border-border/10 flex items-center gap-4 border-b pb-6'>
                         <div className='bg-primary/10 border-primary/20 flex h-10 w-10 items-center justify-center rounded-xl border'>

@@ -362,14 +362,9 @@ export default function FileEditorPage({
                 </div>
 
                 <div className='fp-surface relative flex min-h-[600px] flex-1 items-center justify-center overflow-hidden rounded-xl border p-1'>
-                    <div className='from-primary/5 absolute inset-0 bg-linear-to-br via-transparent to-transparent opacity-30' />
                     <div className='relative z-10 flex flex-col items-center gap-6'>
-                        <div className='relative'>
-                            <div className='bg-primary/10 border-primary/20 flex h-20 w-20 animate-pulse items-center justify-center rounded-3xl border'>
-                                <Loader2 className='text-primary h-10 w-10 animate-spin' />
-                            </div>
-                            <div className='bg-primary/5 absolute -top-4 -right-4 h-12 w-12 animate-pulse rounded-full blur-xl' />
-                            <div className='bg-primary/5 absolute -bottom-4 -left-4 h-12 w-12 animate-pulse rounded-full blur-xl delay-700' />
+                        <div className='bg-primary/10 border-primary/20 flex h-20 w-20 items-center justify-center rounded-3xl border'>
+                            <Loader2 className='text-primary h-10 w-10 animate-spin' />
                         </div>
                         <div className='space-y-2 text-center'>
                             <h3 className='text-foreground text-lg font-bold tracking-tight'>

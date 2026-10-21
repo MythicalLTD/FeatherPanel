@@ -32,11 +32,10 @@ export const BACKGROUND_VARIANT_PREVIEWS: Record<BackgroundAnimatedVariant, stri
     ferrofluid: 'radial-gradient(circle at 40% 60%, #7c3aed 0%, #0891b2 40%, #0a0a0a 80%)',
 };
 
-export type StaticBackgroundKind = 'gradient' | 'solid' | 'pattern' | 'image';
+export type StaticBackgroundKind = 'gradient' | 'solid' | 'image';
 
 export const STATIC_BACKGROUND_PREVIEWS: Record<Exclude<StaticBackgroundKind, 'image'>, string> = {
     gradient:
         'linear-gradient(135deg, hsl(var(--primary) / 0.35) 0%, hsl(var(--primary) / 0.08) 50%, hsl(var(--primary) / 0.35) 100%)',
     solid: 'hsl(var(--background))',
-    pattern: 'radial-gradient(circle, hsl(var(--muted-foreground) / 0.15) 1px, transparent 1px)',
 };

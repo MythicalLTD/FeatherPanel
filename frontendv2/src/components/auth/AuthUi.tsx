@@ -181,10 +181,8 @@ export function AuthHeroCard({
         <div
             className={cn(
                 'space-y-2 rounded-2xl border p-5 text-center',
-                tone === 'primary' &&
-                    'border-primary/20 from-primary/12 via-primary/5 bg-gradient-to-br to-transparent',
-                tone === 'discord' &&
-                    'border-[#5865F2]/30 bg-gradient-to-br from-[#5865F2]/20 via-[#5865F2]/5 to-transparent',
+                tone === 'primary' && 'border-primary/20 bg-primary/5',
+                tone === 'discord' && 'border-[#5865F2]/30 bg-[#5865F2]/10',
                 className,
             )}
         >

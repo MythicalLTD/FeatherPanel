@@ -777,7 +777,7 @@ export default function SettingsPage() {
                                             <div className='space-y-6'>
                                                 {key === 'email' && (
                                                     <div className='space-y-4'>
-                                                        <div className='border-border/50 from-primary/5 to-primary/10 rounded-2xl border bg-linear-to-br p-6'>
+                                                        <div className='border-border/50 rounded-2xl border p-6'>
                                                             <div className='flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center'>
                                                                 <div className='space-y-1'>
                                                                     <h3 className='text-foreground flex items-center gap-2 text-base font-semibold'>

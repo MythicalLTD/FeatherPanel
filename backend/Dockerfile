@@ -1,6 +1,6 @@
 # FrankenPHP = Caddy + PHP in one (replaces nginx + php-fpm)
 # PHP 8.5 variant when available; use php8.4 if the build fails
-FROM dunglas/frankenphp:php8.5
+FROM dunglas/frankenphp:1.13.1-php8.5
 
 # Set working directory (app lives here; Caddyfile serves from public/)
 WORKDIR /var/www/html
@@ -69,7 +69,8 @@ COPY --chown=www-data:www-data . .
 # Custom PHP configuration (same limits as before)
 # memory_limit stays unlimited for the CLI and cron; web requests get the
 # bounded PHP_MEMORY_LIMIT from the Caddyfile (FrankenPHP php_ini).
-RUN echo 'memory_limit = -1\n\
+RUN echo 'session.upload_progress.enabled = Off\n\
+memory_limit = -1\n\
 upload_max_filesize = 100M\n\
 post_max_size = 100M\n\
 max_execution_time = 300\n\

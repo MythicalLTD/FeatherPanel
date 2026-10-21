@@ -321,7 +321,7 @@ export default function StorageSensePage() {
                 icon={BrushCleaning}
             />
 
-            <div className='border-primary/20 from-primary/10 via-background to-background relative overflow-hidden rounded-2xl border bg-linear-to-br p-4 sm:p-5'>
+            <div className='border-border relative overflow-hidden rounded-2xl border p-4 sm:p-5'>
                 <div className='relative z-10 flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4'>
                     <TriangleAlert className='h-10 w-10 shrink-0 text-amber-600 dark:text-amber-400' />
                     <div>

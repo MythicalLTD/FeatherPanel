@@ -788,7 +788,7 @@ export default function SettingsTab() {
                 </div>
             </div>
 
-            <div className='border-primary/20 from-primary/12 via-background to-muted/20 relative overflow-hidden rounded-2xl border bg-linear-to-br p-5 sm:p-6'>
+            <div className='border-border relative overflow-hidden rounded-2xl border p-5 sm:p-6'>
                 <div className='relative flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between'>
                     <div className='flex min-w-0 items-start gap-3'>
                         <span className='bg-primary/12 text-primary ring-primary/20 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ring-1'>

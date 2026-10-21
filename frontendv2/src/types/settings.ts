@@ -181,7 +181,7 @@ export interface AppSettings {
     app_ui_pack_default?: string;
     /** When 'true', force the configured UI pack for all users. */
     app_ui_pack_lock?: string;
-    /** Optional default background type (aurora, gradient, solid, image, pattern). */
+    /** Optional default background type (aurora, gradient, solid, image). */
     app_background_type_default?: string;
     /** When 'true', force the configured background type for all users. */
     app_background_type_lock?: string;

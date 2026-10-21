@@ -286,11 +286,8 @@ export default function ServerSubusersPage() {
     if (!isEnabled(settings?.server_allow_subusers)) {
         return (
             <div className='fp-surface flex flex-col items-center justify-center space-y-8 rounded-xl border py-24 text-center'>
-                <div className='relative'>
-                    <div className='absolute inset-0 scale-150 rounded-full bg-red-500/20 blur-3xl' />
-                    <div className='relative flex h-32 w-32 rotate-3 items-center justify-center rounded-3xl border-2 border-red-500/20 bg-red-500/10'>
-                        <Lock className='h-16 w-16 text-red-500' />
-                    </div>
+                <div className='relative flex h-32 w-32 items-center justify-center rounded-3xl border-2 border-red-500/20 bg-red-500/10'>
+                    <Lock className='h-16 w-16 text-red-500' />
                 </div>
                 <div className='max-w-md space-y-3 px-4'>
                     <h2 className='text-3xl font-semibold tracking-tight'>{t('serverSubusers.featureDisabled')}</h2>

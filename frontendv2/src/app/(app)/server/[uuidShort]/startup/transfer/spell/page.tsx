@@ -334,11 +334,8 @@ export default function ServerTransferSpellPage() {
     if (!canChangeSpell) {
         return (
             <div className='fp-surface flex flex-col items-center justify-center space-y-8 rounded-xl border py-24 text-center'>
-                <div className='relative'>
-                    <div className='absolute inset-0 scale-150 rounded-full bg-red-500/20 blur-3xl' />
-                    <div className='relative flex h-32 w-32 rotate-3 items-center justify-center rounded-3xl border-2 border-red-500/20 bg-red-500/10'>
-                        <Lock className='h-16 w-16 text-red-500' />
-                    </div>
+                <div className='relative flex h-32 w-32 items-center justify-center rounded-3xl border-2 border-red-500/20 bg-red-500/10'>
+                    <Lock className='h-16 w-16 text-red-500' />
                 </div>
                 <div className='max-w-md space-y-3 px-4'>
                     <h2 className='text-3xl font-black tracking-tight uppercase'>
@@ -474,9 +471,8 @@ export default function ServerTransferSpellPage() {
                                         selectedRealmId === String(realm.id) && 'ring-primary/60 ring-2',
                                     )}
                                 >
-                                    <div className='bg-primary/5 group-hover:bg-primary/10 absolute top-0 right-0 h-32 w-32 translate-x-1/2 -translate-y-1/2 blur-3xl transition-colors' />
                                     <div className='relative z-10 space-y-4'>
-                                        <div className='bg-primary/10 border-primary/20 flex h-14 w-14 items-center justify-center rounded-2xl border transition-all duration-500 group-hover:scale-110 group-hover:rotate-3'>
+                                        <div className='bg-primary/10 border-primary/20 flex h-14 w-14 items-center justify-center rounded-2xl border'>
                                             <Boxes className='text-primary h-7 w-7' />
                                         </div>
                                         <div>

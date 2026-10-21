@@ -301,11 +301,11 @@ export default function BlockedIpsPage() {
                     description={t('admin.blocked_ips.empty_search_hint')}
                 />
             ) : (
-                <ResourceTable>
+                <div className='space-y-4'>
                     <p className='text-muted-foreground text-sm'>
                         {t('admin.blocked_ips.list_summary', { total: String(total) })}
                     </p>
-                    <ResourceTable>
+                    <ResourceTable className='lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)_auto]'>
                         {rows.map((row) => {
                             const badges: ResourceBadge[] = [
                                 {
@@ -331,7 +331,7 @@ export default function BlockedIpsPage() {
                                     key={row.id}
                                     icon={ShieldBan}
                                     title={row.ip}
-                                    titleClassName='font-mono'
+                                    titleClassName='font-mono break-all'
                                     subtitle={row.reason || t('admin.blocked_ips.no_reason')}
                                     description={t('admin.blocked_ips.added_at', {
                                         date: formatWhen(row.created_at),
@@ -354,7 +354,7 @@ export default function BlockedIpsPage() {
                         })}
                     </ResourceTable>
                     <ListPagination page={page} totalPages={totalPages} disabled={loading} onPageChange={setPage} />
-                </ResourceTable>
+                </div>
             )}
 
             {bottomWidgets.length > 0 ? <WidgetRenderer widgets={bottomWidgets} /> : null}

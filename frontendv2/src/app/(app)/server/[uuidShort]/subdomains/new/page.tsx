@@ -163,11 +163,8 @@ export default function CreateSubdomainPage() {
     if (availableDomains.length === 0 && !loading) {
         return (
             <div className='fp-surface flex flex-col items-center justify-center space-y-8 rounded-xl border py-24 text-center'>
-                <div className='relative'>
-                    <div className='bg-primary/20 absolute inset-0 scale-150 rounded-full blur-3xl' />
-                    <div className='bg-primary/10 border-primary/20 relative flex h-32 w-32 rotate-3 items-center justify-center rounded-3xl border-2'>
-                        <Globe className='text-primary h-16 w-16' />
-                    </div>
+                <div className='bg-primary/10 border-primary/20 relative flex h-32 w-32 items-center justify-center rounded-3xl border-2'>
+                    <Globe className='text-primary h-16 w-16' />
                 </div>
                 <div className='max-w-md space-y-3 px-4'>
                     <h2 className='text-3xl font-black tracking-tight uppercase'>
@@ -302,7 +299,6 @@ export default function CreateSubdomainPage() {
 
                 <div className='space-y-8 lg:col-span-4'>
                     <FormSection className='group relative space-y-4 overflow-hidden border-blue-500/10 bg-blue-500/5'>
-                        <div className='pointer-events-none absolute -right-6 -bottom-6 h-24 w-24 bg-blue-500/10 blur-2xl transition-transform duration-1000 group-hover:scale-150' />
                         <div className='relative z-10 flex h-10 w-10 items-center justify-center rounded-xl border border-blue-500/20 bg-blue-500/10'>
                             <Info className='h-5 w-5 text-blue-500' />
                         </div>

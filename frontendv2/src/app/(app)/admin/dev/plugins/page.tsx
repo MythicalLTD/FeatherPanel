@@ -597,7 +597,7 @@ export default function PluginManagerPage() {
                                 }
                                 onClick={() => showPluginDetails(plugin)}
                                 className='border-primary/20 hover:border-primary/40 cursor-pointer'
-                                highlightClassName='bg-linear-to-br from-primary/10 via-transparent to-transparent'
+                                highlightClassName='bg-muted/40'
                                 iconClassName='text-primary'
                                 iconWrapperClassName='bg-primary/10 border-primary/20'
                                 actions={
@@ -717,7 +717,7 @@ export default function PluginManagerPage() {
                         {selectedPlugin && (
                             <div className='space-y-8 pb-4'>
                                 <div className='flex items-start gap-6'>
-                                    <div className='from-primary/10 to-primary/5 border-primary/20 relative flex h-24 w-24 items-center justify-center overflow-hidden rounded-3xl border-2 bg-linear-to-br'>
+                                    <div className='bg-muted border-border relative flex h-24 w-24 items-center justify-center overflow-hidden rounded-3xl border-2'>
                                         <Code className='text-primary/60 h-12 w-12' />
                                     </div>
                                     <div className='flex-1 space-y-2'>

@@ -408,12 +408,7 @@ export function DesktopWidgets() {
     };
 
     return (
-        <div
-            className={cn('fos-widgets pointer-events-none absolute top-3 left-3 z-[1] flex w-[300px] flex-col gap-3')}
-            onMouseLeave={() => {
-                if (!galleryOpen) setEditing(false);
-            }}
-        >
+        <div className='fos-widgets pointer-events-none absolute top-3 left-3 z-[1] flex w-[300px] flex-col gap-3'>
             <div className='pointer-events-auto flex flex-col gap-3'>{ordered.map((w) => renderWidget(w))}</div>
 
             <div className='pointer-events-auto flex flex-col gap-2'>

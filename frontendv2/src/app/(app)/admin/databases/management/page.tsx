@@ -230,7 +230,7 @@ export default function DatabaseManagementPage() {
 
             <WidgetRenderer widgets={getWidgets('admin-databases-management', 'after-header')} />
 
-            <section className='fp-surface from-primary/20 via-primary/5 relative overflow-hidden rounded-2xl border bg-linear-to-br to-transparent p-5 sm:p-6'>
+            <section className='fp-surface relative overflow-hidden rounded-2xl border p-5 sm:p-6'>
                 <div className='flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between'>
                     <div className='flex min-w-0 gap-4'>
                         <div className='fp-icon-tile flex h-12 w-12 shrink-0 items-center justify-center rounded-xl'>
