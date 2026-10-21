@@ -24,15 +24,15 @@ jobs:
       matrix:
         include:
           - platform: linux/amd64
-            runner: blacksmith-4vcpu-ubuntu-2404
+            runner: ubuntu-latest
             cache-key: amd64
           - platform: linux/arm64
-            runner: blacksmith-4vcpu-ubuntu-2404-arm
+            runner: ubuntu-24.04-arm
             cache-key: arm64
 
     steps:
       - name: Checkout code
-        uses: useblacksmith/checkout@v1
+        uses: actions/checkout@v4
         with:
           ref: ${{ github.event.inputs.version || github.ref }}
 
@@ -53,10 +53,8 @@ jobs:
             echo "tag=latest" >> $GITHUB_OUTPUT
           fi
 
-      - name: Setup Blacksmith Builder
-        uses: useblacksmith/setup-docker-builder@v2
-        with:
-          cache-key: deploy/oci/Dockerfile
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
@@ -72,18 +70,25 @@ jobs:
           echo "tag=$PLATFORM_TAG" >> $GITHUB_OUTPUT
 
       - name: Build & Push OCI Image
-        uses: useblacksmith/build-push-action@v2
+        uses: docker/build-push-action@v5
         with:
           context: .
           file: ./deploy/oci/Dockerfile
           platforms: ${{ matrix.platform }}
           push: true
+          pull: true
+          cache-from: |
+            type=registry,ref=ghcr.io/${{ steps.repo-owner.outputs.owner }}/featherpanel-oci:buildcache-${{ matrix.cache-key }}
+            type=gha
+          cache-to: |
+            type=registry,ref=ghcr.io/${{ steps.repo-owner.outputs.owner }}/featherpanel-oci:buildcache-${{ matrix.cache-key }},mode=max
+            type=gha,mode=max
           tags: |
             ghcr.io/${{ steps.repo-owner.outputs.owner }}/featherpanel-oci:${{ steps.version.outputs.tag }}-${{ steps.platform-tag.outputs.tag }}
 
   manifest-oci:
     name: Create Multi-Arch Manifest - OCI (Release)
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ubuntu-latest
     needs: build-oci
     permissions:
       contents: read
@@ -91,7 +96,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: useblacksmith/checkout@v1
+        uses: actions/checkout@v4
         with:
           ref: ${{ github.event.inputs.version || github.ref }}
 
@@ -112,10 +117,8 @@ jobs:
             echo "tag=latest" >> $GITHUB_OUTPUT
           fi
 
-      - name: Setup Blacksmith Builder
-        uses: useblacksmith/setup-docker-builder@v2
-        with:
-          cache-key: deploy/oci/Dockerfile
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3

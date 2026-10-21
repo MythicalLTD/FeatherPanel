@@ -67,8 +67,7 @@ export default function BackgroundWrapper({
     const useSpellBlend = Boolean(spellBannerUrl && spellBgMode === 'blend');
     // Light mode only paints solid; never aurora/image/gradient canvases. Dot-grid is retired.
     const resolvedBackgroundType = backgroundType === 'pattern' ? 'solid' : backgroundType;
-    const effectiveBackgroundType =
-        isLight && resolvedBackgroundType !== 'solid' ? 'solid' : resolvedBackgroundType;
+    const effectiveBackgroundType = isLight && resolvedBackgroundType !== 'solid' ? 'solid' : resolvedBackgroundType;
 
     useEffect(() => {
         if (!mounted) return;

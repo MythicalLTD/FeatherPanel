@@ -1,5 +1,12 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { registerServerTools } from "./tools/servers.js";
+import {
+  type PanelFeatures,
+  isFeatureEnabled,
+} from "./features.js";
+import {
+  registerGameServerTools,
+  registerWhoamiTool,
+} from "./tools/servers.js";
 import { registerFileTools } from "./tools/files.js";
 import { registerConsoleTools } from "./tools/console.js";
 import { registerBackupTools } from "./tools/backups.js";
@@ -11,13 +18,18 @@ import { registerSubuserTools } from "./tools/subusers.js";
 import { registerNetworkTools } from "./tools/network.js";
 import { registerKnowledgebaseTools } from "./tools/knowledgebase.js";
 import { registerVdsTools } from "./tools/vds.js";
+import { registerWebSpaceTools } from "./tools/webspaces.js";
+import { registerAccountTools } from "./tools/account.js";
+import { registerTicketTools } from "./tools/tickets.js";
 
 export const MCP_SERVER_NAME = "featherpanel";
-export const MCP_SERVER_VERSION = "1.2.1";
+export const MCP_SERVER_VERSION = "1.3.0";
 
-const MCP_INSTRUCTIONS = `FeatherPanel MCP — you control the user's game servers through these tools.
+const MCP_INSTRUCTIONS = `FeatherPanel MCP — manage the user's panel resources via tools (game servers, webspaces, VDS, tickets, account). FeatherOS and panel plugins/addons are NOT available here.
 
-ALWAYS use tools. Never claim you lack access, never substitute a manual walkthrough, and never ask the user to run apt/java themselves when list_servers / get_server_startup / pull_file / update_server / server_power_action are available. If tools/list is empty, tell them to Disconnect → Connect this connector (MCP process likely restarted).
+ALWAYS use tools. Never claim you lack access, never substitute a manual walkthrough, and never ask the user to run apt/java themselves when list_servers / get_server_startup / pull_file / update_server / server_power_action are available. If tools/list is empty, tell them to Disconnect → Connect this connector (MCP process likely restarted). Tools for disabled panel modules (game/web/vds/tickets/knowledgebase) are omitted from tools/list.
+
+Discover game servers: whoami → list_servers (match by name → uuidShort). Webspaces: list_webspaces → webspace_id (uuidShort). VDS: list_vds → vds_id.
 
 Discover servers: whoami → list_servers (match by name, e.g. "dasdas" → uuidShort). Then get_server_details / get_server_startup.
 
@@ -39,7 +51,9 @@ When a tool returns TOOL_ERROR:
 - File paths: panel volume paths only (/ = server root). Correct: root=/ fileName=server.jar.
 `;
 
-export function createFeatherPanelMcpServer(): McpServer {
+export function createFeatherPanelMcpServer(
+  features?: PanelFeatures,
+): McpServer {
   const server = new McpServer(
     {
       name: MCP_SERVER_NAME,
@@ -49,18 +63,37 @@ export function createFeatherPanelMcpServer(): McpServer {
     { instructions: MCP_INSTRUCTIONS },
   );
 
-  registerServerTools(server);
-  registerFileTools(server);
-  registerConsoleTools(server);
-  registerBackupTools(server);
-  registerDatabaseTools(server);
-  registerScheduleTools(server);
-  registerAllocationTools(server);
-  registerStartupTools(server);
-  registerSubuserTools(server);
-  registerNetworkTools(server);
-  registerKnowledgebaseTools(server);
-  registerVdsTools(server);
+  registerWhoamiTool(server);
+  registerAccountTools(server);
+
+  if (isFeatureEnabled(features, "game")) {
+    registerGameServerTools(server);
+    registerFileTools(server);
+    registerConsoleTools(server);
+    registerBackupTools(server);
+    registerDatabaseTools(server);
+    registerScheduleTools(server);
+    registerAllocationTools(server);
+    registerStartupTools(server);
+    registerSubuserTools(server);
+    registerNetworkTools(server);
+  }
+
+  if (isFeatureEnabled(features, "web")) {
+    registerWebSpaceTools(server);
+  }
+
+  if (isFeatureEnabled(features, "vds")) {
+    registerVdsTools(server);
+  }
+
+  if (isFeatureEnabled(features, "tickets")) {
+    registerTicketTools(server);
+  }
+
+  if (isFeatureEnabled(features, "knowledgebase")) {
+    registerKnowledgebaseTools(server);
+  }
 
   return server;
 }

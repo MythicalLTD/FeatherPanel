@@ -290,6 +290,10 @@ class Permissions {
     /** Create personal API keys even when user API key creation is disabled panel-wide */
     public static USER_API_KEYS_CREATE = 'user.api_keys.create';
 
+    // User Servers Permissions
+    /** Use servers without a panel subdomain when subdomain is required panel-wide */
+    public static USER_SERVERS_BYPASS_SUBDOMAIN_REQUIREMENT = 'user.servers.bypass_subdomain_requirement';
+
     // Admin Tickets Permissions
     /** View support tickets */
     public static ADMIN_TICKETS_VIEW = 'admin.tickets.view';
@@ -1002,6 +1006,12 @@ class Permissions {
                 value: Permissions.USER_API_KEYS_CREATE,
                 category: 'User API',
                 description: 'Create personal API keys even when user API key creation is disabled panel-wide',
+            },
+            {
+                constant: 'USER_SERVERS_BYPASS_SUBDOMAIN_REQUIREMENT',
+                value: Permissions.USER_SERVERS_BYPASS_SUBDOMAIN_REQUIREMENT,
+                category: 'User Servers',
+                description: 'Use servers without a panel subdomain when subdomain is required panel-wide',
             },
             {
                 constant: 'ADMIN_TICKETS_VIEW',

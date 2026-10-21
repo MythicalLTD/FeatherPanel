@@ -37,13 +37,14 @@ import { ResourceBar } from './ResourceBar';
 import { Checkbox } from '@/components/ui/checkbox';
 import { OverflowText } from '@/components/featherui/OverflowText';
 import { safeCssUrl } from '@/lib/safe-css-url';
+import { ServiceExpiryChip } from '@/components/common/ServiceExpiryChip';
 
 interface ServerCardProps {
     server: Server;
     layout: string;
     liveStats: { memory: number; disk: number; cpu: number; status: string } | null;
     isConnected: boolean;
-    t: (key: string) => string;
+    t: (key: string, params?: Record<string, string>) => string;
     folders: ServerFolder[];
     onAssignFolder: (folderId: number) => void;
     onUnassignFolder: () => void;
@@ -161,6 +162,16 @@ export function ServerCard({
                                 <OverflowText>{server.spell?.name}</OverflowText>
                             </div>
                         </div>
+                        {server.expires_at ? (
+                            <div className='min-w-0'>
+                                <div className='text-muted-foreground text-[10px] tracking-wider uppercase sm:text-xs'>
+                                    {t('service_expiry.label')}
+                                </div>
+                                <div className='mt-0.5'>
+                                    <ServiceExpiryChip expiresAt={server.expires_at} compact />
+                                </div>
+                            </div>
+                        ) : null}
                     </Link>
 
                     <div className='flex shrink-0 items-center gap-0.5 self-end sm:self-auto'>
@@ -423,6 +434,7 @@ export function ServerCard({
                             {t('servers.subuser')}
                         </span>
                     )}
+                    <ServiceExpiryChip expiresAt={server.expires_at} compact />
                 </Link>
 
                 <Link href={serverUrl} className='grid cursor-pointer grid-cols-1 gap-3 pt-2 min-[400px]:grid-cols-2'>

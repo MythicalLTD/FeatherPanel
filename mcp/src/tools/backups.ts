@@ -78,4 +78,124 @@ export function registerBackupTools(server: McpServer): void {
             }
         },
     );
+
+    server.registerTool(
+        'restore_backup',
+        {
+            title: 'Restore backup',
+            description: 'Restore a server from a backup UUID.',
+            inputSchema: {
+                server_id: serverId,
+                backup_uuid: z.string().describe('Backup UUID'),
+            },
+            annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: false },
+        },
+        async ({ server_id, backup_uuid }, extra) => {
+            try {
+                const data = await createClient(extra.sessionId).post(
+                    `/api/user/servers/${server_id}/backups/${backup_uuid}/restore`,
+                );
+                return toolText(data);
+            } catch (error) {
+                return toolError(error);
+            }
+        },
+    );
+
+    server.registerTool(
+        'lock_backup',
+        {
+            title: 'Lock backup',
+            description: 'Lock a server backup so it cannot be deleted until unlocked.',
+            inputSchema: {
+                server_id: serverId,
+                backup_uuid: z.string().describe('Backup UUID'),
+            },
+            annotations: { readOnlyHint: false, openWorldHint: false },
+        },
+        async ({ server_id, backup_uuid }, extra) => {
+            try {
+                const data = await createClient(extra.sessionId).post(
+                    `/api/user/servers/${server_id}/backups/${backup_uuid}/lock`,
+                );
+                return toolText(data);
+            } catch (error) {
+                return toolError(error);
+            }
+        },
+    );
+
+    server.registerTool(
+        'unlock_backup',
+        {
+            title: 'Unlock backup',
+            description: 'Unlock a previously locked server backup.',
+            inputSchema: {
+                server_id: serverId,
+                backup_uuid: z.string().describe('Backup UUID'),
+            },
+            annotations: { readOnlyHint: false, openWorldHint: false },
+        },
+        async ({ server_id, backup_uuid }, extra) => {
+            try {
+                const data = await createClient(extra.sessionId).post(
+                    `/api/user/servers/${server_id}/backups/${backup_uuid}/unlock`,
+                );
+                return toolText(data);
+            } catch (error) {
+                return toolError(error);
+            }
+        },
+    );
+
+    server.registerTool(
+        'get_backup_download',
+        {
+            title: 'Get backup download URL',
+            description: 'Get a download URL for a server backup archive.',
+            inputSchema: {
+                server_id: serverId,
+                backup_uuid: z.string().describe('Backup UUID'),
+            },
+            annotations: { readOnlyHint: true, openWorldHint: false },
+        },
+        async ({ server_id, backup_uuid }, extra) => {
+            try {
+                const data = await createClient(extra.sessionId).get(
+                    `/api/user/servers/${server_id}/backups/${backup_uuid}/download`,
+                );
+                return toolText(data);
+            } catch (error) {
+                return toolError(error);
+            }
+        },
+    );
+
+    server.registerTool(
+        'recover_backup',
+        {
+            title: 'Recover stalled backup',
+            description:
+                'Mark a stalled/incomplete backup as interrupted after confirming the Wings job stopped (confirm_interrupted: true).',
+            inputSchema: {
+                server_id: serverId,
+                backup_uuid: z.string().describe('Backup UUID'),
+                confirm_interrupted: z
+                    .literal(true)
+                    .describe('Must be true to confirm the backup job is no longer running'),
+            },
+            annotations: { readOnlyHint: false, openWorldHint: false },
+        },
+        async ({ server_id, backup_uuid, confirm_interrupted }, extra) => {
+            try {
+                const data = await createClient(extra.sessionId).post(
+                    `/api/user/servers/${server_id}/backups/${backup_uuid}/recover`,
+                    { confirm_interrupted },
+                );
+                return toolText(data);
+            } catch (error) {
+                return toolError(error);
+            }
+        },
+    );
 }

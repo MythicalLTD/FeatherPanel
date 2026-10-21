@@ -30,6 +30,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use App\Services\Server\LifecycleHookPowerGate;
 use App\Services\Server\ServerAutoStartService;
+use App\Helpers\ServerSubdomainRequirementHelper;
 use App\Services\Server\LifecycleHookExecutorService;
 use App\Controllers\User\Server\CheckSubuserPermissionsTrait;
 
@@ -121,6 +122,14 @@ class ServerPowerController
             if ($permissionCheck !== null) {
                 return $permissionCheck;
             }
+        }
+
+        // Block start/restart until a panel subdomain exists (when required panel-wide).
+        if (
+            in_array($action, ['start', 'restart'], true)
+            && ServerSubdomainRequirementHelper::shouldEnforce($user, (int) $server['id'])
+        ) {
+            return ServerSubdomainRequirementHelper::forbiddenResponse();
         }
 
         // Get node information

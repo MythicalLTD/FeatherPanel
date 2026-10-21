@@ -17,6 +17,7 @@ import {
   setSessionApiKey,
 } from "./auth.js";
 import { FeatherPanelClient } from "./client.js";
+import { resolvePanelFeatures } from "./features.js";
 import { createFeatherPanelMcpServer } from "./server.js";
 import { mountOAuthRoutes } from "./oauth/routes.js";
 import { oauthProvider } from "./oauth/provider.js";
@@ -151,7 +152,8 @@ async function beginMcpSession(
     }
   };
 
-  const server = createFeatherPanelMcpServer();
+  const features = await resolvePanelFeatures(new FeatherPanelClient(apiKey));
+  const server = createFeatherPanelMcpServer(features);
   await server.connect(transport);
   await transport.handleRequest(req, res, req.body);
 }

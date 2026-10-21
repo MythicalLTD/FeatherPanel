@@ -29,6 +29,7 @@ use App\Config\ConfigInterface;
 use App\Plugins\Events\Events\ServerEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use App\Helpers\ServerSubdomainRequirementHelper;
 use App\Plugins\Events\Events\ServerAllocationEvent;
 
 #[OA\Schema(
@@ -155,6 +156,14 @@ class ServerAllocationController
         // Mark which allocation is primary
         foreach ($allocations as &$allocation) {
             $allocation['is_primary'] = ((int) $allocation['id'] === (int) $server['allocation_id']);
+        }
+        unset($allocation);
+
+        if (ServerSubdomainRequirementHelper::shouldEnforce($user, (int) $server['id'])) {
+            foreach ($allocations as &$allocation) {
+                $allocation = ServerSubdomainRequirementHelper::redactAllocation($allocation) ?? $allocation;
+            }
+            unset($allocation);
         }
 
         // Get server's allocation limit

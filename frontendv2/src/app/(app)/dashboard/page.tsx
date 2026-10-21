@@ -25,7 +25,8 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { useSession } from '@/contexts/SessionContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useDateFormatOptions } from '@/contexts/PreferencesContext';
-import { formatRelativeTime, parseApiDate } from '@/lib/dateUtils';
+import { formatRelativeTime } from '@/lib/dateUtils';
+import { daysUntilExpiry, EXPIRY_WARNING_DAYS } from '@/lib/service-expiry';
 import { getModuleStates } from '@/lib/modules';
 import { formatDisk, getServerCpuLimit, getServerDiskLimit, getServerMemoryLimit } from '@/lib/server-utils';
 import { cn, isEnabled } from '@/lib/utils';
@@ -109,16 +110,8 @@ function readRecent(): { uuidShort: string; lastViewedAt?: string }[] {
         return [];
     }
 }
-const DAY_MS = 86_400_000;
-const EXPIRY_WARNING_DAYS = 7;
 const DISK_WARNING_PERCENT = 90;
 const OVERVIEW_REFRESH_MS = 30_000;
-
-function daysUntil(value?: string | null): number | null {
-    const date = parseApiDate(value);
-    if (!date) return null;
-    return Math.ceil((date.getTime() - Date.now()) / DAY_MS);
-}
 
 interface PlacedWidget {
     id: DashboardWidgetId;
@@ -412,7 +405,7 @@ export default function DashboardPage() {
     const attention = useMemo<AttentionItem[]>(() => {
         const items: AttentionItem[] = [];
         const expiry = (id: string, name: string, href: string, expiresAt?: string | null) => {
-            const days = daysUntil(expiresAt);
+            const days = daysUntilExpiry(expiresAt);
             if (days === null || days > EXPIRY_WARNING_DAYS) return;
             items.push({
                 id: `expiry-${id}`,
@@ -478,7 +471,7 @@ export default function DashboardPage() {
 
         for (const backup of overview?.backups ?? []) {
             if (backup.state !== 'failed') continue;
-            const days = daysUntil(backup.completed_at);
+            const days = daysUntilExpiry(backup.completed_at);
             if (days === null || days < -1) continue; // Only failures from the last day or so.
             items.push({
                 id: `backup-${backup.uuid}`,

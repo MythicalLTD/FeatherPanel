@@ -295,6 +295,10 @@ class Permissions
     /** Create personal API keys even when user API key creation is disabled panel-wide */
     public const USER_API_KEYS_CREATE = 'user.api_keys.create';
 
+    // User Servers Permissions
+    /** Use servers without a panel subdomain when subdomain is required panel-wide */
+    public const USER_SERVERS_BYPASS_SUBDOMAIN_REQUIREMENT = 'user.servers.bypass_subdomain_requirement';
+
     // Admin Tickets Permissions
     /** View support tickets */
     public const ADMIN_TICKETS_VIEW = 'admin.tickets.view';
@@ -1008,6 +1012,12 @@ class Permissions
                 'value' => self::USER_API_KEYS_CREATE,
                 'category' => 'User API',
                 'description' => 'Create personal API keys even when user API key creation is disabled panel-wide',
+            ],
+            [
+                'constant' => 'USER_SERVERS_BYPASS_SUBDOMAIN_REQUIREMENT',
+                'value' => self::USER_SERVERS_BYPASS_SUBDOMAIN_REQUIREMENT,
+                'category' => 'User Servers',
+                'description' => 'Use servers without a panel subdomain when subdomain is required panel-wide',
             ],
             [
                 'constant' => 'ADMIN_TICKETS_VIEW',

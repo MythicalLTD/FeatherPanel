@@ -36,6 +36,7 @@ import {
 } from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { getApiErrorMessage } from '@/lib/api-errors';
+import { ServiceExpiryChip } from '@/components/common/ServiceExpiryChip';
 import {
     displayStatus,
     formatCpu,
@@ -369,13 +370,14 @@ export function DashboardServerRow({
                     <span className='flex min-w-0 items-center gap-2'>
                         <span className='truncate text-sm font-semibold'>{server.name}</span>
                     </span>
-                    <span className='mt-0.5 flex min-w-0 items-center gap-2'>
+                    <span className='mt-0.5 flex min-w-0 flex-wrap items-center gap-2'>
                         <StatusLabel status={status} />
                         {(server.node?.name || server.spell?.name) && (
                             <span className='text-muted-foreground/80 hidden min-w-0 truncate text-xs sm:inline'>
                                 {[server.spell?.name, server.node?.name].filter(Boolean).join(' · ')}
                             </span>
                         )}
+                        <ServiceExpiryChip expiresAt={server.expires_at} compact className='h-5 px-2 text-[10px]' />
                     </span>
                 </span>
             </Link>
@@ -482,9 +484,11 @@ export function DashboardServerGaugeCard({
 }) {
     const { t, status, accessible, href, powerButtons, usage } = useServerPresentation(server, live);
     const banner = server.spell?.banner;
-    const address = server.allocation
-        ? `${server.allocation.ip_alias || server.allocation.alias || server.allocation.ip}:${server.allocation.port}`
-        : null;
+    const address = server.subdomain_requirement?.enforced
+        ? t('serverSubdomains.requirementAddressPending')
+        : server.allocation
+          ? `${server.allocation.ip_alias || server.allocation.alias || server.allocation.ip}:${server.allocation.port}`
+          : null;
     const pct = (used: number, limit: number) => (limit > 0 ? getUsagePercentage(used, limit) : null);
     const ofLimit = (limit: number, format: (n: number) => string) =>
         limit > 0 ? t('dashboard.home.gauges.of', { limit: format(limit) }) : t('dashboard.home.gauges.unlimited');

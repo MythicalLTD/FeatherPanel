@@ -256,14 +256,13 @@ interface ConfigInterface
     public const OIDC_DISABLE_LOCAL_LOGIN = 'oidc_disable_local_login';
 
     /**
-     * API clients: legacy compatibility switch.
+     * API clients: public-key Bearer auth switch.
      *
-     * When true an API client may also authenticate with its own `public_key` as a
-     * Bearer token (old behaviour). The public key is not a secret (it is printed
-     * in redirect URLs for Calagopus compatible integrations), which is why this is
-     * off by default and only exists to rescue a badly configured legacy client.
-     * Only private keys are accepted by default; the public_key redirect URL is not
-     * affected by this switch.
+     * When true (default) an API client may authenticate with either its
+     * `private_key` or its `public_key` as a Bearer token. Set to false to
+     * require the private key only — the public key is not a secret (it appears
+     * in redirect URLs for Calagopus-compatible integrations). The public_key
+     * redirect URL itself is not affected by this switch.
      */
     public const API_CLIENTS_ALLOW_PUBLIC_KEY_AUTH = 'api_clients_allow_public_key_auth';
 
@@ -292,6 +291,12 @@ interface ConfigInterface
     public const SERVER_ALLOW_USER_MADE_IMPORT = 'server_allow_user_made_import';
     public const SERVER_ALLOW_USER_MADE_FASTDL = 'server_allow_user_made_fastdl';
     public const SERVER_ALLOW_USER_MADE_SUBDOMAINS = 'server_allow_user_made_subdomains';
+    /**
+     * When true, users must assign a panel subdomain before starting/restarting a server.
+     * Allocation IPs are redacted until compliant. Bypass via user.servers.bypass_subdomain_requirement.
+     * Requires server_allow_user_made_subdomains so users can create subdomains.
+     */
+    public const SERVER_REQUIRE_SUBDOMAIN = 'server_require_subdomain';
     /** When true, panel queues auto-start for servers with auto_start enabled after a node reconnect. */
     public const SERVER_AUTO_START_ON_NODE_RECONNECT = 'server_auto_start_on_node_reconnect';
     /** Seconds between each queued auto-start on the same node (stagger). */

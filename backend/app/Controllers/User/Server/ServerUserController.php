@@ -51,6 +51,7 @@ use App\Services\Wings\Services\JwtService;
 use Symfony\Component\HttpFoundation\Request;
 use App\Plugins\Events\Events\ServerUserEvent;
 use Symfony\Component\HttpFoundation\Response;
+use App\Helpers\ServerSubdomainRequirementHelper;
 use App\Services\Subdomain\SubdomainCleanupService;
 
 #[OA\Schema(
@@ -419,6 +420,14 @@ class ServerUserController
         $allocationsById = Allocation::getAllocationsByIds(array_keys($allocationIds));
         $ownersById = $ownerIds !== [] ? \App\Chat\User::getUsersByIds(array_keys($ownerIds)) : [];
 
+        $subdomainRequired = ServerSubdomainRequirementHelper::isRequired();
+        $subdomainBypass = $subdomainRequired && ServerSubdomainRequirementHelper::userBypasses($user);
+        $compliantServerIds = [];
+        if ($subdomainRequired) {
+            $pageServerIds = array_map(static fn ($s) => (int) ($s['id'] ?? 0), $servers);
+            $compliantServerIds = array_flip(Subdomain::getServerIdsHavingSubdomains($pageServerIds));
+        }
+
         // Add related data to each server.
         foreach ($servers as &$server) {
             // Check if user is a subuser of this server (only when not viewing all)
@@ -495,6 +504,19 @@ class ServerUserController
                 'port' => $allocation['port'] ?? null,
                 'ip_alias' => $allocation['ip_alias'] ?? null,
             ];
+
+            $serverId = (int) $server['id'];
+            $compliant = isset($compliantServerIds[$serverId]);
+            $enforced = $subdomainRequired && !$subdomainBypass && !$compliant;
+            $server['subdomain_requirement'] = [
+                'required' => $subdomainRequired,
+                'compliant' => $compliant,
+                'bypassed' => $subdomainBypass,
+                'enforced' => $enforced,
+            ];
+            if ($enforced) {
+                $server['allocation'] = ServerSubdomainRequirementHelper::redactAllocation($server['allocation']);
+            }
 
             unset(
                 $server['external_id'],
@@ -944,6 +966,13 @@ class ServerUserController
                 'domain' => null,
                 'subdomain' => null,
             ];
+        }
+
+        $server['subdomain_requirement'] = ServerSubdomainRequirementHelper::requirementMeta($user, (int) $server['id']);
+        if ($server['subdomain_requirement']['enforced']) {
+            $server['allocation'] = ServerSubdomainRequirementHelper::redactAllocation(
+                is_array($server['allocation'] ?? null) ? $server['allocation'] : null
+            );
         }
 
         unset(

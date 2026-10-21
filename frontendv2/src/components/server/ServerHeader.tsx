@@ -26,6 +26,7 @@ import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/contexts/ThemeContext';
 import { resolveSpellBannerUrl, type ServerSpellBannerStyle } from '@/lib/server-spell-banner';
+import { ServiceExpiryChip } from '@/components/common/ServiceExpiryChip';
 
 interface ServerHeaderProps {
     serverName: string;
@@ -37,6 +38,8 @@ interface ServerHeaderProps {
     port?: number | null;
     /** Human readable uptime from the daemon, when known. */
     uptime?: string;
+    /** When set, server is auto-suspended after this datetime. */
+    expiresAt?: string | null;
     nodeLocation?: string;
     nodeLocationFlag?: string;
     nodeName?: string;
@@ -64,6 +67,7 @@ export default function ServerHeader({
     address,
     port,
     uptime,
+    expiresAt,
     nodeLocation,
     nodeLocationFlag,
     nodeName,
@@ -168,6 +172,7 @@ export default function ServerHeader({
                     <span className='tabular-nums'>{uptime}</span>
                 </span>
             ) : null}
+            <ServiceExpiryChip expiresAt={expiresAt} />
             {nodeName || nodeLocation ? (
                 <span className={chipClass} title={t('servers.node')}>
                     {nodeLocationFlag ? (

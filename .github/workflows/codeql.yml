@@ -21,7 +21,7 @@ permissions:
 jobs:
   analyze:
     name: Analyze
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ubuntu-latest
 
     strategy:
       fail-fast: false
@@ -33,7 +33,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: useblacksmith/checkout@v1
+        uses: actions/checkout@v4
 
       # Initializes the CodeQL tools for scanning.
       - name: Initialize CodeQL

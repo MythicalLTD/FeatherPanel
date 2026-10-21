@@ -90,7 +90,14 @@ const STEP_KEYS: Partial<Record<StepId, string[]>> = {
     welcome: ['app_url', 'app_name', 'app_logo_dark', 'app_logo_white'],
     locale: ['app_timezone', 'app_locale_default'],
     mail: ['smtp_enabled', 'smtp_host', 'smtp_port', 'smtp_user', 'smtp_pass', 'smtp_from', 'smtp_encryption'],
-    modules: ['module_game_enabled', 'module_web_enabled', 'module_vds_enabled'],
+    modules: [
+        'module_game_enabled',
+        'module_web_enabled',
+        'module_vds_enabled',
+        'ticket_system_enabled',
+        'knowledgebase_enabled',
+        'status_page_enabled',
+    ],
     security: [
         'registration_enabled',
         'require_two_fa_admins',
@@ -101,9 +108,42 @@ const STEP_KEYS: Partial<Record<StepId, string[]>> = {
 };
 
 const MODULES = [
-    { key: 'module_game_enabled', title: 'setup_wizard.modules.game_title', body: 'setup_wizard.modules.game_body' },
-    { key: 'module_web_enabled', title: 'setup_wizard.modules.web_title', body: 'setup_wizard.modules.web_body' },
-    { key: 'module_vds_enabled', title: 'setup_wizard.modules.vds_title', body: 'setup_wizard.modules.vds_body' },
+    {
+        key: 'module_game_enabled',
+        title: 'setup_wizard.modules.game_title',
+        body: 'setup_wizard.modules.game_body',
+        defaultOn: true,
+    },
+    {
+        key: 'module_web_enabled',
+        title: 'setup_wizard.modules.web_title',
+        body: 'setup_wizard.modules.web_body',
+        defaultOn: true,
+    },
+    {
+        key: 'module_vds_enabled',
+        title: 'setup_wizard.modules.vds_title',
+        body: 'setup_wizard.modules.vds_body',
+        defaultOn: true,
+    },
+    {
+        key: 'ticket_system_enabled',
+        title: 'setup_wizard.modules.tickets_title',
+        body: 'setup_wizard.modules.tickets_body',
+        defaultOn: true,
+    },
+    {
+        key: 'knowledgebase_enabled',
+        title: 'setup_wizard.modules.knowledgebase_title',
+        body: 'setup_wizard.modules.knowledgebase_body',
+        defaultOn: true,
+    },
+    {
+        key: 'status_page_enabled',
+        title: 'setup_wizard.modules.status_page_title',
+        body: 'setup_wizard.modules.status_page_body',
+        defaultOn: false,
+    },
 ] as const;
 
 type Values = Record<string, string>;
@@ -597,7 +637,7 @@ export function SetupWizard() {
                                         key={m.key}
                                         title={t(m.title)}
                                         body={t(m.body)}
-                                        checked={bool(m.key)}
+                                        checked={bool(m.key, m.defaultOn)}
                                         onChange={(v) => setBool(m.key, v)}
                                     />
                                 ))}

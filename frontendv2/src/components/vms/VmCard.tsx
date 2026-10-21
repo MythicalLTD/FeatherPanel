@@ -24,6 +24,7 @@ import { HardDrive, Cpu, MemoryStick, Globe, Server, ArrowRight } from 'lucide-r
 import { cn } from '@/lib/utils';
 import { OverflowText } from '@/components/featherui/OverflowText';
 import { Sensitive } from '@/components/common/Sensitive';
+import { ServiceExpiryChip } from '@/components/common/ServiceExpiryChip';
 import { useTranslation } from '@/contexts/TranslationContext';
 
 interface VmCardProps {
@@ -112,6 +113,7 @@ export function VmCard({ vm, layout }: VmCardProps) {
                             )}
                             {nodeName && <span>{nodeName}</span>}
                             <span className='uppercase opacity-60'>{vm.vm_type}</span>
+                            <ServiceExpiryChip expiresAt={vm.expires_at} compact className='h-5 px-2 text-[10px]' />
                         </div>
                     </div>
 
@@ -151,7 +153,7 @@ export function VmCard({ vm, layout }: VmCardProps) {
                 </div>
 
                 {/* IP + Node */}
-                <div className='text-muted-foreground mb-4 flex flex-wrap gap-x-3 gap-y-1 text-xs'>
+                <div className='text-muted-foreground mb-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs'>
                     {vm.ip_address && (
                         <span className='flex items-center gap-1'>
                             <Globe className='h-3 w-3 shrink-0' />
@@ -159,6 +161,7 @@ export function VmCard({ vm, layout }: VmCardProps) {
                         </span>
                     )}
                     {nodeName && <span>{nodeName}</span>}
+                    <ServiceExpiryChip expiresAt={vm.expires_at} compact className='h-5 px-2 text-[10px]' />
                 </div>
 
                 {/* Specs grid */}

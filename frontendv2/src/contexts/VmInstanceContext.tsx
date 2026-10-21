@@ -49,6 +49,7 @@ export interface VmInstance {
     permissions?: string[];
     access_password?: string | null;
     suspended?: number;
+    expires_at?: string | null;
 }
 
 interface VmInstanceContextType {

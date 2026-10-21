@@ -46,6 +46,9 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Sensitive } from '@/components/common/Sensitive';
+import { ServiceExpiryChip } from '@/components/common/ServiceExpiryChip';
+import { useDateFormatOptions } from '@/contexts/PreferencesContext';
+import { formatExpiryAbsolute } from '@/lib/service-expiry';
 
 interface VmStatus {
     status?: string;
@@ -144,6 +147,7 @@ export default function VdsConsolePage() {
     const { id } = useParams() as { id: string };
     const router = useRouter();
     const { t } = useTranslation();
+    const dateOpts = useDateFormatOptions();
     const { instance, loading: instanceLoading, refreshInstance, hasPermission } = useVmInstance();
     const { fetchWidgets, getWidgets } = usePluginWidgets('vds-console');
 
@@ -515,26 +519,28 @@ export default function VdsConsolePage() {
                         </CardHeader>
                         <CardContent className='pt-0'>
                             <div className='grid grid-cols-1 gap-x-4 gap-y-0 sm:grid-cols-2'>
-                                {[
-                                    { label: t('vds.console.details.hostname'), value: instance.hostname ?? '—' },
-                                    { label: t('vds.console.details.vmid'), value: String(instance.vmid) },
-                                    {
-                                        label: t('vds.console.details.type'),
-                                        value: instance.vm_type?.toUpperCase() ?? 'QEMU',
-                                    },
-                                    { label: t('vds.console.details.status'), value: liveStatus },
-                                    {
-                                        label: t('vds.console.details.node'),
-                                        value: instance.node_name ?? instance.pve_node ?? '—',
-                                    },
-                                    { label: t('vds.console.details.plan'), value: instance.plan_name ?? '—' },
-                                    {
-                                        label: t('vds.console.details.role'),
-                                        value: instance.is_owner
-                                            ? t('vds.console.details.role_owner')
-                                            : t('vds.console.details.role_subuser'),
-                                    },
-                                ].map(({ label, value }) => (
+                                {(
+                                    [
+                                        { label: t('vds.console.details.hostname'), value: instance.hostname ?? '—' },
+                                        { label: t('vds.console.details.vmid'), value: String(instance.vmid) },
+                                        {
+                                            label: t('vds.console.details.type'),
+                                            value: instance.vm_type?.toUpperCase() ?? 'QEMU',
+                                        },
+                                        { label: t('vds.console.details.status'), value: liveStatus },
+                                        {
+                                            label: t('vds.console.details.node'),
+                                            value: instance.node_name ?? instance.pve_node ?? '—',
+                                        },
+                                        { label: t('vds.console.details.plan'), value: instance.plan_name ?? '—' },
+                                        {
+                                            label: t('vds.console.details.role'),
+                                            value: instance.is_owner
+                                                ? t('vds.console.details.role_owner')
+                                                : t('vds.console.details.role_subuser'),
+                                        },
+                                    ] as { label: string; value: string }[]
+                                ).map(({ label, value }) => (
                                     <div
                                         key={label}
                                         className='border-border/10 flex items-center justify-between gap-2 border-b py-1.5'
@@ -547,6 +553,19 @@ export default function VdsConsolePage() {
                                         </span>
                                     </div>
                                 ))}
+                                {instance.expires_at ? (
+                                    <div className='border-border/10 flex items-center justify-between gap-2 border-b py-1.5 sm:col-span-2'>
+                                        <span className='text-muted-foreground shrink-0 text-xs font-medium'>
+                                            {t('service_expiry.label')}
+                                        </span>
+                                        <span className='flex min-w-0 flex-wrap items-center justify-end gap-2'>
+                                            <ServiceExpiryChip expiresAt={instance.expires_at} />
+                                            <span className='text-muted-foreground truncate font-mono text-xs tabular-nums'>
+                                                {formatExpiryAbsolute(instance.expires_at, dateOpts)}
+                                            </span>
+                                        </span>
+                                    </div>
+                                ) : null}
                             </div>
                             {canViewAccessPassword && (
                                 <div className='border-primary/20 bg-primary/5 mt-3 space-y-3 rounded-xl border p-4'>

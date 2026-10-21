@@ -237,6 +237,13 @@ export interface Server {
         domain: string;
         subdomain: string;
     };
+    /** Present when the panel may require a subdomain before start/restart. */
+    subdomain_requirement?: {
+        required: boolean;
+        compliant: boolean;
+        bypassed: boolean;
+        enforced: boolean;
+    };
 
     // Access control
     is_subuser: boolean;

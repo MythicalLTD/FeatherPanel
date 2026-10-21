@@ -410,6 +410,7 @@ class SettingsController
                 ConfigInterface::SERVER_ALLOW_USER_MADE_IMPORT,
                 ConfigInterface::SERVER_ALLOW_USER_MADE_FASTDL,
                 ConfigInterface::SERVER_ALLOW_USER_MADE_SUBDOMAINS,
+                ConfigInterface::SERVER_REQUIRE_SUBDOMAIN,
                 ConfigInterface::SERVER_AUTO_START_ON_NODE_RECONNECT,
                 ConfigInterface::SERVER_AUTO_START_STAGGER_SECONDS,
                 ConfigInterface::SERVER_AUTO_START_INITIAL_DELAY_SECONDS,
@@ -2594,6 +2595,22 @@ class SettingsController
                         'false',
                     ),
                 'description' => 'Allow users to create and manage server subdomains',
+                'type' => 'select',
+                'required' => true,
+                'placeholder' => 'false',
+                'validation' => 'required|string|max:255',
+                'options' => ['true', 'false'],
+                'category' => 'servers',
+            ],
+            ConfigInterface::SERVER_REQUIRE_SUBDOMAIN => [
+                'name' => ConfigInterface::SERVER_REQUIRE_SUBDOMAIN,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::SERVER_REQUIRE_SUBDOMAIN,
+                        'false',
+                    ),
+                'description' => 'Require users to create a panel subdomain before starting a server. Hides allocation IPs until a subdomain exists. Enable "Allow user-made subdomains" first. Roles with user.servers.bypass_subdomain_requirement are exempt.',
                 'type' => 'select',
                 'required' => true,
                 'placeholder' => 'false',

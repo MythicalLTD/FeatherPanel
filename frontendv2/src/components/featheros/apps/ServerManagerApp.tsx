@@ -322,9 +322,11 @@ export default function ServerManagerApp({ win }: OsAppProps) {
                             const ld = live[s.uuidShort];
                             const state = serverState(s, ld?.status);
                             const busy = pending.has(s.uuidShort);
-                            const addr = s.allocation
-                                ? `${s.allocation.ip_alias || s.allocation.ip}:${s.allocation.port}`
-                                : '—';
+                            const addr = s.subdomain_requirement?.enforced
+                                ? t('serverSubdomains.requirementAddressPending')
+                                : s.allocation
+                                  ? `${s.allocation.ip_alias || s.allocation.ip}:${s.allocation.port}`
+                                  : '—';
                             return (
                                 <tr
                                     key={s.uuidShort}

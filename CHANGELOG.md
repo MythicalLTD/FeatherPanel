@@ -1,11 +1,29 @@
 # Changelog
 
+## v1.5.2 STABLE
+
+### Security
+
+- Bumped the Docker base image from `dunglas/frankenphp:1.13.1-php8.5` (PHP 8.5.11) to `dunglas/frankenphp:1.13.2-php8.5` (PHP 8.5.12), which is the FrankenPHP security release that actually ships the PHP2Shell fixes (CVE-2026-109618 / CVE-2026-109619). Also pinned the OCI image to the same tag. by @nayskutzu
+
+### Added
+
+- First-install setup wizard Modules step now also lets you toggle Ticket system, Knowledge base, and Status page (alongside Game servers, Web hosting, and Virtual servers). by @nayskutzu
+- Server and VDS expiry dates set by admins are now visible to users on the console header, settings, server/VM lists, and dashboard rows (with a warning style when expiry is within 7 days).
+
+### Improved
+
+- Moved CI/CD workflows back from Blacksmith to GitHub-hosted runners (`ubuntu-latest` / `ubuntu-24.04-arm`), with standard Buildx + `pull: true` so Docker base-image updates are not stuck behind sticky Blacksmith caches. by @nayskutzu
+
+### Fixed
+
+- API Bearer auth again accepts the public API key by default (as before v1.5.0), so SSO/billing calls such as `POST /api/admin/users/{uuid}/sso-token` no longer return `INVALID_API_KEY` when a valid public key is used. Private keys are still preferred; set `api_clients_allow_public_key_auth=false` to require private keys only. by @nayskutzu
+
 ## v1.5.1 STABLE
 
 ### Security
 
-- Patched critical PHP RCE vulnerabilities CVE-2026-109618 and CVE-2026-109619 ("php2shell") by pinning the Docker base image to `dunglas/frankenphp:1.13.1-php8.5` (PHP 8.5.12). by @nayskutzu
-- Disabled `session.upload_progress` in the container PHP config as defense-in-depth against the upload-progress use-after-free path. by @nayskutzu
+- Patched critical PHP RCE vulnerabilities CVE-2026-109618 and CVE-2026-109619 ("php2shell") by pinning the Docker base image to `dunglas/frankenphp:1.13.1-php8.5` and disabling `session.upload_progress` in the container PHP config as defense-in-depth against the upload-progress use-after-free path. by @nayskutzu
 
 ### Improved
 

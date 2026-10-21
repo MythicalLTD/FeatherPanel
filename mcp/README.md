@@ -72,19 +72,44 @@ pnpm start:stdio
 
 ## Tools
 
-- **Account:** `whoami`
-- **Servers:** `list_servers`, `get_server_details`, `get_server_status`, `get_server_activities`, `server_power_action`
-- **Console / live:** `send_console_command`, `get_console_websocket`, `get_server_logs`, `get_install_logs`, `get_server_players`
-- **Files:** `get_files`, `get_file_content`, `write_file`, `search_files`, `create_directory`, `delete_files`, `rename_file`, `copy_files`, `compress_files`, `decompress_archive`, `pull_file`, `change_file_permissions`
-- **Startup / danger:** `get_server_startup`, `update_server`, `reinstall_server`, `wipe_server_files`, `abort_server_install`
-- **Allocations:** `get_server_allocations`, `get_available_allocations`, `auto_allocate`, `set_primary_allocation`, `delete_allocation`
-- **Subusers:** `get_server_subusers`, `get_subuser_permissions`, `create_subuser`, `update_subuser`, `delete_subuser`
-- **Network:** firewall / proxy / subdomain tools
-- **Backups / DBs / schedules:** full CRUD packs
-- **Knowledgebase:** `search_knowledgebase`, `get_knowledgebase_article`, `list_knowledgebase_categories`
-- **VDS:** list/details/status/power/backups/restore
+Tools are registered from panel public settings (`GET /api/system/settings`, see `mcp/src/features.ts`). A setting value of `"false"` disables that pack; missing values count as enabled. Disabled packs are omitted from `tools/list`.
 
-Permissions match the API key’s user.
+**Not exposed (by design):** FeatherOS, panel plugins/addons, webspace/VDS chatbots, multipart file uploads.
+
+### Always available
+
+- **Account:** `whoami`, notifications / inbox, SSH keys, sessions
+
+### Game servers (`module_game_enabled`)
+
+- **Servers:** list/details/status/activities/power, resources + resource history, trash, FastDL
+- **Console / live:** command, websocket, logs, install logs, players
+- **Files:** browse/read/write/search/compress/pull/permissions
+- **Startup / danger:** startup, update, reinstall, wipe, abort install
+- **Allocations, subusers, network** (firewall / proxy / subdomains)
+- **Backups:** list/create/delete/restore/lock/unlock/download/recover
+- **Databases / schedules:** CRUD packs
+
+### Web hosting (`module_web_enabled`)
+
+- **Webspaces (core):** list/catalog/get/update, utilization, transfer, infrastructure readiness, PHP ini/extensions, Redis, malware scan, power/status/logs, SSL, proxy logs, analytics, activities, JWT, DNS check/provision
+- **Files:** list/read/write, trash, pull/upload-url/download URLs, share jobs, search, archives (no raw multipart upload)
+- **Databases, mail, DNS zones/records, backups, cron schedules, SFTP, subusers**
+- **Apps:** WordPress (install/update/staging/auto-update), Laravel, Ghost, Joomla, Drupal, Magento, PrestaShop, Node/Python starters, git deploy + webhook + deploy key (WordPress *plugin* install excluded)
+
+### VDS (`module_vds_enabled`)
+
+- Full user VDS/VM pack: list/details/status/power, QEMU hardware, networking/DNS, ISO fetch/unmount (no multipart ISO upload), templates, VNC ticket, reinstall + task polling, backups create/list/restore/delete/recover + status polling, activities, subusers (`mcp/src/tools/vds.ts`)
+
+### Tickets (`ticket_system_enabled`)
+
+- categories/priorities/statuses/servers helpers, list/get/create/reply/delete message/close
+
+### Knowledgebase (`knowledgebase_enabled`)
+
+- `search_knowledgebase`, `get_knowledgebase_article`, `list_knowledgebase_categories`
+
+Permissions match the API key’s user and webspace/server/VDS subuser ACLs.
 
 ## Security
 

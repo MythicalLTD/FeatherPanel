@@ -12,9 +12,9 @@ permissions:
 
 jobs:
   dependency-review:
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ubuntu-latest
     steps:
       - name: 'Checkout Repository'
-        uses: useblacksmith/checkout@v1
+        uses: actions/checkout@v4
       - name: 'Dependency Review'
         uses: actions/dependency-review-action@v3

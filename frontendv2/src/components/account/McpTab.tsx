@@ -131,8 +131,12 @@ export default function McpTab({}: McpTabProps) {
         t('account.mcp.capabilities.backups'),
         t('account.mcp.capabilities.databases'),
         t('account.mcp.capabilities.schedules'),
+        t('account.mcp.capabilities.webspaces'),
         t('account.mcp.capabilities.vds'),
+        t('account.mcp.capabilities.tickets'),
+        t('account.mcp.capabilities.account'),
         t('account.mcp.capabilities.knowledgebase'),
+        t('account.mcp.capabilities.featureGating'),
     ];
 
     return (

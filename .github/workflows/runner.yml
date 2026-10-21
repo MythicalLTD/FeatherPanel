@@ -8,13 +8,13 @@ permissions:
 jobs:
   build:
     name: Async Runner Build
-    runs-on: blacksmith-2vcpu-ubuntu-2404
+    runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: runner
     steps:
       - name: Code Checkout
-        uses: useblacksmith/checkout@v1
+        uses: actions/checkout@v4
       - name: Install system dependencies
         run: |
           sudo apt-get update

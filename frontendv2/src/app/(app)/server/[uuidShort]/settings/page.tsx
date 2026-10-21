@@ -72,6 +72,9 @@ import { filesApi } from '@/lib/files-api';
 import { PageLoading } from '@/components/featherui/PageLoading';
 import { UnsavedChangesBar } from '@/components/featherui/UnsavedChangesBar';
 import { Sensitive } from '@/components/common/Sensitive';
+import { ServiceExpiryChip } from '@/components/common/ServiceExpiryChip';
+import { useDateFormatOptions } from '@/contexts/PreferencesContext';
+import { formatExpiryAbsolute } from '@/lib/service-expiry';
 
 interface SftpDetails {
     host: string;
@@ -94,6 +97,7 @@ export default function ServerSettingsPage() {
     const router = useRouter();
     const pathname = usePathname();
     const { t } = useTranslation();
+    const dateOpts = useDateFormatOptions();
     const { loading: settingsLoading, settings } = useSettings();
     const { hasPermission, loading: permissionsLoading } = useServerPermissions(uuidShort);
     const { getWidgets } = usePluginWidgets('server-settings');
@@ -423,6 +427,23 @@ export default function ServerSettingsPage() {
                                     className='bg-secondary/50 border-border/10 focus:border-primary/50 h-12 rounded-xl text-base font-medium'
                                 />
                             </div>
+
+                            {server?.expires_at ? (
+                                <div className='space-y-2'>
+                                    <Label className='text-muted-foreground ml-1 text-xs font-bold'>
+                                        {t('service_expiry.label')}
+                                    </Label>
+                                    <div className='border-border/10 bg-muted/40 flex min-h-12 flex-wrap items-center justify-between gap-3 rounded-xl border px-4 py-2'>
+                                        <span className='text-sm font-medium tabular-nums'>
+                                            {formatExpiryAbsolute(server.expires_at, dateOpts)}
+                                        </span>
+                                        <ServiceExpiryChip expiresAt={server.expires_at} compact />
+                                    </div>
+                                    <p className='text-muted-foreground ml-1 text-xs break-words'>
+                                        {t('service_expiry.settings_help')}
+                                    </p>
+                                </div>
+                            ) : null}
 
                             {canRename && (
                                 <div className='flex gap-3 pt-2'>

@@ -8,13 +8,13 @@ permissions:
 jobs:
   lint:
     name: Backend Lint
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: backend
     steps:
       - name: Code Checkout
-        uses: useblacksmith/checkout@v1
+        uses: actions/checkout@v4
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
@@ -35,7 +35,7 @@ jobs:
         run: composer lint
   tests:
     name: Backend Tests
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: backend
@@ -49,7 +49,7 @@ jobs:
           - 3306
     steps:
       - name: Code Checkout
-        uses: useblacksmith/checkout@v1
+        uses: actions/checkout@v4
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:

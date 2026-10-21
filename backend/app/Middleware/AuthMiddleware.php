@@ -60,29 +60,41 @@ class AuthMiddleware implements MiddlewareInterface
             // Check for Authorization header (Bearer token for API keys)
             $authHeader = $request->headers->get('Authorization');
             if ($authHeader && preg_match('/Bearer\s(\S+)/', $authHeader, $matches)) {
-                $publicKey = $matches[1];
+                $bearerToken = $matches[1];
                 $apiClient = null;
 
-                // FP-5: the public_key of an API client is not a secret (it is
-                // handed out in redirect URLs), so it must not be accepted as a
-                // Bearer credential. Only kept for legacy clients when an operator
-                // explicitly opts in via `api_clients_allow_public_key_auth`.
-                if (self::publicKeyAuthAllowed()) {
-                    $apiClient = ApiClient::getApiClientByPublicKey($publicKey);
+                // Prefer the private key (secret). Public-key Bearer auth remains
+                // enabled by default for compatibility with billing/SSO integrations
+                // that historically stored the always-visible public_key; operators
+                // can harden with `api_clients_allow_public_key_auth=false`.
+                $apiClient = ApiClient::getApiClientByPrivateKey($bearerToken);
+
+                if ($apiClient == null && self::publicKeyAuthAllowed()) {
+                    $apiClient = ApiClient::getApiClientByPublicKey($bearerToken);
                     if ($apiClient !== null) {
                         App::getInstance(true)->getLogger()->warning(
-                            'API client authenticated with its public_key (api_clients_allow_public_key_auth=true) - client: '
+                            'API client authenticated with its public_key - client: '
                             . ($apiClient['uuid'] ?? $apiClient['id'] ?? 'unknown')
                         );
                     }
                 }
 
-                // Validate the API client using the private key
                 if ($apiClient == null) {
-                    $apiClient = ApiClient::getApiClientByPrivateKey($publicKey);
-                    if ($apiClient == null) {
-                        return ApiResponse::error('Invalid API key', 'INVALID_API_KEY', 401, []);
+                    // Helpful error when a real public_key was sent but public-key
+                    // Bearer auth has been explicitly disabled by the operator.
+                    if (
+                        !self::publicKeyAuthAllowed()
+                        && ApiClient::getApiClientByPublicKey($bearerToken) !== null
+                    ) {
+                        return ApiResponse::error(
+                            'Public API keys cannot be used as Bearer tokens. Use the private key, or set api_clients_allow_public_key_auth=true.',
+                            'PUBLIC_API_KEY_NOT_ALLOWED',
+                            401,
+                            []
+                        );
                     }
+
+                    return ApiResponse::error('Invalid API key', 'INVALID_API_KEY', 401, []);
                 }
 
                 // Get the user associated with this API client
@@ -179,19 +191,20 @@ class AuthMiddleware implements MiddlewareInterface
     }
 
     /**
-     * Whether an API client may still authenticate with its own public_key.
-     * Defaults to false; an operator can restore the legacy behaviour with a single
-     * config entry (`api_clients_allow_public_key_auth = true`).
+     * Whether an API client may authenticate with its own public_key as Bearer.
+     * Defaults to true for compatibility with existing integrations; set
+     * `api_clients_allow_public_key_auth=false` to require private keys only.
      */
     private static function publicKeyAuthAllowed(): bool
     {
         try {
             return App::getInstance(true)->getConfig()->getSetting(
                 ConfigInterface::API_CLIENTS_ALLOW_PUBLIC_KEY_AUTH,
-                'false'
-            ) === 'true';
+                'true'
+            ) !== 'false';
         } catch (\Throwable $e) {
-            return false;
+            // Fail open: matching pre-1.5.0 behaviour if config is unavailable.
+            return true;
         }
     }
 }

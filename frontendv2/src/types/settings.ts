@@ -37,6 +37,8 @@ export interface AppSettings {
     server_allow_user_made_proxy: string;
     server_allow_user_made_fastdl: string;
     server_allow_user_made_subdomains: string;
+    /** When true, users must set a panel subdomain before start/restart; IPs are redacted until then. */
+    server_require_subdomain?: string;
     server_auto_start_on_node_reconnect?: string;
     server_auto_start_stagger_seconds?: string;
     server_auto_start_initial_delay_seconds?: string;

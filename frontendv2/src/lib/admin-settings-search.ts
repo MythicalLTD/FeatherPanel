@@ -18,6 +18,7 @@ import type { GlobalSearchResult } from '@/lib/global-search';
 import Permissions from '@/lib/permissions';
 
 const ADMIN_SETTING_DISPLAY_NAMES: Record<string, string> = {
+    server_require_subdomain: 'Require subdomain before server start',
     server_lifecycle_hooks_enabled: 'Lifecycle hooks (pre-start / pre-stop / post-start / crash)',
     server_lifecycle_hooks_container_shell_enabled: 'Container Shell (docker exec) for lifecycle hooks & schedules',
 };

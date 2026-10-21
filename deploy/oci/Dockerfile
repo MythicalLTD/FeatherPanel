@@ -38,7 +38,7 @@ RUN --mount=type=cache,target=/usr/local/cargo/registry \
     cp /build/target/release/async-runner /build/async-runner
 
 # ============================================================================
-FROM dunglas/frankenphp:php8.5 AS final
+FROM dunglas/frankenphp:1.13.2-php8.5 AS final
 
 # Prevent interactive prompts
 ENV DEBIAN_FRONTEND=noninteractive

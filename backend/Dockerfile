@@ -1,6 +1,6 @@
 # FrankenPHP = Caddy + PHP in one (replaces nginx + php-fpm)
 # PHP 8.5 variant when available; use php8.4 if the build fails
-FROM dunglas/frankenphp:1.13.1-php8.5
+FROM dunglas/frankenphp:1.13.2-php8.5
 
 # Set working directory (app lives here; Caddyfile serves from public/)
 WORKDIR /var/www/html

@@ -19,6 +19,7 @@ import { cache } from 'react';
 import ChatbotWidget from '@/components/ai/ChatbotWidget';
 import { ServerAnnouncementBanner } from '@/components/server/ServerAnnouncementBanner';
 import { ServerNodeConnectionBanner } from '@/components/server/ServerNodeConnectionBanner';
+import { ServerSubdomainRequirementBanner } from '@/components/server/ServerSubdomainRequirementBanner';
 import { ServerSpellBackdrop } from '@/components/server/ServerSpellBackdrop';
 import { ServerWingsReachabilityProvider } from '@/contexts/ServerWingsReachabilityContext';
 import { ServerProvider } from '@/contexts/ServerContext';
@@ -129,6 +130,7 @@ export default async function ServerLayout({
                         <ServerSpellBackdrop>
                             <ServerAnnouncementBanner initialNotifications={announcements} />
                             <ServerNodeConnectionBanner />
+                            <ServerSubdomainRequirementBanner />
                             {children}
                         </ServerSpellBackdrop>
                     </ServerSuspendedWrapper>

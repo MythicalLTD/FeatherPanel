@@ -732,7 +732,9 @@ export default function ServerConsolePage() {
     const serverHost =
         server.subdomain && server.subdomain.domain && server.subdomain.subdomain
             ? `${server.subdomain.subdomain}.${server.subdomain.domain}`
-            : server.allocation?.ip_alias || server.allocation?.ip || '';
+            : server.subdomain_requirement?.enforced
+              ? ''
+              : server.allocation?.ip_alias || server.allocation?.ip || '';
 
     if (isPopout) {
         return (
@@ -798,6 +800,7 @@ export default function ServerConsolePage() {
                 address={serverHost}
                 port={server.allocation?.port || null}
                 uptime={connectionStatus === 'connected' && serverStatus === 'running' ? wingsUptime : undefined}
+                expiresAt={server.expires_at}
                 nodeLocation={server.location?.name}
                 nodeLocationFlag={server.location?.flag_code}
                 nodeName={server.node?.name}

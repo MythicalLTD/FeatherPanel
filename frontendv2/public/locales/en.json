@@ -1208,6 +1208,7 @@
             "PROXY_LIMIT_REACHED": "You have reached the maximum number of proxies ({$maxAllowed}) for this server",
             "PROXY_NOT_FOUND": "Proxy not found",
             "PTERODACTYL_IMPORT_DEPRECATED": "Direct HTTP import is no longer supported. Please use the Pterodactyl Migration Agent (curl -sSL https://get.featherpanel.com/stable.sh | bash).",
+            "PUBLIC_API_KEY_NOT_ALLOWED": "Public API keys cannot be used as Bearer tokens. Use the private key, or set api_clients_allow_public_key_auth=true.",
             "PUBLIC_KEY_EMPTY": "Public key cannot be empty",
             "PUBLIC_KEY_REQUIRED": "Public key is required",
             "PURCHASE_FAILED": "Purchase failed",
@@ -1327,6 +1328,7 @@
             "SUBDOMAIN_EXISTS": "This subdomain is already in use for the selected domain",
             "SUBDOMAIN_LIMIT_REACHED": "You have reached the maximum number of subdomains for this server",
             "SUBDOMAIN_NOT_FOUND": "Subdomain not found",
+            "SUBDOMAIN_REQUIRED": "A subdomain is required before you can start this server. Create one under Network → Subdomains.",
             "SUBSCRIPTION_NOT_FOUND": "Subscription not found",
             "SUBUSERS_NOT_ALLOWED": "Subusers are disabled on this host. Please contact your administrator to enable this feature.",
             "SUBUSER_ALREADY_EXISTS": "User is already a subuser for this server",
@@ -2462,11 +2464,15 @@
                 "console": "Send console commands and fetch logs/players",
                 "startup": "Edit startup, variables, reinstall, or wipe",
                 "network": "Allocations, firewall, proxies, and subdomains",
-                "backups": "List, create, and delete backups",
+                "backups": "List, create, restore, lock, and delete backups",
                 "databases": "Manage server databases",
                 "schedules": "Manage schedules and tasks",
-                "vds": "Manage VDS/VM power and backups",
-                "knowledgebase": "Search knowledgebase articles"
+                "webspaces": "Manage webspaces: files, DBs, mail, DNS, SSL, apps",
+                "vds": "Full VDS/VM control: power, hardware, network, ISO, backups",
+                "tickets": "Create, reply to, and close support tickets",
+                "account": "Notifications, SSH keys, and sessions",
+                "knowledgebase": "Search knowledgebase articles",
+                "featureGating": "Only exposes tools for modules enabled on the panel"
             },
             "remoteTitle": "Cursor / JSON config",
             "remoteHelp": "Paste this into Cursor MCP settings (or similar clients) and replace YOUR_API_KEY with a key from Account → API Keys.",
@@ -4781,7 +4787,10 @@
         "guide_custom_address": "Subdomains allow you to give your server a custom address, like",
         "guide_multiple": "You can create multiple subdomains for different purposes.",
         "disabled": "Subdomains are turned off",
-        "disabledDescription": "An administrator has disabled subdomain management on this panel."
+        "disabledDescription": "An administrator has disabled subdomain management on this panel.",
+        "requirementTitle": "Subdomain required",
+        "requirementDescription": "An administrator requires a subdomain for this server before it can be started. Create one to continue. Allocation IPs stay hidden until then.",
+        "requirementAddressPending": "Subdomain required"
     },
     "serverSchedules": {
         "title": "Schedules",
@@ -17837,5 +17846,15 @@
             "open_finder": "Open in Finder",
             "binary": "No in-app preview for this file type."
         }
+    },
+    "service_expiry": {
+        "label": "Expires",
+        "expires_on": "Expires {date}",
+        "expires_in_days": "Expires in {days} days",
+        "expires_today": "Expires today",
+        "expired": "Expired",
+        "hint": "Automatically suspended on {date}.",
+        "expired_hint": "Expired on {date}. Contact support to renew.",
+        "settings_help": "Your server will be automatically suspended on this date. Contact support if you need more time."
     }
 }

@@ -4,7 +4,7 @@ on: [push, pull_request]
 jobs:
   build:
     name: Frontend Build
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ubuntu-latest
     permissions:
       contents: read
     strategy:
@@ -16,7 +16,7 @@ jobs:
         working-directory: frontendv2
     steps:
       - name: Code Checkout
-        uses: useblacksmith/checkout@v1
+        uses: actions/checkout@v4
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:

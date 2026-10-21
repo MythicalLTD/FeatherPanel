@@ -187,11 +187,7 @@ export function ResourceCard({
                                     titleClassName,
                                 )}
                             >
-                                {titleClassName?.includes('break-') ? (
-                                    title
-                                ) : (
-                                    <OverflowText>{title}</OverflowText>
-                                )}
+                                {titleClassName?.includes('break-') ? title : <OverflowText>{title}</OverflowText>}
                             </div>
                             {subtitle ? (
                                 <div className='text-muted-foreground mt-0.5 min-w-0 truncate text-xs'>{subtitle}</div>

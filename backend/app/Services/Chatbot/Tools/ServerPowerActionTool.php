@@ -26,6 +26,7 @@ use App\Helpers\ServerGateway;
 use App\Helpers\WingsUrlHelper;
 use App\Plugins\Events\Events\ServerEvent;
 use App\Services\Server\LifecycleHookPowerGate;
+use App\Helpers\ServerSubdomainRequirementHelper;
 use App\Services\Server\LifecycleHookExecutorService;
 
 /**
@@ -112,6 +113,18 @@ class ServerPowerActionTool implements ToolInterface
             return [
                 'success' => false,
                 'error' => 'Access denied to server',
+                'action_type' => 'server_power',
+            ];
+        }
+
+        if (
+            in_array($action, ['start', 'restart'], true)
+            && ServerSubdomainRequirementHelper::shouldEnforce($user, (int) $server['id'])
+        ) {
+            return [
+                'success' => false,
+                'error' => 'A subdomain is required before you can start this server. Create one under Network → Subdomains.',
+                'error_code' => 'SUBDOMAIN_REQUIRED',
                 'action_type' => 'server_power',
             ];
         }

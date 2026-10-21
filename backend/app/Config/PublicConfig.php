@@ -185,6 +185,7 @@ class PublicConfig extends ConfigFactory
             ConfigInterface::SERVER_ALLOW_USER_MADE_IMPORT => 'false',
             ConfigInterface::SERVER_ALLOW_USER_MADE_FASTDL => 'false',
             ConfigInterface::SERVER_ALLOW_USER_MADE_SUBDOMAINS => 'false',
+            ConfigInterface::SERVER_REQUIRE_SUBDOMAIN => 'false',
             ConfigInterface::SERVER_AUTO_START_ON_NODE_RECONNECT => 'true',
             ConfigInterface::SERVER_AUTO_START_STAGGER_SECONDS => '5',
             ConfigInterface::SERVER_AUTO_START_INITIAL_DELAY_SECONDS => '15',

@@ -93,6 +93,34 @@ class Subdomain
     }
 
     /**
+     * Server IDs in the given set that already have at least one panel subdomain.
+     *
+     * @param list<int> $serverIds
+     *
+     * @return list<int>
+     */
+    public static function getServerIdsHavingSubdomains(array $serverIds): array
+    {
+        $serverIds = array_values(array_unique(array_filter(
+            array_map(static fn ($id) => (int) $id, $serverIds),
+            static fn (int $id) => $id > 0
+        )));
+
+        if ($serverIds === []) {
+            return [];
+        }
+
+        $placeholders = implode(',', array_fill(0, count($serverIds), '?'));
+        $pdo = Database::getPdoConnection();
+        $stmt = $pdo->prepare(
+            'SELECT DISTINCT server_id FROM ' . self::$table . ' WHERE server_id IN (' . $placeholders . ')'
+        );
+        $stmt->execute($serverIds);
+
+        return array_map(static fn ($row) => (int) $row['server_id'], $stmt->fetchAll(\PDO::FETCH_ASSOC));
+    }
+
+    /**
      * Find subdomain by UUID within a server scope.
      */
     public static function getByUuidAndServer(string $uuid, int $serverId): ?array
