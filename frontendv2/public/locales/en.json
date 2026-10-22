@@ -16917,6 +16917,12 @@
             "web_body": "Web nodes, webspaces, domains and mail hosting.",
             "vds_title": "Virtual servers",
             "vds_body": "Proxmox nodes and VDS instances.",
+            "tickets_title": "Support tickets",
+            "tickets_body": "Ticket system for users to contact staff.",
+            "knowledgebase_title": "Knowledge base",
+            "knowledgebase_body": "Help articles and guides for your users.",
+            "status_page_title": "Status page",
+            "status_page_body": "Public page showing node and service health.",
             "note": "Turning a module off hides it for everyone. Existing data is kept."
         },
         "security": {
