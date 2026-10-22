@@ -77,7 +77,7 @@ export function OsWindowFrame({ win, children }: { win: OsWindow; children: Reac
     } = useFeatherOs();
     const def = OS_APPS[win.app];
     const focused = focusedId === win.id;
-    const finderChrome = win.app === 'finder';
+    const finderChrome = win.app === 'finder' || win.app === 'server';
     const settingsChrome = win.app === 'settings';
     const serversChrome = win.app === 'servers';
     const terminalChrome = win.app === 'terminal';

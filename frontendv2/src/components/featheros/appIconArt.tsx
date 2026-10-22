@@ -304,6 +304,23 @@ export const APP_ICON_ART: Record<OsAppId, (u: IconIds) => ReactNode> = {
         </>
     ),
 
+    server: (u) => (
+        <>
+            {background(u, '#5B8CFF', '#2747B8')}
+            <defs>{vgrad(u('unit'), '#FFFFFF', '#DCE4F7')}</defs>
+            <g filter={url(u('sh'))}>
+                <rect x='18' y='20' width='64' height='60' rx='9' fill={url(u('unit'))} />
+                <rect x='18' y='20' width='20' height='60' rx='9' fill='#C9D6F5' />
+                {[34, 46, 58].map((y) => (
+                    <rect key={y} x='23' y={y} width='10' height='3' rx='1.5' fill='#5B7BD6' />
+                ))}
+                <rect x='44' y='32' width='30' height='4' rx='2' fill='#9BB0E6' />
+                <rect x='44' y='42' width='24' height='4' rx='2' fill='#B7C6EE' />
+                <circle cx='70' cy='66' r='5' fill='#22C55E' />
+            </g>
+        </>
+    ),
+
     monitor: (u) => (
         <>
             {background(u, '#2E2E31', '#0C0C0E')}

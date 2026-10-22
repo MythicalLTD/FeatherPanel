@@ -5410,3 +5410,103 @@ html:has(.fos-root[data-fos-theme='dark']) {
         transform: translateY(24px);
     }
 }
+
+/* Server window: Finder style sidebar hosting every server section. */
+.fos-server-ws-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 2px 10px 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--fos-window-ink);
+}
+
+.fos-server-ws-dot {
+    width: 8px;
+    height: 8px;
+    flex-shrink: 0;
+    border-radius: 9999px;
+    background: #8e8e93;
+    box-shadow: 0 0 0 2px rgb(255 255 255 / 0.15);
+}
+
+.fos-server-ws-dot.is-running {
+    background: #30d158;
+}
+
+.fos-server-ws-dot.is-starting,
+.fos-server-ws-dot.is-stopping {
+    background: #ffd60a;
+}
+
+.fos-server-ws-power {
+    display: flex;
+    gap: 6px;
+    margin: 14px 10px 0;
+}
+
+.fos-server-ws-power button,
+.fos-server-ws-icon {
+    display: inline-flex;
+    height: 26px;
+    min-width: 26px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 7px;
+    color: var(--fos-window-ink);
+    transition: background 0.15s ease;
+}
+
+.fos-server-ws-power button {
+    flex: 1;
+    border: 0.5px solid var(--fos-hairline);
+    background: var(--fos-hover);
+}
+
+.fos-server-ws-power button:hover:not(:disabled),
+.fos-server-ws-icon:hover:not(:disabled) {
+    background: var(--fos-active-fill);
+}
+
+.fos-server-ws-power button:disabled,
+.fos-server-ws-icon:disabled {
+    opacity: 0.35;
+}
+
+.fos-server-ws-toolbar {
+    display: flex;
+    height: 52px;
+    flex-shrink: 0;
+    align-items: center;
+    padding: 0 14px;
+    border-bottom: 0.5px solid var(--fos-hairline);
+    backdrop-filter: blur(calc(30px * var(--fos-blur-scale, 1))) saturate(180%);
+}
+
+.fos-server-ws-card {
+    border-radius: 12px;
+    border: 0.5px solid var(--fos-hairline);
+    background: var(--fos-hover);
+    padding: 16px;
+}
+
+.fos-server-ws-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border-radius: 7px;
+    padding: 5px 12px;
+    font-size: 12.5px;
+    font-weight: 500;
+    color: #fff;
+    background: var(--fos-accent, #0a84ff);
+}
+
+.fos-server-ws-btn.is-danger {
+    background: #ff453a;
+}
+
+.fos-server-ws-btn:disabled {
+    opacity: 0.5;
+}

@@ -17026,6 +17026,37 @@
         }
     },
     "featheros": {
+        "server_workspace": {
+            "open": "Open server window",
+            "group_manage": "Manage",
+            "group_configure": "Configure",
+            "section_console": "Console",
+            "section_files": "Files",
+            "section_databases": "Databases",
+            "section_schedules": "Schedules",
+            "section_backups": "Backups",
+            "section_subusers": "Subusers",
+            "section_network": "Network",
+            "section_startup": "Startup",
+            "section_settings": "Settings",
+            "section_activity": "Activity",
+            "start": "Start",
+            "restart": "Restart",
+            "stop": "Stop",
+            "power_start": "Start signal sent",
+            "power_restart": "Restart signal sent",
+            "power_stop": "Stop signal sent",
+            "no_access": "You have no access to any section of this server.",
+            "general": "General",
+            "name": "Name",
+            "description": "Description",
+            "save": "Save",
+            "reinstall_title": "Reinstall server",
+            "reinstall_body": "Runs the install script again. Your files are kept, but the server is stopped while it reinstalls.",
+            "reinstall": "Reinstall",
+            "activity_empty": "No activity yet",
+            "system": "System"
+        },
         "nav_open": "Open {name}",
         "nav_open_hint": "A desktop for all your servers, in a new tab",
         "about": {
@@ -17060,7 +17091,8 @@
             "subusers": "Subusers",
             "startup": "Startup",
             "spells": "Spell Browser",
-            "archive": "Archives"
+            "archive": "Archives",
+            "server": "Server"
         },
         "boot": {
             "session": "Signing in…",
