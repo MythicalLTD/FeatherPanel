@@ -41,6 +41,9 @@ import { getRoleBadgeStyles } from '@/components/RoleBadge';
 import { getRoleBadgeLabel } from '@/lib/role-utils';
 import { Sensitive } from '@/components/common/Sensitive';
 import { useIpMask } from '@/hooks/useIpMask';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { useSession } from '@/contexts/SessionContext';
+import Permissions from '@/lib/permissions';
 
 interface UserRole {
     name: string;
@@ -293,6 +296,10 @@ export default function UsersPage() {
 
     const [refreshKey, setRefreshKey] = useState(0);
     const [clearingAllDevices, setClearingAllDevices] = useState(false);
+    const [altResetOpen, setAltResetOpen] = useState(false);
+    const [resettingAlts, setResettingAlts] = useState(false);
+    const { hasPermission } = useSession();
+    const canManageUsers = hasPermission(Permissions.ADMIN_USERS_EDIT);
 
     const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
     const [debouncedIpFilter, setDebouncedIpFilter] = useState('');
@@ -496,8 +503,37 @@ export default function UsersPage() {
         }
     };
 
+    const handleResetAltDetection = async () => {
+        setResettingAlts(true);
+        try {
+            const { data } = await axios.post('/api/admin/users/alt-detection/reset');
+            if (data?.success) {
+                toast.success(t('admin.users.reset_alt_detection_success'));
+                setAltResetOpen(false);
+            } else {
+                toast.error(getApiErrorMessageFromPayload(data, t, 'admin.users.reset_alt_detection_failed'));
+            }
+        } catch (error: unknown) {
+            toast.error(getApiErrorMessage(error, t, 'admin.users.reset_alt_detection_failed'));
+        } finally {
+            setResettingAlts(false);
+        }
+    };
+
     return (
         <div className='space-y-6'>
+            <ConfirmDialog
+                open={altResetOpen}
+                onOpenChange={setAltResetOpen}
+                title={t('admin.users.reset_alt_detection')}
+                description={t('admin.users.reset_alt_detection_confirm')}
+                confirmLabel={t('admin.users.reset_alt_detection_action')}
+                cancelLabel={t('admin.users.reset_alt_detection_cancel')}
+                onConfirm={handleResetAltDetection}
+                loading={resettingAlts}
+                destructive
+                dangerFrame
+            />
             <WidgetRenderer widgets={getWidgets('admin-users', 'top-of-page')} />
 
             <PageHeader
@@ -510,6 +546,12 @@ export default function UsersPage() {
                             <Trash2 className='mr-2 h-4 w-4' />
                             {t('admin.users.clear_all_devices')}
                         </Button>
+                        {canManageUsers && (
+                            <Button variant='destructive' onClick={() => setAltResetOpen(true)}>
+                                <Trash2 className='mr-2 h-4 w-4' />
+                                {t('admin.users.reset_alt_detection')}
+                            </Button>
+                        )}
                         <Button onClick={() => router.push('/admin/users/create')}>
                             <UserPlus className='mr-2 h-4 w-4' />
                             {t('admin.users.create.title')}
