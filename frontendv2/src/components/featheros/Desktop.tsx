@@ -153,7 +153,7 @@ export function Desktop() {
     );
 
     const openIcon = (icon: RenderedIcon) => {
-        if (icon.kind === 'server' && icon.serverUuid) openApp('finder', { serverUuid: icon.serverUuid });
+        if (icon.kind === 'server' && icon.serverUuid) openApp('server', { serverUuid: icon.serverUuid });
         else if (icon.kind === 'folder' && icon.serverUuid)
             openApp('finder', { serverUuid: icon.serverUuid, newWindow: true, props: { path: icon.path } });
         else if (icon.kind === 'file' && icon.serverUuid && icon.path) {

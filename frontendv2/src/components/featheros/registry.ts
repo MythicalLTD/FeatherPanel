@@ -34,6 +34,7 @@ import {
     Rocket,
     Sparkles,
     PackageCheck,
+    Server as ServerIcon,
     type LucideIcon,
 } from 'lucide-react';
 import type { OsAppId } from './types';
@@ -231,6 +232,14 @@ export const OS_APPS: Record<OsAppId, OsAppDefinition> = {
         serverPermission: 'file.archive',
         defaultSize: { w: 720, h: 480 },
         minSize: { w: 420, h: 300 },
+    },
+    server: {
+        id: 'server',
+        nameKey: 'featheros.apps.server',
+        icon: ServerIcon,
+        serverScoped: true,
+        defaultSize: { w: 1100, h: 700 },
+        minSize: { w: 720, h: 460 },
     },
 };
 

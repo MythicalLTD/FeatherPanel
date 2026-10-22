@@ -31,6 +31,7 @@ import {
     Archive,
     Database,
     Network,
+    ServerCog,
 } from 'lucide-react';
 import axios from 'axios';
 import { toast } from 'sonner';
@@ -140,6 +141,12 @@ export default function ServerManagerApp({ win }: OsAppProps) {
     const rowMenu = (s: Server, e: React.MouseEvent) => {
         e.preventDefault();
         openContextMenu({ x: e.clientX, y: e.clientY }, [
+            {
+                id: 'open',
+                label: t('featheros.server_workspace.open'),
+                icon: ServerCog,
+                onSelect: () => openApp('server', { serverUuid: s.uuidShort }),
+            },
             {
                 id: 'files',
                 label: t('featheros.apps.finder'),
@@ -330,9 +337,7 @@ export default function ServerManagerApp({ win }: OsAppProps) {
                             return (
                                 <tr
                                     key={s.uuidShort}
-                                    onDoubleClick={() =>
-                                        can(s, 'file.read') && openApp('finder', { serverUuid: s.uuidShort })
-                                    }
+                                    onDoubleClick={() => openApp('server', { serverUuid: s.uuidShort })}
                                     onContextMenu={(e) => rowMenu(s, e)}
                                     className={cn(
                                         'hover:bg-muted/50 border-b border-black/5 dark:border-white/5',

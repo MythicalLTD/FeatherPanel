@@ -60,5 +60,6 @@ export const OS_APP_COMPONENTS: Record<OsAppId, ComponentType<OsAppProps>> = {
     subusers: dynamic(() => import('./SubusersApp'), { ssr: false, loading: AppLoading }),
     startup: dynamic(() => import('./StartupApp'), { ssr: false, loading: AppLoading }),
     spells: dynamic(() => import('./SpellsApp'), { ssr: false, loading: AppLoading }),
+    server: dynamic(() => import('./ServerWorkspaceApp'), { ssr: false, loading: AppLoading }),
     archive: dynamic(() => import('./ArchiveApp'), { ssr: false, loading: AppLoading }),
 };

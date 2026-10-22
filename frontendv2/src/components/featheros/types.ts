@@ -35,7 +35,8 @@ export type OsAppId =
     | 'subusers'
     | 'startup'
     | 'spells'
-    | 'archive';
+    | 'archive'
+    | 'server';
 
 export type OsTheme = 'auto' | 'light' | 'dark';
 export type OsDockPosition = 'bottom' | 'left' | 'right';

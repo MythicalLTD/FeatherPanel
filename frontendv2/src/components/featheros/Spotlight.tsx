@@ -142,7 +142,7 @@ export function Spotlight() {
                 group: t('featheros.spotlight.group_servers'),
                 icon: HardDrive,
                 keywords: `${kw} disk storage`,
-                run: () => openApp('finder', { serverUuid: s.uuidShort }),
+                run: () => openApp('server', { serverUuid: s.uuidShort }),
             });
             if (can(s, 'websocket.connect'))
                 out.push({

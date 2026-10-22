@@ -294,7 +294,7 @@ export function MenuBar() {
                           id: s.uuidShort,
                           label: s.name,
                           icon: ServerIcon,
-                          onSelect: () => openApp('finder', { serverUuid: s.uuidShort }),
+                          onSelect: () => openApp('server', { serverUuid: s.uuidShort }),
                       })),
         },
         {
