@@ -112,7 +112,16 @@ export default function ServerWorkspaceApp({ win }: OsAppProps) {
 
     const section = visible.find((s) => s.id === active);
     const Pane = section ? (section.pane ?? (section.app ? OS_APP_COMPONENTS[section.app] : undefined)) : undefined;
-    const paneWin = useMemo(() => (section?.app ? { ...win, app: section.app } : win), [section, win]);
+    // Terminal keys its sessions on props.tabs, so seed it with this server
+    // instead of showing the server picker inside a single server window.
+    const paneWin = useMemo(() => {
+        if (!section?.app) return win;
+        if (section.app === 'terminal') {
+            const tabs = Array.isArray(win.props?.tabs) && win.props.tabs.length > 0 ? win.props.tabs : [uuid];
+            return { ...win, app: section.app, props: { ...win.props, tabs } };
+        }
+        return { ...win, app: section.app };
+    }, [section, win, uuid]);
     const state = live[uuid]?.status ?? server?.status;
 
     const power = async (signal: 'start' | 'restart' | 'stop') => {

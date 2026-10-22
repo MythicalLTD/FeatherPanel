@@ -101,7 +101,7 @@ export function OsWindowFrame({ win, children }: { win: OsWindow; children: Reac
 
     const server = getServer(win.serverUuid);
     const customTitle = typeof win.props?.title === 'string' ? (win.props.title as string) : '';
-    const title = [customTitle || t(def.nameKey), server?.name].filter(Boolean).join(' — ');
+    const title = [customTitle || t(def.nameKey), server?.name].filter(Boolean).join(' · ');
 
     const [viewport, setViewport] = useState(() => ({
         w: typeof window !== 'undefined' ? window.innerWidth : 1440,
