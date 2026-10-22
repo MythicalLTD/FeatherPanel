@@ -66,13 +66,38 @@ function generateApiDocsPage() {
       <a class="fp-badge" href="${DOCS_BASE}/api/index.json">index.json</a>
       <a class="fp-badge" href="${DOCS_BASE}/api/oauth2-playground.html">OAuth2 playground</a>
     </div>
-  <div id="redoc-container"></div>
+  <div id="redoc-container"><p id="redoc-status" style="color:#9ca3af;padding:24px 0">Loading API reference...</p></div>
   <footer class="fp-footer">Raw OpenAPI for RAG/tools: <a href="${DOCS_BASE}/api/openapi.json">openapi.json</a></footer>
   </div>
 
-  <script src="https://cdn.redoc.ly/redoc/latest/bundles/redoc.standalone.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/redoc@2.5.0/bundles/redoc.standalone.js"></script>
   <script>
-    Redoc.init('./openapi.json', {
+    // The static spec only exists when the image was built with export:docs.
+    // Fall back to the live spec served by the panel backend so the viewer never stays blank.
+    async function fpResolveSpec() {
+      for (const url of ['./openapi.json', '/api/openapi.json']) {
+        try {
+          const res = await fetch(url, { credentials: 'same-origin' });
+          const type = res.headers.get('content-type') || '';
+          if (res.ok && type.includes('json')) {
+            return await res.json();
+          }
+        } catch (e) {}
+      }
+      return null;
+    }
+    function fpDocsError(message) {
+      const box = document.getElementById('redoc-container');
+      if (box) box.innerHTML = '<p style="color:#f87171;padding:24px 0">' + message + '</p>';
+    }
+    if (typeof Redoc === 'undefined') {
+      fpDocsError('The API viewer script could not be loaded (blocked CDN or Content Security Policy). Use the openapi.json link above.');
+    } else fpResolveSpec().then((fpSpec) => {
+    if (!fpSpec) {
+      fpDocsError('Could not load openapi.json. Use the openapi.json link above or /api/openapi.json.');
+      return;
+    }
+    Redoc.init(fpSpec, {
       theme: {
         colors: {
           primary: {
@@ -123,7 +148,10 @@ function generateApiDocsPage() {
       hideSingleRequestSampleTab: false,
       menuToggle: true,
       nativeScrollbars: true,
-    }, document.getElementById('redoc-container'));
+    }, document.getElementById('redoc-container'), (err) => {
+      if (err) fpDocsError('The API viewer failed to render the spec: ' + String(err && err.message ? err.message : err));
+    });
+    });
 
     // Apply custom styles to match dark theme
     const style = document.createElement('style');
