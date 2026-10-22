@@ -260,7 +260,6 @@ jobs:
             ghcr.io/mythicalltd/featherpanel-frontendv2:dev-${{ steps.tags.outputs.branch }}-${{ steps.tags.outputs.sha }}-${{ steps.platform-tag.outputs.tag }}
 
   manifest-frontendv2:
-  manifest-frontendv2:
     name: Create Multi-Arch Manifest - Frontend v2
     runs-on: ubuntu-latest
     needs: build-frontendv2
