@@ -720,10 +720,23 @@ class User
         }
 
         $ignoredIps = ['127.0.0.1', '::1', '0.0.0.0', ''];
-        $sourceIps = Activity::getDistinctIpsByUserUuid($userUuid);
-        $sourceIps = array_merge($sourceIps, ServerActivity::getDistinctIpsByUserId((int) $user['id']));
+        // IP evidence older than the latest alt detection reset (per user or
+        // global) is ignored, so "Clear fingerprint" unlinks in both directions.
+        $sourceCutoff = AltDetectionReset::cutoffFor($userUuid);
+        $since = $sourceCutoff ?? AltDetectionReset::EPOCH;
+        $pdo = Database::getPdoConnection();
+        $stmtIps = $pdo->prepare('SELECT DISTINCT ip_address FROM featherpanel_activity WHERE user_uuid = ? AND ip_address IS NOT NULL AND ip_address != \'\' AND created_at > ?');
+        $stmtIps->execute([$userUuid, $since]);
+        $sourceIps = array_column($stmtIps->fetchAll(\PDO::FETCH_ASSOC), 'ip_address');
+        $stmtIps = $pdo->prepare('SELECT DISTINCT ip FROM featherpanel_server_activities WHERE user_id = ? AND ip IS NOT NULL AND ip != \'\' AND `timestamp` > ?');
+        $stmtIps->execute([(int) $user['id'], $since]);
+        $sourceIps = array_merge($sourceIps, array_column($stmtIps->fetchAll(\PDO::FETCH_ASSOC), 'ip'));
 
-        foreach (['first_ip', 'last_ip'] as $field) {
+        $userIpFields = $sourceCutoff === null ? ['first_ip', 'last_ip'] : [];
+        if ($sourceCutoff !== null && !empty($user['last_seen']) && strtotime((string) $user['last_seen']) > strtotime($sourceCutoff)) {
+            $userIpFields[] = 'last_ip';
+        }
+        foreach ($userIpFields as $field) {
             $ip = trim((string) ($user[$field] ?? ''));
             if ($ip !== '' && !in_array($ip, $ignoredIps, true)) {
                 $sourceIps[] = $ip;
@@ -746,17 +759,18 @@ class User
             return ['source_ips' => [], 'source_devices' => [], 'potential_alts' => []];
         }
 
-        $pdo = Database::getPdoConnection();
         $ipMatches = [];
+        $resetJoin = ' LEFT JOIN ' . AltDetectionReset::TABLE . ' r ON r.user_uuid = u.uuid ';
+        $after = 'GREATEST(?, COALESCE(r.reset_at, ?))';
         if (!empty($sourceIps)) {
             $placeholders = implode(',', array_fill(0, count($sourceIps), '?'));
 
             $sql = 'SELECT u.uuid, u.username, u.email, u.avatar, u.banned, u.first_ip, u.last_ip, u.last_seen, u.role_id,
                            a.ip_address AS shared_ip, \'panel_activity\' AS match_source
                     FROM featherpanel_activity a
-                    INNER JOIN ' . self::$table . ' u ON u.uuid = a.user_uuid
-                    WHERE a.ip_address IN (' . $placeholders . ') AND u.uuid != ?';
-            $params = array_merge($sourceIps, [$userUuid]);
+                    INNER JOIN ' . self::$table . ' u ON u.uuid = a.user_uuid' . $resetJoin . '
+                    WHERE a.ip_address IN (' . $placeholders . ') AND u.uuid != ? AND a.created_at > ' . $after;
+            $params = array_merge($sourceIps, [$userUuid, $since, AltDetectionReset::EPOCH]);
             $stmt = $pdo->prepare($sql);
             $stmt->execute($params);
             $ipMatches = array_merge($ipMatches, $stmt->fetchAll(\PDO::FETCH_ASSOC));
@@ -764,22 +778,24 @@ class User
             $sqlServer = 'SELECT u.uuid, u.username, u.email, u.avatar, u.banned, u.first_ip, u.last_ip, u.last_seen, u.role_id,
                                   sa.ip AS shared_ip, \'server_activity\' AS match_source
                            FROM featherpanel_server_activities sa
-                           INNER JOIN ' . self::$table . ' u ON u.id = sa.user_id
-                           WHERE sa.ip IN (' . $placeholders . ') AND u.uuid != ?';
+                           INNER JOIN ' . self::$table . ' u ON u.id = sa.user_id' . $resetJoin . '
+                           WHERE sa.ip IN (' . $placeholders . ') AND u.uuid != ? AND sa.`timestamp` > ' . $after;
             $stmtServer = $pdo->prepare($sqlServer);
             $stmtServer->execute($params);
             $ipMatches = array_merge($ipMatches, $stmtServer->fetchAll(\PDO::FETCH_ASSOC));
 
-            $sql2 = 'SELECT uuid, username, email, avatar, banned, first_ip, last_ip, last_seen, role_id,
-                            first_ip AS shared_ip, \'user_ip\' AS match_source
-                     FROM ' . self::$table . '
-                     WHERE uuid != ? AND first_ip IN (' . $placeholders . ')
+            // first_ip has no timestamp: it only counts while neither user was reset.
+            // last_ip counts when the other user was seen after both resets.
+            $cols = 'u.uuid, u.username, u.email, u.avatar, u.banned, u.first_ip, u.last_ip, u.last_seen, u.role_id';
+            $sql2 = 'SELECT ' . $cols . ', u.first_ip AS shared_ip, \'user_ip\' AS match_source
+                     FROM ' . self::$table . ' u' . $resetJoin . '
+                     WHERE u.uuid != ? AND u.first_ip IN (' . $placeholders . ') AND r.reset_at IS NULL AND ? = 0
                      UNION ALL
-                     SELECT uuid, username, email, avatar, banned, first_ip, last_ip, last_seen, role_id,
-                            last_ip AS shared_ip, \'user_ip\' AS match_source
-                     FROM ' . self::$table . '
-                     WHERE uuid != ? AND last_ip IN (' . $placeholders . ')';
-            $params2 = array_merge([$userUuid], $sourceIps, [$userUuid], $sourceIps);
+                     SELECT ' . $cols . ', u.last_ip AS shared_ip, \'user_ip\' AS match_source
+                     FROM ' . self::$table . ' u' . $resetJoin . '
+                     WHERE u.uuid != ? AND u.last_ip IN (' . $placeholders . ') AND (u.last_seen > ' . $after . ' OR (u.last_seen IS NULL AND r.reset_at IS NULL AND ? = 0))';
+            $flag = $sourceCutoff === null ? 0 : 1;
+            $params2 = array_merge([$userUuid], $sourceIps, [$flag, $userUuid], $sourceIps, [$since, AltDetectionReset::EPOCH, $flag]);
             $stmt2 = $pdo->prepare($sql2);
             $stmt2->execute($params2);
             $ipMatches = array_merge($ipMatches, $stmt2->fetchAll(\PDO::FETCH_ASSOC));

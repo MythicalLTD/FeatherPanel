@@ -162,6 +162,16 @@ return function (RouteCollection $routes): void {
     );
     App::getInstance(true)->registerAdminRoute(
         $routes,
+        'admin-users-alt-detection-reset',
+        '/api/admin/users/alt-detection/reset',
+        function (Request $request) {
+            return (new UsersController())->resetAltDetection($request);
+        },
+        Permissions::ADMIN_USERS_EDIT,
+        ['POST']
+    );
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
         'admin-devices-clear-all',
         '/api/admin/devices',
         function (Request $request) {

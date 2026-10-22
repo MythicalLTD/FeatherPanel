@@ -10933,6 +10933,12 @@
             "clear_all_devices_confirm": "Clear every browser/device fingerprint record in the panel? This resets alt detection and registration device limits until users browse again.",
             "clear_all_devices_success": "All device fingerprint records cleared",
             "clear_all_devices_failed": "Failed to clear device fingerprint records",
+            "reset_alt_detection": "Reset alt detection for all users",
+            "reset_alt_detection_confirm": "This clears every device fingerprint and ignores all IP evidence recorded before now, for every user. Activity logs are kept. Alt matches only come back from new activity. This cannot be undone.",
+            "reset_alt_detection_action": "Reset alt detection",
+            "reset_alt_detection_cancel": "Cancel",
+            "reset_alt_detection_success": "Alt detection reset for all users",
+            "reset_alt_detection_failed": "Failed to reset alt detection",
             "table": {
                 "user": "User",
                 "role": "Role",

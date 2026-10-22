@@ -1438,16 +1438,46 @@ class UsersController
         if (!\App\Chat\UserDevice::deleteUserData($uuid)) {
             return ApiResponse::error('Failed to clear device records', 'DEVICE_CLEAR_FAILED', 500);
         }
+        // Also drop IP based alt links for this user, in both directions.
+        if (!\App\Chat\AltDetectionReset::markUser($uuid)) {
+            return ApiResponse::error('Failed to reset alt detection', 'ALT_RESET_FAILED', 500);
+        }
 
         $admin = $request->attributes->get('user');
         Activity::createActivity([
             'user_uuid' => $admin['uuid'] ?? $uuid,
             'name' => 'admin_clear_user_devices',
-            'context' => 'Cleared device fingerprints for user ' . $user['username'] . ' (' . $uuid . ')',
+            'context' => 'Cleared device fingerprints and alt links for user ' . $user['username'] . ' (' . $uuid . ')',
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
 
         return ApiResponse::success([], 'Device records cleared for user', 200);
+    }
+
+    #[OA\Post(
+        path: '/api/admin/users/alt-detection/reset',
+        summary: 'Reset alt detection for all users',
+        description: 'Clears every device fingerprint and ignores all IP evidence recorded before now when matching alts. Activity logs are kept.',
+        tags: ['Admin - Users'],
+        responses: [
+            new OA\Response(response: 200, description: 'Alt detection reset'),
+        ]
+    )]
+    public function resetAltDetection(Request $request): Response
+    {
+        if (!\App\Chat\UserDevice::deleteAll() || !\App\Chat\AltDetectionReset::markAll()) {
+            return ApiResponse::error('Failed to reset alt detection', 'ALT_RESET_FAILED', 500);
+        }
+
+        $admin = $request->attributes->get('user');
+        Activity::createActivity([
+            'user_uuid' => $admin['uuid'] ?? '',
+            'name' => 'admin_reset_alt_detection',
+            'context' => 'Reset alt detection for all users',
+            'ip_address' => CloudFlareRealIP::getRealIP(),
+        ]);
+
+        return ApiResponse::success([], 'Alt detection reset for all users', 200);
     }
 
     #[OA\Delete(
