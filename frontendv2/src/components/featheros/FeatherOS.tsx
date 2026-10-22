@@ -192,8 +192,14 @@ function Shell() {
                 // Keep the native menu (copy / paste / spellcheck) inside text fields and editors.
                 const el = e.target as HTMLElement;
                 if (el.closest('input, textarea, [contenteditable="true"], .monaco-editor, .xterm')) return;
+                // The desktop owns right click: keep global plugin context menus
+                // (bubble listeners on document/window) from opening on top of ours.
+                // Capture listeners should skip events whose target is inside
+                // [data-fp-contextmenu="owned"] or that are defaultPrevented.
                 e.preventDefault();
+                e.stopPropagation();
             }}
+            data-fp-contextmenu='owned'
         >
             <MenuBar />
             <div className='relative min-h-0 flex-1'>
