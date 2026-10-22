@@ -16,8 +16,40 @@ esac
 _fp_cpus=$(nproc 2>/dev/null || echo 2)
 FEATHERPANEL_WORKERS="${FEATHERPANEL_WORKERS:-$((_fp_cpus * 2))}"
 FEATHERPANEL_SLOW_WORKERS="${FEATHERPANEL_SLOW_WORKERS:-2}"
-FEATHERPANEL_SLOW_MAX_THREADS="${FEATHERPANEL_SLOW_MAX_THREADS:-16}"
-FEATHERPANEL_WORKER_MAX_THREADS="${FEATHERPANEL_WORKER_MAX_THREADS:-$((_fp_cpus * 4))}"
+FEATHERPANEL_SLOW_MAX_THREADS="${FEATHERPANEL_SLOW_MAX_THREADS:-4}"
+FEATHERPANEL_WORKER_MAX_THREADS="${FEATHERPANEL_WORKER_MAX_THREADS:-$((_fp_cpus * 3))}"
+[ "$FEATHERPANEL_WORKER_MAX_THREADS" -le 32 ] || FEATHERPANEL_WORKER_MAX_THREADS=32
+[ "$FEATHERPANEL_WORKERS" -le 16 ] || FEATHERPANEL_WORKERS=16
+
+# "auto" thread sizing ignores the container memory limit, so on a big host
+# the pools can grow until the box runs out of RAM. Size it from the memory
+# that is actually available (cgroup limit or MemTotal): about 60% of it
+# divided by the per-request memory_limit, between 4 and 64 threads.
+_fp_mem_mb() {
+	_v=$(printf '%s' "$1" | tr '[:lower:]' '[:upper:]')
+	case "$_v" in
+	*G) echo $((${_v%G} * 1024)) ;;
+	*M) echo "${_v%M}" ;;
+	*K) echo $((${_v%K} / 1024)) ;;
+	'' | -1 | *[!0-9]*) echo 512 ;;
+	*) echo $((_v / 1048576)) ;;
+	esac
+}
+if [ "${FRANKENPHP_MAX_THREADS:-auto}" = auto ]; then
+	_fp_limit=$(cat /sys/fs/cgroup/memory.max 2>/dev/null || cat /sys/fs/cgroup/memory/memory.limit_in_bytes 2>/dev/null || echo max)
+	_fp_total=$(awk '/MemTotal/ {print int($2 / 1024)}' /proc/meminfo 2>/dev/null || echo 4096)
+	case "$_fp_limit" in
+	'' | max | *[!0-9]*) _fp_avail=$_fp_total ;;
+	*) _fp_avail=$((_fp_limit / 1048576)); [ "$_fp_avail" -le "$_fp_total" ] || _fp_avail=$_fp_total ;;
+	esac
+	_fp_per=$(_fp_mem_mb "${PHP_MEMORY_LIMIT:-512M}")
+	[ "$_fp_per" -ge 64 ] || _fp_per=64
+	FRANKENPHP_MAX_THREADS=$((_fp_avail * 6 / 10 / _fp_per))
+	[ "$FRANKENPHP_MAX_THREADS" -ge 4 ] || FRANKENPHP_MAX_THREADS=4
+	[ "$FRANKENPHP_MAX_THREADS" -le 64 ] || FRANKENPHP_MAX_THREADS=64
+	export FRANKENPHP_MAX_THREADS
+	echo "FrankenPHP: max_threads=${FRANKENPHP_MAX_THREADS} (${_fp_avail} MB available, ${_fp_per} MB per thread)"
+fi
 
 # FrankenPHP refuses to start when the workers (plus one regular thread for
 # phpMyAdmin & co.) need more threads than max_threads allows.
