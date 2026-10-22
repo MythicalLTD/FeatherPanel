@@ -43,6 +43,17 @@ $featherpanelBootTime = microtime(true);
 
 // Read before the first request: afterwards $_SERVER holds the request's values.
 $featherpanelMaxRequests = $_SERVER['FEATHERPANEL_WORKER_MAX_REQUESTS'] ?? getenv('FEATHERPANEL_WORKER_MAX_REQUESTS');
+$featherpanelMaxMemory = (string) ($_SERVER['FEATHERPANEL_WORKER_MAX_MEMORY'] ?? getenv('FEATHERPANEL_WORKER_MAX_MEMORY') ?: '256M');
+$featherpanelMaxMemoryBytes = (static function (string $value): int {
+    $value = strtoupper(trim($value));
+    $number = (int) $value;
+    return match (substr($value, -1)) {
+        'G' => $number * 1024 * 1024 * 1024,
+        'M' => $number * 1024 * 1024,
+        'K' => $number * 1024,
+        default => $number,
+    };
+})($featherpanelMaxMemory); // 0 = no memory based restart
 $featherpanelMaxRequests = ($featherpanelMaxRequests === false || $featherpanelMaxRequests === '') ? 1000 : (int) $featherpanelMaxRequests; // 0 = unlimited
 
 /**
@@ -84,6 +95,12 @@ for ($featherpanelServed = 0; $featherpanelMaxRequests <= 0 || $featherpanelServ
 
     // Collect cycles between requests rather than in the middle of one.
     gc_collect_cycles();
+
+    // Recycle a worker whose heap keeps growing (leaks in plugins or large
+    // responses); FrankenPHP starts a fresh one in its place.
+    if ($featherpanelMaxMemoryBytes > 0 && memory_get_usage(true) > $featherpanelMaxMemoryBytes) {
+        break;
+    }
 
     if (!$featherpanelKeepRunning || WorkerRestart::isRestartRequested()) {
         break;
