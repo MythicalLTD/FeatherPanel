@@ -5510,3 +5510,16 @@ html:has(.fos-root[data-fos-theme='dark']) {
 .fos-server-ws-btn:disabled {
     opacity: 0.5;
 }
+
+/* Close: quick shrink and fade, mirrors fos-window-in. */
+.fos-window[data-closing='1'] {
+    pointer-events: none;
+    animation: fos-window-out calc(170ms / var(--fos-speed, 1)) var(--fos-ease) forwards;
+}
+
+@keyframes fos-window-out {
+    to {
+        opacity: 0;
+        transform: scale(0.94) translateY(6px);
+    }
+}
