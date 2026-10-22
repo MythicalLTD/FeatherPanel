@@ -1,5 +1,4 @@
-# Multi-stage build for Next.js frontend (local / single-arch).
-# CI builds the builder stage once, then packages amd64+arm64 via Dockerfile.runtime.
+# Multi-stage build for Next.js frontend
 FROM node:22-alpine AS builder
 
 # Set working directory for the builder stage

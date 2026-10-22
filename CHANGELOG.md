@@ -18,6 +18,7 @@
 ### Fixed
 
 - Frontend Docker image no longer crash-loops on missing `@swc/helpers/_/_interop_require_default` (Next standalone omitted the CJS `_/` helpers; Caddy returned 502). The post-build helper copy now ships the full `@swc/helpers` package, including both `_/` and `esm/`. by @nayskutzu
+- Reverted shared frontend CI artifact packaging (it broke pnpm symlinks in standalone and caused `@next/env` MODULE_NOT_FOUND). Frontend images are built again with the full multi-stage Dockerfile per architecture. by @nayskutzu
 - API Bearer auth again accepts the public API key by default (as before v1.5.0), so SSO/billing calls such as `POST /api/admin/users/{uuid}/sso-token` no longer return `INVALID_API_KEY` when a valid public key is used. Private keys are still preferred; set `api_clients_allow_public_key_auth=false` to require private keys only. by @nayskutzu
 
 ## v1.5.1 STABLE

@@ -135,20 +135,63 @@ jobs:
             ghcr.io/mythicalltd/featherpanel-backend:${{ steps.version.outputs.tag }}-linux-amd64 \
             ghcr.io/mythicalltd/featherpanel-backend:${{ steps.version.outputs.tag }}-linux-arm64
 
-  # Next.js output is arch-independent JS; build once, then package into
-  # amd64/arm64 runtime images (Node + Caddy binaries differ per arch).
-  prepare-frontendv2:
-    name: Build Frontend v2 (shared)
-    runs-on: ubuntu-latest
+  build-frontendv2:
+    name: Build & Push Frontend v2 (Release) - ${{ matrix.platform }}
+    runs-on: ${{ matrix.runner }}
     permissions:
       contents: read
       packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux/amd64
+            runner: ubuntu-latest
+            cache-key: amd64
+          - platform: linux/arm64
+            runner: ubuntu-24.04-arm
+            cache-key: arm64
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.inputs.version || github.ref }}
+
+      - name: Set version tag
+        id: version
+        run: |
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            echo "tag=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          else
+            echo "tag=latest" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Cache pnpm dependencies
+        uses: actions/cache@v4
+        with:
+          path: ./frontendv2/node_modules
+          key: ${{ runner.os }}-pnpm-v2-${{ matrix.cache-key }}-${{ hashFiles('frontendv2/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-v2-${{ matrix.cache-key }}-
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set platform tag
+        id: platform-tag
+        run: |
+          PLATFORM_TAG=$(echo "${{ matrix.platform }}" | sed 's/\//-/g')
+          echo "tag=$PLATFORM_TAG" >> $GITHUB_OUTPUT
 
       - name: Setup PHP (OpenAPI for in-panel docs)
         uses: shivammathur/setup-php@v2
@@ -186,130 +229,24 @@ jobs:
           test -f public/icanhasfeatherpanel/api/openapi.json
           test -f public/icanhasfeatherpanel/api/oauth2.md
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build Next.js (builder stage once)
+      - name: Build & Push Frontend v2
         uses: docker/build-push-action@v5
         with:
           context: ./frontendv2
-          target: builder
-          load: true
-          pull: true
-          tags: featherpanel-frontend-builder:ci
-          cache-from: |
-            type=registry,ref=ghcr.io/mythicalltd/featherpanel-frontendv2:buildcache-builder
-            type=gha,scope=frontendv2-builder
-          cache-to: |
-            type=registry,ref=ghcr.io/mythicalltd/featherpanel-frontendv2:buildcache-builder,mode=max
-            type=gha,mode=max,scope=frontendv2-builder
-
-      - name: Extract standalone build for multi-arch packaging
-        run: |
-          mkdir -p frontendv2-dist/standalone frontendv2-dist/static frontendv2-dist/public
-          docker create --name fe-extract featherpanel-frontend-builder:ci
-          docker cp fe-extract:/app/.next/standalone/. frontendv2-dist/standalone/
-          docker cp fe-extract:/app/.next/static/. frontendv2-dist/static/
-          docker cp fe-extract:/app/public/. frontendv2-dist/public/
-          docker rm fe-extract
-          cp frontendv2/Caddyfile frontendv2-dist/Caddyfile
-          test -f frontendv2-dist/standalone/server.js
-
-      - name: Upload frontend build artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: frontendv2-dist
-          path: frontendv2-dist
-          retention-days: 1
-
-  build-frontendv2:
-    name: Package & Push Frontend v2 (Release) - ${{ matrix.platform }}
-    needs: prepare-frontendv2
-    runs-on: ${{ matrix.runner }}
-    permissions:
-      contents: read
-      packages: write
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - platform: linux/amd64
-            runner: ubuntu-latest
-            cache-key: amd64
-          - platform: linux/arm64
-            runner: ubuntu-24.04-arm
-            cache-key: arm64
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.inputs.version || github.ref }}
-
-      - name: Set version tag
-        id: version
-        run: |
-          if [ -n "${{ github.event.inputs.version }}" ]; then
-            echo "tag=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
-          elif [[ "${{ github.ref }}" == refs/tags/* ]]; then
-            echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
-          else
-            echo "tag=latest" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Download frontend build artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: frontendv2-dist
-          path: frontendv2-dist
-
-      - name: Verify shared frontend artifact
-        run: |
-          test -f frontendv2-dist/standalone/server.js
-          test -d frontendv2-dist/static
-          test -d frontendv2-dist/public
-          test -f frontendv2-dist/Caddyfile
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Set platform tag
-        id: platform-tag
-        run: |
-          PLATFORM_TAG=$(echo "${{ matrix.platform }}" | sed 's/\//-/g')
-          echo "tag=$PLATFORM_TAG" >> $GITHUB_OUTPUT
-
-      - name: Package & Push Frontend v2 runtime
-        uses: docker/build-push-action@v5
-        with:
-          context: ./frontendv2-dist
-          file: ./frontendv2/Dockerfile.runtime
+          file: ./frontendv2/Dockerfile
           platforms: ${{ matrix.platform }}
           push: true
           pull: true
           cache-from: |
-            type=registry,ref=ghcr.io/mythicalltd/featherpanel-frontendv2:buildcache-runtime-${{ matrix.cache-key }}
-            type=gha,scope=frontendv2-runtime-${{ matrix.cache-key }}
+            type=registry,ref=ghcr.io/mythicalltd/featherpanel-frontendv2:buildcache-${{ matrix.cache-key }}
+            type=gha
           cache-to: |
-            type=registry,ref=ghcr.io/mythicalltd/featherpanel-frontendv2:buildcache-runtime-${{ matrix.cache-key }},mode=max
-            type=gha,mode=max,scope=frontendv2-runtime-${{ matrix.cache-key }}
+            type=registry,ref=ghcr.io/mythicalltd/featherpanel-frontendv2:buildcache-${{ matrix.cache-key }},mode=max
+            type=gha,mode=max
           tags: |
             ghcr.io/mythicalltd/featherpanel-frontendv2:${{ steps.version.outputs.tag }}-${{ steps.platform-tag.outputs.tag }}
 
+  manifest-frontendv2:
   manifest-frontendv2:
     name: Create Multi-Arch Manifest - Frontend v2
     runs-on: ubuntu-latest
