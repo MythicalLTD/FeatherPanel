@@ -67,10 +67,11 @@ RUN --mount=type=cache,target=/root/.composer/cache \
 COPY --chown=www-data:www-data . .
 
 # Custom PHP configuration (same limits as before)
-# memory_limit stays unlimited for the CLI and cron; web requests get the
-# bounded PHP_MEMORY_LIMIT from the Caddyfile (FrankenPHP php_ini).
+# The CLI and cron use PHP_CLI_MEMORY_LIMIT (bounded, so a runaway cron job
+# cannot take the whole host down); web requests get PHP_MEMORY_LIMIT from the
+# Caddyfile (FrankenPHP php_ini).
 RUN echo 'session.upload_progress.enabled = Off\n\
-memory_limit = -1\n\
+memory_limit = ${PHP_CLI_MEMORY_LIMIT}\n\
 upload_max_filesize = 100M\n\
 post_max_size = 100M\n\
 max_execution_time = 300\n\
@@ -97,10 +98,12 @@ zend.assertions = -1' > /usr/local/etc/php/conf.d/custom.ini
 # FrankenPHP worker (boot/worker.php); FRANKENPHP_WORKER=false switches back to
 # classic mode.
 ENV PHP_MEMORY_LIMIT=512M \
+    PHP_CLI_MEMORY_LIMIT=1024M \
+    FEATHERPANEL_WORKER_MAX_MEMORY=256M \
     FRANKENPHP_MAX_THREADS=auto \
     FRANKENPHP_MAX_WAIT_TIME=30s \
     FRANKENPHP_WORKER=true \
-    FEATHERPANEL_WORKER_MAX_REQUESTS=1000
+    FEATHERPANEL_WORKER_MAX_REQUESTS=500
 
 # Caddy/FrankenPHP configuration (replaces nginx.conf)
 COPY Caddyfile /etc/caddy/Caddyfile

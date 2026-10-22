@@ -13,13 +13,16 @@ run_php_cron() {
     cd /var/www/html
     
     # Try with sudo first, fallback to direct execution
-    if sudo -u www-data php storage/cron/runner.php >> /var/log/cron.log 2>&1; then
-        echo "$(date): PHP cron job completed with sudo"
+    # One run at a time (flock), never longer than CRON_TIMEOUT, and never
+    # started a second time when the first run exits non-zero: the old
+    # fallback ran every job twice after any failure.
+    if sudo -n -u www-data true 2>/dev/null; then
+        _runner=(sudo -u www-data)
     else
-        echo "$(date): Trying PHP cron job without sudo..."
-        php storage/cron/runner.php >> /var/log/cron.log 2>&1
-        echo "$(date): PHP cron job completed without sudo"
+        _runner=()
     fi
+    flock -n /tmp/featherpanel-cron.lock timeout "${CRON_TIMEOUT:-900}" "${_runner[@]}" php storage/cron/runner.php >> /var/log/cron.log 2>&1
+    echo "$(date): PHP cron job finished (exit $?)"
 }
 
 # Function to run bash cron job

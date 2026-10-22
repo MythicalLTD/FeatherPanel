@@ -4,10 +4,11 @@
 #
 # Pool sizes (sized by caddy/frankenphp-env.sh so they fit FRANKENPHP_MAX_THREADS):
 #   FEATHERPANEL_WORKERS              {2 x CPUs}  API worker threads started at boot
-#   FEATHERPANEL_WORKER_MAX_THREADS   {4 x CPUs}  the API pool may scale up to this under load
+#   FEATHERPANEL_WORKER_MAX_THREADS   {3 x CPUs, max 32} the API pool may scale up to this under load
 #   FEATHERPANEL_SLOW_WORKERS         {2}         threads for streams and downloads
-#   FEATHERPANEL_SLOW_MAX_THREADS     {16}        the slow pool may scale up to this (2 without frankenphp-env.sh)
-#   FEATHERPANEL_WORKER_MAX_REQUESTS  {1000}      requests before a worker restarts (0 = never)
+#   FEATHERPANEL_SLOW_MAX_THREADS     {4}         the slow pool may scale up to this (2 without frankenphp-env.sh)
+#   FEATHERPANEL_WORKER_MAX_MEMORY    {256M}      worker restarts after a request leaves its heap above this
+#   FEATHERPANEL_WORKER_MAX_REQUESTS  {500}       requests before a worker restarts (0 = never)
 php_server {
 	root {$FEATHERPANEL_ROOT:/var/www/html}/public
 
@@ -22,7 +23,8 @@ php_server {
 		num {$FEATHERPANEL_SLOW_WORKERS:2}
 		max_threads {$FEATHERPANEL_SLOW_MAX_THREADS:2}
 		match /api/user/chatbot/chat/stream /api/user/vds-chatbot/chat/stream /api/user/servers/*/download-file /api/user/servers/*/download-directory /api/user/servers/*/backups/*/download /api/user/webspaces/*/files/download /api/user/webspaces/*/files/download-directory /api/user/webspaces/*/backups/*/download /api/admin/webspaces/*/backups/*/download /api/admin/database-snapshots/*/download /api/client/servers/*/files/download
-		env FEATHERPANEL_WORKER_MAX_REQUESTS {$FEATHERPANEL_WORKER_MAX_REQUESTS:1000}
+		env FEATHERPANEL_WORKER_MAX_REQUESTS {$FEATHERPANEL_WORKER_MAX_REQUESTS:500}
+		env FEATHERPANEL_WORKER_MAX_MEMORY {$FEATHERPANEL_WORKER_MAX_MEMORY:256M}
 		# Plugin install/update/remove and .env or rate-limit edits touch this
 		# stamp; restart the workers so they boot the new state.
 		watch {$FEATHERPANEL_ROOT:/var/www/html}/storage/caches/runtime/*.stamp
@@ -37,7 +39,8 @@ php_server {
 		# back down after max_idle_time. Sized by caddy/frankenphp-env.sh.
 		max_threads {$FEATHERPANEL_WORKER_MAX_THREADS:8}
 		match /api/*
-		env FEATHERPANEL_WORKER_MAX_REQUESTS {$FEATHERPANEL_WORKER_MAX_REQUESTS:1000}
+		env FEATHERPANEL_WORKER_MAX_REQUESTS {$FEATHERPANEL_WORKER_MAX_REQUESTS:500}
+		env FEATHERPANEL_WORKER_MAX_MEMORY {$FEATHERPANEL_WORKER_MAX_MEMORY:256M}
 		watch {$FEATHERPANEL_ROOT:/var/www/html}/storage/caches/runtime/*.stamp
 	}
 }
