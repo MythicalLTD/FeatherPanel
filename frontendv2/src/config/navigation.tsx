@@ -263,6 +263,17 @@ const buildAdminNavigationItems = (
             group: 'infrastructure',
         },
         {
+            id: 'admin-health',
+            name: t('navigation.items.health'),
+            title: t('navigation.items.health'),
+            url: '/admin/health',
+            icon: Activity,
+            isActive: false,
+            category: 'admin',
+            permission: Permissions.ADMIN_NODES_VIEW,
+            group: 'infrastructure',
+        },
+        {
             id: 'admin-nodes-status',
             module: 'game',
             name: t('navigation.items.nodeStatus'),
