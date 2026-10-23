@@ -20,15 +20,15 @@ namespace App\Chat;
 use App\App;
 
 /**
- * Five minute CPU, memory and disk samples per server, kept for about a day.
+ * Five minute CPU, memory and disk samples per server, kept for seven days.
  * Timestamps are stored in UTC.
  */
 class ServerResourceSample
 {
     public const INTERVAL_SECONDS = 300;
 
-    /** A day plus one bucket, so a full 24 hour window is always available. */
-    public const RETENTION_SECONDS = 86400 + self::INTERVAL_SECONDS;
+    /** Seven days plus one bucket, so a full 7 day window is always available. */
+    public const RETENTION_SECONDS = 7 * 86400 + self::INTERVAL_SECONDS;
 
     private static string $table = 'featherpanel_server_resource_samples';
 
@@ -108,6 +108,62 @@ class ServerResourceSample
             }
 
             return $out;
+        } catch (\PDOException $e) {
+            App::getInstance(true)->getLogger()->error('Failed to read resource samples: ' . $e->getMessage());
+
+            return [];
+        }
+    }
+
+    /**
+     * Average samples into wider buckets (for example hourly points for a 7 day graph).
+     * CPU and memory are averaged, disk keeps the last value of the bucket.
+     *
+     * @param array<int, array{t: int, cpu: float, memory_bytes: int, disk_bytes: int}> $samples oldest first
+     *
+     * @return array<int, array{t: int, cpu: float, memory_bytes: int, disk_bytes: int}>
+     */
+    public static function downsample(array $samples, int $bucketSeconds): array
+    {
+        $buckets = [];
+        foreach ($samples as $sample) {
+            $t = $sample['t'] - ($sample['t'] % $bucketSeconds);
+            $buckets[$t] ??= ['n' => 0, 'cpu' => 0.0, 'memory' => 0, 'disk' => 0];
+            ++$buckets[$t]['n'];
+            $buckets[$t]['cpu'] += $sample['cpu'];
+            $buckets[$t]['memory'] += $sample['memory_bytes'];
+            $buckets[$t]['disk'] = $sample['disk_bytes'];
+        }
+        $out = [];
+        foreach ($buckets as $t => $b) {
+            $out[] = [
+                't' => $t,
+                'cpu' => round($b['cpu'] / $b['n'], 2),
+                'memory_bytes' => (int) round($b['memory'] / $b['n']),
+                'disk_bytes' => $b['disk'],
+            ];
+        }
+
+        return $out;
+    }
+
+    /**
+     * The newest samples of one server, newest first.
+     *
+     * @return array<int, array{cpu: float, memory_bytes: int, disk_bytes: int}>
+     */
+    public static function latest(int $serverId, int $limit): array
+    {
+        try {
+            $pdo = Database::getPdoConnection();
+            $stmt = $pdo->prepare('SELECT cpu, memory_bytes, disk_bytes FROM ' . self::$table . ' WHERE server_id = :id ORDER BY sampled_at DESC LIMIT ' . max(1, $limit));
+            $stmt->execute(['id' => $serverId]);
+
+            return array_map(static fn (array $r): array => [
+                'cpu' => (float) $r['cpu'],
+                'memory_bytes' => (int) $r['memory_bytes'],
+                'disk_bytes' => (int) $r['disk_bytes'],
+            ], $stmt->fetchAll(\PDO::FETCH_ASSOC));
         } catch (\PDOException $e) {
             App::getInstance(true)->getLogger()->error('Failed to read resource samples: ' . $e->getMessage());
 

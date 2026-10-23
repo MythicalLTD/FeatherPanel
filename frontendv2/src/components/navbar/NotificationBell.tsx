@@ -29,6 +29,7 @@ import {
     Megaphone,
     MessageSquareText,
     TriangleAlert,
+    Gauge,
     type LucideProps,
     ArrowRightLeft,
 } from 'lucide-react';
@@ -48,6 +49,7 @@ type InboxKind =
     | 'server_crashed'
     | 'file_transfer_completed'
     | 'file_transfer_failed'
+    | 'resource_limit'
     | 'announcement';
 
 export interface InboxItem {
@@ -75,6 +77,7 @@ const KIND_ICONS: Record<InboxKind, { icon: ComponentType<LucideProps>; tone: st
     server_crashed: { icon: TriangleAlert, tone: 'text-amber-500 bg-amber-500/10' },
     file_transfer_completed: { icon: ArrowRightLeft, tone: 'text-emerald-500 bg-emerald-500/10' },
     file_transfer_failed: { icon: ArrowRightLeft, tone: 'text-red-500 bg-red-500/10' },
+    resource_limit: { icon: Gauge, tone: 'text-amber-500 bg-amber-500/10' },
     announcement: { icon: Megaphone, tone: 'text-sky-500 bg-sky-500/10' },
 };
 
@@ -85,6 +88,7 @@ const KIND_TITLES: Record<InboxKind, string> = {
     server_crashed: 'navbar.inbox.kinds.server_crashed',
     file_transfer_completed: 'navbar.inbox.kinds.file_transfer_completed',
     file_transfer_failed: 'navbar.inbox.kinds.file_transfer_failed',
+    resource_limit: 'navbar.inbox.kinds.resource_limit',
     announcement: 'navbar.inbox.kinds.announcement',
 };
 
@@ -95,6 +99,7 @@ const KIND_BODIES: Record<Exclude<InboxKind, 'announcement'>, string> = {
     server_crashed: 'navbar.inbox.bodies.server_crashed',
     file_transfer_completed: 'navbar.inbox.bodies.file_transfer_completed',
     file_transfer_failed: 'navbar.inbox.bodies.file_transfer_failed',
+    resource_limit: 'navbar.inbox.bodies.resource_limit',
 };
 
 function isKnownKind(kind: string): kind is InboxKind {
@@ -111,6 +116,7 @@ function bodyParams(item: InboxItem): Record<string, string> {
         backup: d.backup_name ?? '',
         target: d.target_name ?? '',
         files: d.count ?? '',
+        percent: d.percent ?? '',
         count: String(item.count),
     };
 }
@@ -266,7 +272,13 @@ export function NotificationBell({ className }: { className?: string }) {
                                     kind === 'announcement'
                                         ? (item.data.excerpt ?? '')
                                         : kind
-                                          ? t(KIND_BODIES[kind], bodyParams(item))
+                                          ? t(KIND_BODIES[kind], {
+                                                ...bodyParams(item),
+                                                metric:
+                                                    kind === 'resource_limit'
+                                                        ? t(`navbar.inbox.metrics.${item.data.metric ?? 'cpu'}`)
+                                                        : '',
+                                            })
                                           : '';
                                 return (
                                     <li key={item.key}>

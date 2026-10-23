@@ -109,10 +109,11 @@ class ResourceHistoryController
     #[OA\Get(
         path: '/api/user/servers/{uuidShort}/resource-history',
         summary: 'Resource history for one server',
-        description: 'Five minute CPU, memory and disk samples over the last 24 hours.',
+        description: 'CPU, memory and disk history: five minute samples over 24 hours (range=24h, default) or hourly averages over 7 days (range=7d).',
         tags: ['User - Servers'],
         parameters: [
             new OA\Parameter(name: 'uuidShort', in: 'path', required: true, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'range', in: 'query', required: false, schema: new OA\Schema(type: 'string', enum: ['24h', '7d'])),
         ],
         responses: [
             new OA\Response(response: 200, description: 'History retrieved'),
@@ -126,14 +127,25 @@ class ResourceHistoryController
             return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
         }
 
-        [$from, $to] = self::window();
-        $points = array_map(
-            static fn (array $sample): array => self::point($sample),
-            ServerResourceSample::since([(int) $server['id']], $from)[(int) $server['id']] ?? []
-        );
+        // 24h: five minute points. 7d: hourly averages (168 points instead of 2016).
+        $range = $request->query->get('range') === '7d' ? '7d' : '24h';
+        if ($range === '7d') {
+            $interval = 3600;
+            $to = time() - (time() % $interval);
+            $from = $to - 7 * 86400 + $interval;
+        } else {
+            $interval = ServerResourceSample::INTERVAL_SECONDS;
+            [$from, $to] = self::window();
+        }
+        $samples = ServerResourceSample::since([(int) $server['id']], $from)[(int) $server['id']] ?? [];
+        if ($range === '7d') {
+            $samples = ServerResourceSample::downsample($samples, $interval);
+        }
+        $points = array_map(static fn (array $sample): array => self::point($sample), $samples);
 
         return ApiResponse::success([
-            'interval_seconds' => ServerResourceSample::INTERVAL_SECONDS,
+            'range' => $range,
+            'interval_seconds' => $interval,
             'from' => $from,
             'to' => $to,
             'points' => $points,

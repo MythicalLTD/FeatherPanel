@@ -40,6 +40,7 @@ class ExternalNotifier
         'backup_completed' => [UserNotification::KIND_BACKUP_COMPLETED],
         'backup_failed' => [UserNotification::KIND_BACKUP_FAILED],
         'file_transfer' => [UserNotification::KIND_FILE_TRANSFER_COMPLETED, UserNotification::KIND_FILE_TRANSFER_FAILED],
+        'resource_limit' => [UserNotification::KIND_RESOURCE_LIMIT],
     ];
 
     private const TITLES = [
@@ -48,12 +49,14 @@ class ExternalNotifier
         UserNotification::KIND_BACKUP_FAILED => 'Backup failed',
         UserNotification::KIND_FILE_TRANSFER_COMPLETED => 'File transfer completed',
         UserNotification::KIND_FILE_TRANSFER_FAILED => 'File transfer failed',
+        UserNotification::KIND_RESOURCE_LIMIT => 'Server near its resource limit',
     ];
 
     private const COLORS = [
         UserNotification::KIND_SERVER_CRASHED => 0xEF4444,
         UserNotification::KIND_BACKUP_FAILED => 0xEF4444,
         UserNotification::KIND_FILE_TRANSFER_FAILED => 0xEF4444,
+        UserNotification::KIND_RESOURCE_LIMIT => 0xF59E0B,
     ];
 
     /** Stored preferences merged over the defaults. */
@@ -148,6 +151,10 @@ class ExternalNotifier
         }
         if (!empty($data['backup_name'])) {
             $lines[] = 'Backup: ' . $data['backup_name'];
+        }
+        if (!empty($data['metric']) && isset($data['percent'])) {
+            $labels = ['cpu' => 'CPU', 'memory' => 'Memory', 'disk' => 'Disk'];
+            $lines[] = ($labels[$data['metric']] ?? $data['metric']) . ': ' . $data['percent'] . '% of the limit';
         }
         if (!empty($data['target_name'])) {
             $lines[] = 'Target: ' . $data['target_name'] . ' (' . ($data['count'] ?? '0') . ' items)';

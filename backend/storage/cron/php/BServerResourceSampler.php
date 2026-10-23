@@ -21,11 +21,13 @@ use App\App;
 use App\Chat\Database;
 use App\Chat\ServerResourceSample;
 use App\Helpers\ServerUtilization;
+use App\Services\Notifications\InboxNotifier;
 use App\Cli\Utils\MinecraftColorCodeSupport;
 
 /**
  * BServerResourceSampler - stores a CPU, memory and disk sample for every running server
- * every five minutes (one Wings call per node), and drops samples older than a day.
+ * every five minutes (one Wings call per node), and drops samples older than seven days.
+ * Servers that stay near a CPU, memory or disk limit get an alert in the notifications centre.
  * The dashboard sparklines, the trends card and the console header read from it.
  */
 class BServerResourceSampler implements TimeTask
@@ -33,6 +35,12 @@ class BServerResourceSampler implements TimeTask
     private const WINGS_TIMEOUT = 5;
 
     private const INSERT_CHUNK = 500;
+
+    /** Alert when a server stays at or above this share of a limit... */
+    private const ALERT_THRESHOLD = 0.9;
+
+    /** ...for this many consecutive samples (15 minutes), so short spikes stay quiet. */
+    private const ALERT_SAMPLES = 3;
 
     /** Daemon states that count as "up" for the history. */
     private const SAMPLED_STATES = ['running', 'starting', 'stopping'];
@@ -58,7 +66,7 @@ class BServerResourceSampler implements TimeTask
         $pruned = ServerResourceSample::prune();
 
         $pdo = Database::getPdoConnection();
-        $servers = $pdo->query('SELECT id, uuid, node_id FROM featherpanel_servers WHERE suspended = 0 AND node_id IS NOT NULL')
+        $servers = $pdo->query('SELECT id, uuid, uuidShort, name, owner_id, node_id, memory, disk, cpu FROM featherpanel_servers WHERE suspended = 0 AND node_id IS NOT NULL')
             ->fetchAll(\PDO::FETCH_ASSOC);
         if ($servers === []) {
             MinecraftColorCodeSupport::sendOutputWithNewLine('&7No servers to sample');
@@ -89,6 +97,44 @@ class BServerResourceSampler implements TimeTask
             $stored += ServerResourceSample::record($chunk, $bucket);
         }
 
-        MinecraftColorCodeSupport::sendOutputWithNewLine('&aServerResourceSampler completed: stored ' . $stored . ' sample(s), pruned ' . $pruned);
+        $alerts = 0;
+        foreach ($servers as $server) {
+            if (isset($samples[(int) $server['id']])) {
+                $alerts += $this->checkLimits($server);
+            }
+        }
+
+        MinecraftColorCodeSupport::sendOutputWithNewLine('&aServerResourceSampler completed: stored ' . $stored . ' sample(s), pruned ' . $pruned . ', limit alerts ' . $alerts);
+    }
+
+    /** Notify when the last samples all sit at or above the threshold of a limit (0 means unlimited). */
+    private function checkLimits(array $server): int
+    {
+        $limits = [
+            'cpu' => (float) ($server['cpu'] ?? 0),
+            'memory' => (float) ($server['memory'] ?? 0) * 1024 * 1024,
+            'disk' => (float) ($server['disk'] ?? 0) * 1024 * 1024,
+        ];
+        if (max($limits) <= 0) {
+            return 0;
+        }
+        $recent = ServerResourceSample::latest((int) $server['id'], self::ALERT_SAMPLES);
+        if (count($recent) < self::ALERT_SAMPLES) {
+            return 0;
+        }
+        $fields = ['cpu' => 'cpu', 'memory' => 'memory_bytes', 'disk' => 'disk_bytes'];
+        $sent = 0;
+        foreach ($limits as $metric => $limit) {
+            if ($limit <= 0) {
+                continue;
+            }
+            $lowest = min(array_map(static fn (array $s): float => (float) $s[$fields[$metric]], $recent));
+            if ($lowest >= $limit * self::ALERT_THRESHOLD) {
+                InboxNotifier::resourceLimit($server, $metric, (int) min(999, round($lowest / $limit * 100)));
+                ++$sent;
+            }
+        }
+
+        return $sent;
     }
 }

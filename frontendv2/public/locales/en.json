@@ -2764,7 +2764,8 @@
                 "server_crashed": "Server crashed",
                 "backup_completed": "Backup completed",
                 "backup_failed": "Backup failed",
-                "file_transfer": "File transfer finished"
+                "file_transfer": "File transfer finished",
+                "resource_limit": "Server near a resource limit"
             },
             "save": "Save",
             "saved": "Notification settings saved",
@@ -3059,6 +3060,17 @@
             "stats": {
                 "of_limit": "of {limit}",
                 "total_traffic": "Total {down} in · {up} out"
+            },
+            "graphs": {
+                "title": "Resource history",
+                "description": "CPU, memory and disk use. The dashed red line is the server limit.",
+                "range_24h": "24 hours",
+                "range_7d": "7 days",
+                "empty": "No samples yet. History is recorded every five minutes while the server is running.",
+                "cpu": "CPU",
+                "memory": "Memory",
+                "disk": "Disk",
+                "peak": "Peak {value}"
             }
         }
     },
@@ -4105,7 +4117,8 @@
                 "announcement": "Announcement",
                 "other": "Notification",
                 "file_transfer_completed": "File transfer finished",
-                "file_transfer_failed": "File transfer failed"
+                "file_transfer_failed": "File transfer failed",
+                "resource_limit": "Resource limit reached"
             },
             "bodies": {
                 "ticket_reply": "New reply on \"{ticket}\".",
@@ -4113,7 +4126,13 @@
                 "backup_failed": "{backup} on {server} did not finish.",
                 "server_crashed": "{server} stopped unexpectedly.",
                 "file_transfer_completed": "{files} item(s) from {server} arrived on {target}.",
-                "file_transfer_failed": "Sending {files} item(s) from {server} to {target} failed."
+                "file_transfer_failed": "Sending {files} item(s) from {server} to {target} failed.",
+                "resource_limit": "{server} is using {percent}% of its {metric} limit."
+            },
+            "metrics": {
+                "cpu": "CPU",
+                "memory": "memory",
+                "disk": "disk"
             }
         }
     },
