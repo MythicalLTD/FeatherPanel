@@ -69,7 +69,7 @@ function VdsChatbotWidget() {
                 target.isContentEditable ||
                 target.getAttribute('contenteditable') === 'true';
 
-            if ((event.ctrlKey || event.metaKey) && event.key === 'k' && !isInputField) {
+            if ((event.ctrlKey || event.metaKey) && event.key === 'j' && !isInputField) {
                 event.preventDefault();
                 setIsOpen(true);
             }
@@ -117,7 +117,7 @@ export default function ChatbotWidget() {
                 target.isContentEditable ||
                 target.getAttribute('contenteditable') === 'true';
 
-            if ((event.ctrlKey || event.metaKey) && event.key === 'k' && !isInputField) {
+            if ((event.ctrlKey || event.metaKey) && event.key === 'j' && !isInputField) {
                 event.preventDefault();
                 setIsOpen(true);
             }
