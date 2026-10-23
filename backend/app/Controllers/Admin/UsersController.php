@@ -721,8 +721,15 @@ class UsersController
         $data['uuid'] = UUIDUtils::generateV4();
         $config = App::getInstance(true)->getConfig();
         $data['remember_token'] = User::generateAccountToken();
-        // Set default role if not provided
-        if (empty($data['role_id'])) {
+        // Set default role if not provided. Assigning a role is a root-only
+        // decision: with every role grantable here, `admin.users.create` alone
+        // was enough to create a second full administrator.
+        $actor = $request->attributes->get('user');
+        if (isset($data['role_id']) && (int) $data['role_id'] > 0 && (int) $data['role_id'] !== 1) {
+            if (!\App\Helpers\AdminRank::isRoot(is_array($actor) ? $actor : null)) {
+                return ApiResponse::error('Only a full administrator can assign a role', 'ROLE_ASSIGNMENT_FORBIDDEN', 403);
+            }
+        } else {
             $data['role_id'] = 1;
         }
         $userId = User::createUser($data);
@@ -861,6 +868,13 @@ class UsersController
                     403
                 );
             }
+        }
+
+        // Rank guard: a support account must not modify an account that holds
+        // root-level permissions (password/e-mail change would be a takeover).
+        $rankDenied = \App\Helpers\AdminRank::check($request->attributes->get('user'), $user);
+        if ($rankDenied !== null) {
+            return ApiResponse::error($rankDenied, 'TARGET_OUTRANKS_ACTOR', 403);
         }
 
         if ($app->isDemoMode()) {
@@ -1083,6 +1097,11 @@ class UsersController
         $user = User::getUserByUuid($uuid);
         if (!$user) {
             return ApiResponse::error('User not found', 'USER_NOT_FOUND', 404);
+        }
+
+        $rankDenied = \App\Helpers\AdminRank::check($request->attributes->get('user'), $user);
+        if ($rankDenied !== null) {
+            return ApiResponse::error($rankDenied, 'TARGET_OUTRANKS_ACTOR', 403);
         }
 
         if ($app->isDemoMode()) {
@@ -1591,6 +1610,14 @@ class UsersController
             return ApiResponse::error('User not found', 'USER_NOT_FOUND', 404);
         }
 
+        // Rank guard: an SSO token is a full session for the target account and
+        // the login flow skips its second factor, so minting one for an account
+        // that outranks the actor would be a silent takeover.
+        $rankDenied = \App\Helpers\AdminRank::check($request->attributes->get('user'), $user);
+        if ($rankDenied !== null) {
+            return ApiResponse::error($rankDenied, 'TARGET_OUTRANKS_ACTOR', 403);
+        }
+
         $config = App::getInstance(true)->getConfig();
         $defaultExpiresInMinutes = (int) $config->getSetting(
             ConfigInterface::APP_SSO_TOKEN_LIFETIME_MINUTES,
@@ -1909,6 +1936,11 @@ class UsersController
         $user = User::getUserByUuid($uuid);
         if (!$user) {
             return ApiResponse::error('User not found', 'USER_NOT_FOUND', 404);
+        }
+
+        $rankDenied = \App\Helpers\AdminRank::check($request->attributes->get('user'), $user);
+        if ($rankDenied !== null) {
+            return ApiResponse::error($rankDenied, 'TARGET_OUTRANKS_ACTOR', 403);
         }
 
         if ($user['banned'] === 'true') {

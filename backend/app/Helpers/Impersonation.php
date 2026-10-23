@@ -44,10 +44,12 @@ class Impersonation
         if (!PermissionHelper::hasPermission((string) $admin['uuid'], Permissions::ADMIN_USERS_IMPERSONATE)) {
             return 'You are not allowed to view the panel as other users';
         }
-        // Staff accounts can only be viewed by full admins.
-        if (PermissionHelper::hasPermission((string) $target['uuid'], Permissions::ADMIN_DASHBOARD_VIEW)
-            && !PermissionHelper::hasPermission((string) $admin['uuid'], Permissions::ADMIN_ROOT)) {
-            return 'Only full admins can view the panel as another staff member';
+        // Staff accounts can only be viewed by full admins. This is a rank check,
+        // not a feature check: a role may hold `admin.settings.edit` without the
+        // dashboard permission, and viewing that account must still be forbidden.
+        $rankDenied = AdminRank::check($admin, $target);
+        if ($rankDenied !== null) {
+            return $rankDenied;
         }
 
         return null;

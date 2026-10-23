@@ -225,11 +225,15 @@ class AuthMiddleware implements MiddlewareInterface
         try {
             return App::getInstance(true)->getConfig()->getSetting(
                 ConfigInterface::API_CLIENTS_ALLOW_PUBLIC_KEY_AUTH,
-                'true'
-            ) !== 'false';
+                // Default off: the public key is handed out in redirect URLs and
+                // API responses, so accepting it as a Bearer token makes it a
+                // login credential. Operators that still need the legacy flow
+                // can switch it on explicitly.
+                'false'
+            ) === 'true';
         } catch (\Throwable $e) {
-            // Fail open: matching pre-1.5.0 behaviour if config is unavailable.
-            return true;
+            // Fail closed: without config we cannot prove the opt-in was set.
+            return false;
         }
     }
 

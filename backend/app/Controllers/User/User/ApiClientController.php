@@ -1739,8 +1739,16 @@ class ApiClientController
             if ($host === '') {
                 return null;
             }
-            // User/browser mode keeps strict web redirect protections.
-            if ($scheme === 'http' && $mode !== 'server' && !in_array($host, ['localhost', '127.0.0.1'], true)) {
+            if ($mode === 'server') {
+                // Server mode makes the panel POST the freshly issued
+                // credentials to this URL, so the URL must not become an SSRF
+                // primitive: https only and the host has to resolve to public
+                // addresses (the same rule the generic URL fetcher enforces).
+                if ($scheme !== 'https' || !\App\Helpers\SafeUrlFetcher::isAllowedUrl($url)) {
+                    return null;
+                }
+            } elseif ($scheme === 'http' && !in_array($host, ['localhost', '127.0.0.1'], true)) {
+                // User/browser mode keeps strict web redirect protections.
                 return null;
             }
         } else {

@@ -205,6 +205,15 @@ class VmUserInstanceController
         $vmInstance['access_password'] = $vmInstance['is_owner']
             ? self::resolveAccessPassword($vmInstance)
             : null;
+
+        // `notes` carries the cloud-init credentials ({notes, ci_user, ci_password}).
+        // Subusers must only see the free-text note, never the guest password.
+        if (empty($vmInstance['is_owner']) && isset($vmInstance['notes'])) {
+            $decodedNotes = json_decode((string) $vmInstance['notes'], true);
+            $vmInstance['notes'] = is_array($decodedNotes)
+                ? (string) ($decodedNotes['notes'] ?? '')
+                : (string) $vmInstance['notes'];
+        }
         $vmInstance['assigned_ips'] = VmInstanceIp::getByInstanceId((int) $vmInstance['id']);
 
         return ApiResponse::success([

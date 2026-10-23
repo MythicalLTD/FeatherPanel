@@ -612,26 +612,11 @@ class LifecycleHookExecutorService
 
     protected function isSafeUrl(string $url): bool
     {
-        if (!filter_var($url, FILTER_VALIDATE_URL)) {
-            return false;
-        }
-
-        $parts = parse_url($url);
-        if (!is_array($parts)) {
-            return false;
-        }
-
-        $scheme = strtolower((string) ($parts['scheme'] ?? ''));
-        if (!in_array($scheme, ['http', 'https'], true)) {
-            return false;
-        }
-
-        $host = strtolower((string) ($parts['host'] ?? ''));
-        if ($host === 'localhost' || $host === '127.0.0.1' || str_starts_with($host, '10.') || str_starts_with($host, '192.168.')) {
-            return false;
-        }
-
-        return true;
+        // Delegate to the shared fetcher guard: it requires http(s), rejects
+        // credentials in the URL and resolves the host, refusing any target that
+        // is not a public address. The previous prefix list missed IPv6 literals
+        // and the rest of 127.0.0.0/8, 172.16/12 and 169.254/16.
+        return \App\Helpers\SafeUrlFetcher::isAllowedUrl($url);
     }
 
     protected function createActivity(array $server, string $event, array $metadata = []): void

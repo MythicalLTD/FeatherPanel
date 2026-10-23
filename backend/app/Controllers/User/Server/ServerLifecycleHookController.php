@@ -952,56 +952,10 @@ class ServerLifecycleHookController
 
     private function isSafeHttpUrl(string $url): bool
     {
-        $url = trim($url);
-        if ($url === '') {
-            return false;
-        }
-        // Reject unsupported schemes early (prototype pollution / open redirects to exotic handlers).
-        if (!preg_match('#^https?://#i', $url)) {
-            return false;
-        }
-
-        if (!filter_var($url, FILTER_VALIDATE_URL)) {
-            return false;
-        }
-
-        $parts = parse_url($url);
-        if (!is_array($parts)) {
-            return false;
-        }
-
-        $scheme = strtolower((string) ($parts['scheme'] ?? ''));
-        if (!in_array($scheme, ['http', 'https'], true)) {
-            return false;
-        }
-
-        $host = strtolower((string) ($parts['host'] ?? ''));
-        if ($host === '' || str_contains($host, "\0")) {
-            return false;
-        }
-
-        if ($host === 'localhost' || $host === '::1') {
-            return false;
-        }
-
-        // Block obvious private/link-local literals (mitigate SSRF from user-provided webhook targets).
-        if (filter_var($host, FILTER_VALIDATE_IP)) {
-            if (!filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
-                return false;
-            }
-        } else {
-            if (
-                preg_match('/^127\.\d+\.\d+\.\d+$/', $host)
-                || str_starts_with($host, '10.')
-                || str_starts_with($host, '192.168.')
-                || preg_match('/^172\.(1[6-9]|2\d|3[01])\./', $host)
-                || str_starts_with($host, '169.254.')
-            ) {
-                return false;
-            }
-        }
-
-        return true;
+        // Shared guard: http(s) only, no credentials in the URL, and the host has
+        // to resolve to public addresses. The hand-written check below only
+        // compared strings, so `http://[::1]/` and friends passed it.
+        return \App\Helpers\SafeUrlFetcher::isAllowedUrl($url);
     }
 
     private static function emitEvent(string $eventName, array $payload): void
