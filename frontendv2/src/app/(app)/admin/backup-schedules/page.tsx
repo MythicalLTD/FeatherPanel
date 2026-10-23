@@ -43,6 +43,7 @@ import {
     Shield,
 } from 'lucide-react';
 import { ListPagination } from '@/components/featherui/ListPagination';
+import { BackupScheduleCalendar } from '@/components/admin/backups/BackupScheduleCalendar';
 
 type Policy = {
     id: number;
@@ -145,6 +146,8 @@ export default function AdminBackupSchedulesPage() {
                     </div>
                 }
             />
+
+            <BackupScheduleCalendar onOpen={(id) => router.push(`/admin/backup-schedules/${id}`)} />
 
             <div className='fp-surface flex flex-col items-center gap-4 rounded-2xl border p-4 sm:flex-row'>
                 <div className='group relative w-full flex-1'>

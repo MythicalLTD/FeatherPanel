@@ -1550,7 +1550,8 @@
             "ALT_RESET_FAILED": "Failed to reset alt detection",
             "INVALID_DISCORD_WEBHOOK": "Enter a valid Discord webhook URL",
             "NOTIFICATION_SETTINGS_SAVE_FAILED": "Failed to save notification settings",
-            "DISCORD_WEBHOOK_TEST_FAILED": "Discord rejected the webhook"
+            "DISCORD_WEBHOOK_TEST_FAILED": "Discord rejected the webhook",
+            "INVALID_MONTH": "Month must look like 2026-10"
         },
         "global": {}
     },
@@ -16013,6 +16014,14 @@
                 "title": "Tips",
                 "body": "Prefer off-peak hours for large fleets, keep concurrency low on busy nodes, and use Run now to verify a new schedule."
             }
+        },
+        "calendar": {
+            "title": "Backup calendar",
+            "previous": "Previous month",
+            "next": "Next month",
+            "planned": "Planned",
+            "empty": "No backups on this day",
+            "loadFailed": "Failed to load the backup calendar"
         }
     },
     "ui": {
