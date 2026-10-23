@@ -31,6 +31,7 @@ import {
     Loader2,
     Network,
     Radio,
+    Server,
     RefreshCw,
     Terminal,
     Trash2,
@@ -43,6 +44,7 @@ import { Button } from '@/components/featherui/Button';
 import { Dialog } from '@/components/ui/dialog';
 import { PanelDebugLogsSection } from '@/components/global-search/PanelDebugLogsSection';
 import { PanelDebugApiSection } from '@/components/global-search/PanelDebugApiSection';
+import { PanelDebugServerSection } from '@/components/global-search/PanelDebugServerSection';
 import { usePanelDebug } from '@/contexts/PanelDebugContext';
 import { useSession } from '@/contexts/SessionContext';
 import { useSettings } from '@/contexts/SettingsContext';
@@ -59,7 +61,8 @@ import Permissions from '@/lib/permissions';
 import { copyToClipboard, cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
-type DebugSection = 'overview' | 'diagnostics' | 'benchmarks' | 'logs' | 'storage' | 'network' | 'api' | 'tools';
+type DebugSection =
+    'panel' | 'overview' | 'diagnostics' | 'benchmarks' | 'logs' | 'storage' | 'network' | 'api' | 'tools';
 
 type StorageRow = { key: string; size: number; preview: string; store: 'local' | 'session' };
 
@@ -87,7 +90,7 @@ function readStorageRows(store: Storage): StorageRow[] {
 
 function MetricCard({ label, value, hint }: { label: string; value: string; hint?: string }) {
     return (
-        <div className='border-border/60 bg-card rounded-xl border p-3'>
+        <div className='border-border/60 bg-card hover:border-primary/30 rounded-xl border p-3 transition-colors'>
             <p className='text-muted-foreground text-[10px] font-medium tracking-wide uppercase'>{label}</p>
             <p className='text-foreground mt-1 truncate text-lg font-semibold tabular-nums'>{value}</p>
             {hint ? <p className='text-muted-foreground mt-1 truncate text-[11px]'>{hint}</p> : null}
@@ -115,13 +118,16 @@ function SectionNav({
                         type='button'
                         onClick={() => onChange(item.id)}
                         className={cn(
-                            'flex items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors',
+                            'group relative flex items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-all duration-200',
                             selected
-                                ? 'bg-background text-foreground border-border/60 border font-medium shadow-sm'
-                                : 'text-muted-foreground hover:bg-muted/40 hover:text-foreground',
+                                ? 'bg-primary/10 text-primary font-medium'
+                                : 'text-muted-foreground hover:bg-muted/40 hover:text-foreground hover:translate-x-0.5 motion-reduce:hover:translate-x-0',
                         )}
                     >
-                        <Icon className='h-4 w-4 shrink-0 opacity-80' />
+                        {selected ? (
+                            <span className='bg-primary animate-in fade-in zoom-in absolute top-1.5 bottom-1.5 left-0 w-0.5 rounded-full' />
+                        ) : null}
+                        <Icon className='h-4 w-4 shrink-0 opacity-80 transition-transform group-hover:scale-110' />
                         {item.label}
                     </button>
                 );
@@ -165,6 +171,7 @@ export default function PanelDebugConsole() {
     const navItems = useMemo(
         () => [
             { id: 'overview' as const, label: t('globalSearch.debug.tabs.overview'), icon: Bug },
+            { id: 'panel' as const, label: t('globalSearch.debug.tabs.panel'), icon: Server },
             { id: 'diagnostics' as const, label: t('globalSearch.debug.tabs.diagnostics'), icon: Cpu },
             { id: 'benchmarks' as const, label: t('globalSearch.debug.tabs.benchmark'), icon: Gauge },
             { id: 'network' as const, label: t('globalSearch.debug.tabs.network'), icon: Network },
@@ -260,11 +267,11 @@ export default function PanelDebugConsole() {
             onOpenChange={(next) => !next && closeDebugConsole()}
             className='flex h-[min(88vh,52rem)] max-w-5xl flex-col overflow-hidden p-0'
         >
-            <div className='border-border/60 bg-muted/20 shrink-0 border-b px-5 py-4'>
+            <div className='border-border/60 from-primary/10 via-muted/20 relative shrink-0 overflow-hidden border-b bg-gradient-to-r to-transparent px-5 py-4'>
                 <div className='flex items-start justify-between gap-4'>
                     <div className='flex items-center gap-3'>
-                        <div className='border-border/60 bg-background flex h-10 w-10 items-center justify-center rounded-lg border'>
-                            <Terminal className='text-foreground h-5 w-5' />
+                        <div className='border-primary/30 bg-primary/10 animate-in zoom-in-75 flex h-10 w-10 items-center justify-center rounded-xl border duration-500 motion-reduce:animate-none'>
+                            <Terminal className='text-primary h-5 w-5' />
                         </div>
                         <div>
                             <p className='text-foreground text-base font-semibold'>{t('globalSearch.debug.title')}</p>
@@ -301,7 +308,7 @@ export default function PanelDebugConsole() {
                         <SectionNav active={section} onChange={setSection} items={navItems} />
                     </aside>
 
-                    <div className='custom-scrollbar min-h-0 overflow-y-auto p-4 sm:p-5'>
+                    <div className='custom-scrollbar motion-content min-h-0 overflow-y-auto p-4 sm:p-5'>
                         <div className='mb-4 flex gap-2 overflow-x-auto lg:hidden'>
                             {navItems.map((item) => (
                                 <button
@@ -311,7 +318,7 @@ export default function PanelDebugConsole() {
                                     className={cn(
                                         'shrink-0 rounded-lg border px-3 py-1.5 text-xs font-medium',
                                         section === item.id
-                                            ? 'border-border bg-background text-foreground'
+                                            ? 'border-primary/30 bg-primary/10 text-primary'
                                             : 'bg-muted/40 text-muted-foreground border-transparent',
                                     )}
                                 >
@@ -320,351 +327,377 @@ export default function PanelDebugConsole() {
                             ))}
                         </div>
 
-                        {section === 'overview' ? (
-                            <div className='space-y-4'>
-                                <div className='grid gap-3 sm:grid-cols-2 xl:grid-cols-4'>
-                                    <MetricCard
-                                        label={t('globalSearch.debug.fields.user')}
-                                        value={user?.username ?? '-'}
-                                    />
-                                    <MetricCard
-                                        label={t('globalSearch.debug.fields.path')}
-                                        value={pathname.split('/').pop() || '/'}
-                                        hint={pathname}
-                                    />
-                                    <MetricCard
-                                        label={t('globalSearch.debug.fields.memory')}
-                                        value={memoryUsed ? formatBytes(memoryUsed) : '-'}
-                                        hint={t('globalSearch.debug.memoryHint')}
-                                    />
-                                    <MetricCard label={t('globalSearch.debug.fields.developerMode')} value='on' />
-                                </div>
-                                <div className='border-border/60 bg-muted/15 rounded-xl border'>
-                                    <div className='border-border/60 flex items-center justify-between border-b px-3 py-2'>
-                                        <p className='text-muted-foreground text-xs font-medium'>
-                                            {t('globalSearch.debug.snapshotLabel')}
-                                        </p>
-                                        <Button
-                                            size='sm'
-                                            variant='ghost'
-                                            className='h-7 px-2 text-xs'
-                                            onClick={() => void copySnapshot()}
-                                        >
-                                            <Copy className='mr-1 h-3 w-3' />
-                                            {t('common.copy')}
-                                        </Button>
-                                    </div>
-                                    <pre className='text-muted-foreground custom-scrollbar max-h-48 overflow-auto p-3 font-mono text-[11px] leading-relaxed'>
-                                        {JSON.stringify(snapshot, null, 2)}
-                                    </pre>
-                                </div>
-                                <div className='flex flex-wrap gap-2'>
-                                    <Button size='sm' onClick={() => void copySnapshot()}>
-                                        <Copy className='mr-2 h-4 w-4' />
-                                        {t('globalSearch.debug.copySnapshot')}
-                                    </Button>
-                                    <Button
-                                        size='sm'
-                                        variant='outline'
-                                        onClick={() => void runProbes()}
-                                        disabled={probesRunning}
-                                    >
-                                        {probesRunning ? (
-                                            <Loader2 className='mr-2 h-4 w-4 animate-spin' />
-                                        ) : (
-                                            <Activity className='mr-2 h-4 w-4' />
-                                        )}
-                                        {t('globalSearch.debug.quickProbe')}
-                                    </Button>
-                                </div>
-                            </div>
-                        ) : null}
+                        <div
+                            key={section}
+                            className='animate-in fade-in slide-in-from-bottom-1 duration-300 motion-reduce:animate-none'
+                        >
+                            {section === 'panel' ? <PanelDebugServerSection enabled={canAdminLogs} /> : null}
 
-                        {section === 'diagnostics' ? (
-                            <div className='grid gap-3 sm:grid-cols-2'>
-                                {Object.entries(snapshot.client as Record<string, unknown>).map(([key, value]) => (
-                                    <div key={key} className='border-border/60 bg-card rounded-xl border p-3'>
-                                        <p className='text-muted-foreground text-[10px] font-medium uppercase'>{key}</p>
-                                        <pre className='text-foreground mt-2 overflow-x-auto font-mono text-[11px] whitespace-pre-wrap'>
-                                            {typeof value === 'object'
-                                                ? JSON.stringify(value, null, 2)
-                                                : String(value ?? '-')}
-                                        </pre>
-                                        {typeof value === 'object' && value ? (
+                            {section === 'overview' ? (
+                                <div className='space-y-4'>
+                                    <div className='grid gap-3 sm:grid-cols-2 xl:grid-cols-4'>
+                                        <MetricCard
+                                            label={t('globalSearch.debug.fields.user')}
+                                            value={user?.username ?? '-'}
+                                        />
+                                        <MetricCard
+                                            label={t('globalSearch.debug.fields.path')}
+                                            value={pathname.split('/').pop() || '/'}
+                                            hint={pathname}
+                                        />
+                                        <MetricCard
+                                            label={t('globalSearch.debug.fields.memory')}
+                                            value={memoryUsed ? formatBytes(memoryUsed) : '-'}
+                                            hint={t('globalSearch.debug.memoryHint')}
+                                        />
+                                        <MetricCard label={t('globalSearch.debug.fields.developerMode')} value='on' />
+                                    </div>
+                                    <div className='border-border/60 bg-muted/15 rounded-xl border'>
+                                        <div className='border-border/60 flex items-center justify-between border-b px-3 py-2'>
+                                            <p className='text-muted-foreground text-xs font-medium'>
+                                                {t('globalSearch.debug.snapshotLabel')}
+                                            </p>
                                             <Button
                                                 size='sm'
                                                 variant='ghost'
-                                                className='mt-2 h-7 px-2 text-xs'
-                                                onClick={() => void copyText(JSON.stringify(value, null, 2))}
+                                                className='h-7 px-2 text-xs'
+                                                onClick={() => void copySnapshot()}
                                             >
                                                 <Copy className='mr-1 h-3 w-3' />
                                                 {t('common.copy')}
                                             </Button>
-                                        ) : null}
+                                        </div>
+                                        <pre className='text-muted-foreground custom-scrollbar max-h-48 overflow-auto p-3 font-mono text-[11px] leading-relaxed'>
+                                            {JSON.stringify(snapshot, null, 2)}
+                                        </pre>
                                     </div>
-                                ))}
-                            </div>
-                        ) : null}
-
-                        {section === 'benchmarks' ? (
-                            <div className='space-y-4'>
-                                <p className='text-muted-foreground text-sm'>{t('globalSearch.debug.benchmarkHint')}</p>
-                                <Button onClick={() => void runBenchmarks()} disabled={benchRunning}>
-                                    {benchRunning ? (
-                                        <Loader2 className='mr-2 h-4 w-4 animate-spin' />
-                                    ) : (
-                                        <Gauge className='mr-2 h-4 w-4' />
-                                    )}
-                                    {t('globalSearch.debug.runBenchmark')}
-                                </Button>
-                                <div className='border-border/60 overflow-hidden rounded-xl border'>
-                                    <table className='w-full text-sm'>
-                                        <thead className='bg-muted/30 text-muted-foreground border-border/60 border-b text-left text-xs'>
-                                            <tr>
-                                                <th className='px-3 py-2 font-medium'>
-                                                    {t('globalSearch.debug.benchmarkName')}
-                                                </th>
-                                                <th className='px-3 py-2 font-medium'>
-                                                    {t('globalSearch.debug.benchmarkDetail')}
-                                                </th>
-                                                <th className='px-3 py-2 text-right font-medium'>
-                                                    {t('globalSearch.debug.benchmarkTime')}
-                                                </th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {benchmarks.map((bench) => (
-                                                <tr key={bench.id} className='border-border/40 border-b last:border-0'>
-                                                    <td className='text-foreground px-3 py-2.5 font-medium'>
-                                                        {bench.name}
-                                                    </td>
-                                                    <td className='text-muted-foreground max-w-xs truncate px-3 py-2.5 text-xs'>
-                                                        {bench.detail}
-                                                    </td>
-                                                    <td className='text-foreground px-3 py-2.5 text-right tabular-nums'>
-                                                        {bench.durationMs !== null ? `${bench.durationMs} ms` : '-'}
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                    {!benchRunning && benchmarks.length === 0 ? (
-                                        <p className='text-muted-foreground px-3 py-6 text-center text-xs'>
-                                            {t('globalSearch.debug.benchmarkEmpty')}
-                                        </p>
-                                    ) : null}
+                                    <div className='flex flex-wrap gap-2'>
+                                        <Button size='sm' onClick={() => void copySnapshot()}>
+                                            <Copy className='mr-2 h-4 w-4' />
+                                            {t('globalSearch.debug.copySnapshot')}
+                                        </Button>
+                                        <Button
+                                            size='sm'
+                                            variant='outline'
+                                            onClick={() => void runProbes()}
+                                            disabled={probesRunning}
+                                        >
+                                            {probesRunning ? (
+                                                <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                                            ) : (
+                                                <Activity className='mr-2 h-4 w-4' />
+                                            )}
+                                            {t('globalSearch.debug.quickProbe')}
+                                        </Button>
+                                    </div>
                                 </div>
-                            </div>
-                        ) : null}
+                            ) : null}
 
-                        {section === 'network' ? (
-                            <div className='space-y-4'>
-                                <div className='flex flex-wrap items-center justify-between gap-2'>
+                            {section === 'diagnostics' ? (
+                                <div className='grid gap-3 sm:grid-cols-2'>
+                                    {Object.entries(snapshot.client as Record<string, unknown>).map(([key, value]) => (
+                                        <div key={key} className='border-border/60 bg-card rounded-xl border p-3'>
+                                            <p className='text-muted-foreground text-[10px] font-medium uppercase'>
+                                                {key}
+                                            </p>
+                                            <pre className='text-foreground mt-2 overflow-x-auto font-mono text-[11px] whitespace-pre-wrap'>
+                                                {typeof value === 'object'
+                                                    ? JSON.stringify(value, null, 2)
+                                                    : String(value ?? '-')}
+                                            </pre>
+                                            {typeof value === 'object' && value ? (
+                                                <Button
+                                                    size='sm'
+                                                    variant='ghost'
+                                                    className='mt-2 h-7 px-2 text-xs'
+                                                    onClick={() => void copyText(JSON.stringify(value, null, 2))}
+                                                >
+                                                    <Copy className='mr-1 h-3 w-3' />
+                                                    {t('common.copy')}
+                                                </Button>
+                                            ) : null}
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : null}
+
+                            {section === 'benchmarks' ? (
+                                <div className='space-y-4'>
                                     <p className='text-muted-foreground text-sm'>
-                                        {t('globalSearch.debug.networkHint')}
+                                        {t('globalSearch.debug.benchmarkHint')}
                                     </p>
-                                    <Button
-                                        variant='outline'
-                                        size='sm'
-                                        onClick={() => void runProbes()}
-                                        disabled={probesRunning}
-                                    >
-                                        {probesRunning ? (
+                                    <Button onClick={() => void runBenchmarks()} disabled={benchRunning}>
+                                        {benchRunning ? (
                                             <Loader2 className='mr-2 h-4 w-4 animate-spin' />
                                         ) : (
-                                            <Network className='mr-2 h-4 w-4' />
+                                            <Gauge className='mr-2 h-4 w-4' />
                                         )}
-                                        {t('globalSearch.debug.runProbes')}
+                                        {t('globalSearch.debug.runBenchmark')}
                                     </Button>
-                                </div>
-                                <div className='border-border/60 overflow-hidden rounded-xl border'>
-                                    <table className='w-full text-sm'>
-                                        <thead className='bg-muted/30 text-muted-foreground border-border/60 border-b text-left text-xs'>
-                                            <tr>
-                                                <th className='px-3 py-2 font-medium'>
-                                                    {t('globalSearch.debug.probeStatus')}
-                                                </th>
-                                                <th className='px-3 py-2 font-medium'>
-                                                    {t('globalSearch.debug.probeEndpoint')}
-                                                </th>
-                                                <th className='px-3 py-2 font-medium'>
-                                                    {t('globalSearch.debug.probeDetail')}
-                                                </th>
-                                                <th className='px-3 py-2 text-right font-medium'>
-                                                    {t('globalSearch.debug.probeTime')}
-                                                </th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {probesRunning && probes.length === 0 ? (
+                                    <div className='border-border/60 overflow-hidden rounded-xl border'>
+                                        <table className='w-full text-sm'>
+                                            <thead className='bg-muted/30 text-muted-foreground border-border/60 border-b text-left text-xs'>
                                                 <tr>
-                                                    <td
-                                                        colSpan={4}
-                                                        className='text-muted-foreground px-3 py-8 text-center text-xs'
-                                                    >
-                                                        <Loader2 className='mr-2 inline h-4 w-4 animate-spin' />
-                                                        {t('globalSearch.debug.probesRunning')}
-                                                    </td>
+                                                    <th className='px-3 py-2 font-medium'>
+                                                        {t('globalSearch.debug.benchmarkName')}
+                                                    </th>
+                                                    <th className='px-3 py-2 font-medium'>
+                                                        {t('globalSearch.debug.benchmarkDetail')}
+                                                    </th>
+                                                    <th className='px-3 py-2 text-right font-medium'>
+                                                        {t('globalSearch.debug.benchmarkTime')}
+                                                    </th>
                                                 </tr>
-                                            ) : (
-                                                probes.map((probe) => (
+                                            </thead>
+                                            <tbody>
+                                                {benchmarks.map((bench) => (
                                                     <tr
-                                                        key={probe.id}
+                                                        key={bench.id}
                                                         className='border-border/40 border-b last:border-0'
                                                     >
-                                                        <td className='px-3 py-2.5'>
-                                                            <ProbeStatusBadge ok={probe.ok} />
+                                                        <td className='text-foreground px-3 py-2.5 font-medium'>
+                                                            {bench.name}
                                                         </td>
-                                                        <td className='px-3 py-2.5'>
-                                                            <p className='text-foreground font-medium'>{probe.label}</p>
-                                                            <p className='text-muted-foreground font-mono text-[11px]'>
-                                                                {probe.url}
-                                                            </p>
-                                                        </td>
-                                                        <td className='text-muted-foreground max-w-xs px-3 py-2.5 text-xs'>
-                                                            {probe.detail}
+                                                        <td className='text-muted-foreground max-w-xs truncate px-3 py-2.5 text-xs'>
+                                                            {bench.detail}
                                                         </td>
                                                         <td className='text-foreground px-3 py-2.5 text-right tabular-nums'>
-                                                            {probe.durationMs !== null ? `${probe.durationMs} ms` : '-'}
+                                                            {bench.durationMs !== null ? `${bench.durationMs} ms` : '-'}
                                                         </td>
                                                     </tr>
-                                                ))
-                                            )}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        ) : null}
-
-                        {section === 'logs' ? <PanelDebugLogsSection enabled={canAdminLogs} /> : null}
-
-                        {section === 'api' ? <PanelDebugApiSection /> : null}
-
-                        {section === 'storage' ? (
-                            <div className='space-y-3'>
-                                <div className='flex flex-wrap items-center justify-between gap-2'>
-                                    <p className='text-muted-foreground text-sm'>
-                                        {t('globalSearch.debug.storageCount', { count: String(storageRows.length) })}
-                                    </p>
-                                    <div className='flex gap-2'>
-                                        <Button size='sm' variant='outline' onClick={refreshStorage}>
-                                            <RefreshCw className='mr-2 h-4 w-4' />
-                                            {t('globalSearch.debug.refreshStorage')}
-                                        </Button>
-                                        <Button size='sm' variant='outline' onClick={clearPanelStorage}>
-                                            <Trash2 className='mr-2 h-4 w-4' />
-                                            {t('globalSearch.debug.clearPanelStorage')}
-                                        </Button>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                        {!benchRunning && benchmarks.length === 0 ? (
+                                            <p className='text-muted-foreground px-3 py-6 text-center text-xs'>
+                                                {t('globalSearch.debug.benchmarkEmpty')}
+                                            </p>
+                                        ) : null}
                                     </div>
                                 </div>
-                                <ul className='space-y-2'>
-                                    {storageRows.map((row) => (
-                                        <li
-                                            key={`${row.store}-${row.key}`}
-                                            className='border-border/60 bg-card rounded-xl border px-3 py-2.5'
-                                        >
-                                            <div className='flex items-center justify-between gap-2'>
-                                                <div className='min-w-0'>
-                                                    <p className='text-foreground truncate text-xs font-medium'>
-                                                        {row.key}
-                                                    </p>
-                                                    <p className='text-muted-foreground text-[10px] uppercase'>
-                                                        {row.store}
-                                                    </p>
-                                                </div>
-                                                <div className='flex shrink-0 items-center gap-2'>
-                                                    <span className='text-muted-foreground text-[10px]'>
-                                                        {formatBytes(row.size)}
-                                                    </span>
-                                                    <Button
-                                                        size='sm'
-                                                        variant='ghost'
-                                                        className='h-7 px-2'
-                                                        onClick={() =>
-                                                            void copyText(
-                                                                row.store === 'local'
-                                                                    ? (localStorage.getItem(row.key) ?? '')
-                                                                    : (sessionStorage.getItem(row.key) ?? ''),
-                                                            )
-                                                        }
-                                                    >
-                                                        <Copy className='h-3 w-3' />
-                                                    </Button>
-                                                </div>
-                                            </div>
-                                            <p className='text-muted-foreground mt-1 truncate font-mono text-[10px]'>
-                                                {row.preview || '-'}
-                                            </p>
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
-                        ) : null}
+                            ) : null}
 
-                        {section === 'tools' ? (
-                            <div className='grid gap-2 sm:grid-cols-2'>
-                                <Button
-                                    variant='outline'
-                                    className='h-auto justify-start py-3'
-                                    onClick={() => window.location.reload()}
-                                >
-                                    <RefreshCw className='mr-2 h-4 w-4 shrink-0' />
-                                    <span className='text-left'>{t('globalSearch.debug.hardReload')}</span>
-                                </Button>
-                                <Button
-                                    variant='outline'
-                                    className='h-auto justify-start py-3'
-                                    onClick={() => void copySnapshot()}
-                                >
-                                    <Copy className='mr-2 h-4 w-4 shrink-0' />
-                                    <span className='text-left'>{t('globalSearch.debug.copySnapshot')}</span>
-                                </Button>
-                                <Button
-                                    variant='outline'
-                                    className='h-auto justify-start py-3'
-                                    onClick={() =>
-                                        window.open('/icanhasfeatherpanel/', '_blank', 'noopener,noreferrer')
-                                    }
-                                >
-                                    <BookOpen className='mr-2 h-4 w-4 shrink-0' />
-                                    <span className='flex-1 text-left'>{t('globalSearch.debug.openDocs')}</span>
-                                    <ExternalLink className='h-3.5 w-3.5 opacity-60' />
-                                </Button>
-                                <Button
-                                    variant='outline'
-                                    className='h-auto justify-start py-3'
-                                    onClick={() => window.open('/admin/dev/plugins', '_blank', 'noopener,noreferrer')}
-                                >
-                                    <Bug className='mr-2 h-4 w-4 shrink-0' />
-                                    <span className='flex-1 text-left'>{t('globalSearch.debug.openDevPlugins')}</span>
-                                    <ExternalLink className='h-3.5 w-3.5 opacity-60' />
-                                </Button>
-                                {canAdminLogs ? (
+                            {section === 'network' ? (
+                                <div className='space-y-4'>
+                                    <div className='flex flex-wrap items-center justify-between gap-2'>
+                                        <p className='text-muted-foreground text-sm'>
+                                            {t('globalSearch.debug.networkHint')}
+                                        </p>
+                                        <Button
+                                            variant='outline'
+                                            size='sm'
+                                            onClick={() => void runProbes()}
+                                            disabled={probesRunning}
+                                        >
+                                            {probesRunning ? (
+                                                <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                                            ) : (
+                                                <Network className='mr-2 h-4 w-4' />
+                                            )}
+                                            {t('globalSearch.debug.runProbes')}
+                                        </Button>
+                                    </div>
+                                    <div className='border-border/60 overflow-hidden rounded-xl border'>
+                                        <table className='w-full text-sm'>
+                                            <thead className='bg-muted/30 text-muted-foreground border-border/60 border-b text-left text-xs'>
+                                                <tr>
+                                                    <th className='px-3 py-2 font-medium'>
+                                                        {t('globalSearch.debug.probeStatus')}
+                                                    </th>
+                                                    <th className='px-3 py-2 font-medium'>
+                                                        {t('globalSearch.debug.probeEndpoint')}
+                                                    </th>
+                                                    <th className='px-3 py-2 font-medium'>
+                                                        {t('globalSearch.debug.probeDetail')}
+                                                    </th>
+                                                    <th className='px-3 py-2 text-right font-medium'>
+                                                        {t('globalSearch.debug.probeTime')}
+                                                    </th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {probesRunning && probes.length === 0 ? (
+                                                    <tr>
+                                                        <td
+                                                            colSpan={4}
+                                                            className='text-muted-foreground px-3 py-8 text-center text-xs'
+                                                        >
+                                                            <Loader2 className='mr-2 inline h-4 w-4 animate-spin' />
+                                                            {t('globalSearch.debug.probesRunning')}
+                                                        </td>
+                                                    </tr>
+                                                ) : (
+                                                    probes.map((probe) => (
+                                                        <tr
+                                                            key={probe.id}
+                                                            className='border-border/40 border-b last:border-0'
+                                                        >
+                                                            <td className='px-3 py-2.5'>
+                                                                <ProbeStatusBadge ok={probe.ok} />
+                                                            </td>
+                                                            <td className='px-3 py-2.5'>
+                                                                <p className='text-foreground font-medium'>
+                                                                    {probe.label}
+                                                                </p>
+                                                                <p className='text-muted-foreground font-mono text-[11px]'>
+                                                                    {probe.url}
+                                                                </p>
+                                                            </td>
+                                                            <td className='text-muted-foreground max-w-xs px-3 py-2.5 text-xs'>
+                                                                {probe.detail}
+                                                            </td>
+                                                            <td className='text-foreground px-3 py-2.5 text-right tabular-nums'>
+                                                                {probe.durationMs !== null
+                                                                    ? `${probe.durationMs} ms`
+                                                                    : '-'}
+                                                            </td>
+                                                        </tr>
+                                                    ))
+                                                )}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            ) : null}
+
+                            {section === 'logs' ? <PanelDebugLogsSection enabled={canAdminLogs} /> : null}
+
+                            {section === 'api' ? <PanelDebugApiSection /> : null}
+
+                            {section === 'storage' ? (
+                                <div className='space-y-3'>
+                                    <div className='flex flex-wrap items-center justify-between gap-2'>
+                                        <p className='text-muted-foreground text-sm'>
+                                            {t('globalSearch.debug.storageCount', {
+                                                count: String(storageRows.length),
+                                            })}
+                                        </p>
+                                        <div className='flex gap-2'>
+                                            <Button size='sm' variant='outline' onClick={refreshStorage}>
+                                                <RefreshCw className='mr-2 h-4 w-4' />
+                                                {t('globalSearch.debug.refreshStorage')}
+                                            </Button>
+                                            <Button size='sm' variant='outline' onClick={clearPanelStorage}>
+                                                <Trash2 className='mr-2 h-4 w-4' />
+                                                {t('globalSearch.debug.clearPanelStorage')}
+                                            </Button>
+                                        </div>
+                                    </div>
+                                    <ul className='space-y-2'>
+                                        {storageRows.map((row) => (
+                                            <li
+                                                key={`${row.store}-${row.key}`}
+                                                className='border-border/60 bg-card rounded-xl border px-3 py-2.5'
+                                            >
+                                                <div className='flex items-center justify-between gap-2'>
+                                                    <div className='min-w-0'>
+                                                        <p className='text-foreground truncate text-xs font-medium'>
+                                                            {row.key}
+                                                        </p>
+                                                        <p className='text-muted-foreground text-[10px] uppercase'>
+                                                            {row.store}
+                                                        </p>
+                                                    </div>
+                                                    <div className='flex shrink-0 items-center gap-2'>
+                                                        <span className='text-muted-foreground text-[10px]'>
+                                                            {formatBytes(row.size)}
+                                                        </span>
+                                                        <Button
+                                                            size='sm'
+                                                            variant='ghost'
+                                                            className='h-7 px-2'
+                                                            onClick={() =>
+                                                                void copyText(
+                                                                    row.store === 'local'
+                                                                        ? (localStorage.getItem(row.key) ?? '')
+                                                                        : (sessionStorage.getItem(row.key) ?? ''),
+                                                                )
+                                                            }
+                                                        >
+                                                            <Copy className='h-3 w-3' />
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                                <p className='text-muted-foreground mt-1 truncate font-mono text-[10px]'>
+                                                    {row.preview || '-'}
+                                                </p>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            ) : null}
+
+                            {section === 'tools' ? (
+                                <div className='grid gap-2 sm:grid-cols-2'>
                                     <Button
                                         variant='outline'
                                         className='h-auto justify-start py-3'
-                                        onClick={() => window.open('/admin/logs', '_blank', 'noopener,noreferrer')}
+                                        onClick={() => window.location.reload()}
                                     >
-                                        <HardDrive className='mr-2 h-4 w-4 shrink-0' />
+                                        <RefreshCw className='mr-2 h-4 w-4 shrink-0' />
+                                        <span className='text-left'>{t('globalSearch.debug.hardReload')}</span>
+                                    </Button>
+                                    <Button
+                                        variant='outline'
+                                        className='h-auto justify-start py-3'
+                                        onClick={() => void copySnapshot()}
+                                    >
+                                        <Copy className='mr-2 h-4 w-4 shrink-0' />
+                                        <span className='text-left'>{t('globalSearch.debug.copySnapshot')}</span>
+                                    </Button>
+                                    <Button
+                                        variant='outline'
+                                        className='h-auto justify-start py-3'
+                                        onClick={() =>
+                                            window.open('/icanhasfeatherpanel/', '_blank', 'noopener,noreferrer')
+                                        }
+                                    >
+                                        <BookOpen className='mr-2 h-4 w-4 shrink-0' />
+                                        <span className='flex-1 text-left'>{t('globalSearch.debug.openDocs')}</span>
+                                        <ExternalLink className='h-3.5 w-3.5 opacity-60' />
+                                    </Button>
+                                    <Button
+                                        variant='outline'
+                                        className='h-auto justify-start py-3'
+                                        onClick={() =>
+                                            window.open('/admin/dev/plugins', '_blank', 'noopener,noreferrer')
+                                        }
+                                    >
+                                        <Bug className='mr-2 h-4 w-4 shrink-0' />
                                         <span className='flex-1 text-left'>
-                                            {t('globalSearch.debug.openLogViewer')}
+                                            {t('globalSearch.debug.openDevPlugins')}
                                         </span>
                                         <ExternalLink className='h-3.5 w-3.5 opacity-60' />
                                     </Button>
-                                ) : null}
-                                <Button
-                                    variant='outline'
-                                    className='h-auto justify-start py-3'
-                                    onClick={() => {
-                                        closeDebugConsole();
-                                        window.dispatchEvent(new KeyboardEvent('keydown', { ctrlKey: true, key: 'd' }));
-                                    }}
-                                >
-                                    <Zap className='mr-2 h-4 w-4 shrink-0' />
-                                    <span className='text-left'>{t('globalSearch.debug.backToSearch')}</span>
-                                </Button>
-                            </div>
-                        ) : null}
+                                    {canAdminLogs ? (
+                                        <Button
+                                            variant='outline'
+                                            className='h-auto justify-start py-3'
+                                            onClick={() => window.open('/admin/logs', '_blank', 'noopener,noreferrer')}
+                                        >
+                                            <HardDrive className='mr-2 h-4 w-4 shrink-0' />
+                                            <span className='flex-1 text-left'>
+                                                {t('globalSearch.debug.openLogViewer')}
+                                            </span>
+                                            <ExternalLink className='h-3.5 w-3.5 opacity-60' />
+                                        </Button>
+                                    ) : null}
+                                    <Button
+                                        variant='outline'
+                                        className='h-auto justify-start py-3'
+                                        onClick={() => {
+                                            closeDebugConsole();
+                                            window.dispatchEvent(
+                                                new KeyboardEvent('keydown', { ctrlKey: true, key: 'd' }),
+                                            );
+                                        }}
+                                    >
+                                        <Zap className='mr-2 h-4 w-4 shrink-0' />
+                                        <span className='text-left'>{t('globalSearch.debug.backToSearch')}</span>
+                                    </Button>
+                                </div>
+                            ) : null}
+                        </div>
                     </div>
                 </div>
             )}

@@ -19,6 +19,7 @@ use App\Permissions;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RouteCollection;
 use App\Controllers\Admin\HealthController;
+use App\Controllers\Admin\DebugRuntimeController;
 
 return function (RouteCollection $routes): void {
     App::getInstance(true)->registerAdminRoute(
@@ -29,5 +30,16 @@ return function (RouteCollection $routes): void {
             return (new HealthController())->index($request);
         },
         Permissions::ADMIN_NODES_VIEW,
+    );
+
+    // Developer debug console (##icanhasfeatherpanel): read-only runtime facts.
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-debug-runtime',
+        '/api/admin/debug/runtime',
+        function (Request $request) {
+            return (new DebugRuntimeController())->index($request);
+        },
+        Permissions::ADMIN_ROOT,
     );
 };
