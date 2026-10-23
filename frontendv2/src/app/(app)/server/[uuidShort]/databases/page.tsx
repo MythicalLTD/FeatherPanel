@@ -542,7 +542,7 @@ export default function ServerDatabasesPage() {
                             size='default'
                             onClick={handleDeleteAll}
                             disabled={loading || actionLoading || pagination.total === 0}
-                            className='w-full shrink-0 sm:w-auto'
+                            className='h-14 w-full shrink-0 sm:w-auto'
                         >
                             <Trash2 className='mr-2 h-4 w-4' />
                             {t('serverDatabases.deleteAll')}
