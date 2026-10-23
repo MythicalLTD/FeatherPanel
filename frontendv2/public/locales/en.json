@@ -1187,6 +1187,7 @@
             "PLUGIN_INSTALL_QUEUE_CYCLE": "Circular dependency when resolving queued plugin installations. Install one of the queued plugins first, or adjust your download list.",
             "PLUGIN_NOT_FOUND": "Plugin not found",
             "PORT_RANGE_TOO_LARGE": "Port range too large. Maximum 1000 ports allowed per request",
+            "INVALID_FREE_CLAIM_METHOD": "Choose how you supported FeatherPanel: star or share.",
             "PREMIUM_REQUIRED": "This extra is part of FeatherPanel Premium, an optional donation. You can also get it for free by starring the repo or spreading the word.",
             "PRIMARY_ALLOCATION_CLEANUP_FAILED": "Failed to unassign previous primary allocation",
             "PRIMARY_ALLOCATION_DELETE": "Cannot delete primary allocation",
@@ -9772,6 +9773,13 @@
             "no_permission_desc": "You need tickets view permission to see this feed.",
             "unknown_user": "Unknown user"
         },
+        "donation_nudge": {
+            "title": "Enjoying FeatherPanel?",
+            "body": "FeatherPanel is free, non-profit and fiscally hosted by Hack Club HCB. If it helps you, a small donation keeps it going. You don't lose anything by skipping this.",
+            "donate": "Support FeatherPanel",
+            "free": "Can't donate? Get Premium free",
+            "dismiss": "Hide for 30 days"
+        },
         "cloud_hub": {
             "title": "MyFeatherPanel",
             "description": "Cloud services, marketplace, and community",
@@ -10866,9 +10874,23 @@
             "manage_on_mythic": "Manage on Mythic",
             "free_path": {
                 "title": "Can't donate? Get Premium for free",
-                "description": "Money shouldn't stand in the way. If you can't donate, star FeatherPanel on GitHub or spread the word: post about it, share it with a friend, or mention it in your community. Then message us on Discord and we will enable Premium for your team at no cost.",
+                "description": "Money shouldn't stand in the way. Star FeatherPanel on GitHub or spread the word (post about it, share it with a friend, mention it in your community), then claim it below. Free Premium lasts 30 days; renew it any time by starring or sharing again.",
+                "renew_title": "Renew your free Premium",
+                "renew_description": "Free Premium lasts 30 days. When it runs out, the extras switch back to the defaults. Renew by starring the repo or spreading the word again.",
+                "active_desc": "Free community Premium is active. Thank you for starring or sharing FeatherPanel!",
+                "expires": "Free Premium expires on {date}.",
                 "star": "Star on GitHub",
-                "request": "Request free Premium on Discord"
+                "claim_star": "I starred it",
+                "claim_share": "I spread the word",
+                "renew_star": "Renew: I starred it",
+                "renew_share": "Renew: I spread the word",
+                "honor_note": "No checks, we trust you. Thanks for helping more people find FeatherPanel.",
+                "claimed": "Free Premium is active for 30 days. Thank you!",
+                "claim_failed": "Could not claim free Premium"
+            },
+            "donate": {
+                "note": "FeatherPanel is a non-profit project, fiscally hosted by Hack Club HCB. Donations go straight to development and hosting.",
+                "link": "Support FeatherPanel"
             },
             "your_team": "your team",
             "status": {

@@ -42,6 +42,7 @@ import { AttentionWidget } from '@/components/admin/AttentionWidget';
 import { NodesOverviewWidget } from '@/components/admin/NodesOverviewWidget';
 import { RecentServersWidget } from '@/components/admin/RecentServersWidget';
 import { SupportTicketsWidget } from '@/components/admin/SupportTicketsWidget';
+import { DonationNudge } from '@/components/admin/DonationNudge';
 import { CloudHubWidget } from '@/components/admin/CloudHubWidget';
 import { AdminWidgetFrame } from '@/components/admin/AdminWidgetFrame';
 import { Button } from '@/components/featherui/Button';
@@ -183,6 +184,8 @@ export default function AdminDashboardPage() {
             <WidgetRenderer widgets={getWidgets('admin-home', 'top-of-page')} />
 
             <SetupBanner />
+
+            <DonationNudge />
 
             {/* The hero below greets and links the main tasks; this row keeps the page tools. */}
             <div className='flex justify-end'>

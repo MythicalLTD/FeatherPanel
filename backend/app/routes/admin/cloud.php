@@ -162,6 +162,17 @@ return function (RouteCollection $routes): void {
         ['POST'],
     );
 
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-featherpanel-premium-free-claim',
+        '/api/admin/featherpanel-premium/free-claim',
+        static function (Request $request) {
+            return (new \App\Controllers\Admin\FeatherPanelPremiumController())->claimFree($request);
+        },
+        Permissions::ADMIN_SETTINGS_EDIT,
+        ['POST'],
+    );
+
     // Cloud Data Endpoints (Admin Root Only)
     App::getInstance(true)->registerAdminRoute(
         $routes,

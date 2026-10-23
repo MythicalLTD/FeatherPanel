@@ -28,8 +28,8 @@ import {
     CheckCircle2,
     Crown,
     Heart,
+    Share2,
     Star,
-    MessageSquare,
     ExternalLink,
     ImageIcon,
     LayoutPanelLeft,
@@ -45,6 +45,7 @@ import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { FEATHERPANEL_DONATE_URL, FEATHERPANEL_REPO_URL } from '@/lib/premium-links';
 import { PremiumSidebarEditor } from './PremiumSidebarEditor';
 import { ImageAttachmentField } from '@/components/featherui/ImageAttachmentField';
 import { parseSidebarNavigationConfig, type SidebarNavigationConfig } from '@/lib/sidebarCustomization';
@@ -68,6 +69,13 @@ export type FeatherPanelPremiumStatus = {
     can_customize_ui: boolean;
     can_custom_sidebar?: boolean;
     manage_url: string;
+    paid_active?: boolean;
+    free_claim?: {
+        active: boolean;
+        method?: 'star' | 'share' | null;
+        claimed_at?: string | null;
+        expires_at?: string | null;
+    };
 };
 
 type PremiumPayload = {
@@ -93,6 +101,7 @@ export default function FeatherPanelPremiumPage() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
+    const [claiming, setClaiming] = useState(false);
     const [data, setData] = useState<PremiumPayload | null>(null);
 
     const [displayName, setDisplayName] = useState('');
@@ -174,8 +183,34 @@ export default function FeatherPanelPremiumPage() {
         }
     };
 
+    const claimFree = async (method: 'star' | 'share') => {
+        setClaiming(true);
+        try {
+            const res = await axios.post<{ success: boolean; data: PremiumPayload; message?: string }>(
+                '/api/admin/featherpanel-premium/free-claim',
+                { method },
+            );
+            if (res.data.success && res.data.data) {
+                applyPayload(res.data.data);
+                toast.success(t('admin.featherpanel_premium.free_path.claimed'));
+            } else {
+                toast.error(
+                    getApiErrorMessageFromPayload(res.data, t, 'admin.featherpanel_premium.free_path.claim_failed'),
+                );
+            }
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.featherpanel_premium.free_path.claim_failed'));
+        } finally {
+            setClaiming(false);
+        }
+    };
+
+    const formatDate = (value?: string | null) => (value ? new Date(value).toLocaleDateString() : '-');
+
     const premium = data?.premium;
     const active = Boolean(premium?.active);
+    const freeActive = Boolean(premium?.free_claim?.active);
+    const paidActive = premium?.paid_active ?? (active && !freeActive);
     const linked = Boolean(data?.linked);
     const manageUrl = premium?.manage_url || 'https://my.mythicalsystems.org/clouds';
 
@@ -227,16 +262,7 @@ export default function FeatherPanelPremiumPage() {
                                 )}
                             </div>
 
-                            {!linked ? (
-                                <div className='space-y-3'>
-                                    <p className='text-muted-foreground text-sm'>
-                                        {t('admin.featherpanel_premium.status.not_linked')}
-                                    </p>
-                                    <Button onClick={() => router.push('/admin/cloud-management')}>
-                                        {t('admin.featherpanel_premium.open_cloud')}
-                                    </Button>
-                                </div>
-                            ) : active ? (
+                            {paidActive ? (
                                 <div className='space-y-2'>
                                     <p className='text-muted-foreground text-sm'>
                                         {t('admin.featherpanel_premium.status.active_desc', {
@@ -274,6 +300,26 @@ export default function FeatherPanelPremiumPage() {
                                         {t('admin.featherpanel_premium.manage_on_mythic')}
                                     </Button>
                                 </div>
+                            ) : freeActive ? (
+                                <div className='space-y-2'>
+                                    <p className='text-muted-foreground text-sm'>
+                                        {t('admin.featherpanel_premium.free_path.active_desc')}
+                                    </p>
+                                    <p className='text-muted-foreground text-xs'>
+                                        {t('admin.featherpanel_premium.free_path.expires', {
+                                            date: formatDate(premium?.free_claim?.expires_at),
+                                        })}
+                                    </p>
+                                </div>
+                            ) : !linked ? (
+                                <div className='space-y-3'>
+                                    <p className='text-muted-foreground text-sm'>
+                                        {t('admin.featherpanel_premium.status.not_linked')}
+                                    </p>
+                                    <Button onClick={() => router.push('/admin/cloud-management')}>
+                                        {t('admin.featherpanel_premium.open_cloud')}
+                                    </Button>
+                                </div>
                             ) : (
                                 <div className='space-y-3'>
                                     <p className='text-muted-foreground text-sm'>
@@ -285,53 +331,64 @@ export default function FeatherPanelPremiumPage() {
                                             {t('admin.featherpanel_premium.get_premium')}
                                             <ExternalLink className='ml-2 h-4 w-4' />
                                         </Button>
-                                        <Button
-                                            variant='outline'
-                                            onClick={() => router.push('/admin/cloud-management')}
-                                        >
-                                            {t('admin.featherpanel_premium.open_cloud')}
-                                        </Button>
-                                    </div>
-                                    <div className='border-primary/20 bg-primary/5 space-y-2 rounded-xl border p-4'>
-                                        <p className='text-foreground flex items-center gap-2 text-sm font-semibold'>
-                                            <Heart className='text-primary h-4 w-4' />
-                                            {t('admin.featherpanel_premium.free_path.title')}
-                                        </p>
-                                        <p className='text-muted-foreground text-sm'>
-                                            {t('admin.featherpanel_premium.free_path.description')}
-                                        </p>
-                                        <div className='flex flex-wrap gap-2'>
-                                            <Button
-                                                variant='outline'
-                                                size='sm'
-                                                onClick={() =>
-                                                    window.open(
-                                                        'https://github.com/MythicalLTD/FeatherPanel',
-                                                        '_blank',
-                                                        'noopener,noreferrer',
-                                                    )
-                                                }
-                                            >
-                                                <Star className='mr-2 h-4 w-4' />
-                                                {t('admin.featherpanel_premium.free_path.star')}
-                                            </Button>
-                                            <Button
-                                                variant='outline'
-                                                size='sm'
-                                                onClick={() =>
-                                                    window.open(
-                                                        'https://discord.mythical.systems',
-                                                        '_blank',
-                                                        'noopener,noreferrer',
-                                                    )
-                                                }
-                                            >
-                                                <MessageSquare className='mr-2 h-4 w-4' />
-                                                {t('admin.featherpanel_premium.free_path.request')}
-                                            </Button>
-                                        </div>
                                     </div>
                                 </div>
+                            )}
+
+                            {!paidActive && (
+                                <div className='border-primary/20 bg-primary/5 space-y-3 rounded-xl border p-4'>
+                                    <p className='text-foreground flex items-center gap-2 text-sm font-semibold'>
+                                        <Heart className='text-primary h-4 w-4' />
+                                        {freeActive
+                                            ? t('admin.featherpanel_premium.free_path.renew_title')
+                                            : t('admin.featherpanel_premium.free_path.title')}
+                                    </p>
+                                    <p className='text-muted-foreground text-sm'>
+                                        {freeActive
+                                            ? t('admin.featherpanel_premium.free_path.renew_description')
+                                            : t('admin.featherpanel_premium.free_path.description')}
+                                    </p>
+                                    <div className='flex flex-wrap gap-2'>
+                                        <Button
+                                            variant='outline'
+                                            size='sm'
+                                            onClick={() =>
+                                                window.open(FEATHERPANEL_REPO_URL, '_blank', 'noopener,noreferrer')
+                                            }
+                                        >
+                                            <Star className='mr-2 h-4 w-4' />
+                                            {t('admin.featherpanel_premium.free_path.star')}
+                                        </Button>
+                                        <Button size='sm' disabled={claiming} onClick={() => void claimFree('star')}>
+                                            {freeActive
+                                                ? t('admin.featherpanel_premium.free_path.renew_star')
+                                                : t('admin.featherpanel_premium.free_path.claim_star')}
+                                        </Button>
+                                        <Button size='sm' disabled={claiming} onClick={() => void claimFree('share')}>
+                                            <Share2 className='mr-2 h-4 w-4' />
+                                            {freeActive
+                                                ? t('admin.featherpanel_premium.free_path.renew_share')
+                                                : t('admin.featherpanel_premium.free_path.claim_share')}
+                                        </Button>
+                                    </div>
+                                    <p className='text-muted-foreground text-xs'>
+                                        {t('admin.featherpanel_premium.free_path.honor_note')}
+                                    </p>
+                                </div>
+                            )}
+
+                            {!active && (
+                                <p className='text-muted-foreground text-xs'>
+                                    {t('admin.featherpanel_premium.donate.note')}{' '}
+                                    <a
+                                        href={FEATHERPANEL_DONATE_URL}
+                                        target='_blank'
+                                        rel='noopener noreferrer'
+                                        className='text-primary underline-offset-2 hover:underline'
+                                    >
+                                        {t('admin.featherpanel_premium.donate.link')}
+                                    </a>
+                                </p>
                             )}
                         </div>
                     </PageCard>

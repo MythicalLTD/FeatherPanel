@@ -420,6 +420,10 @@ interface ConfigInterface
     public const FEATHERPANEL_PREMIUM_EXPIRES_AT = 'featherpanel_premium_expires_at';
     /** ISO timestamp of the last failed Mythic entitlement refresh (grace cache in use) */
     public const FEATHERPANEL_PREMIUM_LAST_FAILURE_AT = 'featherpanel_premium_last_failure_at';
+    /** Free community Premium (star the repo or spread the word): ISO timestamps and claim method. Expires after 30 days, renewable. */
+    public const FEATHERPANEL_PREMIUM_FREE_CLAIMED_AT = 'featherpanel_premium_free_claimed_at';
+    public const FEATHERPANEL_PREMIUM_FREE_EXPIRES_AT = 'featherpanel_premium_free_expires_at';
+    public const FEATHERPANEL_PREMIUM_FREE_METHOD = 'featherpanel_premium_free_method';
 
     /**
      * Temp uploads (public file sharing from server file manager via Wings).
