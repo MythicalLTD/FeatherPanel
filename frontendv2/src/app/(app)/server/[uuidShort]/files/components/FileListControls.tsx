@@ -49,8 +49,8 @@ export function FileListControls({
     const { t } = useTranslation();
     const sortKeys: FilesSortKey[] = ['name', 'size', 'modified'];
     return (
-        <Popover className='relative w-full'>
-            <div className='flex flex-wrap items-center gap-2'>
+        <Popover className='relative'>
+            <div className='flex flex-wrap items-center justify-end gap-2'>
                 <div className='fp-surface-inset flex items-center gap-0.5 rounded-xl border p-0.5'>
                     {sortKeys.map((key) => (
                         <button

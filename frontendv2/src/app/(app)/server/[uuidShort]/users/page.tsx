@@ -398,7 +398,8 @@ export default function ServerSubusersPage() {
                                 onKeyDown={(e) => e.key === 'Enter' && fetchSubusers(1)}
                                 type='text'
                                 placeholder={t('serverSubusers.searchPlaceholder')}
-                                className='h-14 pl-12'
+                                variant='surface'
+                                className='h-14 pl-12 text-base'
                             />
                         </div>
                         <Button

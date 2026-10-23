@@ -1419,6 +1419,34 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                             canCreate={canCreate}
                             canDelete={canDelete}
                             currentDirectory={currentDirectory || '/'}
+                            secondary={
+                                <div className='flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-end'>
+                                    <div className='lg:hidden'>
+                                        <FileQuickAccess
+                                            currentDirectory={currentDirectory || '/'}
+                                            pins={quickAccess.pins}
+                                            recent={quickAccess.recent}
+                                            onTogglePin={quickAccess.togglePin}
+                                            onClearRecent={quickAccess.clearRecent}
+                                            onNavigate={(path) => navigateAndCloseArchive(path)}
+                                        />
+                                    </div>
+                                    <div className='flex flex-wrap items-center justify-end gap-2'>
+                                        <FileListControls prefs={viewPrefs} onChange={updateViewPrefs} />
+                                        {!viewPrefs.sidePanel && (
+                                            <button
+                                                type='button'
+                                                onClick={() => updateViewPrefs({ sidePanel: true })}
+                                                className='fp-surface-inset text-muted-foreground hover:text-foreground hidden h-9 items-center gap-1.5 rounded-xl border px-2.5 text-xs lg:inline-flex'
+                                                title={t('files.quick.expand')}
+                                            >
+                                                <PanelRightOpen className='h-3.5 w-3.5' />
+                                                {t('files.quick.title')}
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            }
                         />
 
                         {uploadQueue.length > 0 && (
@@ -1699,33 +1727,6 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                                 refresh();
                             }}
                         />
-
-                        <div className='flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between'>
-                            <div className='lg:hidden'>
-                                <FileQuickAccess
-                                    currentDirectory={currentDirectory || '/'}
-                                    pins={quickAccess.pins}
-                                    recent={quickAccess.recent}
-                                    onTogglePin={quickAccess.togglePin}
-                                    onClearRecent={quickAccess.clearRecent}
-                                    onNavigate={(path) => navigateAndCloseArchive(path)}
-                                />
-                            </div>
-                            <div className='flex flex-wrap items-center gap-2 lg:ml-auto'>
-                                <FileListControls prefs={viewPrefs} onChange={updateViewPrefs} />
-                                {!viewPrefs.sidePanel && (
-                                    <button
-                                        type='button'
-                                        onClick={() => updateViewPrefs({ sidePanel: true })}
-                                        className='fp-surface-inset text-muted-foreground hover:text-foreground hidden h-9 items-center gap-1.5 rounded-xl border px-2.5 text-xs lg:inline-flex'
-                                        title={t('files.quick.expand')}
-                                    >
-                                        <PanelRightOpen className='h-3.5 w-3.5' />
-                                        {t('files.quick.title')}
-                                    </button>
-                                )}
-                            </div>
-                        </div>
 
                         <FileTransfersPanel serverUuid={uuidShort} refreshKey={transferKey} onCompleted={refresh} />
 

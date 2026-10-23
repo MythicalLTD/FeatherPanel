@@ -869,6 +869,18 @@ html.fp-privacy [data-fp-sensitive]:not(:focus) {
     border-color: var(--fp-inset-border, hsl(var(--border) / 0.65));
 }
 
+/* Form field that sits directly on the page (list search bars): the card material without the
+   shadow, so it lines up with the cards around it instead of reading as a lighter grey block. */
+@utility fp-surface-field {
+    background-color: hsl(var(--fp-surface-tint) / var(--fp-surface-alpha));
+    border-color: var(--fp-surface-border);
+    -webkit-backdrop-filter: blur(14px) saturate(var(--fp-surface-saturate));
+    backdrop-filter: blur(14px) saturate(var(--fp-surface-saturate));
+    &:hover {
+        border-color: hsl(var(--border));
+    }
+}
+
 /* Glass for the sidebar and floating top bar: same tint as cards, a little denser. */
 @utility fp-chrome-surface {
     background-color: hsl(var(--fp-surface-tint) / var(--fp-chrome-alpha));

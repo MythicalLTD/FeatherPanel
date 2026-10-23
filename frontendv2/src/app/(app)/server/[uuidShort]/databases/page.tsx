@@ -530,6 +530,7 @@ export default function ServerDatabasesPage() {
                         <Search className='text-muted-foreground/80 group-focus-within:text-foreground absolute top-1/2 left-4 h-5 w-5 -translate-y-1/2 transition-colors' />
                         <Input
                             placeholder={t('serverDatabases.searchPlaceholder')}
+                            variant='surface'
                             className='h-14 pl-12 text-base'
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
