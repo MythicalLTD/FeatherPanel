@@ -159,6 +159,7 @@ class InboxNotifier
             if ($userId <= 0 || UserNotification::notify($userId, $kind, $data, $link, $groupKey) === false) {
                 continue;
             }
+            ExternalNotifier::deliver($user, $kind, $data, $link);
             if (!empty($user['uuid']) && Mercure::isEnabled()) {
                 Mercure::publish(Mercure::userTopic((string) $user['uuid']), self::REALTIME_TYPE);
             }

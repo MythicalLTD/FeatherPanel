@@ -31,6 +31,7 @@ import ApiKeysTab from '@/components/account/ApiKeysTab';
 import McpTab from '@/components/account/McpTab';
 import ActivityTab from '@/components/account/ActivityTab';
 import MailTab from '@/components/account/MailTab';
+import NotificationsTab from '@/components/account/NotificationsTab';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { Sensitive } from '@/components/common/Sensitive';
@@ -51,6 +52,7 @@ export default function AccountPage() {
     const tabs = [
         { id: 'profile', name: t('account.profile'), component: ProfileTab },
         { id: 'settings', name: t('account.settings'), component: SettingsTab },
+        { id: 'notifications', name: t('account.notifications.title'), component: NotificationsTab },
         { id: 'ssh-keys', name: t('account.sshKeys.title'), component: SshKeysTab },
         { id: 'api-keys', name: t('account.apiKeys.title'), component: ApiKeysTab },
         { id: 'mcp', name: t('account.mcp.title'), component: McpTab },
