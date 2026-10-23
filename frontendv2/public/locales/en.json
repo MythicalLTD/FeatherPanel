@@ -1558,7 +1558,11 @@
             "PASSWORD_POLICY_VIOLATION": "The password does not meet the password policy",
             "INVALID_IP_ALLOW_LIST": "The IP allow list has an invalid entry",
             "IP_ALLOW_LIST_SELF_LOCKOUT": "Your current IP is not in the allow list, saving would lock you out",
-            "SECURITY_POLICY_SAVE_FAILED": "Failed to save the security policy"
+            "SECURITY_POLICY_SAVE_FAILED": "Failed to save the security policy",
+            "IMPERSONATION_READ_ONLY": "Viewing as another user is read only. Stop viewing as this user to make changes.",
+            "IMPERSONATION_ACTIVE": "Stop viewing as the current user first",
+            "IMPERSONATION_SESSION_REQUIRED": "Viewing as a user needs a browser session",
+            "IMPERSONATION_NOT_ALLOWED": "You are not allowed to view the panel as this user"
         },
         "global": {}
     },
@@ -7407,6 +7411,18 @@
                 "badge": "Badge",
                 "permissions": "Permissions",
                 "created": "Created"
+            },
+            "presets": {
+                "title": "Role presets",
+                "description": "Add a common set of permissions in one click. Presets only add permissions and can be combined.",
+                "read_only_admin": "Read-only admin",
+                "read_only_admin_hint": "Every admin view permission, no changes",
+                "support": "Support",
+                "support_hint": "Tickets, user edits and view as user",
+                "moderator": "Moderator",
+                "moderator_hint": "Users, suspensions, blocked IPs and ticket replies",
+                "server_manager": "Server manager",
+                "server_manager_hint": "Servers, nodes, allocations, spells, databases and backups"
             }
         },
         "locations": {
@@ -18059,5 +18075,14 @@
             "failed": "Failed",
             "stale": "Not run recently"
         }
+    },
+    "impersonation": {
+        "viewAsUser": "View as user",
+        "confirm": "View the panel as {username}? This is logged on both accounts and the view is read only.",
+        "startFailed": "Could not start viewing as this user",
+        "stopFailed": "Could not stop viewing as this user",
+        "bannerTitle": "You are viewing the panel as {username}",
+        "bannerDescription": "Signed in as {admin}. This view is read only and every visit is audit logged.",
+        "stop": "Stop viewing"
     }
 }

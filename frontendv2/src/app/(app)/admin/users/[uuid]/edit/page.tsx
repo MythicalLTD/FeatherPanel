@@ -32,6 +32,7 @@ import {
     Unlock,
     Trash2,
     ArrowLeft,
+    Eye,
     Edit,
     RefreshCw,
     RotateCcw,
@@ -50,6 +51,8 @@ import { Select } from '@/components/ui/select-native';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { toast } from 'sonner';
+import { useSession } from '@/contexts/SessionContext';
+import Permissions from '@/lib/permissions';
 import { Tabs, TabsContent, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollableTabsList } from '@/components/ui/scrollable-tabs-list';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -198,6 +201,8 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
 
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
+    const { user: currentUser, hasPermission } = useSession();
+    const [impersonating, setImpersonating] = useState(false);
     const [user, setUser] = useState<ApiUser | null>(null);
     const [availableRoles, setAvailableRoles] = useState<AvailableRole[]>([]);
     const [ownedServers, setOwnedServers] = useState<Server[]>([]);
@@ -670,6 +675,19 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
         ...(user.id != null && user.id !== undefined ? { userId: user.id } : {}),
     };
 
+    const startImpersonation = async () => {
+        if (!user || !window.confirm(t('impersonation.confirm', { username: user.username }))) return;
+        setImpersonating(true);
+        try {
+            await axios.post(`/api/admin/users/${user.uuid}/impersonate`);
+            // Full reload so the session, navigation and permissions switch to the user.
+            window.location.href = '/dashboard';
+        } catch (e) {
+            toast.error(getApiErrorMessage(e, t, 'impersonation.startFailed'));
+            setImpersonating(false);
+        }
+    };
+
     return (
         <div className='space-y-6'>
             <WidgetRenderer widgets={getWidgets('admin-users-edit', 'top-of-page')} context={widgetContext} />
@@ -679,10 +697,18 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                 description={t('admin.users.edit.description')}
                 icon={User}
                 actions={
-                    <Button variant='outline' onClick={() => router.push('/admin/users')}>
-                        <ArrowLeft className='mr-2 h-4 w-4' />
-                        {t('admin.users.back_to_list')}
-                    </Button>
+                    <div className='flex flex-wrap gap-2'>
+                        {hasPermission(Permissions.ADMIN_USERS_IMPERSONATE) && user.uuid !== currentUser?.uuid && (
+                            <Button variant='outline' onClick={startImpersonation} disabled={impersonating}>
+                                <Eye className='mr-2 h-4 w-4' />
+                                {t('impersonation.viewAsUser')}
+                            </Button>
+                        )}
+                        <Button variant='outline' onClick={() => router.push('/admin/users')}>
+                            <ArrowLeft className='mr-2 h-4 w-4' />
+                            {t('admin.users.back_to_list')}
+                        </Button>
+                    </div>
                 }
             />
 

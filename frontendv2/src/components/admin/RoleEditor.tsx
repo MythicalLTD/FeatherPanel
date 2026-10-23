@@ -63,6 +63,62 @@ interface PermissionNode {
 
 type PermissionFilter = 'all' | 'granted' | 'missing';
 
+/**
+ * Role presets: common permission bundles. Applying one only adds permissions,
+ * anything already granted stays, so presets can be combined.
+ */
+const ROLE_PRESETS: Array<{ id: string; match: (value: string) => boolean }> = [
+    {
+        id: 'read_only_admin',
+        match: (v) =>
+            v === 'admin.dashboard.view' || v === 'admin.users.list' || (v.startsWith('admin.') && v.endsWith('.view')),
+    },
+    {
+        id: 'support',
+        match: (v) =>
+            [
+                'admin.dashboard.view',
+                'admin.users.list',
+                'admin.users.edit',
+                'admin.users.impersonate',
+                'admin.servers.view',
+                'admin.nodes.view',
+                'admin.knowledgebase.articles.view',
+            ].includes(v) ||
+            v.startsWith('admin.tickets.') ||
+            v.startsWith('admin.ticket_messages.') ||
+            v.startsWith('admin.ticket_attachments.'),
+    },
+    {
+        id: 'moderator',
+        match: (v) =>
+            [
+                'admin.dashboard.view',
+                'admin.users.list',
+                'admin.users.edit',
+                'admin.servers.view',
+                'admin.servers.suspend',
+                'admin.servers.unsuspend',
+                'admin.blocked_ips.view',
+                'admin.blocked_ips.create',
+                'admin.blocked_ips.delete',
+                'admin.tickets.view',
+                'admin.tickets.edit',
+                'admin.ticket_messages.view',
+                'admin.ticket_messages.manage',
+            ].includes(v),
+    },
+    {
+        id: 'server_manager',
+        match: (v) =>
+            v === 'admin.dashboard.view' ||
+            v === 'admin.users.list' ||
+            /^admin\.(servers|nodes|allocations|locations|realms|spells|databases|backups|backup_schedules|subdomains)\./.test(
+                v,
+            ),
+    },
+];
+
 interface RoleEditorProps {
     mode: 'create' | 'edit';
     loading: boolean;
@@ -124,6 +180,22 @@ export function RoleEditor({
     const [bulkTogglingCategory, setBulkTogglingCategory] = useState<string | null>(null);
 
     const allPermissions = useMemo(() => Permissions.getAll(), []);
+    const [applyingPreset, setApplyingPreset] = useState<string | null>(null);
+
+    const applyPreset = async (presetId: string) => {
+        const preset = ROLE_PRESETS.find((p) => p.id === presetId);
+        if (!preset) return;
+        const items = allPermissions
+            .filter((perm) => preset.match(perm.value) && !assignedPermissionMap.has(perm.value))
+            .map((perm) => ({ value: perm.value, enable: true }));
+        if (items.length === 0) return;
+        setApplyingPreset(presetId);
+        try {
+            await onBulkTogglePermissions(items);
+        } finally {
+            setApplyingPreset(null);
+        }
+    };
     const hasAdminRoot = assignedPermissionMap.has(Permissions.ADMIN_ROOT);
     const assignedCount = assignedPermissionMap.size;
     const totalCount = allPermissions.length;
@@ -545,6 +617,32 @@ export function RoleEditor({
                                     {coveragePercent}%
                                 </span>
                             </div>
+
+                            {!hasAdminRoot && (
+                                <div className='border-border/50 bg-muted/20 space-y-2 rounded-xl border p-3'>
+                                    <div>
+                                        <p className='text-sm font-semibold'>{t('admin.roles.presets.title')}</p>
+                                        <p className='text-muted-foreground text-xs'>
+                                            {t('admin.roles.presets.description')}
+                                        </p>
+                                    </div>
+                                    <div className='flex flex-wrap gap-2'>
+                                        {ROLE_PRESETS.map((preset) => (
+                                            <Button
+                                                key={preset.id}
+                                                type='button'
+                                                size='sm'
+                                                variant='outline'
+                                                disabled={applyingPreset !== null || togglingPermission !== null}
+                                                onClick={() => void applyPreset(preset.id)}
+                                                title={t(`admin.roles.presets.${preset.id}_hint`)}
+                                            >
+                                                {t(`admin.roles.presets.${preset.id}`)}
+                                            </Button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
 
                             <div className='flex flex-wrap items-center gap-2'>
                                 {(['all', 'granted', 'missing'] as PermissionFilter[]).map((filter) => (

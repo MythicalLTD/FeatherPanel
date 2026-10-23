@@ -56,6 +56,21 @@ class AuthMiddleware implements MiddlewareInterface
             // Attach user info to the request attributes for downstream use
             $request->attributes->set('user', $userInfo);
             $request->attributes->set('auth_type', 'session');
+
+            // "View as user": swap in the target for this request, keep the admin for audit.
+            if (isset($_COOKIE[\App\Helpers\Impersonation::COOKIE])) {
+                $impersonation = \App\Helpers\Impersonation::resolve($userInfo);
+                $path = $request->getPathInfo();
+                if ($impersonation === null || $path === '/api/user/auth/logout') {
+                    \App\Helpers\Impersonation::stop($userInfo, null);
+                } else {
+                    if (\App\Helpers\Impersonation::isBlockedWrite($request->getMethod(), $path)) {
+                        return ApiResponse::error('Viewing as another user is read only. Stop viewing as this user to make changes.', 'IMPERSONATION_READ_ONLY', 403);
+                    }
+                    $request->attributes->set('user', $impersonation['target']);
+                    $request->attributes->set('impersonator', $userInfo);
+                }
+            }
         } else {
             // Check for Authorization header (Bearer token for API keys)
             $authHeader = $request->headers->get('Authorization');
@@ -257,7 +272,7 @@ class AuthMiddleware implements MiddlewareInterface
         if (!$policy::ipAllowed($user, CloudFlareRealIP::getRealIP())) {
             return ApiResponse::error('Access from this IP address is not allowed', 'IP_NOT_ALLOWED', 403);
         }
-        if ($request->attributes->get('auth_type') !== 'session' || !$policy::requiresTwoFactor($user)) {
+        if ($request->attributes->get('auth_type') !== 'session' || $request->attributes->has('impersonator') || !$policy::requiresTwoFactor($user)) {
             return null;
         }
         $path = $request->getPathInfo();

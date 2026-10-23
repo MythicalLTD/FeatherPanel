@@ -14,6 +14,7 @@ ADMIN_USERS_VIEW=admin.users.list | Admin Users | View the users
 ADMIN_USERS_CREATE=admin.users.create | Admin Users | Create new users
 ADMIN_USERS_EDIT=admin.users.edit | Admin Users | Edit existing users
 ADMIN_USERS_DELETE=admin.users.delete | Admin Users | Delete users
+ADMIN_USERS_IMPERSONATE=admin.users.impersonate | Admin Users | View the panel as another user (audit logged)
 
 # Banned IPs Permissions
 ADMIN_BLOCKED_IPS_VIEW=admin.blocked_ips.view | Admin Banned IPs | View banned panel IPs

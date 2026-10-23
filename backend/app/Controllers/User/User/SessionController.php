@@ -396,9 +396,11 @@ class SessionController
         ];
 
         // Security center: the frontend sends users whose role needs 2FA to the setup page.
-        $user['two_fa_required'] = \App\Services\Security\SecurityPolicy::requiresTwoFactor($user);
+        $impersonator = $request->attributes->get('impersonator');
+        $user['two_fa_required'] = !is_array($impersonator) && \App\Services\Security\SecurityPolicy::requiresTwoFactor($user);
 
         $user = User::stripSensitiveFields($user);
+        $user['impersonated_by'] = is_array($impersonator) ? ['uuid' => $impersonator['uuid'], 'username' => $impersonator['username']] : null;
 
         if ($app->isDemoMode()) {
             $user['first_ip'] = $app->getIPIntoFBIFormat();
@@ -409,6 +411,7 @@ class SessionController
             'user_info' => $user,
             'permissions' => $permissions,
             'preferences' => [],
+            'impersonator' => is_array($impersonator) ? ['uuid' => $impersonator['uuid'], 'username' => $impersonator['username']] : null,
         ];
 
         if (

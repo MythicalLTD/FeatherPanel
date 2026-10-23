@@ -27,6 +27,7 @@ import { NavbarHoverDock } from '@/components/layout/NavbarHoverDock';
 import BackgroundWrapper from '@/components/theme/BackgroundWrapper';
 import { ConfiguredLinks } from '@/components/branding/ConfiguredLinks';
 import { MaintenanceGate } from '@/components/layout/MaintenanceGate';
+import { ImpersonationBanner } from '@/components/layout/ImpersonationBanner';
 import { AdminOpenTicketsBanner } from '@/components/dashboard/AdminOpenTicketsBanner';
 import GlobalSearchDialog from '@/components/global-search/GlobalSearchDialog';
 import KeyboardShortcuts from '@/components/global-search/KeyboardShortcuts';
@@ -201,6 +202,7 @@ export default function DashboardShell({ children }: { children: React.ReactNode
                                                     <AdminOpenTicketsBanner className='mb-5 shrink-0' />
                                                 )}
                                             </PluginSlot>
+                                            <ImpersonationBanner />
                                             <ModuleRouteGuard>
                                                 <MaintenanceGate>
                                                     <PluginPageOverrideGate>{children}</PluginPageOverrideGate>
