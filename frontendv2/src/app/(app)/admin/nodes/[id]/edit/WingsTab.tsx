@@ -27,8 +27,9 @@ import { Sensitive } from '@/components/common/Sensitive';
 interface WingsTabProps {
     nodeId: string;
     wingsConfigYaml: string;
-    handleResetKey: () => void;
+    handleResetKey: (propagate?: boolean) => void;
     resetting: boolean;
+    canPropagate?: boolean;
 }
 
 interface SetupCommandData {
@@ -77,7 +78,8 @@ function CommandBlock({ command, copyLabel, onCopy, preClassName }: CommandBlock
     );
 }
 
-export function WingsTab({ nodeId, wingsConfigYaml, handleResetKey, resetting }: WingsTabProps) {
+export function WingsTab({ nodeId, wingsConfigYaml, handleResetKey, resetting, canPropagate }: WingsTabProps) {
+    const [propagate, setPropagate] = useState(true);
     const { t } = useTranslation();
     const [setupData, setSetupData] = useState<SetupCommandData | null>(null);
     const [setupLoading, setSetupLoading] = useState(false);
@@ -190,11 +192,21 @@ export function WingsTab({ nodeId, wingsConfigYaml, handleResetKey, resetting }:
                                 <p className='text-muted-foreground mt-1 text-xs'>
                                     {t('admin.node.wings.reset_key_help')}
                                 </p>
+                                {canPropagate ? (
+                                    <label className='text-muted-foreground mt-3 flex items-center gap-2 text-xs'>
+                                        <input
+                                            type='checkbox'
+                                            checked={propagate}
+                                            onChange={(e) => setPropagate(e.target.checked)}
+                                        />
+                                        {t('admin.node.wings.reset_key_propagate')}
+                                    </label>
+                                ) : null}
                             </div>
                             <Button
                                 type='button'
                                 variant='destructive'
-                                onClick={handleResetKey}
+                                onClick={() => handleResetKey(canPropagate === true && propagate)}
                                 loading={resetting}
                                 className='h-11 px-6'
                             >

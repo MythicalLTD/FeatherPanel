@@ -115,6 +115,8 @@ export interface NodeData {
     daemonListen: number;
     daemonSFTP: number;
     fastdl_port?: number;
+    wings_check_install_exit_code?: number | boolean;
+    wings_cpu_shares?: number;
     daemonBase: string;
     daemon_type?: 'featherwings' | 'wings_rs';
     capabilities?: Record<string, boolean>;

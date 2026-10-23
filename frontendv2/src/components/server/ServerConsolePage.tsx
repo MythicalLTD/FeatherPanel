@@ -141,7 +141,7 @@ export default function ServerConsolePage() {
     const [memoryData, setMemoryData] = useState<Array<{ timestamp: number; value: number }>>([]);
     const [diskData, setDiskData] = useState<Array<{ timestamp: number; value: number }>>([]);
     const [networkData, setNetworkData] = useState<Array<{ timestamp: number; value: number }>>([]);
-    const [, setDiskIoData] = useState<Array<{ timestamp: number; value: number }>>([]);
+    const [diskIoData, setDiskIoData] = useState<Array<{ timestamp: number; value: number }>>([]);
     const maxDataPoints = 60;
 
     const [currentCpu, setCurrentCpu] = useState(0);
@@ -155,10 +155,11 @@ export default function ServerConsolePage() {
     const [currentNetworkTx, setCurrentNetworkTx] = useState(0);
     const [networkRxTotal, setNetworkRxTotal] = useState(0);
     const [networkTxTotal, setNetworkTxTotal] = useState(0);
-    const [, setCurrentDiskIoRead] = useState(0);
-    const [, setCurrentDiskIoWrite] = useState(0);
-    const [, setDiskIoReadTotal] = useState(0);
-    const [, setDiskIoWriteTotal] = useState(0);
+    const [currentDiskIoRead, setCurrentDiskIoRead] = useState(0);
+    const [currentDiskIoWrite, setCurrentDiskIoWrite] = useState(0);
+    const [diskIoReadTotal, setDiskIoReadTotal] = useState(0);
+    const [diskIoWriteTotal, setDiskIoWriteTotal] = useState(0);
+    const [diskIoReported, setDiskIoReported] = useState(false);
 
     const [consoleFilters, setConsoleFilters] = useState<ConsoleFilterRule[]>([]);
     const hasLoadedFilters = useRef(false);
@@ -423,6 +424,7 @@ export default function ServerConsolePage() {
                 const currentWriteBytes = Number(stats.disk_io.write_bytes);
                 const now = new Date().getTime();
 
+                setDiskIoReported(true);
                 setDiskIoReadTotal(Math.max(0, currentReadBytes));
                 setDiskIoWriteTotal(Math.max(0, currentWriteBytes));
 
@@ -944,6 +946,17 @@ export default function ServerConsolePage() {
                             memoryData={memoryData}
                             diskData={diskData}
                             networkData={networkData}
+                            diskIo={
+                                diskIoReported
+                                    ? {
+                                          read: currentDiskIoRead,
+                                          write: currentDiskIoWrite,
+                                          readTotal: diskIoReadTotal,
+                                          writeTotal: diskIoWriteTotal,
+                                          data: diskIoData,
+                                      }
+                                    : null
+                            }
                         />
                     )}
 

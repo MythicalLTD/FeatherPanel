@@ -171,6 +171,8 @@ export interface ServerConsoleStatsProps {
     memoryData: Point[];
     diskData: Point[];
     networkData: Point[];
+    /** Block I/O throughput (bytes/s); the card is only shown once the daemon reports disk_io. */
+    diskIo?: { read: number; write: number; readTotal: number; writeTotal: number; data: Point[] } | null;
     className?: string;
 }
 
@@ -192,6 +194,7 @@ export default React.memo(function ServerConsoleStats({
     memoryData,
     diskData,
     networkData,
+    diskIo,
     className,
 }: ServerConsoleStatsProps) {
     const { t } = useTranslation();
@@ -266,6 +269,34 @@ export default React.memo(function ServerConsoleStats({
                 data={networkData}
                 ready={statsReady}
             />
+            {diskIo ? (
+                <StatCard
+                    icon={HardDrive}
+                    label={t('servers.console.info_cards.disk_io_title')}
+                    value={`${formatFileSize(diskIo.read + diskIo.write)}/s`}
+                    sub={
+                        <span className='flex flex-wrap items-center gap-x-2'>
+                            <span
+                                className='inline-flex items-center gap-0.5'
+                                title={t('servers.console.info_cards.disk_io_read')}
+                            >
+                                <ArrowDown className='h-3 w-3' />
+                                {formatFileSize(diskIo.read)}/s
+                            </span>
+                            <span
+                                className='inline-flex items-center gap-0.5'
+                                title={t('servers.console.info_cards.disk_io_write')}
+                            >
+                                <ArrowUp className='h-3 w-3' />
+                                {formatFileSize(diskIo.write)}/s
+                            </span>
+                        </span>
+                    }
+                    percent={null}
+                    data={diskIo.data}
+                    ready={statsReady}
+                />
+            ) : null}
         </div>
     );
 });

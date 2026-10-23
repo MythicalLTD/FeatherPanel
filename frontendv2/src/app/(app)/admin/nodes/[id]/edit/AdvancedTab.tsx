@@ -33,6 +33,8 @@ interface AdvancedTabProps {
 export function AdvancedTab({ form, setForm, errors, capabilities }: AdvancedTabProps) {
     const { t } = useTranslation();
     const showFastdl = supportsDaemonFeature(capabilities, 'fastdl', form.daemon_type);
+    const showInstallExitCode = supportsDaemonFeature(capabilities, 'install_exit_code', form.daemon_type);
+    const showCpuShares = supportsDaemonFeature(capabilities, 'cpu_shares', form.daemon_type);
 
     return (
         <PageCard title={t('admin.node.form.advanced')} icon={Shield}>
@@ -132,6 +134,41 @@ export function AdvancedTab({ form, setForm, errors, capabilities }: AdvancedTab
                             {t('admin.node.form.upload_size_help')}
                         </p>
                     </div>
+                    {showInstallExitCode ? (
+                        <div className='space-y-2'>
+                            <Label className='text-sm font-semibold'>
+                                {t('admin.node.form.check_install_exit_code')}
+                            </Label>
+                            <Select
+                                value={form.wings_check_install_exit_code}
+                                onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+                                    setForm({ ...form, wings_check_install_exit_code: e.target.value })
+                                }
+                            >
+                                <option value='false'>{t('admin.node.form.maintenance_disabled')}</option>
+                                <option value='true'>{t('admin.node.form.maintenance_enabled')}</option>
+                            </Select>
+                            <p className='text-muted-foreground/70 text-xs italic'>
+                                {t('admin.node.form.check_install_exit_code_help')}
+                            </p>
+                        </div>
+                    ) : null}
+                    {showCpuShares ? (
+                        <div className='space-y-2'>
+                            <Label className='text-sm font-semibold'>{t('admin.node.form.cpu_shares')}</Label>
+                            <Input
+                                type='number'
+                                min={0}
+                                value={form.wings_cpu_shares}
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                                    setForm({ ...form, wings_cpu_shares: Math.max(0, parseInt(e.target.value) || 0) })
+                                }
+                            />
+                            <p className='text-muted-foreground/70 text-xs italic'>
+                                {t('admin.node.form.cpu_shares_help')}
+                            </p>
+                        </div>
+                    ) : null}
                 </div>
             </div>
         </PageCard>

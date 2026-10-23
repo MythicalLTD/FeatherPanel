@@ -93,6 +93,8 @@ export interface NodeForm {
     daemonListen: number;
     daemonSFTP: number;
     fastdl_port: number;
+    wings_check_install_exit_code: string;
+    wings_cpu_shares: number;
     daemonBase: string;
     daemon_type: DaemonType;
     public_ip_v4: string;
@@ -153,6 +155,8 @@ export default function EditNodePage() {
         daemonListen: 8443,
         daemonSFTP: 2022,
         fastdl_port: 80,
+        wings_check_install_exit_code: 'false',
+        wings_cpu_shares: 1024,
         daemonBase: '/var/lib/featherpanel/volumes',
         daemon_type: 'featherwings',
         public_ip_v4: '',
@@ -226,6 +230,8 @@ export default function EditNodePage() {
                 daemonListen: node.daemonListen,
                 daemonSFTP: node.daemonSFTP,
                 fastdl_port: node.fastdl_port ?? 80,
+                wings_check_install_exit_code: Number(node.wings_check_install_exit_code ?? 0) === 1 ? 'true' : 'false',
+                wings_cpu_shares: node.wings_cpu_shares ?? 1024,
                 daemonBase: node.daemonBase || defaultDaemonBase(daemonType),
                 daemon_type: daemonType,
                 public_ip_v4: node.public_ip_v4 || '',
@@ -400,6 +406,13 @@ export default function EditNodePage() {
     nginx_config_path: /etc/nginx/sites-available/featherwings-fastdl
 `
             : '';
+        const nodeCaps = nodeData.capabilities ?? capabilitiesForType(form.daemon_type);
+        const installExitBlock = supportsDaemonFeature(nodeCaps, 'install_exit_code', form.daemon_type)
+            ? `  check_install_exit_code: ${form.wings_check_install_exit_code === 'true'}\n`
+            : '';
+        const dockerBlock = supportsDaemonFeature(nodeCaps, 'cpu_shares', form.daemon_type)
+            ? `docker:\n  cpu_shares: ${Math.max(0, Number(form.wings_cpu_shares) || 0)}\n`
+            : '';
         const yaml = `debug: false
 uuid: ${nodeData.uuid}
 token_id: ${nodeData.daemon_token_id ?? '<token_id>'}
@@ -416,16 +429,20 @@ system:
   data: ${form.daemonBase || defaultDaemonBase(form.daemon_type)}
   sftp:
     bind_port: ${form.daemonSFTP || 2022}
-${fastdlBlock}allowed_mounts: []
+${fastdlBlock}${installExitBlock}${dockerBlock}allowed_mounts: []
 remote: '${typeof window !== 'undefined' ? window.location.origin : 'https://panel.example.com'}'`;
         return yaml;
     }, [nodeData, form]);
 
-    const handleResetKey = async () => {
+    const handleResetKey = async (propagate = false) => {
         setResetting(true);
         try {
-            await axios.post(`/api/admin/nodes/${nodeId}/reset-key`);
-            toast.success(t('admin.node.wings.reset_key_success'));
+            const { data } = await axios.post(`/api/admin/nodes/${nodeId}/reset-key`, { propagate });
+            toast.success(
+                propagate && data?.data?.propagated
+                    ? t('admin.node.wings.reset_key_propagated')
+                    : t('admin.node.wings.reset_key_success'),
+            );
             fetchInitialData();
         } catch (error) {
             console.error('Error resetting key:', error);
@@ -496,6 +513,8 @@ remote: '${typeof window !== 'undefined' ? window.location.origin : 'https://pan
                 daemonListen: Number(form.daemonListen),
                 daemonSFTP: Number(form.daemonSFTP),
                 fastdl_port: Number(form.fastdl_port) || 80,
+                wings_check_install_exit_code: form.wings_check_install_exit_code === 'true' ? 1 : 0,
+                wings_cpu_shares: Math.max(0, Number(form.wings_cpu_shares) || 0),
                 public_ip_v4: trimmedIPv4 === '' ? null : trimmedIPv4,
                 public_ip_v6: trimmedIPv6 === '' ? null : trimmedIPv6,
                 sftp_subdomain: trimmedSftpSubdomain === '' ? null : trimmedSftpSubdomain,
@@ -685,6 +704,7 @@ remote: '${typeof window !== 'undefined' ? window.location.origin : 'https://pan
                                 wingsConfigYaml={wingsConfigYaml}
                                 handleResetKey={handleResetKey}
                                 resetting={resetting}
+                                canPropagate={supportsDaemonFeature(caps, 'credential_propagation', form.daemon_type)}
                             />
                         </TabsContent>
 
