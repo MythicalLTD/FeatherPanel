@@ -35,6 +35,16 @@ return function (RouteCollection $routes): void {
 
     App::getInstance(true)->registerAdminRoute(
         $routes,
+        'admin-backup-schedules-calendar',
+        '/api/admin/backup-schedules/calendar',
+        function (Request $request) {
+            return (new BackupSchedulesController())->calendar($request);
+        },
+        Permissions::ADMIN_BACKUP_SCHEDULES_VIEW,
+    );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
         'admin-backup-schedules-preview-targets',
         '/api/admin/backup-schedules/preview-targets',
         function (Request $request) {

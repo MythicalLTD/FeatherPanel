@@ -21,6 +21,8 @@ use App\App;
 use App\Chat\Node;
 use App\Chat\Server;
 use App\Chat\Activity;
+use App\Chat\Database;
+use App\Chat\ServerSchedule;
 use App\Chat\BackupPolicy;
 use App\Helpers\ApiResponse;
 use App\Chat\BackupPolicyRun;
@@ -34,6 +36,64 @@ use App\Services\Database\ServerDatabaseDumpService;
 
 class BackupSchedulesController
 {
+    #[OA\Get(
+        path: '/api/admin/backup-schedules/calendar',
+        summary: 'Backup schedule calendar',
+        description: 'Planned runs of active backup schedules and recorded runs for one month (month=YYYY-MM, UTC).',
+        tags: ['Admin - Backup Schedules'],
+        responses: [new OA\Response(response: 200, description: 'Calendar retrieved')]
+    )]
+    public function calendar(Request $request): Response
+    {
+        $month = (string) $request->query->get('month', gmdate('Y-m'));
+        if (!preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', $month)) {
+            return ApiResponse::error('Month must look like 2026-10', 'INVALID_MONTH', 400);
+        }
+        $utc = new \DateTimeZone('UTC');
+        $from = new \DateTimeImmutable($month . '-01 00:00:00', $utc);
+        $to = $from->modify('+1 month');
+        $nowUtc = new \DateTimeImmutable('now', $utc);
+        $plannedFrom = $from > $nowUtc ? $from : $nowUtc;
+
+        $pdo = Database::getPdoConnection();
+        $policies = $pdo->query('SELECT * FROM featherpanel_backup_policies WHERE is_active = 1 ORDER BY id ASC LIMIT 50')->fetchAll(\PDO::FETCH_ASSOC) ?: [];
+
+        $planned = [];
+        foreach ($policies as $policy) {
+            if ($plannedFrom >= $to) {
+                break;
+            }
+            foreach (ServerSchedule::occurrencesBetween(
+                (string) $policy['cron_day_of_week'],
+                (string) $policy['cron_month'],
+                (string) $policy['cron_day_of_month'],
+                (string) $policy['cron_hour'],
+                (string) $policy['cron_minute'],
+                $plannedFrom,
+                $to,
+                (string) ($policy['timezone'] ?? 'UTC'),
+                62
+            ) as $at) {
+                $planned[] = ['policy_id' => (int) $policy['id'], 'name' => (string) $policy['name'], 'at' => $at];
+            }
+        }
+
+        $stmt = $pdo->prepare('SELECT r.id, r.policy_id, r.status, r.started_at, r.servers_total, p.name FROM featherpanel_backup_policy_runs r'
+            . ' LEFT JOIN featherpanel_backup_policies p ON p.id = r.policy_id'
+            . ' WHERE r.started_at >= :from AND r.started_at < :to ORDER BY r.started_at ASC LIMIT 500');
+        $stmt->execute(['from' => $from->format('Y-m-d H:i:s'), 'to' => $to->format('Y-m-d H:i:s')]);
+        $runs = array_map(static fn (array $r): array => [
+            'id' => (int) $r['id'],
+            'policy_id' => (int) $r['policy_id'],
+            'name' => (string) ($r['name'] ?? ''),
+            'status' => (string) $r['status'],
+            'at' => (string) $r['started_at'],
+            'servers_total' => (int) $r['servers_total'],
+        ], $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: []);
+
+        return ApiResponse::success(['month' => $month, 'planned' => $planned, 'runs' => $runs], 'Calendar retrieved', 200);
+    }
+
     #[OA\Get(
         path: '/api/admin/backup-schedules',
         summary: 'List admin backup schedules',

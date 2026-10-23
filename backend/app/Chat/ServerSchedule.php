@@ -646,6 +646,36 @@ class ServerSchedule
     }
 
     /**
+     * Every run time of a cron expression between two UTC instants (inclusive start, exclusive end).
+     *
+     * @return string[] UTC `Y-m-d H:i:s` literals, at most $limit entries
+     */
+    public static function occurrencesBetween(string $dayOfWeek, string $month, string $dayOfMonth, string $hour, string $minute, \DateTimeInterface $from, \DateTimeInterface $to, string $timezone = 'UTC', int $limit = 200): array
+    {
+        if (!class_exists(CrontabSchedule::class)) {
+            return [];
+        }
+        $utc = new \DateTimeZone('UTC');
+        $out = [];
+        try {
+            $schedule = new CrontabSchedule(self::formatCronExpression($dayOfWeek, $month, $dayOfMonth, $hour, $minute));
+            $cursor = \DateTime::createFromInterface($from)->setTimezone(self::resolveTimezone($timezone));
+            $cursor->setTime((int) $cursor->format('H'), (int) $cursor->format('i'));
+            $end = \DateTime::createFromInterface($to);
+            while ($cursor < $end && count($out) < $limit) {
+                if ($schedule->valid($cursor)) {
+                    $out[] = (clone $cursor)->setTimezone($utc)->format('Y-m-d H:i:s');
+                }
+                $cursor->modify('+1 minute');
+            }
+        } catch (\Throwable $e) {
+            App::getInstance(true)->getLogger()->error('Failed to list cron occurrences: ' . $e->getMessage());
+        }
+
+        return $out;
+    }
+
+    /**
      * Resolve a user-supplied timezone string into a DateTimeZone, falling
      * back to UTC if the identifier is invalid.
      */
