@@ -34,7 +34,14 @@ export function GlobalSearchProvider({ children }: { children: ReactNode }) {
 
     useEffect(() => {
         const onKeyDown = (event: KeyboardEvent) => {
-            if (!event.ctrlKey || event.metaKey || event.altKey || event.key.toLowerCase() !== 'd') return;
+            const key = event.key.toLowerCase();
+            // Cmd+K / Ctrl+K works everywhere, even while typing, like most command palettes.
+            if ((event.metaKey || event.ctrlKey) && !event.altKey && !event.shiftKey && key === 'k') {
+                event.preventDefault();
+                toggle();
+                return;
+            }
+            if (!event.ctrlKey || event.metaKey || event.altKey || key !== 'd') return;
             const target = event.target as HTMLElement | null;
             const tag = target?.tagName?.toLowerCase();
             const isEditable =
