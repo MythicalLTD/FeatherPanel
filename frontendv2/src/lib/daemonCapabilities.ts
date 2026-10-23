@@ -47,7 +47,10 @@ export type DaemonFeature =
     | 'transfer_backups'
     | 'compress_7z'
     | 'file_history'
-    | 'file_collaboration';
+    | 'file_collaboration'
+    | 'install_exit_code'
+    | 'cpu_shares'
+    | 'credential_propagation';
 
 export type DaemonCapabilitiesMap = Record<DaemonFeature, boolean>;
 
@@ -84,6 +87,9 @@ const FEATHERWINGS_CAPS: DaemonCapabilitiesMap = {
     compress_7z: false,
     file_history: true,
     file_collaboration: true,
+    install_exit_code: true,
+    cpu_shares: true,
+    credential_propagation: true,
 };
 
 const WINGS_RS_CAPS: DaemonCapabilitiesMap = {
@@ -119,6 +125,9 @@ const WINGS_RS_CAPS: DaemonCapabilitiesMap = {
     compress_7z: true,
     file_history: true,
     file_collaboration: true,
+    install_exit_code: false,
+    cpu_shares: false,
+    credential_propagation: false,
 };
 
 export function normalizeDaemonType(type?: string | null): DaemonType {

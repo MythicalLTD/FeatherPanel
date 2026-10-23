@@ -1183,6 +1183,30 @@ class NodesController
             'daemon_token' => Node::generateDaemonToken(),
         ];
 
+        // Optionally push the new credentials to the daemon (still authenticated with the old
+        // ones) before saving them, so the node keeps talking to the panel. When the push fails
+        // nothing is rotated, which avoids locking the node out.
+        $body = json_decode((string) $request->getContent(), true);
+        $propagate = is_array($body) && !empty($body['propagate']);
+        $propagated = false;
+        if ($propagate) {
+            if (!DaemonCapabilities::fromNode($node)->supports(DaemonCapabilities::FEATURE_CREDENTIAL_PROPAGATION)) {
+                return ApiResponse::error('This daemon does not support credential propagation', 'DAEMON_FEATURE_UNSUPPORTED', 400);
+            }
+            try {
+                $result = Wings::fromNode($node, 15)->getConfig()->pushPanelConfiguration(Node::buildPanelConfigurationPayload(array_merge($node, $data)));
+                // FeatherWings answers applied=false when ignore_panel_config_updates is set.
+                if (($result['applied'] ?? true) === false) {
+                    return ApiResponse::error('The node ignores panel config updates (ignore_panel_config_updates); tokens were not rotated', 'NODE_CREDENTIAL_PROPAGATION_IGNORED', 409);
+                }
+                $propagated = true;
+            } catch (\Throwable $e) {
+                App::getInstance(true)->getLogger()->error('Failed to propagate new daemon credentials to node ' . $id . ': ' . $e->getMessage());
+
+                return ApiResponse::error('Could not push the new credentials to the node; tokens were not rotated', 'NODE_CREDENTIAL_PROPAGATION_FAILED', 502);
+            }
+        }
+
         $success = Node::updateNodeById($id, $data);
         if (!$success) {
             return ApiResponse::error('Failed to update node tokens', 'NODE_UPDATE_FAILED', 400);
@@ -1198,7 +1222,7 @@ class NodesController
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
 
-        return ApiResponse::success(['node' => $this->enrichNode($updatedNode)], 'Master daemon reset key generated successfully', 200);
+        return ApiResponse::success(['node' => $this->enrichNode($updatedNode), 'propagated' => $propagated], 'Master daemon reset key generated successfully', 200);
     }
 
     #[OA\Get(

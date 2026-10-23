@@ -83,6 +83,20 @@ class ConfigService
     }
 
     /**
+     * Push panel-managed values (uuid, tokens, API and SFTP settings) to the daemon
+     * through POST /api/update. FeatherWings only accepts the panel-managed subset and
+     * keeps any value missing from the payload, so this is safe for credential rotation.
+     *
+     * @param array<string, mixed> $panelConfiguration
+     *
+     * @return array The response data
+     */
+    public function pushPanelConfiguration(array $panelConfiguration): array
+    {
+        return $this->connection->post('/api/update', $panelConfiguration, ['Content-Type' => 'application/json'], 1);
+    }
+
+    /**
      * Patch specific configuration values using dot notation.
      *
      * Wings API expects:
