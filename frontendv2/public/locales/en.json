@@ -3684,7 +3684,8 @@
             "mailHosts": "Mail",
             "dnsHosts": "DNS hosts",
             "auditLog": "Audit log",
-            "securityCenter": "Security center"
+            "securityCenter": "Security center",
+            "health": "System health"
         }
     },
     "adminWingsBackups": {
@@ -18002,6 +18003,61 @@
             "title": "Sign-in alerts",
             "description": "Email users when their account signs in from an IP address it has not used before.",
             "newLogin": "Send new sign-in alerts"
+        }
+    },
+    "adminHealth": {
+        "title": "System health",
+        "description": "Database, Redis, Wings nodes, scheduled tasks, queues, disk space and versions at a glance. Refreshes every minute.",
+        "loadFailed": "Failed to load the health checks",
+        "never": "Never",
+        "took": "Checked in {ms} ms",
+        "checkedAt": "Checked {time}",
+        "status": {
+            "ok": "Healthy",
+            "warn": "Warning",
+            "down": "Down"
+        },
+        "overall": {
+            "ok": "All systems are healthy",
+            "warn": "Some checks need attention",
+            "down": "At least one critical check is failing"
+        },
+        "checks": {
+            "database": "Database",
+            "redis": "Redis",
+            "nodes": "Wings nodes",
+            "crons": "Scheduled tasks",
+            "queue": "Queues",
+            "disk": "Disk space"
+        },
+        "versions": "Versions",
+        "versionLabels": {
+            "panel": "Panel",
+            "php": "PHP",
+            "database": "Database server",
+            "os": "Operating system"
+        },
+        "labels": {
+            "size": "Size",
+            "connections": "Connections",
+            "version": "Version",
+            "memory": "Memory used",
+            "clients": "Clients",
+            "mailPending": "Emails waiting",
+            "mailFailed": "Emails failed",
+            "oldestPending": "Oldest waiting email",
+            "autoStartPending": "Server auto starts waiting",
+            "nodesTotal": "Nodes",
+            "nodesUnhealthy": "Unreachable",
+            "freeOf": "{free} free of {total}",
+            "heartbeat": "Last task run",
+            "task": "Task",
+            "lastRun": "Last run",
+            "result": "Result"
+        },
+        "task": {
+            "failed": "Failed",
+            "stale": "Not run recently"
         }
     }
 }
