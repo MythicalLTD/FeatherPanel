@@ -32,6 +32,7 @@ export type GlobalSearchCategory =
     | 'vdsPages'
     | 'account'
     | 'adminSettings'
+    | 'users'
     | 'pages'
     | 'settings'
     | 'admin'
@@ -95,6 +96,7 @@ export const GLOBAL_SEARCH_CATEGORY_ORDER: GlobalSearchCategory[] = [
     'vdsPages',
     'account',
     'adminSettings',
+    'users',
     'pages',
     'settings',
     'admin',
@@ -111,6 +113,7 @@ const CATEGORY_PRIORITY: Record<GlobalSearchCategory, number> = {
     vdsPages: 450,
     account: 420,
     adminSettings: 410,
+    users: 400,
     pages: 200,
     settings: 180,
     admin: 100,
@@ -144,7 +147,7 @@ const SCOPE_ALIASES: Record<string, GlobalSearchScope> = {
 
 const SCOPE_CATEGORIES: Record<GlobalSearchScope, GlobalSearchCategory[] | 'all'> = {
     all: 'all',
-    admin: ['admin', 'adminSettings'],
+    admin: ['admin', 'adminSettings', 'users'],
     settings: ['settings', 'adminSettings', 'account'],
     account: ['account'],
     servers: ['currentContext', 'servers', 'serverPages'],

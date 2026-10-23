@@ -4109,7 +4109,7 @@
         "open": "Open global search",
         "placeholder": "Search servers, files, webspaces, pages…",
         "inputPlaceholder": "Search servers, files, webspaces, VDS, admin…",
-        "shortcut": "Ctrl+D",
+        "shortcut": "Ctrl+K",
         "emptyDefault": "Start typing to search the panel",
         "emptySearch": "No results found",
         "emptyHint": "Try a page name (e.g. files, backups), server, WebSpace, VM, account action, or panel setting.",
@@ -4138,7 +4138,8 @@
             "vdsPages": "VDS pages",
             "account": "Account",
             "adminSettings": "Panel settings",
-            "admin": "Administration"
+            "admin": "Administration",
+            "users": "Users"
         },
         "debug": {
             "title": "Panel debug console",
@@ -17940,5 +17941,22 @@
         "hint": "Automatically suspended on {date}.",
         "expired_hint": "Expired on {date}. Contact support to renew.",
         "settings_help": "Your server will be automatically suspended on this date. Contact support if you need more time."
+    },
+    "shortcuts": {
+        "title": "Keyboard shortcuts",
+        "description": "Press ? anywhere to show or hide this list.",
+        "general": "General",
+        "navigation": "Go to",
+        "openPalette": "Open the command palette",
+        "openPaletteAlt": "Open the command palette (alternative)",
+        "toggleHelp": "Show keyboard shortcuts",
+        "close": "Close dialogs and menus",
+        "save": "Save the open form",
+        "goDashboard": "Dashboard",
+        "goAccount": "Account",
+        "goStatus": "Status page",
+        "goAdmin": "Admin overview",
+        "goUsers": "Users",
+        "goSettings": "Panel settings"
     }
 }

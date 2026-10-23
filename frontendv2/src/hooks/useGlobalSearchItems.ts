@@ -34,7 +34,9 @@ import {
     User,
     Zap,
     Monitor,
+    Users as UsersIcon,
 } from 'lucide-react';
+import axios from 'axios';
 import { useSession } from '@/contexts/SessionContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { usePterodactylImporterVisible, withoutPterodactylImporter } from '@/hooks/usePterodactylImporterVisibility';
@@ -628,6 +630,45 @@ export function useGlobalSearchItems(open: boolean, query: string) {
     );
 
     const [pluginItems, setPluginItems] = useState<GlobalSearchResult[]>([]);
+    const [userItems, setUserItems] = useState<GlobalSearchResult[]>([]);
+    const canViewUsers = hasPermission(Permissions.ADMIN_USERS_VIEW);
+
+    // Users are searched on the server (there can be thousands), only for staff who can list them.
+    useEffect(() => {
+        const q = parsedQuery.text.trim();
+        const scopeAllowsUsers = !parsedQuery.scopeExplicit || ['all', 'admin'].includes(parsedQuery.scope);
+        if (!open || !canViewUsers || q.length < 2 || !scopeAllowsUsers || parsedQuery.mode === 'debug') {
+            setUserItems([]);
+            return;
+        }
+        const controller = new AbortController();
+        const timer = window.setTimeout(async () => {
+            try {
+                const { data } = await axios.get('/api/admin/users', {
+                    params: { page: 1, limit: 6, search: q },
+                    signal: controller.signal,
+                });
+                const users: Array<{ uuid: string; username: string; email?: string }> = data?.data?.users ?? [];
+                setUserItems(
+                    users.map((user) => ({
+                        id: `user-${user.uuid}`,
+                        title: user.username,
+                        subtitle: user.email,
+                        href: `/admin/users/${user.uuid}/edit`,
+                        category: 'users' as const,
+                        icon: UsersIcon,
+                        keywords: [user.username, user.email ?? '', user.uuid, q],
+                    })),
+                );
+            } catch {
+                if (!controller.signal.aborted) setUserItems([]);
+            }
+        }, 250);
+        return () => {
+            controller.abort();
+            window.clearTimeout(timer);
+        };
+    }, [open, canViewUsers, parsedQuery.text, parsedQuery.scope, parsedQuery.scopeExplicit, parsedQuery.mode]);
 
     useEffect(() => {
         if (!open) {
@@ -668,7 +709,7 @@ export function useGlobalSearchItems(open: boolean, query: string) {
     const results = useMemo(() => {
         if (parsedQuery.mode === 'debug') return [];
 
-        const merged = dedupeGlobalSearchResults([...allItems, ...pluginItems]);
+        const merged = dedupeGlobalSearchResults([...allItems, ...pluginItems, ...userItems]);
         const filtered = filterGlobalSearchResults(merged, query, { parsed: parsedQuery });
         const q = parsedQuery.text.trim();
 
@@ -680,7 +721,7 @@ export function useGlobalSearchItems(open: boolean, query: string) {
         }
 
         return filtered;
-    }, [allItems, pluginItems, query, parsedQuery, entityContext, showCurrentContext]);
+    }, [allItems, pluginItems, userItems, query, parsedQuery, entityContext, showCurrentContext]);
 
     return {
         results,

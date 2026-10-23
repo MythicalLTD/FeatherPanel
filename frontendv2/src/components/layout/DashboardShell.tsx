@@ -29,6 +29,7 @@ import { ConfiguredLinks } from '@/components/branding/ConfiguredLinks';
 import { MaintenanceGate } from '@/components/layout/MaintenanceGate';
 import { AdminOpenTicketsBanner } from '@/components/dashboard/AdminOpenTicketsBanner';
 import GlobalSearchDialog from '@/components/global-search/GlobalSearchDialog';
+import KeyboardShortcuts from '@/components/global-search/KeyboardShortcuts';
 import PanelDebugConsole from '@/components/global-search/PanelDebugConsole';
 import { GlobalSearchProvider } from '@/contexts/GlobalSearchContext';
 import { PanelDebugProvider } from '@/contexts/PanelDebugContext';
@@ -128,6 +129,7 @@ export default function DashboardShell({ children }: { children: React.ReactNode
                 <PluginSlot id='shell.background' className='contents' collapseWhenHidden={false}>
                     <BackgroundWrapper fillViewport>
                         <GlobalSearchDialog />
+                        <KeyboardShortcuts />
                         <PanelDebugConsole />
                         <div
                             className={cn(
