@@ -26,7 +26,6 @@ use App\Helpers\ApiResponse;
 use App\Services\Wings\Wings;
 use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
-use App\Helpers\WingsUrlHelper;
 use App\Helpers\DaemonCapabilities;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -605,20 +604,29 @@ class ServerFastDlController
      * Build the public FastDL download URL.
      *
      * Uses the node FQDN and FastDL bind port (default 80), NOT the Wings API port.
-     * FastDL nginx serves plain HTTP; omit the port when it is 80 or the node is behind a proxy.
+     * FastDL nginx is a separate plain-HTTP listener from the Wings API, so the node's
+     * "behind reverse proxy" flag must not strip this port — that flag only applies to
+     * the Wings API URL. Omitting it sent players to the panel (or API proxy) and made
+     * `/<uuid>/fastdl` look like a missing panel route (404).
      */
     private function buildFastDlUrl(array $node, array $server, string $directory): string
     {
-        $host = rtrim((string) ($node['fqdn'] ?? 'localhost'), '/');
+        $host = (string) ($node['fqdn'] ?? 'localhost');
+        $host = preg_replace('#^https?://#i', '', $host) ?? $host;
+        $host = explode('/', $host, 2)[0];
+        $host = rtrim($host, '/');
+        if ($host === '') {
+            $host = 'localhost';
+        }
+
         $dir = trim($directory) !== '' ? trim($directory) : 'fastdl';
         $port = (int) ($node['fastdl_port'] ?? 80);
         if ($port < 1 || $port > 65535) {
             $port = 80;
         }
 
-        // FastDL nginx is HTTP-only; omit :80 (and any port when behind a reverse proxy on 80/443).
-        $omitPort = WingsUrlHelper::isBehindProxy($node) || $port === 80;
-        $base = $omitPort ? 'http://' . $host : 'http://' . $host . ':' . $port;
+        // FastDL nginx is HTTP-only; omit :80 only (default HTTP). Never use behind_proxy here.
+        $base = $port === 80 ? 'http://' . $host : 'http://' . $host . ':' . $port;
 
         return $base . '/' . $server['uuid'] . '/' . $dir;
     }
