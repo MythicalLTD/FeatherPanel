@@ -219,6 +219,8 @@ class PublicConfig extends ConfigFactory
 
             // Status page settings
             ConfigInterface::STATUS_PAGE_ENABLED => 'false',
+            ConfigInterface::MAINTENANCE_MODE_ENABLED => 'false',
+            ConfigInterface::MAINTENANCE_MODE_MESSAGE => '',
             ConfigInterface::STATUS_PAGE_PUBLIC_ENABLED => 'true',
             ConfigInterface::STATUS_PAGE_ALLOW_IFRAME => 'false',
             ConfigInterface::STATUS_PAGE_SHOW_RAW_VALUES => 'false',

@@ -26,6 +26,7 @@ import { useChromeLayout } from '@/hooks/useChromeLayout';
 import { NavbarHoverDock } from '@/components/layout/NavbarHoverDock';
 import BackgroundWrapper from '@/components/theme/BackgroundWrapper';
 import { ConfiguredLinks } from '@/components/branding/ConfiguredLinks';
+import { MaintenanceGate } from '@/components/layout/MaintenanceGate';
 import { AdminOpenTicketsBanner } from '@/components/dashboard/AdminOpenTicketsBanner';
 import GlobalSearchDialog from '@/components/global-search/GlobalSearchDialog';
 import PanelDebugConsole from '@/components/global-search/PanelDebugConsole';
@@ -199,7 +200,9 @@ export default function DashboardShell({ children }: { children: React.ReactNode
                                                 )}
                                             </PluginSlot>
                                             <ModuleRouteGuard>
-                                                <PluginPageOverrideGate>{children}</PluginPageOverrideGate>
+                                                <MaintenanceGate>
+                                                    <PluginPageOverrideGate>{children}</PluginPageOverrideGate>
+                                                </MaintenanceGate>
                                             </ModuleRouteGuard>
                                             {!useFullBleedLayout ? (
                                                 <footer className='border-border/40 mt-6 shrink-0 border-t pt-4 pb-2'>

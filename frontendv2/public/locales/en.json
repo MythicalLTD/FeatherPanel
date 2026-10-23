@@ -1551,7 +1551,8 @@
             "INVALID_DISCORD_WEBHOOK": "Enter a valid Discord webhook URL",
             "NOTIFICATION_SETTINGS_SAVE_FAILED": "Failed to save notification settings",
             "DISCORD_WEBHOOK_TEST_FAILED": "Discord rejected the webhook",
-            "INVALID_MONTH": "Month must look like 2026-10"
+            "INVALID_MONTH": "Month must look like 2026-10",
+            "MAINTENANCE_MODE": "The panel is under maintenance. Please try again later."
         },
         "global": {}
     },
@@ -1760,7 +1761,11 @@
         "title": "System Maintenance",
         "message": "We are currently upgrading our systems to provide you with a better experience. We'll be back shortly.",
         "status": "In Progress",
-        "check_again": "Check Again"
+        "check_again": "Check Again",
+        "defaultMessage": "The panel is under maintenance. Please try again later.",
+        "adminBanner": "Maintenance mode is on. Only staff can use the panel right now.",
+        "viewStatus": "View status page",
+        "logout": "Log out"
     },
     "validation": {
         "required": "This field is required",

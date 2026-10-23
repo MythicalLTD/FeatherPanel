@@ -145,6 +145,11 @@ class AuthMiddleware implements MiddlewareInterface
             \App\Telemetry\SentryTelemetry::setUser((string) $user['uuid']);
             // The row was just loaded: permission checks in this request reuse its role.
             \App\Helpers\PermissionHelper::rememberUser($user);
+
+            $maintenance = self::maintenanceResponse($request, $user);
+            if ($maintenance !== null) {
+                return $maintenance;
+            }
         }
 
         return $next($request);
@@ -206,5 +211,34 @@ class AuthMiddleware implements MiddlewareInterface
             // Fail open: matching pre-1.5.0 behaviour if config is unavailable.
             return true;
         }
+    }
+
+    /**
+     * Maintenance mode: block everyone without admin dashboard access, except the
+     * session and auth endpoints the frontend needs to show the notice and log out.
+     */
+    private static function maintenanceResponse(Request $request, array $user): ?Response
+    {
+        $config = App::getInstance(true)->getConfig();
+        if ($config->getSetting(ConfigInterface::MAINTENANCE_MODE_ENABLED, 'false') !== 'true') {
+            return null;
+        }
+        $path = $request->getPathInfo();
+        foreach (['/api/user/session', '/api/user/auth/', '/api/user/status'] as $allowed) {
+            if ($path === $allowed || str_starts_with($path, rtrim($allowed, '/') . '/')) {
+                return null;
+            }
+        }
+        if (\App\Helpers\PermissionHelper::hasPermission((string) $user['uuid'], \App\Permissions::ADMIN_DASHBOARD_VIEW)) {
+            return null;
+        }
+        $message = trim((string) $config->getSetting(ConfigInterface::MAINTENANCE_MODE_MESSAGE, ''));
+
+        return ApiResponse::error(
+            $message !== '' ? $message : 'The panel is under maintenance. Please try again later.',
+            'MAINTENANCE_MODE',
+            503,
+            ['maintenance' => true]
+        );
     }
 }

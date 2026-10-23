@@ -352,6 +352,8 @@ class SettingsController
             'icon' => 'activity',
             'settings' => [
                 ConfigInterface::STATUS_PAGE_ENABLED,
+                ConfigInterface::MAINTENANCE_MODE_ENABLED,
+                ConfigInterface::MAINTENANCE_MODE_MESSAGE,
                 ConfigInterface::STATUS_PAGE_PUBLIC_ENABLED,
                 ConfigInterface::STATUS_PAGE_SHOW_NODE_STATUS,
                 ConfigInterface::STATUS_PAGE_SHOW_LOAD_USAGE,
@@ -3194,6 +3196,32 @@ class SettingsController
                 'placeholder' => 'false',
                 'validation' => 'required|string|max:255',
                 'options' => ['true', 'false'],
+                'category' => 'status_page',
+            ],
+            ConfigInterface::MAINTENANCE_MODE_ENABLED => [
+                'name' => ConfigInterface::MAINTENANCE_MODE_ENABLED,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::MAINTENANCE_MODE_ENABLED, 'false'),
+                'description' => 'Maintenance mode: only staff with admin dashboard access can use the panel. Everyone else sees the maintenance notice and the status page',
+                'type' => 'select',
+                'required' => true,
+                'placeholder' => 'false',
+                'validation' => 'required|string|max:255',
+                'options' => ['true', 'false'],
+                'category' => 'status_page',
+            ],
+            ConfigInterface::MAINTENANCE_MODE_MESSAGE => [
+                'name' => ConfigInterface::MAINTENANCE_MODE_MESSAGE,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::MAINTENANCE_MODE_MESSAGE, ''),
+                'description' => 'Message shown to users during maintenance (optional)',
+                'type' => 'text',
+                'required' => false,
+                'placeholder' => 'We are upgrading the panel and will be back shortly.',
+                'validation' => 'nullable|string|max:1000',
+                'options' => [],
                 'category' => 'status_page',
             ],
             ConfigInterface::STATUS_PAGE_PUBLIC_ENABLED => [
