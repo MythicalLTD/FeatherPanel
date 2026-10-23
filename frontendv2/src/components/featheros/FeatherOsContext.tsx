@@ -273,6 +273,25 @@ function fitWindow(win: OsWindow): OsWindow {
     return { ...win, w, h, x, y };
 }
 
+/** Align FeatherOS theme with the shared panel preference (light | dark only). */
+function osThemeFromPanel(panelTheme: string): OsSettings['theme'] {
+    return panelTheme === 'light' ? 'light' : 'dark';
+}
+
+/**
+ * Pre-1.5.x FeatherOS defaulted to light + sonoma with no accent. That value was
+ * written into saved state and then forced onto the whole panel. Detect that
+ * untouched default so we can re-align with the panel theme once.
+ */
+function isLegacyDefaultLightTheme(settings: OsSettings): boolean {
+    return (
+        settings.theme === 'light' &&
+        settings.wallpaper === 'sonoma' &&
+        !settings.accent &&
+        !settings.customWallpaperUrl
+    );
+}
+
 function sanitizeState(raw: unknown): OsPersistedState | null {
     if (!raw || typeof raw !== 'object') return null;
     const s = raw as Partial<OsPersistedState>;
@@ -473,6 +492,7 @@ export function FeatherOsProvider({ children }: { children: ReactNode }) {
             });
             const [stateRes] = await Promise.allSettled([statePromise, serversPromise]);
             const saved = stateRes.status === 'fulfilled' ? sanitizeState(stateRes.value.state) : null;
+            const panelAlignedTheme = osThemeFromPanel(panelTheme);
             if (saved) {
                 const maxZ = saved.windows.reduce((m, w) => Math.max(m, w.z || 0), 10);
                 zCounter.current = maxZ + 1;
@@ -487,9 +507,15 @@ export function FeatherOsProvider({ children }: { children: ReactNode }) {
                 setIcons(saved.icons);
                 setWidgets(saved.widgets ?? DEFAULT_WIDGETS.map((w) => ({ ...w })));
                 setDockState(saved.dock);
-                setSettings(saved.settings);
+                const nextSettings = isLegacyDefaultLightTheme(saved.settings)
+                    ? { ...saved.settings, theme: panelAlignedTheme }
+                    : saved.settings;
+                setSettings(nextSettings);
                 const top = [...saved.windows].filter((w) => !w.minimized).sort((a, b) => b.z - a.z)[0];
                 setFocusedId(top?.id ?? null);
+            } else {
+                // First visit: follow the panel theme so opening /os does not flip the UI.
+                setSettings({ ...DEFAULT_SETTINGS, theme: panelAlignedTheme });
             }
             setBootPhase('done');
             setBootProgress(1);
@@ -497,7 +523,7 @@ export function FeatherOsProvider({ children }: { children: ReactNode }) {
             const wait = Math.max(0, 900 - (Date.now() - started));
             window.setTimeout(() => setReady(true), wait);
         })();
-    }, [isSessionChecked, user, refreshServers]);
+    }, [isSessionChecked, user, refreshServers, panelTheme]);
 
     // Persistence
     const persisted = useMemo<OsPersistedState>(
@@ -543,11 +569,15 @@ export function FeatherOsProvider({ children }: { children: ReactNode }) {
     useEffect(() => {
         if (!ready) return;
         if (settings.theme !== 'auto') {
-            if (settings.theme !== panelTheme) setPanelTheme(settings.theme);
+            // Mirror an explicit OS theme into the panel for this session only — do not
+            // stamp themeUserOverride (that was locking the whole panel to light after /os).
+            if (settings.theme !== panelTheme) {
+                setPanelTheme(settings.theme, { markUserOverride: false });
+            }
             return;
         }
         const mq = window.matchMedia('(prefers-color-scheme: dark)');
-        const apply = () => setPanelTheme(mq.matches ? 'dark' : 'light');
+        const apply = () => setPanelTheme(mq.matches ? 'dark' : 'light', { markUserOverride: false });
         apply();
         mq.addEventListener('change', apply);
         return () => mq.removeEventListener('change', apply);
@@ -850,9 +880,9 @@ export function FeatherOsProvider({ children }: { children: ReactNode }) {
         setIcons([]);
         setWidgets(DEFAULT_WIDGETS.map((w) => ({ ...w })));
         setDockState(DEFAULT_DOCK);
-        setSettings(DEFAULT_SETTINGS);
+        setSettings({ ...DEFAULT_SETTINGS, theme: osThemeFromPanel(panelTheme) });
         setFocusedId(null);
-    }, []);
+    }, [panelTheme]);
 
     // Menus & dialogs
     const openContextMenu = useCallback((pos: { x: number; y: number }, items: OsContextMenuItem[]) => {

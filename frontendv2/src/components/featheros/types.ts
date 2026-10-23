@@ -204,7 +204,9 @@ export interface OsContextMenuItem {
 export const DEFAULT_SETTINGS: OsSettings = {
     wallpaper: 'sonoma',
     customWallpaperUrl: '',
-    theme: 'light',
+    // Match the panel default (dark). Light was forcing the rest of the panel into
+    // light mode whenever FeatherOS booted with an unset / default theme.
+    theme: 'dark',
     accent: '',
     dockSize: 52,
     dockMagnification: true,

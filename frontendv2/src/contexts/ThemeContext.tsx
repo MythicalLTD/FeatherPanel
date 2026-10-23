@@ -166,7 +166,7 @@ interface ThemeContextType {
     themePack: PluginThemePack | null;
     /** Available theme packs from plugins. */
     themePacks: PluginThemePack[];
-    setTheme: (theme: Theme) => void;
+    setTheme: (theme: Theme, options?: { markUserOverride?: boolean }) => void;
     setAccentColor: (color: string) => void;
     setBackgroundType: (type: BackgroundType) => void;
     setBackgroundAnimatedVariant: (variant: BackgroundAnimatedVariant) => void;
@@ -445,13 +445,17 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         document.documentElement.dataset.motion = motionLevel;
     }, [motionLevel, mounted]);
 
-    const setTheme = (newTheme: Theme) => {
+    const setTheme = (newTheme: Theme, options?: { markUserOverride?: boolean }) => {
         // If admin locked theme, ignore user changes.
         if (settings?.app_theme_lock === 'true') return;
         if (newTheme !== theme) reportPanelInteraction('panel.preference.change', 'theme');
         setThemeState(newTheme);
         localStorage.setItem('theme', newTheme);
-        localStorage.setItem(USER_OVERRIDE_KEYS.theme, 'true');
+        // System / OS-shell sync can update the live theme without claiming a user override
+        // (so admin defaults and the user's real choice still apply after leaving FeatherOS).
+        if (options?.markUserOverride !== false) {
+            localStorage.setItem(USER_OVERRIDE_KEYS.theme, 'true');
+        }
         // Sync-coerce so light tokens never paint over aurora/image/black WebGL canvases.
         if (newTheme === 'light' && !isLightSafeBackgroundType(backgroundType)) {
             setBackgroundTypeState('solid');
