@@ -24,7 +24,7 @@ export interface InputProps extends Omit<React.InputHTMLAttributes<HTMLInputElem
     label?: string;
     description?: string;
     icon?: React.ReactNode;
-    /** `surface`: same translucent fill and hairline border as cards, for fields that sit directly on the page (list search bars). */
+    /** `surface`: opaque card fill and hairline border, for fields that sit directly on the page (list search bars). */
     variant?: 'default' | 'surface';
 }
 

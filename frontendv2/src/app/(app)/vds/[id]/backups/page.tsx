@@ -397,7 +397,12 @@ export default function VdsBackupsPage() {
 
             <div className='space-y-6'>
                 <div className='flex items-center gap-4'>
-                    <Button variant='glass' disabled={loading} onClick={() => void fetchBackups()}>
+                    <Button
+                        variant='glass'
+                        disabled={loading}
+                        onClick={() => void fetchBackups()}
+                        className='h-14 shrink-0'
+                    >
                         {t('serverBackups.recheckAction')}
                     </Button>
                     <div className='group relative w-full min-w-0 flex-1'>

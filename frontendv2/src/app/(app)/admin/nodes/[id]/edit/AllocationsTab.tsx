@@ -334,10 +334,17 @@ export function AllocationsTab({ nodeId, nodeName }: AllocationsTabProps) {
                                 placeholder={t('admin.node.allocations.search_placeholder')}
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className='pl-10'
+                                variant='surface'
+                                className='h-11 pl-10'
                             />
                         </div>
-                        <Button variant='outline' size='icon' onClick={() => fetchAllocations()} loading={loading}>
+                        <Button
+                            variant='outline'
+                            size='icon'
+                            onClick={() => fetchAllocations()}
+                            loading={loading}
+                            className='h-11 w-11'
+                        >
                             <RefreshCw className='h-4 w-4' />
                         </Button>
                     </div>

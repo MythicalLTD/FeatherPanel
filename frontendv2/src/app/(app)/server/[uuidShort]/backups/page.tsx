@@ -582,7 +582,7 @@ export default function ServerBackupsPage() {
                     </div>
 
                     {canDelete && backups.length > 0 && (
-                        <div className='fp-surface flex flex-wrap items-center justify-between gap-3 rounded-xl border px-4 py-3'>
+                        <div className='fp-surface-solid flex flex-wrap items-center justify-between gap-3 rounded-xl border px-4 py-3'>
                             <div className='flex items-center gap-3'>
                                 <Checkbox
                                     checked={allDeletableSelected}

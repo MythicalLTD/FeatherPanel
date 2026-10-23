@@ -905,7 +905,8 @@ export default function PluginsPage() {
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         placeholder={t('admin.plugins.search_placeholder')}
-                        className='pl-9'
+                        variant='surface'
+                        className='h-11 pl-9'
                     />
                 </div>
                 <div className='flex flex-wrap gap-2'>
@@ -921,6 +922,7 @@ export default function PluginsPage() {
                             size='sm'
                             variant={filter === item.key ? 'default' : 'outline'}
                             onClick={() => setFilter(item.key)}
+                            className='h-11'
                         >
                             {t(item.labelKey)}
                         </Button>
@@ -930,6 +932,7 @@ export default function PluginsPage() {
                         variant='outline'
                         onClick={() => void fetchPlugins().then((list) => checkAllUpdates(list))}
                         disabled={loading}
+                        className='h-11'
                     >
                         <RefreshCw className={cn('mr-2 h-4 w-4', loading && 'animate-spin')} />
                         {t('admin.plugins.actions.refresh')}

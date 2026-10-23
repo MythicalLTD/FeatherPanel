@@ -389,7 +389,8 @@ export default function MythicTranslationsPage() {
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         placeholder={t('admin.feathercloud.translations.search_placeholder')}
-                        className='pl-9'
+                        variant='surface'
+                        className='h-11 pl-9'
                     />
                 </div>
                 <div className='flex flex-wrap gap-2'>
@@ -412,12 +413,13 @@ export default function MythicTranslationsPage() {
                             size='sm'
                             variant={filter === item.key ? 'default' : 'outline'}
                             onClick={() => setFilter(item.key)}
+                            className='h-11'
                         >
                             {t(item.labelKey)}
                         </Button>
                     ))}
                     {selected.size > 0 ? (
-                        <Button size='sm' onClick={() => void bulkInstall()} disabled={bulkBusy}>
+                        <Button size='sm' onClick={() => void bulkInstall()} disabled={bulkBusy} className='h-11'>
                             {bulkBusy ? (
                                 <Loader2 className='mr-2 h-4 w-4 animate-spin' />
                             ) : (

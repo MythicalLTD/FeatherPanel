@@ -688,6 +688,7 @@ export function RoleEditor({
                                     placeholder={t('admin.roles.permissions.search')}
                                     value={permissionSearch}
                                     onChange={(e) => setPermissionSearch(e.target.value)}
+                                    variant='surface'
                                     className='h-11 pl-10'
                                 />
                             </div>

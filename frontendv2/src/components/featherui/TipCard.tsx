@@ -35,13 +35,7 @@ const iconTone = {
 /** The one "what is this page / tips" card used across the admin area. */
 export function TipCard({ title, icon: Icon = Lightbulb, children, variant = 'default', className }: TipCardProps) {
     return (
-        <section
-            className={cn(
-                // Same surface tokens as other cards, but no backdrop blur — sibling tips stay matched.
-                'fp-surface flex gap-3 rounded-xl border p-4 backdrop-blur-none [-webkit-backdrop-filter:none] ![background-color:hsl(var(--fp-surface-tint)/0.92)]',
-                className,
-            )}
-        >
+        <section className={cn('fp-surface-solid flex gap-3 rounded-xl border p-4', className)}>
             <div
                 className={cn(
                     'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[hsl(var(--fp-surface-tint))]',

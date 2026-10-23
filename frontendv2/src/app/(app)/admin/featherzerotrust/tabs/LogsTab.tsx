@@ -19,27 +19,16 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/featherui/Button';
-import { Card, CardContent } from '@/components/ui/card';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { ResourceCard, ResourceTable } from '@/components/featherui/ResourceCard';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
 import { EmptyState } from '@/components/featherui/EmptyState';
-import {
-    Clock,
-    Server,
-    AlertTriangle,
-    CheckCircle,
-    XCircle,
-    Eye,
-    FileText,
-    ChevronLeft,
-    ChevronRight,
-} from 'lucide-react';
+import { ListPagination } from '@/components/featherui/ListPagination';
+import { Clock, Server, AlertTriangle, CheckCircle, XCircle, Eye, FileText, RefreshCw } from 'lucide-react';
 import axios from 'axios';
 import { toast } from 'sonner';
 import { getApiErrorMessage } from '@/lib/api-errors';
 import { cn } from '@/lib/utils';
-import { ListPagination } from '@/components/featherui/ListPagination';
 
 interface CronLog {
     id: number;
@@ -164,6 +153,12 @@ const LogsTab = () => {
         }
     };
 
+    const statusBadgeClass = (status: string) => {
+        if (status === 'failed') return 'bg-destructive/10 text-destructive border-destructive/20';
+        if (status === 'running') return 'bg-primary/10 text-primary border-primary/20';
+        return 'bg-secondary text-secondary-foreground border-transparent';
+    };
+
     const formatDuration = (seconds: number | string | null | undefined) => {
         if (!seconds) return 'N/A';
         const numSeconds = typeof seconds === 'string' ? parseFloat(seconds) : seconds;
@@ -196,7 +191,6 @@ const LogsTab = () => {
                             page={pagination.page}
                             totalPages={pagination.totalPages}
                             onPageChange={(nextPage) => setPagination({ ...pagination, page: nextPage })}
-                            className='mb-4'
                         />
                     )}
                     <ResourceTable>
@@ -209,19 +203,13 @@ const LogsTab = () => {
                                 badges={[
                                     {
                                         label: log.status.toUpperCase(),
-                                        className: cn(
-                                            log.status === 'completed' &&
-                                                'bg-green-500/10 text-green-600 border-green-500/20',
-                                            log.status === 'failed' && 'bg-red-500/10 text-red-600 border-red-500/20',
-                                            log.status === 'running' &&
-                                                'bg-blue-500/10 text-blue-600 border-blue-500/20 animate-pulse',
-                                        ),
+                                        className: statusBadgeClass(log.status),
                                     },
                                 ]}
                                 description={
-                                    <div className='mt-2 grid grid-cols-2 gap-4 md:grid-cols-4'>
+                                    <div className='grid grid-cols-2 gap-3 md:grid-cols-4'>
                                         <div className='text-muted-foreground flex items-center gap-2 text-xs'>
-                                            <Server className='h-3 w-3' />
+                                            <Server className='h-3.5 w-3.5 shrink-0' />
                                             <span>
                                                 {log.total_servers_scanned} {t('admin.featherzerotrust.logs.servers')}
                                             </span>
@@ -229,22 +217,20 @@ const LogsTab = () => {
                                         <div className='text-muted-foreground flex items-center gap-2 text-xs'>
                                             <AlertTriangle
                                                 className={cn(
-                                                    'h-3 w-3',
-                                                    log.total_detections > 0
-                                                        ? 'text-destructive'
-                                                        : 'text-muted-foreground',
+                                                    'h-3.5 w-3.5 shrink-0',
+                                                    log.total_detections > 0 && 'text-destructive',
                                                 )}
                                             />
                                             <span
                                                 className={cn(
-                                                    log.total_detections > 0 && 'text-destructive font-semibold',
+                                                    log.total_detections > 0 && 'text-destructive font-medium',
                                                 )}
                                             >
                                                 {log.total_detections} {t('admin.featherzerotrust.logs.detections')}
                                             </span>
                                         </div>
                                         <div className='text-muted-foreground flex items-center gap-2 text-xs'>
-                                            <Clock className='h-3 w-3' />
+                                            <Clock className='h-3.5 w-3.5 shrink-0' />
                                             <span>{formatDuration(log.details?.duration_seconds)}</span>
                                         </div>
                                         <div className='text-muted-foreground text-xs'>
@@ -259,8 +245,8 @@ const LogsTab = () => {
                                     <Button
                                         variant='outline'
                                         size='sm'
-                                        className='transition-all hover:scale-105'
-                                        onClick={() => fetchLogDetails(log.execution_id)}
+                                        className='h-9'
+                                        onClick={() => void fetchLogDetails(log.execution_id)}
                                     >
                                         <Eye className='mr-2 h-4 w-4' />
                                         {t('admin.featherzerotrust.logs.viewDetails')}
@@ -270,27 +256,11 @@ const LogsTab = () => {
                         ))}
                     </ResourceTable>
                     {pagination.totalPages > 1 && (
-                        <div className='mt-8 flex items-center justify-center gap-2'>
-                            <Button
-                                variant='outline'
-                                size='icon'
-                                disabled={pagination.page === 1}
-                                onClick={() => setPagination({ ...pagination, page: pagination.page - 1 })}
-                            >
-                                <ChevronLeft className='h-4 w-4' />
-                            </Button>
-                            <span className='text-sm font-medium'>
-                                {pagination.page} / {pagination.totalPages}
-                            </span>
-                            <Button
-                                variant='outline'
-                                size='icon'
-                                disabled={pagination.page === pagination.totalPages}
-                                onClick={() => setPagination({ ...pagination, page: pagination.page + 1 })}
-                            >
-                                <ChevronRight className='h-4 w-4' />
-                            </Button>
-                        </div>
+                        <ListPagination
+                            page={pagination.page}
+                            totalPages={pagination.totalPages}
+                            onPageChange={(nextPage) => setPagination({ ...pagination, page: nextPage })}
+                        />
                     )}
                 </>
             )}
@@ -313,83 +283,73 @@ const LogsTab = () => {
                     ) : (
                         executionLog && (
                             <div className='mt-6 space-y-6'>
-                                <div className='grid grid-cols-2 gap-4'>
-                                    <Card className='bg-muted/30 border-border/50'>
-                                        <CardContent className='p-4'>
-                                            <div className='text-muted-foreground text-xs'>
-                                                {t('admin.featherzerotrust.logs.totalServers')}
-                                            </div>
-                                            <div className='text-2xl font-bold'>
-                                                {executionLog.total_servers_scanned}
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-                                    <Card
-                                        className={cn(
-                                            'bg-muted/30 border-border/50',
-                                            executionLog.total_detections > 0 &&
-                                                'border-destructive/30 bg-destructive/5',
-                                        )}
-                                    >
-                                        <CardContent className='p-4'>
-                                            <div className='text-muted-foreground text-xs'>
-                                                {t('admin.featherzerotrust.logs.totalDetections')}
-                                            </div>
-                                            <div
-                                                className={cn(
-                                                    'text-2xl font-bold',
-                                                    executionLog.total_detections > 0 && 'text-destructive',
-                                                )}
-                                            >
-                                                {executionLog.total_detections}
-                                            </div>
-                                        </CardContent>
-                                    </Card>
+                                <div className='grid grid-cols-2 gap-3'>
+                                    <div className='fp-surface-solid rounded-xl border px-4 py-3'>
+                                        <p className='text-muted-foreground text-xs'>
+                                            {t('admin.featherzerotrust.logs.totalServers')}
+                                        </p>
+                                        <p className='mt-1 text-sm font-medium'>
+                                            {executionLog.total_servers_scanned}
+                                        </p>
+                                    </div>
+                                    <div className='fp-surface-solid rounded-xl border px-4 py-3'>
+                                        <p className='text-muted-foreground text-xs'>
+                                            {t('admin.featherzerotrust.logs.totalDetections')}
+                                        </p>
+                                        <p
+                                            className={cn(
+                                                'mt-1 text-sm font-medium',
+                                                executionLog.total_detections > 0 && 'text-destructive',
+                                            )}
+                                        >
+                                            {executionLog.total_detections}
+                                        </p>
+                                    </div>
                                 </div>
 
-                                <div className='space-y-4'>
+                                <div className='space-y-3'>
                                     <h4 className='flex items-center gap-2 text-sm font-semibold'>
                                         <Server className='text-primary h-4 w-4' />
                                         {t('ui.admin.featherzerotrust.tabs.logsTab.serverScanHistory')}
                                     </h4>
                                     {scanLogs.length === 0 ? (
-                                        <p className='text-muted-foreground text-sm italic'>
+                                        <p className='text-muted-foreground text-sm'>
                                             {t('ui.admin.featherzerotrust.tabs.logsTab.noIndividualServerLogsFound')}
                                         </p>
                                     ) : (
-                                        <div className='space-y-3'>
+                                        <div className='space-y-2'>
                                             {scanLogs.map((log) => (
                                                 <div
                                                     key={log.id}
-                                                    className='border-border/50 bg-card hover:border-primary/30 rounded-xl border p-4 transition-all'
+                                                    className='fp-surface-solid rounded-xl border p-4'
                                                 >
-                                                    <div className='flex items-start justify-between'>
-                                                        <div>
-                                                            <div className='text-sm font-bold'>
+                                                    <div className='flex items-start justify-between gap-3'>
+                                                        <div className='min-w-0'>
+                                                            <div className='truncate text-sm font-medium'>
                                                                 {log.server_name ||
                                                                     t('admin.featherzerotrust.logs.unknownServer')}
                                                             </div>
-                                                            <div className='text-muted-foreground font-mono text-[10px]'>
+                                                            <div className='text-muted-foreground truncate font-mono text-[10px]'>
                                                                 {log.server_uuid}
                                                             </div>
                                                         </div>
                                                         <Badge
                                                             variant={
-                                                                log.status === 'completed' ? 'default' : 'destructive'
+                                                                log.status === 'completed' ? 'secondary' : 'destructive'
                                                             }
-                                                            className='text-[10px]'
+                                                            className='shrink-0 text-[10px]'
                                                         >
                                                             {log.status.toUpperCase()}
                                                         </Badge>
                                                     </div>
-                                                    <div className='border-border/30 mt-3 grid grid-cols-3 gap-2 border-t pt-3'>
+                                                    <div className='border-border mt-3 grid grid-cols-3 gap-2 border-t pt-3'>
                                                         <div>
                                                             <div className='text-muted-foreground text-[10px]'>
                                                                 {t(
                                                                     'ui.admin.featherzerotrust.tabs.logsTab.filesScanned',
                                                                 )}
                                                             </div>
-                                                            <div className='text-xs font-semibold'>
+                                                            <div className='text-xs font-medium'>
                                                                 {log.files_scanned.toLocaleString()}
                                                             </div>
                                                         </div>
@@ -399,7 +359,7 @@ const LogsTab = () => {
                                                             </div>
                                                             <div
                                                                 className={cn(
-                                                                    'text-xs font-semibold',
+                                                                    'text-xs font-medium',
                                                                     log.detections_count > 0 && 'text-destructive',
                                                                 )}
                                                             >
@@ -410,13 +370,13 @@ const LogsTab = () => {
                                                             <div className='text-muted-foreground text-[10px]'>
                                                                 {t('ui.admin.featherzerotrust.tabs.logsTab.duration')}
                                                             </div>
-                                                            <div className='text-xs font-semibold'>
+                                                            <div className='text-xs font-medium'>
                                                                 {formatDuration(log.duration_seconds)}
                                                             </div>
                                                         </div>
                                                     </div>
                                                     {log.error_message && (
-                                                        <div className='bg-destructive/10 text-destructive border-destructive/20 mt-3 rounded-lg border p-2 text-xs'>
+                                                        <div className='border-destructive/20 bg-destructive/5 text-destructive mt-3 rounded-lg border p-2 text-xs'>
                                                             {log.error_message}
                                                         </div>
                                                     )}
@@ -431,28 +391,6 @@ const LogsTab = () => {
                 </SheetContent>
             </Sheet>
         </div>
-    );
-};
-
-const RefreshCw = ({ className }: { className?: string }) => {
-    return (
-        <svg
-            className={className}
-            xmlns='http://www.w3.org/2000/svg'
-            width='24'
-            height='24'
-            viewBox='0 0 24 24'
-            fill='none'
-            stroke='currentColor'
-            strokeWidth='2'
-            strokeLinecap='round'
-            strokeLinejoin='round'
-        >
-            <path d='M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8' />
-            <path d='M3 3v5h5' />
-            <path d='M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16' />
-            <path d='M16 16h5v5' />
-        </svg>
     );
 };
 

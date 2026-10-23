@@ -434,7 +434,7 @@ export default function WebSpaceBackupsPage() {
                     </div>
                 )}
                 {selectBackup && (
-                    <div className='border-border/50 bg-card/50 space-y-3 rounded-xl border p-4'>
+                    <div className='fp-surface-solid space-y-3 rounded-xl border p-4'>
                         <div className='flex items-center justify-between gap-2'>
                             <p className='text-sm font-medium'>{t('webSpaces.backups.restoreSelected')}</p>
                             <Button variant='outline' size='sm' onClick={() => setSelectBackup(null)}>

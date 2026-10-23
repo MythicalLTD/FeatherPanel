@@ -53,6 +53,7 @@ const FeatherZeroTrustPage = () => {
                 <PageHeader
                     title={t('admin.featherzerotrust.title')}
                     description={t('admin.featherzerotrust.description')}
+                    icon={ShieldCheck}
                 />
 
                 <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as typeof activeTab)}>
@@ -65,24 +66,25 @@ const FeatherZeroTrustPage = () => {
                         ))}
                     </ScrollableTabsList>
 
-                    <TabsContent value='scanner' className='mt-6'>
+                    <TabsContent value='scanner' className='mt-6 space-y-6'>
                         <ScannerTab />
                     </TabsContent>
 
-                    <TabsContent value='hashes' className='mt-6'>
+                    <TabsContent value='hashes' className='mt-6 space-y-6'>
                         <HashesTab />
                     </TabsContent>
 
-                    <TabsContent value='logs' className='mt-6'>
+                    <TabsContent value='logs' className='mt-6 space-y-6'>
                         <LogsTab />
                     </TabsContent>
 
-                    <TabsContent value='config' className='mt-6'>
+                    <TabsContent value='config' className='mt-6 space-y-6'>
                         <ConfigTab />
                     </TabsContent>
                 </Tabs>
+
+                <AdminPageTips page='featherzerotrust' />
             </div>
-            <AdminPageTips page='featherzerotrust' />
 
             <WidgetRenderer widgets={getWidgets('admin-featherzerotrust', 'bottom-of-page')} />
         </>

@@ -88,7 +88,7 @@ export function ServerCard({
         return (
             <div
                 className={cn(
-                    'fp-surface group relative flex flex-col items-stretch gap-4 rounded-xl border p-4 transition-all sm:flex-row sm:items-center sm:gap-6 sm:p-5 md:p-6',
+                    'fp-surface-solid group relative flex flex-col items-stretch gap-4 rounded-xl border p-4 transition-all sm:flex-row sm:items-center sm:gap-6 sm:p-5 md:p-6',
                     accessible ? 'hover:border-primary' : 'opacity-60',
                 )}
             >
@@ -272,7 +272,7 @@ export function ServerCard({
     return (
         <div
             className={cn(
-                'fp-surface group relative overflow-hidden rounded-xl border transition-all',
+                'fp-surface-solid group relative overflow-hidden rounded-xl border transition-all',
                 accessible ? 'hover:border-primary' : 'opacity-60',
             )}
         >
