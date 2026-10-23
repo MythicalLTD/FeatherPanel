@@ -329,6 +329,13 @@ class LoginController
             $userInfo['deletion_mode'] = null;
         }
 
+        // Security center: panel IP allow list, then a heads-up email for a new sign-in IP.
+        $loginIp = CloudFlareRealIP::getRealIP();
+        if (!\App\Services\Security\SecurityPolicy::ipAllowed($userInfo, $loginIp)) {
+            return ApiResponse::error('Signing in from this IP address is not allowed', 'IP_NOT_ALLOWED', 403);
+        }
+        \App\Services\Security\SecurityPolicy::maybeSendNewLoginAlert($userInfo, $loginIp, $_SERVER['HTTP_USER_AGENT'] ?? null);
+
         // Session cookie requires a non-empty remember_token; older rows may have NULL/empty.
         $token = User::ensureRememberToken($userInfo['uuid'], $userInfo['remember_token'] ?? null);
         if ($token === false) {

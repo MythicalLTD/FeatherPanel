@@ -149,6 +149,10 @@ class ResetPasswordController
                 return ApiResponse::error('Looks like the token is invalid or expired or already used', 'INVALID_TOKEN');
             }
 
+            $policyError = \App\Services\Security\SecurityPolicy::validatePassword((string) $data['password']);
+            if ($policyError !== null) {
+                return ApiResponse::error($policyError, 'PASSWORD_POLICY_VIOLATION', 422);
+            }
             if (User::updateUser($userInfo['uuid'], ['password' => password_hash($data['password'], PASSWORD_BCRYPT), 'remember_token' => User::generateAccountToken()]) && User::updateUser($userInfo['uuid'], ['mail_verify' => PasswordResetTokenHelper::mailVerifyAfterReset($resetLookup['state'])])) {
                 Activity::createActivity([
                     'user_uuid' => $userInfo['uuid'],

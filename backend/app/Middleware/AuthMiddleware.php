@@ -146,6 +146,11 @@ class AuthMiddleware implements MiddlewareInterface
             // The row was just loaded: permission checks in this request reuse its role.
             \App\Helpers\PermissionHelper::rememberUser($user);
 
+            $security = self::securityResponse($request, $user);
+            if ($security !== null) {
+                return $security;
+            }
+
             $maintenance = self::maintenanceResponse($request, $user);
             if ($maintenance !== null) {
                 return $maintenance;
@@ -240,5 +245,26 @@ class AuthMiddleware implements MiddlewareInterface
             503,
             ['maintenance' => true]
         );
+    }
+
+    /**
+     * Security center rules for signed-in users: IP allow list and required 2FA setup.
+     * Session and auth endpoints stay open so the user can set up 2FA or log out.
+     */
+    private static function securityResponse(Request $request, array $user): ?Response
+    {
+        $policy = \App\Services\Security\SecurityPolicy::class;
+        if (!$policy::ipAllowed($user, CloudFlareRealIP::getRealIP())) {
+            return ApiResponse::error('Access from this IP address is not allowed', 'IP_NOT_ALLOWED', 403);
+        }
+        if ($request->attributes->get('auth_type') !== 'session' || !$policy::requiresTwoFactor($user)) {
+            return null;
+        }
+        $path = $request->getPathInfo();
+        if ($path === '/api/user/session' || str_starts_with($path, '/api/user/auth/')) {
+            return null;
+        }
+
+        return ApiResponse::error('Your role requires two-factor authentication. Set it up to continue.', 'TWO_FACTOR_SETUP_REQUIRED', 403);
     }
 }

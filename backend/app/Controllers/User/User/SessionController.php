@@ -299,6 +299,10 @@ class SessionController
 
         // Hash password if provided
         if ($passwordChanging) {
+            $policyError = \App\Services\Security\SecurityPolicy::validatePassword((string) $data['password']);
+            if ($policyError !== null) {
+                return ApiResponse::error($policyError, 'PASSWORD_POLICY_VIOLATION', 422);
+            }
             $data['password'] = password_hash($data['password'], PASSWORD_BCRYPT);
             $data['remember_token'] = User::generateAccountToken();
         }
@@ -390,6 +394,9 @@ class SessionController
             'badge_icon' => $role ? ($role['badge_icon'] ?? null) : null,
             'color' => $role ? ($role['color'] ?? '#666666') : '#666666',
         ];
+
+        // Security center: the frontend sends users whose role needs 2FA to the setup page.
+        $user['two_fa_required'] = \App\Services\Security\SecurityPolicy::requiresTwoFactor($user);
 
         $user = User::stripSensitiveFields($user);
 
