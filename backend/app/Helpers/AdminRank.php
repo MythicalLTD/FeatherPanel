@@ -33,16 +33,13 @@ use App\Permissions;
 class AdminRank
 {
     /**
-     * Permissions that make an account "root-level" for this guard. `admin.root`
-     * short-circuits every permission check, so it is always included first.
+     * Permissions that make an account "root-level" for this guard. Only
+     * `admin.root` qualifies: it short-circuits every permission check, so it is
+     * the single superuser node. Narrower staff permissions stay manageable by
+     * staff with the matching route permission.
      */
     private const ROOT_LEVEL_PERMISSIONS = [
         Permissions::ADMIN_ROOT,
-        Permissions::ADMIN_SETTINGS_EDIT,
-        Permissions::ADMIN_USERS_CREATE,
-        Permissions::ADMIN_USERS_DELETE,
-        Permissions::ADMIN_ROLES_PERMISSIONS_CREATE,
-        Permissions::ADMIN_NODES_EDIT,
     ];
 
     /** Whether the given account holds `admin.root` (directly or via the role). */

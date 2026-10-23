@@ -379,6 +379,16 @@ class PermissionsController
             }
         }
 
+        if (isset($data['permission'])
+            && \App\Helpers\AdminRank::isRootLevelPermission((string) $data['permission'])
+            && !\App\Helpers\AdminRank::isRoot($request->attributes->get('user'))) {
+            return ApiResponse::error(
+                'Only a full administrator can grant ' . $data['permission'],
+                'ROOT_PERMISSION_GRANT_FORBIDDEN',
+                403
+            );
+        }
+
         $admin = $request->attributes->get('user');
         if (
             $permission['permission'] === Permissions::ADMIN_ROOT

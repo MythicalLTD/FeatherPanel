@@ -88,6 +88,7 @@ export interface AppSettings {
     app_support_url: string;
     app_sso_redirect_path?: string;
     app_sso_token_lifetime_minutes?: string;
+    api_clients_allow_public_key_auth?: string;
     linkedin_url: string;
     telegram_url: string;
     tiktok_url: string;

@@ -39,6 +39,20 @@
 - Backup ignore parsing tests and a Cloudflare IP range check script for maintainers. (#353) by @nayskutzu
 - The panel keeps going into white theme for some reason. by @nayskutzu
 
+### Security
+
+- Admins without `admin.root` can no longer edit, ban, delete or create SSO tokens for an account that holds `admin.root`, and can no longer create users with a role other than the default one. (#371) by @redstonerthebest
+- Granting `admin.root` to a role, by adding or by changing a permission, now requires `admin.root`. (#371) by @redstonerthebest
+- Viewing the panel as another user now also refuses accounts holding `admin.root`, on top of the existing staff rule. (#371) by @redstonerthebest
+- Server file transfers check that you can access the target server. (#371) by @redstonerthebest
+- VDS backup restores check that the backup belongs to that VM, and VDS subusers no longer see the cloud-init password stored in the VM notes. (#371) by @redstonerthebest
+- Lifecycle hook URLs and server-mode API client callbacks are checked against private, loopback and link-local addresses (including IPv6) by resolving the host. (#371) by @redstonerthebest
+- Public key Bearer auth for API clients keeps its 1.5.3 default (on) and can now be switched off in Admin, Settings, App. by @nayskutzu
+
+### Notes
+
+- Breaking: lifecycle hooks and server-mode API client callbacks now need public URLs, and server-mode callbacks must use https. Hooks or callbacks that point at internal addresses, or server-mode callbacks over http, are rejected.
+
 ## v1.5.2 STABLE
 
 ### Security

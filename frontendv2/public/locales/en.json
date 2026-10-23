@@ -1570,7 +1570,10 @@
             "INVITE_OWN_SERVER": "You already own this server.",
             "INVITE_NOT_FOUND": "Invite not found.",
             "INVALID_INVITE_EXPIRY": "Expiry must be between 1 and 720 hours.",
-            "INVALID_INVITE_USES": "Uses must be between 1 and 50."
+            "INVALID_INVITE_USES": "Uses must be between 1 and 50.",
+            "ROLE_ASSIGNMENT_FORBIDDEN": "Only a full administrator can assign a role.",
+            "ROOT_PERMISSION_GRANT_FORBIDDEN": "Only a full administrator can grant this permission.",
+            "TARGET_OUTRANKS_ACTOR": "Only a full administrator can modify this account."
         },
         "global": {}
     },

@@ -189,6 +189,7 @@ class SettingsController
                 ConfigInterface::APP_TIMEZONE,
                 ConfigInterface::APP_SSO_REDIRECT_PATH,
                 ConfigInterface::APP_SSO_TOKEN_LIFETIME_MINUTES,
+                ConfigInterface::API_CLIENTS_ALLOW_PUBLIC_KEY_AUTH,
                 ConfigInterface::APP_BACKGROUND_IMAGE_URL,
                 ConfigInterface::APP_BACKGROUND_LOCK,
                 ConfigInterface::APP_LOCALE_DEFAULT,
@@ -780,6 +781,19 @@ class SettingsController
                 'placeholder' => '5',
                 'validation' => 'required|integer|min:1|max:1440',
                 'options' => [],
+                'category' => 'app',
+            ],
+            ConfigInterface::API_CLIENTS_ALLOW_PUBLIC_KEY_AUTH => [
+                'name' => ConfigInterface::API_CLIENTS_ALLOW_PUBLIC_KEY_AUTH,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::API_CLIENTS_ALLOW_PUBLIC_KEY_AUTH, 'true'),
+                'description' => 'Allow API clients to authenticate with their public key as a Bearer token (set to false to require the private key)',
+                'type' => 'select',
+                'required' => true,
+                'placeholder' => 'true',
+                'validation' => 'required|string|max:255',
+                'options' => ['true', 'false'],
                 'category' => 'app',
             ],
             ConfigInterface::APP_TIMEZONE => [
