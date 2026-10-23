@@ -49,6 +49,11 @@ class Impersonation
             && !PermissionHelper::hasPermission((string) $admin['uuid'], Permissions::ADMIN_ROOT)) {
             return 'Only full admins can view the panel as another staff member';
         }
+        // Rank check on top: accounts holding root-level permissions stay off limits.
+        $rankDenied = AdminRank::check($admin, $target);
+        if ($rankDenied !== null) {
+            return $rankDenied;
+        }
 
         return null;
     }

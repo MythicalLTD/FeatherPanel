@@ -101,6 +101,13 @@ class FileTransferController
         if (!$target || (int) $target['id'] === (int) $source['id']) {
             return ApiResponse::error('Target server not found', 'TARGET_NOT_FOUND', 404);
         }
+        // The target must be a server this account can actually access. Without
+        // this check `SubuserPermissionChecker::hasPermission()` treats every
+        // account without a subuser row as the owner and returns true, so any
+        // customer could push files into a foreign server.
+        if (!\App\Helpers\ServerGateway::canUserAccessServer((string) ($user['uuid'] ?? ''), (string) $target['uuid'], $user, $target)) {
+            return ApiResponse::error('Target server not found', 'TARGET_NOT_FOUND', 404);
+        }
         $uid = (int) $user['id'];
         $needed = [SubuserPermissions::FILE_READ, SubuserPermissions::FILE_ARCHIVE];
         if ($mode === 'move') {

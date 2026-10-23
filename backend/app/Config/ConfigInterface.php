@@ -260,7 +260,7 @@ interface ConfigInterface
      *
      * When true (default) an API client may authenticate with either its
      * `private_key` or its `public_key` as a Bearer token. Set to false to
-     * require the private key only — the public key is not a secret (it appears
+     * require the private key only, since the public key is not a secret (it appears
      * in redirect URLs for Calagopus-compatible integrations). The public_key
      * redirect URL itself is not affected by this switch.
      */

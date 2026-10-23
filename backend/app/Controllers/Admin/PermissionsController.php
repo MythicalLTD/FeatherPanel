@@ -268,6 +268,19 @@ class PermissionsController
         if (strlen($data['permission']) < 2 || strlen($data['permission']) > 255) {
             return ApiResponse::error('Permission must be between 2 and 255 characters', 'INVALID_DATA_LENGTH');
         }
+
+        // Granting a root-level node (for example `admin.root`) to a role is a
+        // root-only decision. Without this guard `admin.roles.permissions.create`
+        // alone was enough to lift your own role to full administrator.
+        if (\App\Helpers\AdminRank::isRootLevelPermission((string) $data['permission'])
+            && !\App\Helpers\AdminRank::isRoot($request->attributes->get('user'))) {
+            return ApiResponse::error(
+                'Only a full administrator can grant ' . $data['permission'],
+                'ROOT_PERMISSION_GRANT_FORBIDDEN',
+                403
+            );
+        }
+
         $unknownFields = Database::unknownColumns(Permission::getTableName(), $data);
         if ($unknownFields !== []) {
             return ApiResponse::error('Unknown field(s): ' . implode(', ', $unknownFields), 'UNKNOWN_FIELDS', 400);
@@ -364,6 +377,16 @@ class PermissionsController
             if (strlen($data['permission']) < 2 || strlen($data['permission']) > 255) {
                 return ApiResponse::error('Permission must be between 2 and 255 characters', 'INVALID_DATA_LENGTH');
             }
+        }
+
+        if (isset($data['permission'])
+            && \App\Helpers\AdminRank::isRootLevelPermission((string) $data['permission'])
+            && !\App\Helpers\AdminRank::isRoot($request->attributes->get('user'))) {
+            return ApiResponse::error(
+                'Only a full administrator can grant ' . $data['permission'],
+                'ROOT_PERMISSION_GRANT_FORBIDDEN',
+                403
+            );
         }
 
         $admin = $request->attributes->get('user');
