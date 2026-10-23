@@ -212,6 +212,8 @@ function PluginStatus({ plugin, update }: { plugin: Plugin; update?: PluginStore
         <div className='flex flex-wrap items-center gap-1.5'>
             {!plugin.loaded ? (
                 <StatusDot tone='muted'>{t('admin.plugins.grid.not_loaded')}</StatusDot>
+            ) : (plugin.missingConfigs?.length ?? 0) > 0 ? (
+                <StatusDot tone='warning'>{t('admin.plugins.grid.not_configured')}</StatusDot>
             ) : update?.update_available ? (
                 <StatusDot tone='warning'>{t('admin.plugins.actions.update')}</StatusDot>
             ) : (
