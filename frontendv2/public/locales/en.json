@@ -1562,7 +1562,8 @@
             "IMPERSONATION_READ_ONLY": "Viewing as another user is read only. Stop viewing as this user to make changes.",
             "IMPERSONATION_ACTIVE": "Stop viewing as the current user first",
             "IMPERSONATION_SESSION_REQUIRED": "Viewing as a user needs a browser session",
-            "IMPERSONATION_NOT_ALLOWED": "You are not allowed to view the panel as this user"
+            "IMPERSONATION_NOT_ALLOWED": "You are not allowed to view the panel as this user",
+            "INVALID_AUTO_RESTART": "Auto restart must be turned on or off"
         },
         "global": {}
     },
@@ -3072,6 +3073,19 @@
                 "disk": "Disk",
                 "peak": "Peak {value}"
             }
+        },
+        "crash": {
+            "title": "Server crashed",
+            "description": "The server stopped unexpectedly at {time}. These are the last console lines before it went down.",
+            "noLines": "No console output was captured before the crash.",
+            "dismiss": "Dismiss",
+            "autoRestart": "Restart automatically after a crash",
+            "autoRestartDescription": "When on, the node starts the server again after a crash. Turn it off to keep a crashed server stopped so you can look into it.",
+            "autoRestartOn": "Automatic restart after a crash is on",
+            "autoRestartOff": "Automatic restart after a crash is off",
+            "syncPending": "Saved. The node could not be reached, so it applies on the next sync.",
+            "saveFailed": "Could not update crash settings",
+            "settingsTitle": "Crash detection"
         }
     },
     "serverConsole": {

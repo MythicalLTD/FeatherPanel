@@ -48,6 +48,7 @@ import { resolveServerSpellBannerStyle } from '@/lib/server-spell-banner';
 import { useServerResourceHistory } from '@/lib/resource-history';
 import { ResourceTrendStrip } from '@/components/dashboard/ResourceTrends';
 import { ServerResourceGraphs } from '@/components/server/ServerResourceGraphs';
+import { ServerCrashCard } from '@/components/server/ServerCrashCard';
 
 interface WingsStats {
     uptime?: number;
@@ -952,6 +953,13 @@ export default function ServerConsolePage() {
                 </div>
             </div>
 
+            {hasPermission('control.console') && (
+                <ServerCrashCard
+                    uuidShort={serverUuid}
+                    status={serverStatus}
+                    canToggle={hasPermission('control.restart')}
+                />
+            )}
             <WidgetRenderer widgets={getWidgets('server-console', 'before-performance')} />
             {shouldConnectToWings && (
                 <ServerResourceGraphs

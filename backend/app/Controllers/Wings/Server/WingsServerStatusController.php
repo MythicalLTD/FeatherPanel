@@ -24,6 +24,7 @@ use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Plugins\Events\Events\WingsEvent;
 use App\Services\Notifications\InboxNotifier;
+use App\Services\Server\ServerCrashRecorder;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use App\Services\Server\LifecycleHookExecutorService;
@@ -184,7 +185,14 @@ class WingsServerStatusController
             return ApiResponse::error('Failed to update server status', 'UPDATE_FAILED', 500);
         }
 
-        if ($state === 'crashed' && $oldState !== 'crashed') {
+        // Wings never sends "crashed": a crash is running/starting straight to offline.
+        // Intentional stops and kills always pass through "stopping" first.
+        $previousState = is_array($data['data'] ?? null) ? (string) ($data['data']['previous_state'] ?? '') : '';
+        $crashed = ($state === 'crashed' && $oldState !== 'crashed')
+            || ($state === 'offline' && in_array($previousState, ['running', 'starting'], true));
+
+        if ($crashed) {
+            ServerCrashRecorder::record($server, $node);
             InboxNotifier::serverCrashed($server);
             try {
                 (new LifecycleHookExecutorService())->executeForServerCrash($server, $node);

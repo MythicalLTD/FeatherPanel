@@ -23,6 +23,7 @@ import { formatBackupLimitLabel } from '@/lib/server-utils';
 import { ServerPageHeader } from '@/components/server/ServerPageHeader';
 import { ServerPageTips } from '@/components/server/ServerPageTips';
 import { PageCard } from '@/components/featherui/PageCard';
+import { CrashAutoRestartSetting } from '@/components/server/ServerCrashCard';
 import { HideIpsToggle } from '@/components/preferences/HideIpsToggle';
 import { Switch } from '@/components/ui/switch';
 import {
@@ -610,6 +611,10 @@ export default function ServerSettingsPage() {
                                 </div>
                             </div>
                         </PageCard>
+                    )}
+
+                    {hasPermission('control.console') && (
+                        <CrashAutoRestartSetting uuidShort={uuidShort} canToggle={hasPermission('control.restart')} />
                     )}
 
                     <WidgetRenderer widgets={getWidgets('server-settings', 'after-server-info')} />
