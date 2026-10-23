@@ -269,6 +269,10 @@ class RegisterController
             );
         }
 
+        $policyError = \App\Services\Security\SecurityPolicy::validatePassword((string) $data['password']);
+        if ($policyError !== null) {
+            return ApiResponse::error($policyError, 'PASSWORD_POLICY_VIOLATION', 422);
+        }
         $tempPassword = $data['password'];
         $emailVerificationToken = $requiresEmailVerification ? bin2hex(random_bytes(32)) : null;
         // Create user

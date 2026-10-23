@@ -16,7 +16,8 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { useEffect } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import { Wrench, LogOut } from 'lucide-react';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useSession } from '@/contexts/SessionContext';
@@ -31,9 +32,20 @@ import Permissions from '@/lib/permissions';
  */
 export function MaintenanceGate({ children }: { children: React.ReactNode }) {
     const { settings } = useSettings();
-    const { hasPermission } = useSession();
+    const { hasPermission, user } = useSession();
+    const router = useRouter();
     const { t } = useTranslation();
     const pathname = usePathname();
+    const mustSetUpTwoFactor = user?.two_fa_required === true;
+
+    // Security center: roles that require 2FA go to the setup page first.
+    useEffect(() => {
+        if (mustSetUpTwoFactor) router.replace('/auth/setup-2fa');
+    }, [mustSetUpTwoFactor, router]);
+
+    if (mustSetUpTwoFactor) {
+        return null;
+    }
 
     // The status page stays reachable so users can follow the maintenance there.
     if (settings?.maintenance_mode_enabled !== 'true' || pathname?.startsWith('/dashboard/status')) {

@@ -50,6 +50,8 @@ export interface UserInfo {
     avatar: string;
     uuid: string;
     two_fa_enabled: string;
+    /** Security center: the user's role requires 2FA and it is not set up yet. */
+    two_fa_required?: boolean;
     last_seen: string;
     first_seen: string;
     ticket_signature?: string;

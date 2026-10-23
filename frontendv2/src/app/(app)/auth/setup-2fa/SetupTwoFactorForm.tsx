@@ -23,6 +23,7 @@ import QRCode from 'react-qr-code';
 import { ShieldCheck, ArrowRight, Clipboard } from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useSettings } from '@/contexts/SettingsContext';
+import { useSession } from '@/contexts/SessionContext';
 import { Captcha } from '@/components/Captcha';
 import axios from 'axios';
 import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
@@ -33,6 +34,7 @@ import { AuthAlert, AuthLoadingState, AuthPage, AuthPageHeader, AuthPanel } from
 
 export default function SetupTwoFactorForm() {
     const router = useRouter();
+    const { refreshSession } = useSession();
     const { t } = useTranslation();
     const { settings } = useSettings();
     const { getWidgets, fetchWidgets } = usePluginWidgets('auth-setup-2fa');
@@ -138,6 +140,8 @@ export default function SetupTwoFactorForm() {
 
             if (response.data && response.data.success) {
                 setSuccess(t('common.success'));
+                // Refresh so a role that requires 2FA stops sending the user back here.
+                void refreshSession().catch(() => false);
                 setTimeout(() => {
                     router.push('/dashboard');
                 }, 1500);

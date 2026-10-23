@@ -415,6 +415,17 @@ const buildAdminNavigationItems = (
             group: 'security',
         },
         {
+            id: 'admin-security-center',
+            name: t('navigation.items.securityCenter'),
+            title: t('navigation.items.securityCenter'),
+            url: '/admin/security',
+            icon: ShieldCheck,
+            isActive: false,
+            category: 'admin',
+            permission: Permissions.ADMIN_SETTINGS_VIEW,
+            group: 'security',
+        },
+        {
             id: 'admin-blocked-ips',
             name: t('navigation.items.blockedIps'),
             title: t('navigation.items.blockedIps'),

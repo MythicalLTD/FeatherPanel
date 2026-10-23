@@ -1552,7 +1552,13 @@
             "NOTIFICATION_SETTINGS_SAVE_FAILED": "Failed to save notification settings",
             "DISCORD_WEBHOOK_TEST_FAILED": "Discord rejected the webhook",
             "INVALID_MONTH": "Month must look like 2026-10",
-            "MAINTENANCE_MODE": "The panel is under maintenance. Please try again later."
+            "MAINTENANCE_MODE": "The panel is under maintenance. Please try again later.",
+            "IP_NOT_ALLOWED": "Access from your IP address is not allowed",
+            "TWO_FACTOR_SETUP_REQUIRED": "Your role requires two-factor authentication. Set it up to continue.",
+            "PASSWORD_POLICY_VIOLATION": "The password does not meet the password policy",
+            "INVALID_IP_ALLOW_LIST": "The IP allow list has an invalid entry",
+            "IP_ALLOW_LIST_SELF_LOCKOUT": "Your current IP is not in the allow list, saving would lock you out",
+            "SECURITY_POLICY_SAVE_FAILED": "Failed to save the security policy"
         },
         "global": {}
     },
@@ -3677,7 +3683,8 @@
             "wingsBackups": "Wings Backups",
             "mailHosts": "Mail",
             "dnsHosts": "DNS hosts",
-            "auditLog": "Audit log"
+            "auditLog": "Audit log",
+            "securityCenter": "Security center"
         }
     },
     "adminWingsBackups": {
@@ -17958,5 +17965,43 @@
         "goAdmin": "Admin overview",
         "goUsers": "Users",
         "goSettings": "Panel settings"
+    },
+    "adminSecurity": {
+        "title": "Security center",
+        "description": "Panel wide security rules: two-factor authentication, passwords, IP access and sign-in alerts.",
+        "loadFailed": "Failed to load the security policy",
+        "saved": "Security policy saved",
+        "saveFailed": "Failed to save the security policy",
+        "twoFactor": {
+            "title": "Require two-factor authentication",
+            "description": "Users in the selected roles must set up 2FA before they can use the panel.",
+            "adoption": "{count} of {total} users have 2FA enabled.",
+            "noRoles": "No roles found."
+        },
+        "password": {
+            "title": "Password policy",
+            "description": "Applies to sign up, password changes and password resets.",
+            "minLength": "Minimum length",
+            "upper": "Require an uppercase letter",
+            "lower": "Require a lowercase letter",
+            "number": "Require a number",
+            "symbol": "Require a symbol"
+        },
+        "ip": {
+            "title": "IP allow list",
+            "description": "One IP or CIDR per line. Leave empty to allow every IP.",
+            "yourIp": "Your current IP: {ip}. It must be on the list.",
+            "scope": {
+                "admins": "Staff only",
+                "all": "Everyone"
+            },
+            "denyHint": "To block specific IPs, use the deny list.",
+            "denyLink": "Blocked IPs"
+        },
+        "alerts": {
+            "title": "Sign-in alerts",
+            "description": "Email users when their account signs in from an IP address it has not used before.",
+            "newLogin": "Send new sign-in alerts"
+        }
     }
 }
