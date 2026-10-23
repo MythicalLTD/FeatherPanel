@@ -27,6 +27,7 @@ use App\Helpers\ApiResponse;
 use App\Services\Wings\Wings;
 use App\Helpers\WingsUrlHelper;
 use App\Plugins\Events\Events\ServerEvent;
+use App\Services\Servers\TransferPowerRestorer;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -98,6 +99,8 @@ class WingsTransferStatusController
             // Update server status to offline (waiting for it to be started on new node)
             Server::updateServerById($server['id'], $updateData);
 
+            $completedTransfer = ServerTransfer::getActiveByServerId($server['id']);
+
             // Update transfer record in database
             ServerTransfer::updateByServerId($server['id'], [
                 'status' => 'completed',
@@ -116,6 +119,10 @@ class WingsTransferStatusController
                         'destination_node_id' => $destinationNodeId,
                     ]
                 );
+            }
+
+            if ($completedTransfer) {
+                TransferPowerRestorer::onTransferSucceeded((int) $completedTransfer['id']);
             }
 
             $logger->info('Server transfer completed successfully: ' . $server['name'] . ' (UUID: ' . $uuid . ')');
@@ -259,6 +266,9 @@ class WingsTransferStatusController
 
         // 4. Delete the server from the old node via Wings API
         $this->deleteServerFromOldNode($server, $transfer, $logger);
+
+        // 5. Start the server again if it was running before the transfer
+        TransferPowerRestorer::onTransferSucceeded((int) $transfer['id']);
 
         // Emit event
         global $eventManager;

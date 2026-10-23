@@ -84,6 +84,9 @@ class ServerTransferInitiator
         }
 
         $originalNodeId = (int) $server['node_id'];
+        // Opt-out: restore the power state after the transfer unless explicitly disabled.
+        $restorePowerState = !array_key_exists('restore_power_state', $options) || $options['restore_power_state'] !== false;
+        $powerStateBefore = TransferPowerRestorer::captureState($server, $sourceNode);
         $originalAllocationId = $server['allocation_id'];
 
         $currentAllocations = Allocation::getByServerId($serverId);
@@ -262,6 +265,8 @@ class ServerTransferInitiator
                 'status' => 'in_progress',
                 'progress' => 0.0,
                 'started_at' => date('Y-m-d H:i:s'),
+                'power_state_before' => $powerStateBefore,
+                'restore_power_state' => $restorePowerState ? 1 : 0,
                 'metadata' => [
                     'backups' => $backupUuids,
                     'delete_backups' => $deleteBackups,
@@ -336,6 +341,7 @@ class ServerTransferInitiator
         bool $moveAll,
         array $actingUser,
         int $maxPerRequest = 100,
+        bool $restorePowerState = true,
     ): array {
         $initiated = [];
         $failed = [];
@@ -430,6 +436,7 @@ class ServerTransferInitiator
                 'destination_allocation_id' => $primaryId,
                 'destination_additional_allocations' => $additionalIds,
                 'auto_allocate' => false,
+                'restore_power_state' => $restorePowerState,
             ], $actingUser);
 
             if ($result['success']) {

@@ -34,6 +34,7 @@ class UserNotification
     public const KIND_FILE_TRANSFER_COMPLETED = 'file_transfer_completed';
     public const KIND_FILE_TRANSFER_FAILED = 'file_transfer_failed';
     public const KIND_RESOURCE_LIMIT = 'resource_limit';
+    public const KIND_TRANSFER_POWER_FAILED = 'transfer_power_failed';
 
     public const KINDS = [
         self::KIND_TICKET_REPLY,
@@ -43,6 +44,7 @@ class UserNotification
         self::KIND_FILE_TRANSFER_COMPLETED,
         self::KIND_FILE_TRANSFER_FAILED,
         self::KIND_RESOURCE_LIMIT,
+        self::KIND_TRANSFER_POWER_FAILED,
     ];
 
     /** Read items are kept this long, unread ones three times as long. */

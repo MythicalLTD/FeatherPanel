@@ -30,6 +30,7 @@ import {
     MessageSquareText,
     TriangleAlert,
     Gauge,
+    Power,
     type LucideProps,
     ArrowRightLeft,
 } from 'lucide-react';
@@ -50,6 +51,7 @@ type InboxKind =
     | 'file_transfer_completed'
     | 'file_transfer_failed'
     | 'resource_limit'
+    | 'transfer_power_failed'
     | 'announcement';
 
 export interface InboxItem {
@@ -78,6 +80,7 @@ const KIND_ICONS: Record<InboxKind, { icon: ComponentType<LucideProps>; tone: st
     file_transfer_completed: { icon: ArrowRightLeft, tone: 'text-emerald-500 bg-emerald-500/10' },
     file_transfer_failed: { icon: ArrowRightLeft, tone: 'text-red-500 bg-red-500/10' },
     resource_limit: { icon: Gauge, tone: 'text-amber-500 bg-amber-500/10' },
+    transfer_power_failed: { icon: Power, tone: 'text-red-500 bg-red-500/10' },
     announcement: { icon: Megaphone, tone: 'text-sky-500 bg-sky-500/10' },
 };
 
@@ -89,6 +92,7 @@ const KIND_TITLES: Record<InboxKind, string> = {
     file_transfer_completed: 'navbar.inbox.kinds.file_transfer_completed',
     file_transfer_failed: 'navbar.inbox.kinds.file_transfer_failed',
     resource_limit: 'navbar.inbox.kinds.resource_limit',
+    transfer_power_failed: 'navbar.inbox.kinds.transfer_power_failed',
     announcement: 'navbar.inbox.kinds.announcement',
 };
 
@@ -100,6 +104,7 @@ const KIND_BODIES: Record<Exclude<InboxKind, 'announcement'>, string> = {
     file_transfer_completed: 'navbar.inbox.bodies.file_transfer_completed',
     file_transfer_failed: 'navbar.inbox.bodies.file_transfer_failed',
     resource_limit: 'navbar.inbox.bodies.resource_limit',
+    transfer_power_failed: 'navbar.inbox.bodies.transfer_power_failed',
 };
 
 function isKnownKind(kind: string): kind is InboxKind {

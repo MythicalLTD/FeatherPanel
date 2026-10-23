@@ -23,6 +23,7 @@ import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { Dialog, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
+import { RestorePowerStateOption } from '@/components/admin/RestorePowerStateOption';
 import { toast } from 'sonner';
 import { AlertTriangle, ArrowLeftRight, ChevronRight, Loader2, Search, ShieldCheck } from 'lucide-react';
 import { ApiAllocation, ApiNode, ApiServer } from '@/types/adminServerTypes';
@@ -58,6 +59,7 @@ export function TransferServerDialog({ server, open, onOpenChange, onCompleted }
     const [autoOpenPorts, setAutoOpenPorts] = useState(false);
     const [includeBackups, setIncludeBackups] = useState(false);
     const [deleteBackups, setDeleteBackups] = useState(false);
+    const [restorePowerState, setRestorePowerState] = useState(true);
     const [sourceDaemonType, setSourceDaemonType] = useState<DaemonType | null>(null);
     const [sourceCapabilities, setSourceCapabilities] = useState<DaemonCapabilitiesMap | null>(null);
 
@@ -206,9 +208,11 @@ export function TransferServerDialog({ server, open, onOpenChange, onCompleted }
                 auto_open_ports?: boolean;
                 include_all_backups?: boolean;
                 delete_backups?: boolean;
+                restore_power_state: boolean;
             } = {
                 destination_node_id: selectedNode.id,
                 auto_allocate: autoAllocate,
+                restore_power_state: restorePowerState,
             };
             if (autoAllocate && autoOpenPorts) {
                 payload.auto_open_ports = true;
@@ -358,6 +362,12 @@ export function TransferServerDialog({ server, open, onOpenChange, onCompleted }
                                 </div>
                             </label>
                         )}
+
+                        <RestorePowerStateOption
+                            checked={restorePowerState}
+                            onChange={setRestorePowerState}
+                            disabled={submitting}
+                        />
 
                         {canTransferBackups && (
                             <>

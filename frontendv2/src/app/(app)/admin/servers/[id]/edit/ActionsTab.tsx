@@ -29,6 +29,7 @@ import { Input } from '@/components/featherui/Input';
 import { Textarea } from '@/components/featherui/Textarea';
 import { Dialog, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
+import { RestorePowerStateOption } from '@/components/admin/RestorePowerStateOption';
 import { Label } from '@/components/ui/label';
 import {
     AlertDialog,
@@ -105,6 +106,7 @@ export function ActionsTab({
     const [deleting, setDeleting] = useState(false);
     const [isHardDelete, setIsHardDelete] = useState(false);
     const [transferring, setTransferring] = useState(false);
+    const [restorePowerState, setRestorePowerState] = useState(true);
     const [transferDialogOpen, setTransferDialogOpen] = useState(false);
     const [nodeModalOpen, setNodeModalOpen] = useState(false);
     const [allocationModalOpen, setAllocationModalOpen] = useState(false);
@@ -303,9 +305,11 @@ export function ActionsTab({
                 destination_node_id: number;
                 destination_allocation_id?: number;
                 auto_allocate?: boolean;
+                restore_power_state: boolean;
             } = {
                 destination_node_id: selectedNode.id,
                 auto_allocate: autoAllocate,
+                restore_power_state: restorePowerState,
             };
             if (!autoAllocate && selectedAllocation) {
                 payload.destination_allocation_id = selectedAllocation.id;
@@ -688,6 +692,11 @@ export function ActionsTab({
                             </Button>
                         ) : null}
                     </div>
+                    <RestorePowerStateOption
+                        checked={restorePowerState}
+                        onChange={setRestorePowerState}
+                        disabled={transferring}
+                    />
                     <AlertDialogFooter>
                         <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
                         <AlertDialogAction

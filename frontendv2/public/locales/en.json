@@ -2773,7 +2773,8 @@
                 "backup_completed": "Backup completed",
                 "backup_failed": "Backup failed",
                 "file_transfer": "File transfer finished",
-                "resource_limit": "Server near a resource limit"
+                "resource_limit": "Server near a resource limit",
+                "transfer_power": "Server not started after a transfer"
             },
             "save": "Save",
             "saved": "Notification settings saved",
@@ -4139,7 +4140,8 @@
                 "other": "Notification",
                 "file_transfer_completed": "File transfer finished",
                 "file_transfer_failed": "File transfer failed",
-                "resource_limit": "Resource limit reached"
+                "resource_limit": "Resource limit reached",
+                "transfer_power_failed": "Server not started after transfer"
             },
             "bodies": {
                 "ticket_reply": "New reply on \"{ticket}\".",
@@ -4148,7 +4150,8 @@
                 "server_crashed": "{server} stopped unexpectedly.",
                 "file_transfer_completed": "{files} item(s) from {server} arrived on {target}.",
                 "file_transfer_failed": "Sending {files} item(s) from {server} to {target} failed.",
-                "resource_limit": "{server} is using {percent}% of its {metric} limit."
+                "resource_limit": "{server} is using {percent}% of its {metric} limit.",
+                "transfer_power_failed": "{server} was running before its transfer but could not be started on the new node. Start it manually."
             },
             "metrics": {
                 "cpu": "CPU",
@@ -9071,7 +9074,9 @@
                 "insufficient_allocations_hint": "Enable \"Auto-open missing ports on destination\" to create allocations from the Wings IP list automatically.",
                 "error_title": "Transfer failed",
                 "submit": "Start Transfer",
-                "submitting": "Starting Transfer..."
+                "submitting": "Starting Transfer...",
+                "restore_power_state": "Restore power state after transfer",
+                "restore_power_state_help": "If the server is running when the transfer starts, it is started again on the new node once the transfer succeeds. Offline servers stay off."
             },
             "form": {
                 "create_title": "Create Server",
