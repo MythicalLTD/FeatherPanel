@@ -15,7 +15,7 @@ All paths are under `backend/storage/addons/{identifier}/`.
 | **bedrockaddoninstaller** | Server-scoped search API | `Controllers/Servers/`, server routes |
 | **fivemutils** | Server config APIs + curl deps | `php-ext=curl`, `Routes/fivem.php` |
 | **billinglinks** | Plugin dependency + Cron + Chat | `plugin=billingcore`, `Cron/LinkPurgeCron.php` |
-| **devutils** | CLI generators for plugin authors | `Commands/*` (`php fuse …`) |
+| **devutils** | CLI generators for plugin authors | `Commands/*` (`php cli …`) |
 | **billingplans** | Public pages with setting visibility | `Frontend/public.json` |
 
 ---
@@ -109,10 +109,13 @@ App::getInstance(true)->registerServerRoute(
     $routes,
     'mcutils-player-manager',
     '/api/user/servers/{uuidShort}/addons/mcutils/playermanager',
-    /* controller */,
-    /* methods */
+    function (Request $request, array $args) { /* $args['uuidShort'] */ },
+    'uuidShort', // route parameter holding the server short UUID (required)
+    ['GET']
 );
 ```
+
+Full example and argument order: [backend.md](./backend.md#server-route-sketch-minecraftutils-style).
 
 Sidebar (note: only `server` / `admin` / `client` / `vds` / `webspace` are merged — a top-level `"dashboard": {}` key is **ignored**):
 
@@ -181,7 +184,7 @@ config:
     required: true
 ```
 
-Until the setting exists in DB, the plugin is treated as not fully configured.
+Until `curseforge_api_key` has a non-empty value, the plugin stays loaded but the admin plugin list marks it "Not configured" and the settings tab shows a warning. See [conf-yml.md](./conf-yml.md#requiredconfigs).
 
 ---
 
@@ -216,8 +219,8 @@ See [public-pages.md](./public-pages.md) for reserved path rules.
 CLI commands under `Commands/` generate migrations, cron, plugin commands, frontend watch helpers, etc.
 
 ```bash
-php fuse makeplugincron
-php fuse exportpermissions
+php cli makeplugincron
+php cli exportpermissions
 ```
 
 Class `MakePluginCron` → invoke name is the lowercased class basename.

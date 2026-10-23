@@ -12623,6 +12623,7 @@
                 "no_description": "No description available",
                 "missing_badge": "Missing: {dep}",
                 "config_badge": "Config: {cfg}",
+                "not_configured": "Not configured",
                 "visit_action": "Visit",
                 "update_checking": "Checking...",
                 "update_available": "Update Available",
@@ -12643,6 +12644,8 @@
                 "dependencies": "Dependencies",
                 "flags": "Flags",
                 "attention": "This plugin needs attention before it can run cleanly.",
+                "not_configured_title": "This plugin is not configured yet",
+                "not_configured_description": "The plugin is loaded, but these required settings are missing or empty: {fields}. Features that depend on them may not work until you fill them in and save.",
                 "settings_description": "Manage the plugin's required and optional configuration values.",
                 "tabs": {
                     "overview": "Overview",
@@ -12788,7 +12791,8 @@
                 "store_check_failed": "Failed to check Mythic store for updates",
                 "no_release": "No downloadable release found.",
                 "assets_resynced": "Plugin assets resynced",
-                "assets_resync_failed": "Failed to resync plugin assets"
+                "assets_resync_failed": "Failed to resync plugin assets",
+                "required_missing": "Fill in the required settings before saving: {fields}"
             },
             "table": {
                 "plugin": "Plugin",

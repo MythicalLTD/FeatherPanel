@@ -19,6 +19,7 @@ namespace App\Plugins;
 
 use App\App;
 use App\Plugins\Mixins\MixinManager;
+use App\Plugins\Mixins\MixinRegistry;
 
 class PluginManager
 {
@@ -33,6 +34,14 @@ class PluginManager
     public function loadKernel(): void
     {
         global $eventManager;
+
+        // Mixin classes must be registered before plugins declare which ones they use.
+        try {
+            MixinRegistry::registerMixins();
+        } catch (\Throwable $e) {
+            $this->logger->error('Failed to register mixins: ' . $e->getMessage());
+        }
+
         try {
             $pluginFiles = $this->getPluginFiles();
             foreach ($pluginFiles as $plugin) {
@@ -243,12 +252,12 @@ class PluginManager
     private function loadMixinsForPlugin(string $plugin, array $config): void
     {
         try {
-            // Check if plugin has mixins configured
-            if (!isset($config['mixins']) || !is_array($config['mixins'])) {
+            // Check if plugin has mixins configured (top-level `mixins` or `plugin.mixins`)
+            if (PluginConfig::getMixinsFromConfig($config) === []) {
                 return;
             }
 
-            $mixins = MixinManager::loadMixinsForPlugin($plugin);
+            MixinManager::loadMixinsForPlugin($plugin);
         } catch (\Throwable $e) {
             $this->logger->error("Failed to load mixins for plugin {$plugin}: " . $e->getMessage());
         }

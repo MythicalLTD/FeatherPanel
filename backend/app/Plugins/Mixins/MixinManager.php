@@ -18,6 +18,7 @@
 namespace App\Plugins\Mixins;
 
 use App\App;
+use App\Plugins\PluginConfig;
 use App\Plugins\PluginHelper;
 
 /**
@@ -162,13 +163,13 @@ class MixinManager
 
         try {
             $config = PluginHelper::getPluginConfig($pluginIdentifier);
-            if (empty($config) || !isset($config['mixins']) || !is_array($config['mixins'])) {
+            $mixins = empty($config) ? [] : PluginConfig::getMixinsFromConfig($config);
+            if ($mixins === []) {
                 // No mixins configured
                 return [];
             }
 
-            foreach ($config['mixins'] as $mixinId => $mixinConfig) {
-                $mixinConfig = is_array($mixinConfig) ? $mixinConfig : [];
+            foreach ($mixins as $mixinId => $mixinConfig) {
                 $mixin = self::getMixin($pluginIdentifier, $mixinId, $mixinConfig);
 
                 if ($mixin !== null) {

@@ -40,6 +40,7 @@ Produce a valid addon under `backend/storage/addons/{identifier}/` that:
 | Scheduled work | `Cron/*.php` | [cron-and-commands.md](./cron-and-commands.md) |
 | CLI | `Commands/*.php` | [cron-and-commands.md](./cron-and-commands.md) |
 | Request gate | `middleware/` + `onRouterReady` | [middleware-and-hooks.md](./middleware-and-hooks.md) |
+| React to core actions | `processEvents()` + `$event->on(...)` | [events.md](./events.md) |
 | Inject into pages | `Frontend/widgets.json` | [frontend.md](./frontend.md) |
 | Nav + full page | `Frontend/sidebar.json` | [frontend.md](./frontend.md) |
 | Public page | `Frontend/public.json` | [public-pages.md](./public-pages.md) |
@@ -98,6 +99,7 @@ Details: [examples.md](./examples.md).
 - [ ] widget `page`/`location` exist ([../widgets/](../widgets/))
 - [ ] public paths avoid reserved prefixes
 - [ ] booleans in settings are `"true"`/`"false"` strings
+- [ ] every `requiredConfigs` key has a `config:` field; `validation.regex` has delimiters
 - [ ] no secrets committed
 
 ## Pitfalls
@@ -105,7 +107,7 @@ Details: [examples.md](./examples.md).
 1. `plugin.name` used as display title → use sidebar/widget titles  
 2. Hyphenated ids  
 3. Expecting Controllers to auto-load  
-4. Mixins only under `plugin.mixins` (also put top-level — see [mixins.md](./mixins.md))  
+4. Declaring a mixin id that no panel class provides (it is skipped with a warning, see [mixins.md](./mixins.md))  
 5. Cron in `App\Cron` inside an addon  
 6. Sidebar key `dashboard` (ignored)  
 7. Components referenced as `/addons/…` instead of `/components/…`  

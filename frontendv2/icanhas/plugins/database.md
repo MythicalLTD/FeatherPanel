@@ -11,7 +11,7 @@
 ### When they run
 
 1. Addon install / update (`CloudPluginsController::runAddonMigrations`)
-2. `php fuse migrate` (includes plugin migrations with a namespaced tracking id)
+2. `php cli migrate` (includes plugin migrations with a namespaced tracking id)
 
 Tracked in `featherpanel_migrations`.
 
@@ -36,7 +36,7 @@ CREATE TABLE IF NOT EXISTS `featherpanel_imagehosting_uploads` (
 ### Generating
 
 ```bash
-php fuse makemigration   # via devutils patterns / plugin file creator
+php cli makemigration   # via devutils patterns / plugin file creator
 ```
 
 Or Dev → Plugins → create migration file.

@@ -215,6 +215,54 @@ class PluginSettings extends PluginDB
     }
 
     /**
+     * Get the stored settings of a plugin as a key => value map.
+     *
+     * @param string $identifier The identifier of the plugin
+     *
+     * @throws \PDOException If database operation fails
+     *
+     * @return array<string, string>
+     */
+    public static function getSettingValues(string $identifier): array
+    {
+        $values = [];
+        foreach (self::getSettings($identifier) as $row) {
+            if (isset($row['key'])) {
+                $values[(string) $row['key']] = (string) ($row['value'] ?? '');
+            }
+        }
+
+        return $values;
+    }
+
+    /**
+     * Save the `default` of every setting declared in conf.yml that is not stored yet.
+     *
+     * Existing values are never overwritten, so this is safe to call on install,
+     * on update and when the admin settings page is opened.
+     *
+     * @param string $identifier The identifier of the plugin
+     * @param array|null $schema The `config:` block of conf.yml (loaded from the plugin when null)
+     *
+     * @throws \PDOException If database operation fails
+     *
+     * @return array<string, string> The defaults that were saved
+     */
+    public static function applyDefaults(string $identifier, ?array $schema = null): array
+    {
+        if ($schema === null) {
+            $schema = PluginConfig::getPluginRequiredAdminConfig($identifier);
+        }
+
+        $missing = PluginSettingsSchema::missingDefaults($schema, array_keys(self::getSettingValues($identifier)));
+        foreach ($missing as $key => $value) {
+            self::setSettings($identifier, $key, ['value' => $value]);
+        }
+
+        return $missing;
+    }
+
+    /**
      * Validate input parameters.
      *
      * @param string $identifier The identifier to validate

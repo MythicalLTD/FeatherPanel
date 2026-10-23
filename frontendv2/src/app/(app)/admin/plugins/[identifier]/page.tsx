@@ -52,10 +52,25 @@ import { useFormBaseline } from '@/hooks/useFormBaseline';
 interface ConfigField {
     name: string;
     display_name: string;
-    type: 'text' | 'email' | 'url' | 'password' | 'number' | 'boolean';
+    type: 'text' | 'textarea' | 'email' | 'url' | 'password' | 'number' | 'boolean' | 'file';
     description: string;
-    required: boolean;
-    default: string;
+    required?: boolean | string;
+    default?: string | number | boolean | null;
+    validation?: {
+        regex?: string;
+        min?: number;
+        max?: number;
+        type?: string;
+        message?: string;
+    };
+}
+
+function isFieldRequired(field: ConfigField): boolean {
+    return field.required === true || field.required === 'true';
+}
+
+function isEmptySetting(value: string | undefined): boolean {
+    return value === undefined || value === null || String(value).trim() === '';
 }
 
 interface Plugin {
@@ -73,6 +88,7 @@ interface Plugin {
     loaded?: boolean;
     unmetDependencies?: string[];
     missingConfigs?: string[];
+    configured?: boolean;
 }
 
 interface PluginConfig {
@@ -154,6 +170,7 @@ export default function PluginDetailPage({ params }: { params: Promise<{ identif
     const [spellsLoading, setSpellsLoading] = useState(false);
     const [savingSpellRestrictions, setSavingSpellRestrictions] = useState(false);
     const [resyncingAssets, setResyncingAssets] = useState(false);
+    const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
     const loadSelectedSpellsDetails = useCallback(async (spellIds: number[]) => {
         const spellResponses = await Promise.all(
@@ -239,6 +256,7 @@ export default function PluginDetailPage({ params }: { params: Promise<{ identif
     const configFields = config?.configSchema || [];
     const plugin = config?.plugin || config?.config;
     const author = normalizeAuthor(plugin?.author);
+    const missingConfigs = plugin?.missingConfigs ?? [];
     const hasIssues = Boolean(
         plugin &&
         ((plugin.unmetDependencies?.length || 0) > 0 || (plugin.missingConfigs?.length || 0) > 0 || !plugin.loaded),
@@ -280,6 +298,25 @@ export default function PluginDetailPage({ params }: { params: Promise<{ identif
 
     const saveAllSettings = async () => {
         if (!config) return;
+
+        const missingRequired = configFields.filter(
+            (field) => isFieldRequired(field) && isEmptySetting(config.settings[field.name]),
+        );
+        if (missingRequired.length > 0) {
+            const errors: Record<string, string> = {};
+            missingRequired.forEach((field) => {
+                errors[field.name] = t('admin.plugins.drawers.config.required');
+            });
+            setFieldErrors(errors);
+            toast.error(
+                t('admin.plugins.messages.required_missing', {
+                    fields: missingRequired.map((field) => field.display_name || field.name).join(', '),
+                }),
+            );
+            return;
+        }
+
+        setFieldErrors({});
         setSavingSettings(true);
         try {
             await Promise.all(
@@ -291,7 +328,12 @@ export default function PluginDetailPage({ params }: { params: Promise<{ identif
             await loadPlugin();
         } catch (error) {
             console.error(error);
-            toast.error(getApiErrorMessage(error, t, 'admin.plugins.messages.save_failed'));
+            const message = getApiErrorMessage(error, t, 'admin.plugins.messages.save_failed');
+            const failedKey = axios.isAxiosError(error) ? error.response?.data?.data?.key : undefined;
+            if (typeof failedKey === 'string' && failedKey !== '') {
+                setFieldErrors({ [failedKey]: message });
+            }
+            toast.error(message);
         } finally {
             setSavingSettings(false);
         }
@@ -554,6 +596,21 @@ export default function PluginDetailPage({ params }: { params: Promise<{ identif
                             ) : null
                         }
                     >
+                        {missingConfigs.length > 0 ? (
+                            <div
+                                role='alert'
+                                className='mb-5 rounded-lg border border-amber-500/25 bg-amber-500/[0.06] p-4'
+                            >
+                                <p className='text-sm font-medium text-amber-700 dark:text-amber-400'>
+                                    {t('admin.plugins.detail.not_configured_title')}
+                                </p>
+                                <p className='text-muted-foreground mt-1 text-sm'>
+                                    {t('admin.plugins.detail.not_configured_description', {
+                                        fields: missingConfigs.map(String).join(', '),
+                                    })}
+                                </p>
+                            </div>
+                        ) : null}
                         {configFields.length === 0 ? (
                             <div className='border-border/30 bg-muted/15 text-muted-foreground rounded-lg border border-dashed py-12 text-center text-sm'>
                                 {t('admin.plugins.drawers.config.no_schema')}
@@ -564,7 +621,7 @@ export default function PluginDetailPage({ params }: { params: Promise<{ identif
                                     <div key={field.name} className='space-y-2'>
                                         <div className='flex items-center justify-between gap-3'>
                                             <label className='text-sm font-medium'>{field.display_name}</label>
-                                            {field.required ? (
+                                            {isFieldRequired(field) ? (
                                                 <Badge variant='secondary'>
                                                     {t('admin.plugins.drawers.config.required')}
                                                 </Badge>
@@ -611,22 +668,38 @@ export default function PluginDetailPage({ params }: { params: Promise<{ identif
                                                           : 'text'
                                                 }
                                                 value={config.settings[field.name] || ''}
-                                                placeholder={field.default}
-                                                onChange={(event) =>
+                                                placeholder={
+                                                    field.default !== undefined && field.default !== null
+                                                        ? String(field.default)
+                                                        : undefined
+                                                }
+                                                required={isFieldRequired(field)}
+                                                error={fieldErrors[field.name]}
+                                                onChange={(event) => {
+                                                    const nextValue = event.target.value;
+                                                    setFieldErrors((prev) => {
+                                                        if (!prev[field.name]) return prev;
+                                                        const next = { ...prev };
+                                                        delete next[field.name];
+                                                        return next;
+                                                    });
                                                     setConfig((prev) =>
                                                         prev
                                                             ? {
                                                                   ...prev,
                                                                   settings: {
                                                                       ...prev.settings,
-                                                                      [field.name]: event.target.value,
+                                                                      [field.name]: nextValue,
                                                                   },
                                                               }
                                                             : prev,
-                                                    )
-                                                }
+                                                    );
+                                                }}
                                             />
                                         )}
+                                        {field.type === 'boolean' && fieldErrors[field.name] ? (
+                                            <p className='text-destructive text-xs'>{fieldErrors[field.name]}</p>
+                                        ) : null}
                                         {field.description && field.type !== 'boolean' ? (
                                             <p className='text-muted-foreground text-xs'>{field.description}</p>
                                         ) : null}

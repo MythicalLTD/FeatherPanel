@@ -28,6 +28,7 @@ use App\Config\ConfigInterface;
 use App\Plugins\PluginSettings;
 use Symfony\Component\Yaml\Yaml;
 use App\Plugins\PluginDependencies;
+use App\Plugins\PluginSettingsSchema;
 use App\Plugins\PluginRequiredConfigs;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -680,6 +681,14 @@ class PluginManagerController
 
             if (!isset($data['settings']) || !is_array($data['settings'])) {
                 return ApiResponse::error('Settings data is required', 'BAD_REQUEST', 400);
+            }
+
+            // Enforce `required` and `validation` from the conf.yml `config:` block before saving anything.
+            $errors = PluginSettingsSchema::validate(PluginConfig::getPluginRequiredAdminConfig($identifier), $data['settings']);
+            if ($errors !== []) {
+                return ApiResponse::error(implode(' ', array_merge(...array_values($errors))), 'PLUGIN_SETTING_INVALID', 400, [
+                    'errors' => $errors,
+                ]);
             }
 
             // Update each setting
@@ -1674,7 +1683,7 @@ VALUES ('Plugin {$identifier} initialized successfully', 'info');";
         // Create simple cron job example
         $cronContent = "<?php
 
-namespace App\Cron;
+namespace App\\Addons\\{$identifier}\\Cron;
 
 use App\Cron\Cron;
 use App\Cron\TimeTask;

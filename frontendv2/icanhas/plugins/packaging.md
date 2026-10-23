@@ -37,7 +37,7 @@ Approximate order:
 5. Restore `Storage/`  
 6. Symlink `Public/` → `public/addons/{identifier}`  
 7. Symlink `Frontend/Components/` → `public/components/{identifier}`  
-8. Run `Migrations/*.sql`  
+8. Run `Migrations/*.sql`, then save `default` values from `conf.yml` for settings that are not stored yet  
 9. Call `pluginUpdate` or `pluginInstall`  
 10. Record installed plugin metadata  
 
@@ -45,7 +45,7 @@ Approximate order:
 
 ## Manual / git installs
 
-Copy into `storage/addons/{identifier}/`, restart PHP-FPM/opcache if needed, `php fuse migrate`, ensure Components/Public symlinks exist.
+Copy into `storage/addons/{identifier}/`, restart PHP-FPM/opcache if needed, `php cli migrate`, ensure Components/Public symlinks exist.
 
 ## What to ship
 
@@ -64,7 +64,7 @@ plugin:
 
 ## Operator checklist
 
-1. Enable / configure settings (`requiredConfigs`)  
+1. Fill in settings until the plugin no longer shows "Not configured" (`requiredConfigs` and `required` fields)  
 2. Hit new API routes  
 3. Confirm sidebar/widgets/public pages appear (hard refresh)  
 4. Confirm theme/UI packs selectable if shipped  
