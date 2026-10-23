@@ -28,6 +28,8 @@
 
 - FeatherPanel Premium is now described as what it is: an optional monthly donation that helps keep the panel going, not a paywall. Every panel feature works without it. If you can't donate, you can claim free Premium on Admin, FeatherPanel Premium by starring the GitHub repo or spreading the word. Free Premium lasts 30 days and is renewed the same way; when it expires the extras return to the defaults. by @nayskutzu
 - Donation link to the non-profit Hack Club HCB fund (admin only): a small card on the admin dashboard that hides for 30 days when dismissed (synced per admin) and is never shown while Premium is active, plus a Support FeatherPanel link on the Premium page. by @nayskutzu
+- The admin setup wizard was rebuilt: welcome hero with a live branding preview, an animated progress rail, smooth step transitions (honours reduced motion), inline validation for mail and Turnstile, keyboard navigation (Enter, Alt + arrows) and a new "You're all set" screen with next steps (location, node, spells, first server, docs). All settings it saves are unchanged. by @nayskutzu
+- The `##icanhasfeatherpanel` debug console got a fresh look and a new Panel & server section (admin root): connectivity for database, Redis, Mercure, nodes, cron and queue, build and commit, PHP and FrankenPHP worker info, feature flags, Premium state, node daemon capabilities, copy diagnostics, clear caches and force onboarding (both with confirmation). New read-only `GET /api/admin/debug/runtime`. by @nayskutzu
 
 ### Fixed
 

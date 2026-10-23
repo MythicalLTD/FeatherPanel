@@ -4278,7 +4278,8 @@
                 "api": "API history",
                 "benchmark": "Benchmarks",
                 "logs": "Logs",
-                "tools": "Tools"
+                "tools": "Tools",
+                "panel": "Panel & server"
             },
             "apiHistory": "Recent requests ({count})",
             "apiClearHistory": "Clear",
@@ -4311,6 +4312,34 @@
                 "panel": "Panel",
                 "developerMode": "Developer mode",
                 "memory": "JS heap"
+            },
+            "panel": {
+                "adminOnly": "Panel and server diagnostics require admin root permission.",
+                "copyDiagnostics": "Copy diagnostics",
+                "refresh": "Refresh",
+                "clearCache": "Clear caches",
+                "forceOobe": "Force onboarding",
+                "connectivity": "Connectivity",
+                "build": "Build",
+                "runtime": "PHP & FrankenPHP",
+                "flags": "Feature flags",
+                "premium": "Premium state",
+                "nodes": "Node daemon capabilities",
+                "noNodes": "No nodes configured yet.",
+                "loadFailed": "Could not load diagnostics.",
+                "overall": "Overall health: {status}",
+                "enabled": "enabled",
+                "disabled": "disabled",
+                "nodesDetail": "{total} total, {unhealthy} unhealthy",
+                "queueDetail": "{count} mail pending",
+                "cacheCleared": "App and route caches cleared",
+                "oobeReset": "Onboarding reset. Opening the setup wizard…",
+                "actionFailed": "Action failed",
+                "clearCacheTitle": "Clear all panel caches?",
+                "clearCacheBody": "Clears the app cache, the compiled route cache and pending timed tasks. Pages may be slower for a moment while caches rebuild.",
+                "forceOobeTitle": "Re-run the onboarding wizard?",
+                "forceOobeBody": "Marks setup as not completed so every admin is sent through the onboarding wizard again. Your saved settings are kept.",
+                "confirm": "Yes, continue"
             }
         }
     },
