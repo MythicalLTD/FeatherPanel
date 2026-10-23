@@ -21,6 +21,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RouteCollection;
 use App\Controllers\User\User\SessionController;
 use App\Controllers\User\User\UiPreferencesController;
+use App\Controllers\User\User\NotificationSettingsController;
 
 return function (RouteCollection $routes): void {
     App::getInstance(true)->registerAuthRoute(
@@ -74,6 +75,37 @@ return function (RouteCollection $routes): void {
         },
         ['PATCH'],
         Rate::perMinute(30), // Default: Admin can override in ratelimit.json
+        'user-session'
+    );
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'notification-settings-get',
+        '/api/user/notification-settings',
+        function (Request $request) {
+            return (new NotificationSettingsController())->get($request);
+        },
+        ['GET']
+    );
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'notification-settings-update',
+        '/api/user/notification-settings',
+        function (Request $request) {
+            return (new NotificationSettingsController())->update($request);
+        },
+        ['PUT'],
+        Rate::perMinute(30), // Default: Admin can override in ratelimit.json
+        'user-session'
+    );
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'notification-settings-test-discord',
+        '/api/user/notification-settings/test-discord',
+        function (Request $request) {
+            return (new NotificationSettingsController())->testDiscord($request);
+        },
+        ['POST'],
+        Rate::perMinute(5), // Default: Admin can override in ratelimit.json
         'user-session'
     );
     App::getInstance(true)->registerAuthRoute(

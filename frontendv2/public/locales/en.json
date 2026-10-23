@@ -1547,7 +1547,10 @@
             "FEATHEROS_STATE_RESET_FAILED": "Failed to reset the desktop state",
             "FEATHEROS_WALLPAPER_SAVE_FAILED": "Failed to save wallpaper",
             "FEATHEROS_TRASH_UNAVAILABLE": "Trash is unavailable. Run database migrations, then try again.",
-            "ALT_RESET_FAILED": "Failed to reset alt detection"
+            "ALT_RESET_FAILED": "Failed to reset alt detection",
+            "INVALID_DISCORD_WEBHOOK": "Enter a valid Discord webhook URL",
+            "NOTIFICATION_SETTINGS_SAVE_FAILED": "Failed to save notification settings",
+            "DISCORD_WEBHOOK_TEST_FAILED": "Discord rejected the webhook"
         },
         "global": {}
     },
@@ -2731,6 +2734,28 @@
             "unknown_device": "Unknown device",
             "only_this": "No other devices are signed in.",
             "legacy": "This browser signed in before session tracking was added. Sign out all other sessions to start tracking it."
+        },
+        "notifications": {
+            "title": "Notifications",
+            "description": "Get told about server events outside the panel. Everything is on by default; turn off what you do not need.",
+            "email": "Email",
+            "emailDescription": "Send server events to your account email.",
+            "discord": "Discord webhook",
+            "discordDescription": "Post server events to a Discord channel through a webhook URL.",
+            "sendTest": "Send test",
+            "events": "Events",
+            "event": {
+                "server_crashed": "Server crashed",
+                "backup_completed": "Backup completed",
+                "backup_failed": "Backup failed",
+                "file_transfer": "File transfer finished"
+            },
+            "save": "Save",
+            "saved": "Notification settings saved",
+            "saveFailed": "Failed to save notification settings",
+            "loadFailed": "Failed to load notification settings",
+            "testSent": "Test message sent to Discord",
+            "testFailed": "Discord did not accept the test message"
         }
     },
     "servers": {
