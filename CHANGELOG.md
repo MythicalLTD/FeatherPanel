@@ -19,6 +19,7 @@
 - Global "Reset alt detection for all users" on the admin users page (`POST /api/admin/users/alt-detection/reset`, `admin.users.edit`). (#342) by @nayskutzu
 - FeatherOS: native server window with a Finder style sidebar for every server section, including a file manager pane, plus Settings and Activity panes. (#343) by @nayskutzu
 - FeatherOS: windows close with a macOS style animation (skipped with reduce motion). (#344) by @nayskutzu
+- FeatherWings node options (needs FeatherWings #23): a switch on Admin, Nodes, Advanced that fails a server install when the install script exits non-zero (off by default), container CPU shares (default 1024, 0 uses the Docker default), and an option when resetting the node key to push the new key to the node automatically. The key is only changed if the node accepts it. The server console shows a block I/O card when the node reports disk I/O. Only offered on FeatherWings nodes. (#363) by @nayskutzu
 
 ### Improved
 

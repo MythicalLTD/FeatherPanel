@@ -57,6 +57,11 @@ class DaemonCapabilities
     public const FEATURE_COMPRESS_7Z = 'compress_7z';
     public const FEATURE_FILE_HISTORY = 'file_history';
     public const FEATURE_FILE_COLLABORATION = 'file_collaboration';
+    /** Daemon reads system.check_install_exit_code and docker.cpu_shares from config.yml. */
+    public const FEATURE_INSTALL_EXIT_CODE = 'install_exit_code';
+    public const FEATURE_CPU_SHARES = 'cpu_shares';
+    /** Daemon applies new token_id/token pushed through POST /api/update (master key rotation). */
+    public const FEATURE_CREDENTIAL_PROPAGATION = 'credential_propagation';
 
     /** @var list<string> */
     public const VALID_TYPES = [
@@ -98,6 +103,9 @@ class DaemonCapabilities
         self::FEATURE_COMPRESS_7Z,
         self::FEATURE_FILE_HISTORY,
         self::FEATURE_FILE_COLLABORATION,
+        self::FEATURE_INSTALL_EXIT_CODE,
+        self::FEATURE_CPU_SHARES,
+        self::FEATURE_CREDENTIAL_PROPAGATION,
     ];
 
     /** @var array<string, list<string>> */
@@ -124,6 +132,9 @@ class DaemonCapabilities
             self::FEATURE_CONTAINER_EXEC,
             self::FEATURE_FILE_HISTORY,
             self::FEATURE_FILE_COLLABORATION,
+            self::FEATURE_INSTALL_EXIT_CODE,
+            self::FEATURE_CPU_SHARES,
+            self::FEATURE_CREDENTIAL_PROPAGATION,
         ],
         self::TYPE_WINGS_RS => [
             self::FEATURE_CORE,

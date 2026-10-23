@@ -56,6 +56,8 @@ class Node
         'daemonListen',
         'daemonSFTP',
         'fastdl_port',
+        'wings_check_install_exit_code',
+        'wings_cpu_shares',
         'daemonBase',
         'daemon_type',
         'public_ip_v4',
@@ -120,6 +122,10 @@ class Node
 
         if (isset($data['fastdl_port']) && (!is_numeric($data['fastdl_port']) || (int) $data['fastdl_port'] < 1 || (int) $data['fastdl_port'] > 65535)) {
             $errors[] = 'FastDL port must be a number between 1 and 65535';
+        }
+
+        if (isset($data['wings_cpu_shares']) && (!is_numeric($data['wings_cpu_shares']) || (int) $data['wings_cpu_shares'] < 0 || (int) $data['wings_cpu_shares'] > 262144)) {
+            $errors[] = 'CPU shares must be a number between 0 and 262144';
         }
 
         if (isset($data['daemon_type']) && !DaemonCapabilities::isValidType((string) $data['daemon_type'])) {
@@ -865,6 +871,40 @@ class Node
     }
 
     /**
+     * Panel-managed config values sent to the daemon through POST /api/update.
+     * Mirrors the corresponding keys of generateWingsConfigYaml().
+     *
+     * @param array<string, mixed> $node
+     *
+     * @return array<string, mixed>
+     */
+    public static function buildPanelConfigurationPayload(array $node): array
+    {
+        $fqdn = (string) ($node['fqdn'] ?? 'localhost');
+
+        return [
+            'uuid' => (string) ($node['uuid'] ?? ''),
+            'token_id' => (string) ($node['daemon_token_id'] ?? ''),
+            'token' => (string) ($node['daemon_token'] ?? ''),
+            'api' => [
+                'host' => '0.0.0.0',
+                'port' => (int) ($node['daemonListen'] ?? 8443),
+                'ssl' => [
+                    'enabled' => ($node['scheme'] ?? 'https') === 'https',
+                    'cert' => '/etc/letsencrypt/live/' . $fqdn . '/fullchain.pem',
+                    'key' => '/etc/letsencrypt/live/' . $fqdn . '/privkey.pem',
+                ],
+                'upload_limit' => (int) ($node['upload_size'] ?? 100),
+            ],
+            'system' => [
+                'sftp' => [
+                    'bind_port' => (int) ($node['daemonSFTP'] ?? 2022),
+                ],
+            ],
+        ];
+    }
+
+    /**
      * Generate Wings config.yml content from node data.
      * Used by the panel to serve config to Wings via GET /api/remote/config (setup flow).
      *
@@ -916,6 +956,13 @@ class Node
             $yaml .= '    bind_port: ' . $fastdlPort . "\n";
             $yaml .= '    public_hostname: ' . $fqdn . "\n";
             $yaml .= "    nginx_config_path: /etc/nginx/sites-available/featherwings-fastdl\n";
+        }
+        if ($caps->supports(DaemonCapabilities::FEATURE_INSTALL_EXIT_CODE)) {
+            $yaml .= '  check_install_exit_code: ' . (!empty($node['wings_check_install_exit_code']) ? 'true' : 'false') . "\n";
+        }
+        if ($caps->supports(DaemonCapabilities::FEATURE_CPU_SHARES)) {
+            $yaml .= "docker:\n";
+            $yaml .= '  cpu_shares: ' . max(0, (int) ($node['wings_cpu_shares'] ?? 1024)) . "\n";
         }
         $allowedMounts = Mount::getAllowedSourcesForNode((int) ($node['id'] ?? 0));
         $yaml .= rtrim(Yaml::dump(['allowed_mounts' => $allowedMounts], 3, 2, Yaml::DUMP_EMPTY_ARRAY_AS_SEQUENCE)) . "\n";
