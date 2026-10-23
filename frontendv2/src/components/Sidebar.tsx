@@ -279,8 +279,8 @@ function SidebarContent({
     }
 
     const navItemBase = isClassicChrome
-        ? 'group relative flex items-center w-full rounded-md text-sm font-medium transition-colors'
-        : 'group relative flex items-center w-full rounded-xl text-sm font-medium transition-[background-color,box-shadow,color,transform] duration-200';
+        ? 'group relative flex items-center w-full rounded-md text-sm font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none'
+        : 'group relative flex items-center w-full rounded-xl text-sm font-medium transition-[background-color,box-shadow,color,transform] duration-200 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none';
     const navItemIdle = isClassicChrome
         ? 'text-muted-foreground hover:bg-muted hover:text-foreground'
         : 'text-muted-foreground hover:bg-muted/55 hover:text-foreground dark:hover:bg-muted/20';

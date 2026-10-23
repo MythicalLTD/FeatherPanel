@@ -453,7 +453,8 @@ export default function SpellsPage() {
                     <Input
                         id='feathercloud-spells-search'
                         placeholder={t('admin.marketplace.spells.search_placeholder')}
-                        className='pl-9'
+                        variant='surface'
+                        className='h-11 pl-9'
                         value={onlineSearch}
                         onChange={(e) => setOnlineSearch(e.target.value)}
                         onKeyDown={(e) => {
@@ -467,7 +468,7 @@ export default function SpellsPage() {
                 </div>
                 <div className='flex flex-wrap gap-2'>
                     <select
-                        className='border-border bg-background h-9 rounded-md border px-3 text-sm'
+                        className='border-border bg-background h-11 rounded-xl border px-3 text-sm'
                         value={channel}
                         onChange={(e) => setChannel(e.target.value)}
                         aria-label={t('admin.marketplace.spells.aria.channel')}
@@ -477,7 +478,7 @@ export default function SpellsPage() {
                         <option value='pterodactyl'>Pterodactyl</option>
                     </select>
                     <select
-                        className='border-border bg-background h-9 rounded-md border px-3 text-sm'
+                        className='border-border bg-background h-11 rounded-xl border px-3 text-sm'
                         value={sort}
                         onChange={(e) => setSort(e.target.value)}
                         aria-label={t('admin.marketplace.spells.aria.sort')}
@@ -488,7 +489,7 @@ export default function SpellsPage() {
                         <option value='newest'>{t('ui.admin.feathercloud.spells.newest')}</option>
                         <option value='name'>{t('ui.admin.feathercloud.spells.name')}</option>
                     </select>
-                    <Button size='sm' onClick={() => runSpellsSearch()} disabled={onlineLoading}>
+                    <Button size='sm' onClick={() => runSpellsSearch()} disabled={onlineLoading} className='h-11'>
                         <Search className='mr-2 h-4 w-4' />
                         {t('admin.marketplace.spells.search_button')}
                     </Button>

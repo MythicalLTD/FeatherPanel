@@ -146,7 +146,7 @@ export default function CategoryArticlesPage({ params }: { params: Promise<{ id:
 
             <WidgetRenderer widgets={getWidgets('dashboard-knowledgebase-category', 'before-articles-list')} />
             {pagination && pagination.total_pages > 1 && (
-                <div className='border-border bg-card/50 flex items-center justify-between gap-4 rounded-xl border px-4 py-3'>
+                <div className='fp-surface-solid flex items-center justify-between gap-4 rounded-xl border px-4 py-3'>
                     <Button
                         variant='outline'
                         size='sm'

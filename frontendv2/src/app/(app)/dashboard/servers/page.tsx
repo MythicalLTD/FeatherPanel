@@ -619,7 +619,7 @@ export default function ServersPage() {
                     {serverScope === 'all' ? (
                         <div className='space-y-6'>
                             {pagination.total_pages > 1 && (
-                                <div className='border-border bg-card/50 mb-4 flex items-center justify-between gap-4 rounded-xl border px-4 py-3'>
+                                <div className='fp-surface-solid mb-4 flex items-center justify-between gap-4 rounded-xl border px-4 py-3'>
                                     <button
                                         onClick={() => changePage(pagination.current_page - 1)}
                                         disabled={!pagination.has_prev || loading}
@@ -720,7 +720,7 @@ export default function ServersPage() {
                             <TabPanels className='mt-2'>
                                 <TabPanel>
                                     {pagination.total_pages > 1 && (
-                                        <div className='border-border bg-card/50 mb-4 flex items-center justify-between gap-4 rounded-xl border px-4 py-3'>
+                                        <div className='fp-surface-solid mb-4 flex items-center justify-between gap-4 rounded-xl border px-4 py-3'>
                                             <button
                                                 onClick={() => changePage(pagination.current_page - 1)}
                                                 disabled={!pagination.has_prev || loading}

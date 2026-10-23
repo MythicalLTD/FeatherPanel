@@ -542,7 +542,7 @@ export default function ServerDatabasesPage() {
                             size='default'
                             onClick={handleDeleteAll}
                             disabled={loading || actionLoading || pagination.total === 0}
-                            className='w-full shrink-0 sm:w-auto'
+                            className='h-14 w-full shrink-0 sm:w-auto'
                         >
                             <Trash2 className='mr-2 h-4 w-4' />
                             {t('serverDatabases.deleteAll')}
@@ -551,7 +551,7 @@ export default function ServerDatabasesPage() {
                 </div>
 
                 {canDelete && databases.length > 0 && (
-                    <div className='fp-surface flex flex-wrap items-center justify-between gap-3 rounded-xl border px-4 py-3'>
+                    <div className='fp-surface-solid flex flex-wrap items-center justify-between gap-3 rounded-xl border px-4 py-3'>
                         <div className='flex items-center gap-3'>
                             <Checkbox
                                 checked={allSelected}

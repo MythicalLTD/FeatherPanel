@@ -315,7 +315,7 @@ export default function WebSpacesDashboardPage() {
                 </div>
 
                 {filteredSpaces.length > 0 && (
-                    <div className='border-border/50 flex flex-wrap items-center justify-between gap-3 border-t pt-3'>
+                    <div className='fp-surface-solid flex flex-wrap items-center justify-between gap-3 rounded-xl border px-4 py-3'>
                         <div className='flex flex-wrap items-center gap-2 text-sm'>
                             <button type='button' onClick={selectAllVisible} className='text-primary hover:underline'>
                                 {t('servers.bulk.selectAllPage')}
@@ -405,7 +405,7 @@ export default function WebSpacesDashboardPage() {
                     ) : (
                         <>
                             {totalPages > 1 && (
-                                <div className='border-border bg-card/50 mb-4 flex items-center justify-between gap-4 rounded-xl border px-4 py-3'>
+                                <div className='fp-surface-solid mb-4 flex items-center justify-between gap-4 rounded-xl border px-4 py-3'>
                                     <button
                                         onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                                         disabled={currentPage <= 1}

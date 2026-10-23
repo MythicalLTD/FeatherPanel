@@ -289,6 +289,7 @@ export function DatabaseDumpsPanel({ uuidShort, directory = DEFAULT_DB_DIRECTORY
                         onClick={() => fetchDumps()}
                         disabled={loading || actionLoading}
                         aria-label={t('serverBackups.refresh')}
+                        className='h-14'
                     >
                         <RefreshCw className={cn('h-4 w-4 sm:mr-2', loading && 'animate-spin')} />
                         <span className='hidden sm:inline'>{t('serverBackups.refresh')}</span>
@@ -299,6 +300,7 @@ export function DatabaseDumpsPanel({ uuidShort, directory = DEFAULT_DB_DIRECTORY
                             size='default'
                             onClick={handleDeleteAll}
                             disabled={loading || actionLoading}
+                            className='h-14'
                         >
                             <Trash2 className='mr-2 h-4 w-4' />
                             {t('serverBackups.deleteAll')}
@@ -308,7 +310,7 @@ export function DatabaseDumpsPanel({ uuidShort, directory = DEFAULT_DB_DIRECTORY
             </div>
 
             {(canDelete || canDownload) && filtered.length > 0 && (
-                <div className='border-border bg-card/50 flex flex-wrap items-center justify-between gap-3 rounded-xl border px-4 py-3'>
+                <div className='fp-surface-solid flex flex-wrap items-center justify-between gap-3 rounded-xl border px-4 py-3'>
                     <div className='flex items-center gap-3'>
                         <Checkbox
                             checked={allSelected}

@@ -15,14 +15,14 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/featherui/Button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/featherui/Input';
 import { Label } from '@/components/ui/label';
-import { Radar, Server, Scan, ShieldCheck, Activity, Zap, X, AlertTriangle, Terminal, Plus } from 'lucide-react';
+import { PageCard } from '@/components/featherui/PageCard';
+import { Server, Scan, ShieldCheck, X, AlertTriangle, Plus, Loader2 } from 'lucide-react';
 import axios from 'axios';
 import { toast } from 'sonner';
 import { getApiErrorMessage } from '@/lib/api-errors';
@@ -30,7 +30,7 @@ import { cn } from '@/lib/utils';
 import { ServerSelectionModal } from '@/components/dashboard/ServerSelectionModal';
 import { ResourceCard } from '@/components/featherui/ResourceCard';
 
-interface Server {
+interface ServerItem {
     id: number;
     uuid: string;
     uuidShort: string;
@@ -56,26 +56,18 @@ const ScannerTab = () => {
     const { t } = useTranslation();
     const [scanning, setScanning] = useState(false);
     const [scanMode, setScanMode] = useState<'single' | 'batch'>('single');
-    const [selectedServers, setSelectedServers] = useState<Server[]>([]);
+    const [selectedServers, setSelectedServers] = useState<ServerItem[]>([]);
     const [scanForm, setScanForm] = useState({
         directory: '/',
         max_depth: 10,
-    });
-
-    const [scanProgress, setScanProgress] = useState({
-        message: '',
-        filesScanned: 0,
-        currentDirectory: '',
     });
 
     const [scanResults, setScanResults] = useState<ScanResult | null>(null);
     const [batchResults, setBatchResults] = useState<BatchScanResult[]>([]);
 
     const [serverModalOpen, setServerModalOpen] = useState(false);
-    const [allServers, setAllServers] = useState<Server[]>([]);
+    const [allServers, setAllServers] = useState<ServerItem[]>([]);
     const [loadingServers, setLoadingServers] = useState(false);
-
-    const progressTimer = useRef<NodeJS.Timeout | null>(null);
 
     const fetchServers = useCallback(
         async (query = '') => {
@@ -97,44 +89,6 @@ const ScannerTab = () => {
         [t],
     );
 
-    const startFakeProgress = () => {
-        setScanProgress({
-            message: t('admin.featherzerotrust.scanner.progress.initializing'),
-            filesScanned: 0,
-            currentDirectory: scanForm.directory,
-        });
-
-        const messages = [
-            t('admin.featherzerotrust.scanner.progress.scanningDirectory'),
-            t('admin.featherzerotrust.scanner.progress.analyzingFileSystem'),
-            t('admin.featherzerotrust.scanner.progress.checkingPermissions'),
-            t('admin.featherzerotrust.scanner.progress.calculatingHashes'),
-            t('admin.featherzerotrust.scanner.progress.comparingDatabase'),
-            t('admin.featherzerotrust.scanner.progress.validatingSignatures'),
-            t('admin.featherzerotrust.scanner.progress.scanningPatterns'),
-        ];
-
-        let idx = 0;
-        const dirs = ['/home', '/var', '/usr/bin', '/etc', '/opt', '/tmp', '/srv', '/lib64'];
-
-        progressTimer.current = setInterval(() => {
-            setScanProgress((prev) => {
-                const nextCount = prev.filesScanned + Math.floor(Math.random() * 80) + 20;
-                return {
-                    message: messages[idx % messages.length],
-                    filesScanned: nextCount,
-                    currentDirectory: dirs[Math.floor((nextCount / 200) % dirs.length)],
-                };
-            });
-            idx++;
-        }, 1500);
-    };
-
-    const stopProgress = () => {
-        if (progressTimer.current) clearInterval(progressTimer.current);
-        setScanProgress({ message: '', filesScanned: 0, currentDirectory: '' });
-    };
-
     const handlePerformScan = async () => {
         if (selectedServers.length === 0) {
             toast.error(t('admin.featherzerotrust.scanner.selectServer'));
@@ -144,7 +98,6 @@ const ScannerTab = () => {
         setScanning(true);
         setScanResults(null);
         setBatchResults([]);
-        startFakeProgress();
 
         try {
             if (scanMode === 'single') {
@@ -179,269 +132,211 @@ const ScannerTab = () => {
             toast.error(getApiErrorMessage(err, t, 'admin.featherzerotrust.scanner.scanFailed'));
         } finally {
             setScanning(false);
-            stopProgress();
         }
     };
 
-    const addServer = (server: Server) => {
+    const addServer = (server: ServerItem) => {
         if (scanMode === 'single') {
             setSelectedServers([server]);
-        } else {
-            if (!selectedServers.find((s) => s.uuid === server.uuid)) {
-                setSelectedServers([...selectedServers, server]);
-            }
+        } else if (!selectedServers.find((s) => s.uuid === server.uuid)) {
+            setSelectedServers([...selectedServers, server]);
         }
     };
 
-    useEffect(() => {
-        return () => stopProgress();
-    }, []);
+    const modes = [
+        {
+            id: 'single' as const,
+            label: t('admin.featherzerotrust.scanner.single'),
+            desc: t('admin.featherzerotrust.scanner.singleDesc'),
+            icon: Scan,
+        },
+        {
+            id: 'batch' as const,
+            label: t('admin.featherzerotrust.scanner.batch'),
+            desc: t('admin.featherzerotrust.scanner.batchDesc'),
+            icon: Server,
+        },
+    ];
 
     return (
         <div className='space-y-6'>
-            <div className='grid grid-cols-1 gap-6 lg:grid-cols-3'>
-                <Card className='fp-surface border lg:col-span-2'>
-                    <CardHeader>
-                        <CardTitle className='flex items-center gap-2 text-lg'>
-                            <Activity className='text-primary h-5 w-5' />
-                            {t('admin.featherzerotrust.scanner.config')}
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className='space-y-6'>
-                        <div className='grid grid-cols-2 gap-4'>
-                            {[
-                                {
-                                    id: 'single',
-                                    label: t('admin.featherzerotrust.scanner.single'),
-                                    icon: Scan,
-                                    desc: t('admin.featherzerotrust.scanner.singleDesc'),
-                                },
-                                {
-                                    id: 'batch',
-                                    label: t('admin.featherzerotrust.scanner.batch'),
-                                    icon: Zap,
-                                    desc: t('admin.featherzerotrust.scanner.batchDesc'),
-                                },
-                            ].map((mode) => (
+            <div className='grid grid-cols-1 gap-4 lg:grid-cols-3'>
+                <PageCard
+                    className='lg:col-span-2'
+                    title={t('admin.featherzerotrust.scanner.config')}
+                    icon={ShieldCheck}
+                >
+                    <div className='space-y-5'>
+                        <div className='grid grid-cols-1 gap-3 sm:grid-cols-2'>
+                            {modes.map((mode) => (
                                 <button
                                     key={mode.id}
+                                    type='button'
                                     onClick={() => {
-                                        setScanMode(mode.id as 'single' | 'batch');
+                                        setScanMode(mode.id);
                                         setSelectedServers([]);
                                     }}
                                     className={cn(
-                                        'group relative overflow-hidden rounded-2xl border-2 p-4 text-left transition-all',
+                                        'fp-surface-solid rounded-xl border p-4 text-left transition-colors',
                                         scanMode === mode.id
-                                            ? 'border-primary bg-primary/5'
-                                            : 'border-border/50 hover:border-primary/30 hover:bg-muted/30',
+                                            ? 'border-primary/50 bg-primary/5'
+                                            : 'hover:border-primary/30',
                                     )}
                                 >
-                                    {scanMode === mode.id && (
-                                        <div className='bg-primary/5 absolute inset-0 animate-pulse' />
-                                    )}
-                                    <div className='relative z-10'>
-                                        <mode.icon
-                                            className={cn(
-                                                'mb-2 h-6 w-6',
-                                                scanMode === mode.id ? 'text-primary' : 'text-muted-foreground',
-                                            )}
-                                        />
-                                        <div className='text-sm font-bold'>{mode.label}</div>
-                                        <div className='text-muted-foreground text-[10px]'>{mode.desc}</div>
-                                    </div>
+                                    <mode.icon
+                                        className={cn(
+                                            'mb-2 h-5 w-5',
+                                            scanMode === mode.id ? 'text-primary' : 'text-muted-foreground',
+                                        )}
+                                    />
+                                    <div className='text-sm font-semibold'>{mode.label}</div>
+                                    <div className='text-muted-foreground mt-0.5 text-xs'>{mode.desc}</div>
                                 </button>
                             ))}
                         </div>
 
-                        <div className='grid grid-cols-2 gap-4 pt-2'>
+                        <div className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
                             <div className='space-y-2'>
-                                <Label className='text-xs'>{t('admin.featherzerotrust.scanner.directory')}</Label>
+                                <Label className='text-sm'>{t('admin.featherzerotrust.scanner.directory')}</Label>
                                 <Input
-                                    className='h-9'
+                                    variant='surface'
+                                    className='h-11'
                                     value={scanForm.directory}
                                     onChange={(e) => setScanForm({ ...scanForm, directory: e.target.value })}
                                 />
                             </div>
                             <div className='space-y-2'>
-                                <Label className='text-xs'>{t('admin.featherzerotrust.scanner.maxDepth')}</Label>
+                                <Label className='text-sm'>{t('admin.featherzerotrust.scanner.maxDepth')}</Label>
                                 <Input
-                                    className='h-9'
+                                    variant='surface'
+                                    className='h-11'
                                     type='number'
                                     value={scanForm.max_depth}
-                                    onChange={(e) => setScanForm({ ...scanForm, max_depth: parseInt(e.target.value) })}
+                                    onChange={(e) =>
+                                        setScanForm({ ...scanForm, max_depth: parseInt(e.target.value) || 0 })
+                                    }
                                 />
                             </div>
                         </div>
 
                         <Button
-                            className='text-md h-12 w-full font-bold transition-all hover:scale-[1.01] active:scale-[0.99]'
+                            className='h-11 w-full'
                             disabled={scanning || selectedServers.length === 0}
-                            onClick={handlePerformScan}
+                            onClick={() => void handlePerformScan()}
                         >
                             {scanning ? (
-                                <Radar className='mr-2 h-5 w-5 animate-spin' />
+                                <Loader2 className='mr-2 h-4 w-4 animate-spin' />
                             ) : (
-                                <ShieldCheck className='mr-2 h-5 w-5' />
+                                <ShieldCheck className='mr-2 h-4 w-4' />
                             )}
                             {scanning
                                 ? t('admin.featherzerotrust.scanner.scanning')
                                 : t('admin.featherzerotrust.scanner.startScan')}
                         </Button>
-                    </CardContent>
-                </Card>
+                    </div>
+                </PageCard>
 
-                <Card className='fp-surface border'>
-                    <CardHeader>
-                        <CardTitle className='text-muted-foreground flex items-center justify-between text-sm font-medium tracking-wider uppercase'>
-                            {t('admin.featherzerotrust.scanner.targets')}
-                            <Badge variant='outline' className='text-[10px]'>
-                                {selectedServers.length}
-                            </Badge>
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className='space-y-4'>
+                <PageCard
+                    title={t('admin.featherzerotrust.scanner.targets')}
+                    icon={Server}
+                    action={
+                        <Badge variant='secondary' className='text-xs'>
+                            {selectedServers.length}
+                        </Badge>
+                    }
+                >
+                    <div className='space-y-3'>
                         <Button
                             variant='outline'
-                            className='border-primary/30 hover:border-primary/60 hover:bg-primary/5 h-10 w-full border-dashed'
+                            className='h-11 w-full'
                             onClick={() => {
                                 setServerModalOpen(true);
-                                fetchServers();
+                                void fetchServers();
                             }}
                         >
                             <Plus className='mr-2 h-4 w-4' />
                             {t('admin.featherzerotrust.scanner.addTarget')}
                         </Button>
 
-                        <div className='custom-scrollbar max-h-[250px] space-y-2 overflow-y-auto pr-2'>
+                        <div className='max-h-[240px] space-y-2 overflow-y-auto'>
                             {selectedServers.length === 0 ? (
-                                <div className='py-8 text-center opacity-40'>
-                                    <Server className='mx-auto mb-2 h-8 w-8' />
-                                    <p className='text-[10px]'>
-                                        {t('admin.featherzerotrust.scanner.noServersSelected')}
-                                    </p>
-                                </div>
+                                <p className='text-muted-foreground py-8 text-center text-xs'>
+                                    {t('admin.featherzerotrust.scanner.noServersSelected')}
+                                </p>
                             ) : (
                                 selectedServers.map((s) => (
                                     <div
                                         key={s.uuid}
-                                        className='bg-muted/30 border-border/50 group animate-in slide-in-from-right-2 flex items-center justify-between rounded-lg border p-2'
+                                        className='fp-surface-solid flex items-center justify-between gap-2 rounded-xl border px-3 py-2'
                                     >
                                         <div className='min-w-0'>
-                                            <div className='truncate text-xs font-bold'>{s.name}</div>
-                                            <div className='truncate font-mono text-[9px] opacity-50'>
+                                            <div className='truncate text-sm font-medium'>{s.name}</div>
+                                            <div className='text-muted-foreground truncate font-mono text-[10px]'>
                                                 {s.uuidShort}
                                             </div>
                                         </div>
                                         <Button
                                             variant='ghost'
                                             size='sm'
-                                            className='h-7 w-7 opacity-0 transition-opacity group-hover:opacity-100'
+                                            className='h-8 w-8 shrink-0 p-0'
                                             onClick={() =>
                                                 setSelectedServers(selectedServers.filter((sv) => sv.uuid !== s.uuid))
                                             }
+                                            aria-label={t('common.remove')}
                                         >
-                                            <X className='h-3 w-3' />
+                                            <X className='h-4 w-4' />
                                         </Button>
                                     </div>
                                 ))
                             )}
                         </div>
-                    </CardContent>
-                </Card>
+                    </div>
+                </PageCard>
             </div>
 
-            {scanning && (
-                <Card className='border-primary/30 animate-in fade-in zoom-in overflow-hidden bg-black/40 backdrop-blur-xl duration-500'>
-                    <div className='bg-primary/10 border-primary/20 flex items-center justify-between border-b px-4 py-2'>
-                        <div className='flex items-center gap-2'>
-                            <Terminal className='text-primary h-4 w-4' />
-                            <span className='text-primary font-mono text-[10px] tracking-widest uppercase'>
-                                {t('admin.featherzerotrust.scanner.liveFeed')}
-                            </span>
-                        </div>
-                        <div className='flex items-center gap-1'>
-                            <div className='h-1.5 w-1.5 animate-pulse rounded-full bg-red-500' />
-                            <span className='text-[10px] font-bold text-red-500'>
-                                {t('admin.featherzerotrust.scanner.analyzing')}
-                            </span>
-                        </div>
-                    </div>
-                    <CardContent className='space-y-4 p-4'>
-                        <div className='mb-2 flex items-center justify-between'>
-                            <span className='text-primary-foreground/80 text-sm font-medium'>
-                                {scanProgress.message}
-                            </span>
-                            <span className='text-primary font-mono text-xs'>
-                                {scanProgress.filesScanned.toLocaleString()} files
-                            </span>
-                        </div>
-                        <div className='bg-muted/30 h-1 overflow-hidden rounded-full'>
-                            <div
-                                className='bg-primary h-full transition-all duration-500 ease-out'
-                                style={{ width: `${Math.min((scanProgress.filesScanned / 1500) * 100, 98)}%` }}
-                            />
-                        </div>
-                        <div className='fp-surface-inset rounded-lg border p-3 font-mono text-[10px] text-green-500/80'>
-                            <div className='flex items-center gap-2'>
-                                <span className='opacity-50'>CUR_DIR:</span>
-                                <span className='truncate'>{scanProgress.currentDirectory}</span>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
-            )}
-
             {(scanResults || batchResults.length > 0) && (
-                <div className='animate-in slide-in-from-bottom-6 space-y-6 duration-700'>
-                    <div className='flex items-center gap-3'>
-                        <ShieldCheck className='h-6 w-6 text-green-500' />
-                        <h2 className='text-xl font-bold'>{t('admin.featherzerotrust.scanner.resultsTitle')}</h2>
-                    </div>
+                <div className='space-y-4'>
+                    <h2 className='text-base font-semibold'>{t('admin.featherzerotrust.scanner.resultsTitle')}</h2>
 
                     {scanResults && (
                         <div className='space-y-4'>
-                            <div className='grid grid-cols-2 gap-4 lg:grid-cols-4'>
-                                <Card className='border-blue-500/20 bg-blue-500/5 p-4'>
-                                    <div className='text-[10px] font-bold text-blue-500 uppercase'>
+                            <div className='grid grid-cols-2 gap-3 lg:grid-cols-3'>
+                                <div className='fp-surface-solid rounded-xl border px-4 py-3'>
+                                    <p className='text-muted-foreground text-xs'>
                                         {t('admin.featherzerotrust.scanner.filesScanned')}
-                                    </div>
-                                    <div className='text-2xl font-bold'>
+                                    </p>
+                                    <p className='mt-1 text-sm font-medium'>
                                         {scanResults.files_scanned.toLocaleString()}
-                                    </div>
-                                </Card>
-                                <Card
-                                    className={cn(
-                                        'p-4 transition-colors',
-                                        scanResults.detections_count > 0
-                                            ? 'border-red-500/30 bg-red-500/10'
-                                            : 'border-green-500/20 bg-green-500/5',
-                                    )}
-                                >
-                                    <div
+                                    </p>
+                                </div>
+                                <div className='fp-surface-solid rounded-xl border px-4 py-3'>
+                                    <p className='text-muted-foreground text-xs'>
+                                        {t('admin.featherzerotrust.scanner.detections')}
+                                    </p>
+                                    <p
                                         className={cn(
-                                            'text-[10px] font-bold uppercase',
-                                            scanResults.detections_count > 0 ? 'text-red-500' : 'text-green-500',
+                                            'mt-1 text-sm font-medium',
+                                            scanResults.detections_count > 0 && 'text-destructive',
                                         )}
                                     >
-                                        {t('admin.featherzerotrust.scanner.detections')}
-                                    </div>
-                                    <div className='text-2xl font-bold'>{scanResults.detections_count}</div>
-                                </Card>
-                                <Card className='bg-muted/30 border-border/50 p-4'>
-                                    <div className='text-muted-foreground text-[10px] font-bold uppercase'>
+                                        {scanResults.detections_count}
+                                    </p>
+                                </div>
+                                <div className='fp-surface-solid rounded-xl border px-4 py-3'>
+                                    <p className='text-muted-foreground text-xs'>
                                         {t('admin.featherzerotrust.scanner.duration')}
-                                    </div>
-                                    <div className='text-2xl font-bold'>{scanResults.duration}</div>
-                                </Card>
+                                    </p>
+                                    <p className='mt-1 text-sm font-medium'>{scanResults.duration}</p>
+                                </div>
                             </div>
 
                             {scanResults.detections && scanResults.detections.length > 0 && (
                                 <div className='space-y-3'>
-                                    <h3 className='flex items-center gap-2 text-sm font-semibold text-red-500'>
+                                    <h3 className='text-destructive flex items-center gap-2 text-sm font-semibold'>
                                         <AlertTriangle className='h-4 w-4' />
                                         {t('admin.featherzerotrust.scanner.threatsFound')}
                                     </h3>
-                                    <div className='grid grid-cols-1 gap-3'>
+                                    <div className='space-y-2'>
                                         {scanResults.detections.map((d, i) => {
                                             const detection = d as {
                                                 file_name?: string;
@@ -451,26 +346,19 @@ const ScannerTab = () => {
                                             return (
                                                 <div
                                                     key={i}
-                                                    className='flex items-start gap-4 rounded-xl border border-red-500/25 bg-red-500/[0.06] p-3'
+                                                    className='fp-surface-solid border-destructive/20 flex items-start gap-3 rounded-xl border p-3'
                                                 >
-                                                    <div className='rounded-lg bg-red-500/20 p-2 text-red-500'>
-                                                        <AlertTriangle className='h-4 w-4' />
-                                                    </div>
+                                                    <AlertTriangle className='text-destructive mt-0.5 h-4 w-4 shrink-0' />
                                                     <div className='min-w-0'>
-                                                        <div className='text-sm font-bold text-red-200'>
+                                                        <div className='text-sm font-medium'>
                                                             {detection.file_name || t('common.unknown')}
                                                         </div>
-                                                        <div className='truncate font-mono text-[10px] text-red-500/80'>
+                                                        <div className='text-muted-foreground truncate font-mono text-[10px]'>
                                                             {detection.file_path || 'N/A'}
                                                         </div>
-                                                        <div className='mt-1'>
-                                                            <Badge
-                                                                variant='destructive'
-                                                                className='text-[9px] tracking-tighter uppercase'
-                                                            >
-                                                                {detection.detection_type || 'Malicious Pattern'}
-                                                            </Badge>
-                                                        </div>
+                                                        <Badge variant='destructive' className='mt-2 text-[10px]'>
+                                                            {detection.detection_type || 'Malicious Pattern'}
+                                                        </Badge>
                                                     </div>
                                                 </div>
                                             );
@@ -482,7 +370,7 @@ const ScannerTab = () => {
                     )}
 
                     {batchResults.length > 0 && (
-                        <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
+                        <div className='grid grid-cols-1 gap-3 md:grid-cols-2'>
                             {batchResults.map((r) => (
                                 <ResourceCard
                                     key={r.server_uuid}
@@ -493,20 +381,20 @@ const ScannerTab = () => {
                                         {
                                             label: r.error ? 'FAILED' : 'COMPLETED',
                                             className: r.error
-                                                ? 'bg-red-500/20 text-red-500'
-                                                : 'bg-green-500/20 text-green-500',
+                                                ? 'bg-destructive/10 text-destructive border-destructive/20'
+                                                : 'bg-secondary text-secondary-foreground border-transparent',
                                         },
                                     ]}
                                     description={
                                         r.error ? (
-                                            <p className='mt-2 text-xs text-red-500 italic'>{r.error}</p>
+                                            <p className='text-destructive text-xs'>{r.error}</p>
                                         ) : (
-                                            <div className='mt-2 flex items-center gap-6'>
+                                            <div className='flex items-center gap-6'>
                                                 <div className='flex flex-col'>
                                                     <span className='text-muted-foreground text-[10px] uppercase'>
                                                         {t('ui.admin.featherzerotrust.tabs.scannerTab.files')}
                                                     </span>
-                                                    <span className='text-xs font-bold'>
+                                                    <span className='text-xs font-medium'>
                                                         {r.result?.files_scanned || 0}
                                                     </span>
                                                 </div>
@@ -516,8 +404,8 @@ const ScannerTab = () => {
                                                     </span>
                                                     <span
                                                         className={cn(
-                                                            'text-xs font-bold',
-                                                            (r.result?.detections_count || 0) > 0 && 'text-red-500',
+                                                            'text-xs font-medium',
+                                                            (r.result?.detections_count || 0) > 0 && 'text-destructive',
                                                         )}
                                                     >
                                                         {r.result?.detections_count || 0}

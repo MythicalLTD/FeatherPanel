@@ -2,6 +2,8 @@
 
 ## v1.5.3 STABLE
 
+> **Wings update required.** Update FeatherWings to the latest release together with this panel version. FeatherWings #19 and #20 are needed for the auto start and crash auto restart fixes below; FeatherWings #23 for the node options and #25 for transfer power restore. Older Wings ignores the per server crash setting.
+
 ### Added
 
 - Email and Discord webhook notifications for server events (crash, backup completed or failed, file transfer finished, resource limit). Opt-out per event and per channel under Account, Notifications, with a test button for the webhook. (#352) by @nayskutzu
@@ -17,17 +19,19 @@
 - Global "Reset alt detection for all users" on the admin users page (`POST /api/admin/users/alt-detection/reset`, `admin.users.edit`). (#342) by @nayskutzu
 - FeatherOS: native server window with a Finder style sidebar for every server section, including a file manager pane, plus Settings and Activity panes. (#343) by @nayskutzu
 - FeatherOS: windows close with a macOS style animation (skipped with reduce motion). (#344) by @nayskutzu
-- FeatherWings node options (needs FeatherWings #23): a switch on Admin, Nodes, Advanced that fails a server install when the install script exits non-zero (off by default), container CPU shares (default 1024, 0 uses the Docker default), and an option when resetting the node key to push the new key to the node automatically. The key is only changed if the node accepts it. The server console shows a block I/O card when the node reports disk I/O. Only offered on FeatherWings nodes. (#363) by @nayskutzu
+- FeatherWings node options (#363, needs FeatherWings #23): a switch on Admin, Nodes, Advanced that fails a server install when the install script exits non-zero (off by default), container CPU shares (default 1024, 0 uses the Docker default), and an option when resetting the node key to push the new key to the node automatically. The key is only changed if the node accepts it. The server console shows a block I/O card when the node reports disk I/O. Only offered on FeatherWings nodes. (#363) by @nayskutzu
 - Single and mass server transfers remember whether the server was running and start it again on the new node once the transfer succeeds (offline servers stay off). On by default, with a "Restore power state after transfer" opt-out in both transfer dialogs. Start attempts are retried for a few minutes, logged in the server activity, and a notification is sent if the server could not be started. Starts right away with FeatherWings #25, older Wings are covered by the retries. by @nayskutzu
+- FeatherPanel Premium is now described as what it is: an optional monthly donation that helps keep the panel going, not a paywall. Every panel feature works without it. If you can't donate, you can claim free Premium on Admin, FeatherPanel Premium by starring the GitHub repo or spreading the word. Free Premium lasts 30 days and is renewed the same way; when it expires the extras return to the defaults. (#370) by @nayskutzu
+- Donation link to the non-profit Hack Club HCB fund (admin only): a small card on the admin dashboard that hides for 30 days when dismissed (synced per admin) and is never shown while Premium is active, plus a Support FeatherPanel link on the Premium page. (#370) by @nayskutzu
+- Plugins: settings in `conf.yml` get their defaults, required flag and validation applied, and the admin plugin page shows required settings and a not configured state. (#365) by @nayskutzu
 
 ### Improved
 
 - Memory use of the Docker image is bounded. `FRANKENPHP_MAX_THREADS=auto` is now sized from the container memory, pool defaults are lower and workers recycle when their heap grows. New and changed environment variables: `PHP_MEMORY_LIMIT` (512M), `PHP_CLI_MEMORY_LIMIT` (1024M, was unlimited), `FEATHERPANEL_WORKER_MAX_MEMORY` (256M), `FEATHERPANEL_WORKER_MAX_REQUESTS` (500, was 1000), `FEATHERPANEL_WORKERS`, `FEATHERPANEL_WORKER_MAX_THREADS` (3 x CPU, max 32), `FEATHERPANEL_SLOW_WORKERS` (2), `FEATHERPANEL_SLOW_MAX_THREADS` (4, was 16) and `CRON_TIMEOUT` (900s). Under load the backend now stays flat at around 160 to 175 MiB. (#338) by @nayskutzu
 - Hotfix to the memory fix: dropped the FrankenPHP file watcher, which added native threads and CPU and memory use; workers already check the restart stamp between requests. (#341) by @nayskutzu
-- The built in API reference pins Redoc, falls back to the live `/api/openapi.json` and shows load errors instead of a blank page. API keys: public key Bearer auth works again by default since v1.5.2, private keys are preferred. (#337) by @nayskutzu
-
-- FeatherPanel Premium is now described as what it is: an optional monthly donation that helps keep the panel going, not a paywall. Every panel feature works without it. If you can't donate, you can claim free Premium on Admin, FeatherPanel Premium by starring the GitHub repo or spreading the word. Free Premium lasts 30 days and is renewed the same way; when it expires the extras return to the defaults. by @nayskutzu
-- Donation link to the non-profit Hack Club HCB fund (admin only): a small card on the admin dashboard that hides for 30 days when dismissed (synced per admin) and is never shown while Premium is active, plus a Support FeatherPanel link on the Premium page. by @nayskutzu
+- The built in API reference pins Redoc, falls back to the live `/api/openapi.json` and shows load errors instead of a blank page. (#337) by @nayskutzu
+- Backup ignore parsing tests and a Cloudflare IP range check script for maintainers. (#353) by @nayskutzu
+- Page search bars (server databases, backups, subusers, allocations, webspace and VDS lists, tickets, status) match the card style, and the file manager sort, hidden files, view and Quick access controls now sit inside the toolbar card instead of a floating row. (#369) by @nayskutzu
 - The admin setup wizard was rebuilt: welcome hero with a live branding preview, an animated progress rail, smooth step transitions (honours reduced motion), inline validation for mail and Turnstile, keyboard navigation (Enter, Alt + arrows) and a new "You're all set" screen with next steps (location, node, spells, first server, docs). All settings it saves are unchanged. by @nayskutzu
 - The `##icanhasfeatherpanel` debug console got a fresh look and a new Panel & server section (admin root): connectivity for database, Redis, Mercure, nodes, cron and queue, build and commit, PHP and FrankenPHP worker info, feature flags, Premium state, node daemon capabilities, copy diagnostics, clear caches and force onboarding (both with confirmation). New read-only `GET /api/admin/debug/runtime`. by @nayskutzu
 
@@ -41,8 +45,8 @@
 - The login page no longer shows the Password/Passkey row twice when Discord or OIDC is the primary method. (#351) by @nayskutzu
 - Crashes were never detected because Wings reports a crash as running to offline, not as `crashed`; crash notifications and the crash hook now fire. Server log requests now use the `size` parameter Wings expects. (#361) by @nayskutzu
 - Auto start on Wings boot now respects the panel setting (FeatherWings #19), and crash auto restart is no longer applied when it is switched off (FeatherWings #20). Requires the Wings update. by @nayskutzu
-- Backup ignore parsing tests and a Cloudflare IP range check script for maintainers. (#353) by @nayskutzu
-- The panel keeps going into white theme for some reason. by @nayskutzu
+- FeatherOS follows the panel light/dark preference instead of switching the panel to the light theme; FeatherOS can still override the theme temporarily without locking the panel setting. by @nayskutzu
+- Plugins: plugin CLI commands are found from `APP_ADDONS_DIR` instead of the working directory, Cron intervals are stored in seconds so the `S` unit works, mixins register before plugins load, and the generated starter Cron example uses the addon namespace. (#365) by @nayskutzu
 
 ### Security
 
@@ -52,7 +56,7 @@
 - Server file transfers check that you can access the target server. (#371) by @redstonerthebest
 - VDS backup restores check that the backup belongs to that VM, and VDS subusers no longer see the cloud-init password stored in the VM notes. (#371) by @redstonerthebest
 - Lifecycle hook URLs and server-mode API client callbacks are checked against private, loopback and link-local addresses (including IPv6) by resolving the host. (#371) by @redstonerthebest
-- Public key Bearer auth for API clients keeps its 1.5.3 default (on) and can now be switched off in Admin, Settings, App. by @nayskutzu
+- API clients: public key Bearer auth stays on by default (private keys are preferred) and can now be switched off in Admin, Settings, App (`api_clients_allow_public_key_auth`). (#371) by @nayskutzu
 
 ### Notes
 

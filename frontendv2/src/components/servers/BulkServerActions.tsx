@@ -78,7 +78,7 @@ export function BulkSelectionRow({
     return (
         <div
             className={cn(
-                'border-border bg-card/60 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border px-4 py-2.5 text-sm',
+                'fp-surface-solid flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border px-4 py-2.5 text-sm',
                 className,
             )}
         >

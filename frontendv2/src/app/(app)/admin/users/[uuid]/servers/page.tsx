@@ -244,14 +244,15 @@ export default function UserServersPage({ params }: { params: Promise<{ uuid: st
                     }
                 />
 
-                <div className='flex flex-col gap-4 sm:flex-row'>
+                <div className='flex flex-col gap-4 sm:flex-row sm:items-center'>
                     <div className='relative flex-1'>
                         <Search className='text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2' />
                         <Input
                             placeholder={t('admin.servers.search_placeholder', { defaultValue: 'Search servers...' })}
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className='pl-9'
+                            variant='surface'
+                            className='h-11 pl-9'
                         />
                     </div>
                     <Button
@@ -259,6 +260,7 @@ export default function UserServersPage({ params }: { params: Promise<{ uuid: st
                         size='icon'
                         onClick={() => fetchServers(pagination.current_page)}
                         disabled={loading}
+                        className='h-11 w-11'
                     >
                         <RefreshCw className={cn('h-4 w-4', loading && 'animate-spin')} />
                     </Button>

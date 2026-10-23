@@ -61,7 +61,7 @@ export function DataTable<T>({
 }: DataTableProps<T>) {
     return (
         <div className={className}>
-            <div className='fp-surface hidden overflow-x-auto rounded-xl border lg:block'>
+            <div className='fp-surface-solid hidden overflow-x-auto rounded-xl border lg:block'>
                 <table className='w-full text-sm'>
                     <thead>
                         <tr className='border-b border-[var(--fp-surface-border)]'>
@@ -119,7 +119,7 @@ export function DataTable<T>({
                 {rows.map((row) => (
                     <li
                         key={rowKey(row)}
-                        className={cn('fp-surface rounded-xl border p-3.5', onRowClick && 'cursor-pointer')}
+                        className={cn('fp-surface-solid rounded-xl border p-3.5', onRowClick && 'cursor-pointer')}
                         onClick={onRowClick ? () => onRowClick(row) : undefined}
                     >
                         {mobileCard(row)}

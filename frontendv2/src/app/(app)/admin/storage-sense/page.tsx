@@ -422,10 +422,17 @@ export default function StorageSensePage() {
                                 placeholder={t('admin.storage_sense.search_placeholder')}
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
-                                className='pl-9'
+                                variant='surface'
+                                className='h-11 pl-9'
                             />
                         </div>
-                        <Button type='button' variant='outline' onClick={() => void fetchSummary()} disabled={loading}>
+                        <Button
+                            type='button'
+                            variant='outline'
+                            onClick={() => void fetchSummary()}
+                            disabled={loading}
+                            className='h-11'
+                        >
                             <RefreshCw className={cn('h-4 w-4 sm:mr-2', loading && 'animate-spin')} />
                             <span className='hidden sm:inline'>{t('admin.storage_sense.refresh')}</span>
                         </Button>
@@ -434,6 +441,7 @@ export default function StorageSensePage() {
                             variant='outline'
                             onClick={() => void copyJsonSummary()}
                             disabled={loading || !categories.length}
+                            className='h-11'
                         >
                             <Copy className='h-4 w-4 sm:mr-2' />
                             <span className='hidden sm:inline'>{t('admin.storage_sense.copy_summary')}</span>
