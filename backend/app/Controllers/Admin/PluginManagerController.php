@@ -1674,7 +1674,7 @@ VALUES ('Plugin {$identifier} initialized successfully', 'info');";
         // Create simple cron job example
         $cronContent = "<?php
 
-namespace App\Cron;
+namespace App\\Addons\\{$identifier}\\Cron;
 
 use App\Cron\Cron;
 use App\Cron\TimeTask;
