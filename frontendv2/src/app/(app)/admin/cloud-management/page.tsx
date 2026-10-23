@@ -384,6 +384,15 @@ export default function CloudManagementPage() {
                                                 {t('admin.cloud_management.premium.get')}
                                             </Button>
                                         )}
+                                        {!linkInfo.premium?.active && (
+                                            <Button
+                                                variant='outline'
+                                                size='sm'
+                                                onClick={() => router.push('/admin/featherpanel-premium')}
+                                            >
+                                                {t('admin.cloud_management.premium.get_free')}
+                                            </Button>
+                                        )}
                                         <Button variant='outline' size='sm' onClick={openMythicClouds}>
                                             <ExternalLink className='mr-2 h-4 w-4' />
                                             {t('ui.admin.cloudManagement.openMythicClouds')}

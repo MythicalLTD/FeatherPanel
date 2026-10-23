@@ -27,6 +27,8 @@
 - Hotfix to the memory fix: dropped the FrankenPHP file watcher, which added native threads and CPU and memory use; workers already check the restart stamp between requests. (#341) by @nayskutzu
 - The built in API reference pins Redoc, falls back to the live `/api/openapi.json` and shows load errors instead of a blank page. API keys: public key Bearer auth works again by default since v1.5.2, private keys are preferred. (#337) by @nayskutzu
 
+- FeatherPanel Premium is now described as what it is: an optional monthly donation that helps keep the panel going, not a paywall. Every panel feature works without it. If you can't donate, you can get Premium for free by starring the GitHub repo or spreading the word, then asking on Discord. The Premium and Cloud Connections pages link to both. by @nayskutzu
+
 ### Fixed
 
 - Production containers no longer grow to many GB and get OOM killed; cron no longer runs every job twice after a failed run. (#338) by @nayskutzu

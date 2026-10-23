@@ -1187,7 +1187,7 @@
             "PLUGIN_INSTALL_QUEUE_CYCLE": "Circular dependency when resolving queued plugin installations. Install one of the queued plugins first, or adjust your download list.",
             "PLUGIN_NOT_FOUND": "Plugin not found",
             "PORT_RANGE_TOO_LARGE": "Port range too large. Maximum 1000 ports allowed per request",
-            "PREMIUM_REQUIRED": "Premium is required for this feature.",
+            "PREMIUM_REQUIRED": "This extra is part of FeatherPanel Premium, an optional donation. You can also get it for free by starring the repo or spreading the word.",
             "PRIMARY_ALLOCATION_CLEANUP_FAILED": "Failed to unassign previous primary allocation",
             "PRIMARY_ALLOCATION_DELETE": "Cannot delete primary allocation",
             "PRIMARY_ALLOCATION_NOT_FOUND": "Server primary allocation not found",
@@ -9775,8 +9775,8 @@
         "cloud_hub": {
             "title": "MyFeatherPanel",
             "description": "Cloud services, marketplace, and community",
-            "premium": "FeatherPanel Pro",
-            "premium_desc": "Premium features and licensing",
+            "premium": "FeatherPanel Premium",
+            "premium_desc": "Optional donation to support the project",
             "marketplace": "Marketplace",
             "marketplace_desc": "Browse spells, plugins, and products",
             "plugins": "Plugins",
@@ -10855,30 +10855,36 @@
         },
         "featherpanel_premium": {
             "title": "FeatherPanel Premium",
-            "subtitle": "Customize AI branding, powered-by text, and version labels with a Mythic team Premium subscription.",
+            "subtitle": "Premium is an optional monthly donation that helps keep FeatherPanel going. As a thank you, you can rename the AI assistant, customize the sidebar and hide the FeatherPanel credit and version. You do not get less of the panel without it.",
             "refresh": "Refresh entitlement",
             "load_failed": "Failed to load FeatherPanel Premium status",
             "save_failed": "Failed to save Premium settings",
             "saved": "Premium settings saved",
-            "premium_required": "An active FeatherPanel Premium subscription is required",
+            "premium_required": "These extras are part of FeatherPanel Premium. Donate monthly, or get it for free by starring the repo or spreading the word.",
             "open_cloud": "Open Cloud Connections",
-            "get_premium": "Get FeatherPanel Premium",
+            "get_premium": "Support FeatherPanel",
             "manage_on_mythic": "Manage on Mythic",
+            "free_path": {
+                "title": "Can't donate? Get Premium for free",
+                "description": "Money shouldn't stand in the way. If you can't donate, star FeatherPanel on GitHub or spread the word: post about it, share it with a friend, or mention it in your community. Then message us on Discord and we will enable Premium for your team at no cost.",
+                "star": "Star on GitHub",
+                "request": "Request free Premium on Discord"
+            },
             "your_team": "your team",
             "status": {
-                "card_title": "Subscription status",
+                "card_title": "Premium status",
                 "active": "Premium is active",
-                "inactive": "Premium is not active",
+                "inactive": "Premium is not active, and that is completely fine",
                 "not_linked": "Link Mythic Cloud first so this panel can read your team's Premium entitlement.",
-                "active_desc": "Premium is active for {team}. Customize your AI assistant and FeatherPanel branding below.",
-                "inactive_desc": "Subscribe on Mythic to rename the AI assistant, customize sidebar items/links, hide the powered-by footer, and hide the panel version.",
+                "active_desc": "Premium is active for {team}. Thank you for helping keep FeatherPanel going! Customize your AI assistant and FeatherPanel branding below.",
+                "inactive_desc": "FeatherPanel is free and stays free, and every feature works without Premium. Premium is an optional monthly donation that helps pay for development, hosting and support. As a thank you, it lets you rename the AI assistant, customize the sidebar, and hide the powered-by footer and panel version.",
                 "higher_limits": "Premium limits are active on Mythic (paste, temp files, and Panel API).",
                 "checked_at": "Last checked",
                 "expires_at": "Cache valid until",
                 "using_cache": "Mythic could not be reached. Using cached Premium entitlement until {expires}."
             },
             "customize": {
-                "card_title": "Premium customization",
+                "card_title": "Premium thank-you extras",
                 "description": "These settings apply across the panel for all users. Clearing a field restores the FeatherPanel default.",
                 "ai_name": "AI assistant name",
                 "ai_name_placeholder": "FeatherPanel AI",
@@ -10933,7 +10939,8 @@
                 "active_badge": "Premium active",
                 "inactive_badge": "Premium inactive",
                 "manage": "Manage Premium",
-                "get": "Get Premium",
+                "get": "Support FeatherPanel",
+                "get_free": "Can't donate? Get it free",
                 "open_page": "FeatherPanel Premium",
                 "download_success": "Premium package {name} v{version} downloaded successfully",
                 "download_failed": "Failed to download premium package",
@@ -12166,13 +12173,7 @@
             "info": {
                 "title": "Excluded Data",
                 "description": "The following items are excluded from migration to ensure a clean import.",
-                "items": [
-                    null,
-                    null,
-                    null,
-                    null,
-                    null
-                ],
+                "items": [null, null, null, null, null],
                 "footer": "Excluding this data significantly reduces migration time."
             },
             "create_key": {
@@ -12188,12 +12189,7 @@
                 "creating": "Creating..."
             },
             "warning_dialog": {
-                "items": [
-                    null,
-                    null,
-                    null,
-                    null
-                ]
+                "items": [null, null, null, null]
             },
             "visibility": {
                 "hide": "Hide importer",
@@ -14545,8 +14541,8 @@
                 "t2_body": "The cloud keys identify this panel. Regenerate them if you think they leaked."
             },
             "premium": {
-                "t1_title": "Branding",
-                "t1_body": "Set your own logo and decide whether the FeatherPanel credit and version appear in the sidebar.",
+                "t1_title": "Why Premium exists",
+                "t1_body": "Premium is a donation, not a paywall: the panel is complete without it. It helps keep FeatherPanel maintained, and you can get it for free by starring the repo or sharing it.",
                 "t2_title": "Custom sidebar",
                 "t2_body": "Reorder or hide items per area and add your own links. Use reset to go back to the defaults."
             }

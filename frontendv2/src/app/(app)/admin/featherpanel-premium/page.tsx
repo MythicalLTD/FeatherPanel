@@ -27,6 +27,9 @@ import { cn } from '@/lib/utils';
 import {
     CheckCircle2,
     Crown,
+    Heart,
+    Star,
+    MessageSquare,
     ExternalLink,
     ImageIcon,
     LayoutPanelLeft,
@@ -278,7 +281,7 @@ export default function FeatherPanelPremiumPage() {
                                     </p>
                                     <div className='flex flex-wrap gap-2'>
                                         <Button onClick={() => window.open(manageUrl, '_blank', 'noopener,noreferrer')}>
-                                            <Crown className='mr-2 h-4 w-4' />
+                                            <Heart className='mr-2 h-4 w-4' />
                                             {t('admin.featherpanel_premium.get_premium')}
                                             <ExternalLink className='ml-2 h-4 w-4' />
                                         </Button>
@@ -288,6 +291,45 @@ export default function FeatherPanelPremiumPage() {
                                         >
                                             {t('admin.featherpanel_premium.open_cloud')}
                                         </Button>
+                                    </div>
+                                    <div className='border-primary/20 bg-primary/5 space-y-2 rounded-xl border p-4'>
+                                        <p className='text-foreground flex items-center gap-2 text-sm font-semibold'>
+                                            <Heart className='text-primary h-4 w-4' />
+                                            {t('admin.featherpanel_premium.free_path.title')}
+                                        </p>
+                                        <p className='text-muted-foreground text-sm'>
+                                            {t('admin.featherpanel_premium.free_path.description')}
+                                        </p>
+                                        <div className='flex flex-wrap gap-2'>
+                                            <Button
+                                                variant='outline'
+                                                size='sm'
+                                                onClick={() =>
+                                                    window.open(
+                                                        'https://github.com/MythicalLTD/FeatherPanel',
+                                                        '_blank',
+                                                        'noopener,noreferrer',
+                                                    )
+                                                }
+                                            >
+                                                <Star className='mr-2 h-4 w-4' />
+                                                {t('admin.featherpanel_premium.free_path.star')}
+                                            </Button>
+                                            <Button
+                                                variant='outline'
+                                                size='sm'
+                                                onClick={() =>
+                                                    window.open(
+                                                        'https://discord.mythical.systems',
+                                                        '_blank',
+                                                        'noopener,noreferrer',
+                                                    )
+                                                }
+                                            >
+                                                <MessageSquare className='mr-2 h-4 w-4' />
+                                                {t('admin.featherpanel_premium.free_path.request')}
+                                            </Button>
+                                        </div>
                                     </div>
                                 </div>
                             )}
