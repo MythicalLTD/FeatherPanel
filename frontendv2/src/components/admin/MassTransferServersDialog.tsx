@@ -23,6 +23,7 @@ import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { Dialog, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
+import { RestorePowerStateOption } from '@/components/admin/RestorePowerStateOption';
 import { toast } from 'sonner';
 import { ArrowLeftRight, ChevronRight, Loader2, Search } from 'lucide-react';
 import {
@@ -87,6 +88,7 @@ export function MassTransferServersDialog({
     const [moveAll, setMoveAll] = useState(false);
     const [confirmOpen, setConfirmOpen] = useState(false);
     const [submitting, setSubmitting] = useState(false);
+    const [restorePowerState, setRestorePowerState] = useState(true);
 
     const resetState = useCallback(() => {
         setSelectedNode(null);
@@ -194,6 +196,7 @@ export function MassTransferServersDialog({
                 destination_node_id: selectedNode.id,
                 move_all: moveAll,
                 server_ids: moveAll ? undefined : Array.from(selectedIds),
+                restore_power_state: restorePowerState,
             });
             const initiated = data?.data?.initiated_count ?? 0;
             const failed = data?.data?.failed_count ?? 0;
@@ -360,6 +363,14 @@ export function MassTransferServersDialog({
                                 </p>
                             )}
                         </>
+                    )}
+
+                    {preview && (
+                        <RestorePowerStateOption
+                            checked={restorePowerState}
+                            onChange={setRestorePowerState}
+                            disabled={submitting}
+                        />
                     )}
 
                     <div className='flex justify-end gap-2 border-t pt-4'>

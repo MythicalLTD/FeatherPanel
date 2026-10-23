@@ -152,6 +152,24 @@ class InboxNotifier
         });
     }
 
+    /** A server that was running before a transfer could not be started on its new node. */
+    public static function transferPowerRestoreFailed(array $server): void
+    {
+        self::guard(static function () use ($server): void {
+            $uuidShort = (string) ($server['uuidShort'] ?? '');
+            self::send(
+                self::serverAudience($server, SubuserPermissions::CONTROL_START),
+                UserNotification::KIND_TRANSFER_POWER_FAILED,
+                [
+                    'server_name' => mb_substr((string) ($server['name'] ?? ''), 0, 120),
+                    'server' => $uuidShort,
+                ],
+                '/server/' . rawurlencode($uuidShort),
+                'transfer-power:' . (int) ($server['id'] ?? 0)
+            );
+        });
+    }
+
     /**
      * Owner plus subusers holding the permission.
      *

@@ -2091,7 +2091,9 @@ class NodesController
             $destinationNodeId,
             $serverIds,
             $moveAll,
-            $request->attributes->get('user')
+            $request->attributes->get('user'),
+            100,
+            !array_key_exists('restore_power_state', $data) || $data['restore_power_state'] !== false
         );
 
         Activity::createActivity([

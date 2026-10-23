@@ -65,6 +65,8 @@ class ServerTransfer
             'metadata',
             'archived',
             'successful',
+            'power_state_before',
+            'restore_power_state',
         ];
 
         // Encode JSON fields if they are arrays

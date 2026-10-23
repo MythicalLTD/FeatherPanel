@@ -41,6 +41,7 @@ class ExternalNotifier
         'backup_failed' => [UserNotification::KIND_BACKUP_FAILED],
         'file_transfer' => [UserNotification::KIND_FILE_TRANSFER_COMPLETED, UserNotification::KIND_FILE_TRANSFER_FAILED],
         'resource_limit' => [UserNotification::KIND_RESOURCE_LIMIT],
+        'transfer_power' => [UserNotification::KIND_TRANSFER_POWER_FAILED],
     ];
 
     private const TITLES = [
@@ -50,6 +51,7 @@ class ExternalNotifier
         UserNotification::KIND_FILE_TRANSFER_COMPLETED => 'File transfer completed',
         UserNotification::KIND_FILE_TRANSFER_FAILED => 'File transfer failed',
         UserNotification::KIND_RESOURCE_LIMIT => 'Server near its resource limit',
+        UserNotification::KIND_TRANSFER_POWER_FAILED => 'Server could not be started after transfer',
     ];
 
     private const COLORS = [
@@ -57,6 +59,7 @@ class ExternalNotifier
         UserNotification::KIND_BACKUP_FAILED => 0xEF4444,
         UserNotification::KIND_FILE_TRANSFER_FAILED => 0xEF4444,
         UserNotification::KIND_RESOURCE_LIMIT => 0xF59E0B,
+        UserNotification::KIND_TRANSFER_POWER_FAILED => 0xEF4444,
     ];
 
     /** Stored preferences merged over the defaults. */
@@ -158,6 +161,9 @@ class ExternalNotifier
         }
         if (!empty($data['target_name'])) {
             $lines[] = 'Target: ' . $data['target_name'] . ' (' . ($data['count'] ?? '0') . ' items)';
+        }
+        if ($kind === UserNotification::KIND_TRANSFER_POWER_FAILED) {
+            $lines[] = 'The server was running before its transfer but could not be started on the new node. Start it manually.';
         }
 
         return $lines;
