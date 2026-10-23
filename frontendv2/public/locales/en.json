@@ -1087,6 +1087,8 @@
             "NODE_SYSTEM_LOG_FAILED": "Failed to read system log",
             "NODE_UNKNOWN": "Could not determine Proxmox node",
             "NODE_UPDATE_FAILED": "Failed to update node",
+            "NODE_CREDENTIAL_PROPAGATION_FAILED": "Could not push the new key to the node. The key was not changed.",
+            "NODE_CREDENTIAL_PROPAGATION_IGNORED": "The node ignores panel config updates (ignore_panel_config_updates). The key was not changed.",
             "NODE_VALIDATION_FAILED": "public_ip_v4 must be a valid IPv4 address",
             "NOTIFICATION_MESSAGE_TOO_LONG": "Notification message is too long (maximum 65535 characters)",
             "NOTIFICATION_NOT_FOUND": "Notification not found",
