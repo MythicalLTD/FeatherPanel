@@ -165,7 +165,8 @@ class ServerService
     public function getServerLogs(string $serverUuid, int $lines = 100): WingsResponse
     {
         try {
-            $response = $this->connection->get("/api/servers/{$serverUuid}/logs?lines={$lines}");
+            // Wings reads the line count from "size" (capped at 100).
+            $response = $this->connection->get("/api/servers/{$serverUuid}/logs?size={$lines}");
 
             return new WingsResponse($response, 200);
         } catch (\Exception $e) {

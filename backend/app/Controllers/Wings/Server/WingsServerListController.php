@@ -369,6 +369,8 @@ class WingsServerListController
                     'requires_rebuild' => false,
                 ],
                 'file_trash' => WingsFileTrashConfig::forWings(),
+                // Crash auto restart is opt-out per server; Wings skips the restart when false.
+                'crash_detection_enabled' => (int) ($server['crash_auto_restart'] ?? 1) === 1,
                 'fastdl' => [
                     'enabled' => !empty($server['fastdl_enabled']),
                     'directory' => (string) ($server['fastdl_directory'] ?? 'fastdl'),
