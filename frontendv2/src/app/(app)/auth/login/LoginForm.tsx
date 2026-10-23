@@ -1110,12 +1110,11 @@ export default function LoginForm() {
                         </Button>
                     ))}
                 </div>
-
-                {renderLoginSecondarySection()}
             </div>
         );
     };
 
+    // The OIDC and Discord panels leave the secondary methods row to the shared footer below the form.
     const renderDiscordPrimaryPanel = () => {
         const ssoHeadline = settings?.auth_sso_headline?.trim() || t('auth.sso.discordHeadline');
         const ssoSubtitle = settings?.auth_sso_subheadline?.trim() || t('auth.sso.discordSubtitle');
@@ -1147,8 +1146,6 @@ export default function LoginForm() {
                     </span>
                     <ArrowRight className='h-4 w-4 shrink-0 transition-transform group-hover:translate-x-0.5' />
                 </Button>
-
-                {renderLoginSecondarySection()}
             </div>
         );
     };
