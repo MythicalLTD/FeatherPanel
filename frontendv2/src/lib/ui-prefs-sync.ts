@@ -62,6 +62,8 @@ const SYNCED_KEYS = new Set<string>([
     'themePackUserOverride',
     'uiPackId',
     'uiPackUserOverride',
+    // Admin donation nudge (dismissed per admin for 30 days)
+    'featherpanel_donation_nudge_dismissed_at',
     // Language
     'locale',
     'localeUserOverride',

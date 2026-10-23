@@ -37,6 +37,12 @@ class FeatherPanelPremium
      */
     public const CACHE_GRACE_SECONDS = 7 * 24 * 60 * 60;
 
+    /** Free community Premium (starring the repo or spreading the word) lasts 30 days and can be renewed. */
+    public const FREE_CLAIM_SECONDS = 30 * 24 * 60 * 60;
+
+    /** @var list<string> */
+    public const FREE_CLAIM_METHODS = ['star', 'share'];
+
     /** @var list<string> */
     public const FEATURE_KEYS = [
         'remove_branding',
@@ -122,7 +128,63 @@ class FeatherPanelPremium
 
         $config = App::getInstance(true)->getConfig();
 
-        return ($config->getSetting(ConfigInterface::FEATHERPANEL_PREMIUM_ACTIVE, 'false') ?? 'false') === 'true';
+        return ($config->getSetting(ConfigInterface::FEATHERPANEL_PREMIUM_ACTIVE, 'false') ?? 'false') === 'true'
+            || self::isFreeClaimActive();
+    }
+
+    /**
+     * Free community Premium is active (claimed and not yet expired).
+     * An expired claim is cleared and, when no paid Premium is active, customizations are reset.
+     */
+    public static function isFreeClaimActive(): bool
+    {
+        $config = App::getInstance(true)->getConfig();
+        $expiresAt = $config->getSetting(ConfigInterface::FEATHERPANEL_PREMIUM_FREE_EXPIRES_AT, null);
+        if (!is_string($expiresAt) || $expiresAt === '') {
+            return false;
+        }
+
+        $expiresTs = strtotime($expiresAt);
+        if ($expiresTs !== false && time() <= $expiresTs) {
+            return true;
+        }
+
+        $config->setSetting(ConfigInterface::FEATHERPANEL_PREMIUM_FREE_EXPIRES_AT, null);
+        $config->setSetting(ConfigInterface::FEATHERPANEL_PREMIUM_FREE_CLAIMED_AT, null);
+        $config->setSetting(ConfigInterface::FEATHERPANEL_PREMIUM_FREE_METHOD, null);
+        if (($config->getSetting(ConfigInterface::FEATHERPANEL_PREMIUM_ACTIVE, 'false') ?? 'false') !== 'true') {
+            self::resetCustomizations();
+        }
+
+        return false;
+    }
+
+    /**
+     * Claim (or renew) free community Premium for FREE_CLAIM_SECONDS. Honor based: no verification.
+     */
+    public static function claimFree(string $method): void
+    {
+        $config = App::getInstance(true)->getConfig();
+        $now = time();
+        $config->setSetting(ConfigInterface::FEATHERPANEL_PREMIUM_FREE_CLAIMED_AT, gmdate('c', $now));
+        $config->setSetting(ConfigInterface::FEATHERPANEL_PREMIUM_FREE_EXPIRES_AT, gmdate('c', $now + self::FREE_CLAIM_SECONDS));
+        $config->setSetting(ConfigInterface::FEATHERPANEL_PREMIUM_FREE_METHOD, $method);
+    }
+
+    /**
+     * @return array{active: bool, method: string|null, claimed_at: string|null, expires_at: string|null}
+     */
+    public static function freeClaimPayload(): array
+    {
+        $config = App::getInstance(true)->getConfig();
+        $active = self::isFreeClaimActive();
+
+        return [
+            'active' => $active,
+            'method' => $active ? ($config->getSetting(ConfigInterface::FEATHERPANEL_PREMIUM_FREE_METHOD, null) ?: null) : null,
+            'claimed_at' => $active ? ($config->getSetting(ConfigInterface::FEATHERPANEL_PREMIUM_FREE_CLAIMED_AT, null) ?: null) : null,
+            'expires_at' => $active ? ($config->getSetting(ConfigInterface::FEATHERPANEL_PREMIUM_FREE_EXPIRES_AT, null) ?: null) : null,
+        ];
     }
 
     /**
@@ -174,6 +236,8 @@ class FeatherPanelPremium
     /**
      * @return array{
      *   active: bool,
+     *   paid_active: bool,
+     *   free_claim: array{active: bool, method: string|null, claimed_at: string|null, expires_at: string|null},
      *   features: array<string, bool>,
      *   checked_at: string|null,
      *   expires_at: string|null,
@@ -189,13 +253,15 @@ class FeatherPanelPremium
         self::expireIfNeeded();
 
         $config = App::getInstance(true)->getConfig();
-        $active = ($config->getSetting(ConfigInterface::FEATHERPANEL_PREMIUM_ACTIVE, 'false') ?? 'false') === 'true';
+        $paidActive = ($config->getSetting(ConfigInterface::FEATHERPANEL_PREMIUM_ACTIVE, 'false') ?? 'false') === 'true';
+        $freeClaim = self::freeClaimPayload();
+        $active = $paidActive || $freeClaim['active'];
         $checkedAt = $config->getSetting(ConfigInterface::FEATHERPANEL_PREMIUM_CHECKED_AT, null);
         $expiresAt = $config->getSetting(ConfigInterface::FEATHERPANEL_PREMIUM_EXPIRES_AT, null);
         $lastFailureAt = $config->getSetting(ConfigInterface::FEATHERPANEL_PREMIUM_LAST_FAILURE_AT, null);
 
         $usingCache = false;
-        if ($active && is_string($lastFailureAt) && $lastFailureAt !== '') {
+        if ($paidActive && is_string($lastFailureAt) && $lastFailureAt !== '') {
             $failureTs = strtotime($lastFailureAt);
             $checkedTs = is_string($checkedAt) ? strtotime($checkedAt) : false;
             if ($failureTs !== false && ($checkedTs === false || $failureTs >= $checkedTs)) {
@@ -205,6 +271,8 @@ class FeatherPanelPremium
 
         return [
             'active' => $active,
+            'paid_active' => $paidActive,
+            'free_claim' => $freeClaim,
             'features' => self::features(),
             'checked_at' => $checkedAt,
             'expires_at' => $expiresAt,
@@ -257,7 +325,7 @@ class FeatherPanelPremium
             $config->setSetting(ConfigInterface::FEATHERPANEL_PREMIUM_EXPIRES_AT, null);
         }
 
-        if ($forceResetCustomizations || (!$active && $wasActive)) {
+        if (($forceResetCustomizations || (!$active && $wasActive)) && !self::isFreeClaimActive()) {
             self::resetCustomizations();
         }
     }
