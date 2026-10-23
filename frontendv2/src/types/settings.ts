@@ -47,6 +47,8 @@ export interface AppSettings {
     server_hide_ips: string;
     smtp_enabled: string;
     status_page_enabled: string;
+    maintenance_mode_enabled?: string;
+    maintenance_mode_message?: string;
     status_page_public_enabled: string;
     status_page_allow_iframe?: string;
     status_page_show_raw_values?: string;

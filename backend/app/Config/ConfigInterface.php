@@ -467,6 +467,8 @@ interface ConfigInterface
      * Status Page Settings.
      */
     public const STATUS_PAGE_ENABLED = 'status_page_enabled';
+    public const MAINTENANCE_MODE_ENABLED = 'maintenance_mode_enabled';
+    public const MAINTENANCE_MODE_MESSAGE = 'maintenance_mode_message';
     public const STATUS_PAGE_PUBLIC_ENABLED = 'status_page_public_enabled';
     public const STATUS_PAGE_SHOW_NODE_STATUS = 'status_page_show_node_status';
     public const STATUS_PAGE_SHOW_LOAD_USAGE = 'status_page_show_load_usage';

@@ -26,6 +26,10 @@ export default function MaintenancePage() {
     const { t } = useTranslation();
     const { settings } = useSettings();
     const panelName = settings?.app_name || 'Panel';
+    // Planned maintenance set by an admin shows its own message and links the status page.
+    const customMessage =
+        settings?.maintenance_mode_enabled === 'true' ? settings?.maintenance_mode_message?.trim() : '';
+    const statusEnabled = settings?.status_page_enabled === 'true';
 
     return (
         <div className='bg-background relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-4 text-center'>
@@ -50,7 +54,7 @@ export default function MaintenancePage() {
                         {t('maintenance.title')}
                     </h1>
                     <p className='text-muted-foreground mx-auto max-w-[400px] text-lg leading-relaxed'>
-                        {t('maintenance.message')}
+                        {customMessage || t('maintenance.message')}
                     </p>
                 </div>
 
@@ -59,7 +63,7 @@ export default function MaintenancePage() {
                     <span className='text-foreground text-sm font-semibold'>{t('maintenance.status')}</span>
                 </div>
 
-                <div className='pt-4'>
+                <div className='flex flex-col items-center justify-center gap-2 pt-4 sm:flex-row'>
                     <Button variant='outline' size='lg' onClick={() => router.push('/')}>
                         <span className='flex items-center gap-2'>
                             <svg
@@ -81,6 +85,11 @@ export default function MaintenancePage() {
                             {t('maintenance.check_again')}
                         </span>
                     </Button>
+                    {statusEnabled && (
+                        <Button variant='ghost' size='lg' onClick={() => router.push('/dashboard/status')}>
+                            {t('maintenance.viewStatus')}
+                        </Button>
+                    )}
                 </div>
             </div>
 

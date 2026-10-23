@@ -31,6 +31,7 @@ import {
     LayoutGrid,
     Users,
     Activity,
+    Wrench,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -69,6 +70,7 @@ interface NodeEntry {
 
 interface StatusData {
     enabled: boolean;
+    maintenance?: { enabled: boolean; message?: string };
     allow_iframe?: boolean;
     show_raw_values?: boolean;
     show_player_count?: boolean;
@@ -374,6 +376,16 @@ export default function StatusPage() {
             </div>
 
             <WidgetRenderer widgets={getWidgets('dashboard-status', 'after-header')} />
+
+            {statusData?.maintenance?.enabled && (
+                <Alert className='border-amber-500/30 bg-amber-500/10'>
+                    <Wrench className='h-4 w-4 text-amber-500' />
+                    <AlertTitle>{t('maintenance.title')}</AlertTitle>
+                    <AlertDescription>
+                        {statusData.maintenance.message || t('maintenance.defaultMessage')}
+                    </AlertDescription>
+                </Alert>
+            )}
 
             {/*  Global stat cards  */}
             {global && (
