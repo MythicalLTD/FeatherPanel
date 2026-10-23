@@ -4,7 +4,7 @@
 	"description": "FeatherPanel MCP server — manage game servers, webspaces, and VDS from Claude, Cursor, and other MCP clients",
 	"type": "module",
 	"main": "dist/index.js",
-	"packageManager": "pnpm@12.14.0",
+	"packageManager": "pnpm@12.15.0",
 	"bin": {
 		"featherpanel-mcp": "dist/stdio.js"
 	},
