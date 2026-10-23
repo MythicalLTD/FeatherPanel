@@ -18,7 +18,7 @@
 namespace App\Cli;
 
 use App\Cli\Commands\Help;
-use App\Plugins\ObsoleteAddons;
+use App\Cli\Utils\PluginCommandLocator;
 
 class App extends Utils\MinecraftColorCodeSupport
 {
@@ -119,62 +119,24 @@ class App extends Utils\MinecraftColorCodeSupport
     /**
      * Register and execute plugin commands.
      *
+     * Plugin commands live in {addon}/Commands/*.php. The addons directory is resolved
+     * by {@see PluginCommandLocator} from APP_ADDONS_DIR, so this works from any working directory.
+     *
      * @param string $commandName the name of the command to register
      * @param array $args The command arguments
      *
-     * @return bool WhethregisterBuiltInCommandser a plugin command was found and executed
+     * @return bool Whether a plugin command was found and executed
      */
     public function registerPluginCommands(string $commandName, array $args): bool
     {
-        $pluginDirectory = getcwd() . '/backend/storage/addons';
-
-        if (!is_dir($pluginDirectory)) {
+        $commandClass = PluginCommandLocator::findCommand($commandName);
+        if ($commandClass === null) {
             return false;
         }
 
-        $plugins = array_diff(scandir($pluginDirectory), ['.', '..']);
+        $commandClass::execute($args);
 
-        foreach ($plugins as $plugin) {
-            $pluginPath = $pluginDirectory . '/' . $plugin;
-            if (!is_dir($pluginPath)) {
-                continue;
-            }
-
-            if (ObsoleteAddons::isObsolete($plugin)) {
-                continue;
-            }
-
-            // Check if the plugin has a commands folder
-            $commandsFolder = $pluginPath . '/Commands';
-            if (!is_dir($commandsFolder)) {
-                continue;
-            }
-
-            $commandFiles = array_diff(scandir($commandsFolder), ['.', '..']);
-
-            foreach ($commandFiles as $commandFile) {
-                if (!str_ends_with($commandFile, '.php')) {
-                    continue;
-                }
-
-                require_once $commandsFolder . '/' . $commandFile;
-
-                $className = pathinfo($commandFile, PATHINFO_FILENAME);
-                $commandClass = "App\\Addons\\$plugin\\Commands\\$className";
-
-                if (!class_exists($commandClass)) {
-                    continue;
-                }
-
-                if (strtolower($className) === strtolower($commandName)) {
-                    $commandClass::execute($args);
-
-                    return true;
-                }
-            }
-        }
-
-        return false;
+        return true;
     }
 
     /**

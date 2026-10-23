@@ -19,6 +19,7 @@ namespace App\Cli\Commands;
 
 use App\Cli\App;
 use App\Cli\CommandBuilder;
+use App\Cli\Utils\PluginCommandLocator;
 
 class Help extends App implements CommandBuilder
 {
@@ -64,35 +65,19 @@ class Help extends App implements CommandBuilder
 
         $cmd->send('');
         $cmd->send($cmd->color1 . 'Plugins:');
-        $pluginDir = getcwd() . '/backend/storage/addons';
-        if (is_dir($pluginDir)) {
-            $plugins = array_diff(scandir($pluginDir), ['.', '..']);
-            foreach ($plugins as $plugin) {
-                $commandsFolder = $pluginDir . "/$plugin/Commands";
-                if (!is_dir($commandsFolder)) {
-                    continue;
-                }
-                $commandFiles = array_diff(scandir($commandsFolder), ['.', '..']);
-                foreach ($commandFiles as $commandFile) {
-                    if (!str_ends_with($commandFile, '.php')) {
-                        continue;
-                    }
-                    $className = pathinfo($commandFile, PATHINFO_FILENAME);
-                    $commandClass = "App\\Addons\\$plugin\\Commands\\$className";
-                    $commandFilePath = $commandsFolder . "/$commandFile";
-                    require_once $commandFilePath;
-                    if (!class_exists($commandClass)) {
-                        continue;
-                    }
-                    $desc = $commandClass::getDescription();
-                    $cmdKey = lcfirst($className);
-                    $subCommands = $commandClass::getSubCommands();
-                    $cmd->send($cmd->color3 . '[' . $plugin . '] ' . $cmd->color1 . '/' . $cmd->color2 . $cmdKey . $cmd->color3 . ': &f' . $desc);
-                    if (!empty($subCommands)) {
-                        foreach ($subCommands as $subCommand => $subDesc) {
-                            $cmd->send('     ' . $cmd->color2 . '-' . $cmd->color3 . " {$cmdKey} {$subCommand}&7: &f{$subDesc}");
-                        }
-                    }
+        foreach (PluginCommandLocator::listCommandFiles() as $command) {
+            $commandClass = PluginCommandLocator::loadCommand($command);
+            if ($commandClass === null) {
+                continue;
+            }
+            $plugin = $command['plugin'];
+            $desc = $commandClass::getDescription();
+            $cmdKey = lcfirst($command['name']);
+            $subCommands = $commandClass::getSubCommands();
+            $cmd->send($cmd->color3 . '[' . $plugin . '] ' . $cmd->color1 . '/' . $cmd->color2 . $cmdKey . $cmd->color3 . ': &f' . $desc);
+            if (!empty($subCommands)) {
+                foreach ($subCommands as $subCommand => $subDesc) {
+                    $cmd->send('     ' . $cmd->color2 . '-' . $cmd->color3 . " {$cmdKey} {$subCommand}&7: &f{$subDesc}");
                 }
             }
         }
