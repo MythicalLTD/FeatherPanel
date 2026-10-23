@@ -17166,7 +17166,39 @@
             "users_title": "Invite users",
             "users_body": "Create accounts and assign roles.",
             "settings_title": "Fine tune settings",
-            "settings_body": "Branding, mail templates, limits and more."
+            "settings_body": "Branding, mail templates, limits and more.",
+            "headline": "You're all set!",
+            "next_steps": "Next steps",
+            "location_title": "Create a location",
+            "location_body": "Group nodes by region or data center.",
+            "spell_title": "Pick your spells (eggs)",
+            "spell_body": "Choose the game and app templates servers are built from.",
+            "server_title": "Create your first server",
+            "server_body": "Put a node to work with a real server.",
+            "docs_title": "Read the docs",
+            "docs_body": "Guides for Wings, spells, plugins and more.",
+            "support_note": "FeatherPanel is non-profit. If it helps you, you can",
+            "support_link": "support the project"
+        },
+        "progress_label": "Setup progress",
+        "keyboard_hint": "Tip: press Enter to continue, Alt + ← to go back, Alt + → to continue.",
+        "hero": {
+            "title": "Welcome to FeatherPanel",
+            "body": "Let's get your panel ready. A few quick steps and you are good to go.",
+            "chip_time": "About 5 minutes",
+            "chip_later": "Change anything later",
+            "chip_saves": "Saves as you go"
+        },
+        "preview": {
+            "label": "Live preview",
+            "placeholder_name": "Your panel",
+            "hint": "This is how your name and logo appear in the sidebar."
+        },
+        "validation": {
+            "host_required": "Enter the SMTP host",
+            "port_invalid": "Enter a port between 1 and 65535",
+            "email_invalid": "Enter a valid email address",
+            "key_required": "This key is required when Turnstile is on"
         }
     },
     "onboarding": {

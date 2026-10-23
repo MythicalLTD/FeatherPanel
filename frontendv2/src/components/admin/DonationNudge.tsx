@@ -36,6 +36,26 @@ function dismissedRecently(): boolean {
     }
 }
 
+/** True once the panel reports Premium (paid or free claim) as inactive. False while loading, on error, or when active. */
+export function usePremiumInactive(): boolean {
+    const [inactive, setInactive] = useState(false);
+    useEffect(() => {
+        let cancelled = false;
+        axios
+            .get<{ success: boolean; data?: { premium?: { active?: boolean } } }>('/api/admin/featherpanel-premium', {
+                params: { refresh: '0' },
+            })
+            .then((res) => {
+                if (!cancelled && res.data.success && res.data.data?.premium?.active === false) setInactive(true);
+            })
+            .catch(() => undefined);
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+    return inactive;
+}
+
 /**
  * Small, dismissible admin-only card asking for an optional donation.
  * Hidden for 30 days after dismissing and never shown while Premium (paid or free claim) is active.

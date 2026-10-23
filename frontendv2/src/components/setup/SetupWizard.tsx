@@ -15,7 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { useCallback, useEffect, useMemo, useState, type ComponentType, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ComponentType, type ReactNode } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
@@ -24,9 +24,12 @@ import {
     AlertTriangle,
     ArrowLeft,
     ArrowRight,
+    BookOpen,
     Boxes,
     Check,
+    Egg,
     Globe,
+    Heart,
     Languages,
     Loader2,
     Mail,
@@ -36,6 +39,7 @@ import {
     Server,
     Settings,
     ShieldCheck,
+    Sparkles,
     Store,
     Users,
 } from 'lucide-react';
@@ -52,6 +56,8 @@ import { adminSettingsApi } from '@/lib/admin-settings-api';
 import { getApiErrorMessage } from '@/lib/api-errors';
 import { completeSetup, setSetupDeferred, SETUP_STEP_KEY } from '@/lib/setup-wizard';
 import { cn } from '@/lib/utils';
+import { FEATHERPANEL_DONATE_URL } from '@/lib/premium-links';
+import { usePremiumInactive } from '@/components/admin/DonationNudge';
 
 type StepId = 'welcome' | 'locale' | 'mail' | 'modules' | 'security' | 'infrastructure' | 'done';
 
@@ -182,6 +188,8 @@ export function SetupWizard() {
     const [counts, setCounts] = useState<{ locations: number; nodes: number }>({ locations: 0, nodes: 0 });
     const [locationName, setLocationName] = useState('');
     const [creatingLocation, setCreatingLocation] = useState(false);
+    const [direction, setDirection] = useState<'forward' | 'back'>('forward');
+    const [showErrors, setShowErrors] = useState(false);
 
     const step = STEPS[stepIndex];
 
@@ -268,18 +276,44 @@ export function SetupWizard() {
         }
     };
 
-    const goTo = (index: number) => setStepIndex(Math.max(0, Math.min(STEPS.length - 1, index)));
+    /** Inline validation for the current step (translation keys). */
+    const errors = useMemo(() => {
+        const e: Record<string, string> = {};
+        if (step.id === 'welcome') {
+            if (url.error) e.app_url = url.error;
+            if (!values.app_name?.trim()) e.app_name = 'setup_wizard.welcome.name_required';
+        }
+        if (step.id === 'mail' && values.smtp_enabled === 'true') {
+            if (!values.smtp_host?.trim()) e.smtp_host = 'setup_wizard.validation.host_required';
+            const port = Number(values.smtp_port || 0);
+            if (!port || port < 1 || port > 65535) e.smtp_port = 'setup_wizard.validation.port_invalid';
+            if (values.smtp_from && !/^[^\s@]+@[^\s@]+$/.test(values.smtp_from))
+                e.smtp_from = 'setup_wizard.validation.email_invalid';
+        }
+        if (step.id === 'security' && values.turnstile_enabled === 'true') {
+            if (!values.turnstile_key_pub?.trim()) e.turnstile_key_pub = 'setup_wizard.validation.key_required';
+            if (!values.turnstile_key_priv?.trim() && !initial.turnstile_key_priv)
+                e.turnstile_key_priv = 'setup_wizard.validation.key_required';
+        }
+        return e;
+    }, [step.id, url.error, values, initial.turnstile_key_priv]);
+
+    const goTo = (index: number) => {
+        const target = Math.max(0, Math.min(STEPS.length - 1, index));
+        setDirection(target < stepIndex ? 'back' : 'forward');
+        setShowErrors(false);
+        setStepIndex(target);
+    };
+
+    const back = () => {
+        if (stepIndex > 0 && step.id !== 'done') goTo(stepIndex - 1);
+    };
 
     const next = async () => {
-        if (step.id === 'welcome') {
-            if (url.error) {
-                toast.error(t(url.error));
-                return;
-            }
-            if (!values.app_name?.trim()) {
-                toast.error(t('setup_wizard.welcome.name_required'));
-                return;
-            }
+        if (Object.keys(errors).length > 0) {
+            setShowErrors(true);
+            toast.error(t(Object.values(errors)[0]));
+            return;
         }
         const keys = STEP_KEYS[step.id];
         setSaving(true);
@@ -324,6 +358,36 @@ export function SetupWizard() {
         setSetupDeferred(true);
         router.push('/admin');
     };
+
+    const nextRef = useRef<() => void>(() => undefined);
+    const backRef = useRef<() => void>(() => undefined);
+    nextRef.current = () => {
+        if (!saving && !loading && step.id !== 'done') void next();
+    };
+    backRef.current = () => {
+        if (!saving) back();
+    };
+    useEffect(() => {
+        const onKey = (e: KeyboardEvent) => {
+            const target = e.target as HTMLElement | null;
+            const typing = !!target?.closest('input, textarea, select, [contenteditable="true"], [role="listbox"]');
+            if (
+                e.key === 'Enter' &&
+                (e.metaKey || e.ctrlKey || (!typing && target?.tagName !== 'BUTTON' && target?.tagName !== 'A'))
+            ) {
+                e.preventDefault();
+                nextRef.current();
+            } else if (e.altKey && e.key === 'ArrowRight') {
+                e.preventDefault();
+                nextRef.current();
+            } else if (e.altKey && e.key === 'ArrowLeft') {
+                e.preventDefault();
+                backRef.current();
+            }
+        };
+        window.addEventListener('keydown', onKey);
+        return () => window.removeEventListener('keydown', onKey);
+    }, []);
 
     const sendTest = async () => {
         setTesting(true);
@@ -372,13 +436,22 @@ export function SetupWizard() {
     const isLast = step.id === 'done';
     const progress = Math.round((stepIndex / (STEPS.length - 1)) * 100);
     const logoUrl = settings?.app_logo_dark?.trim() || settings?.app_logo_white?.trim() || '/logo.png';
+    const premiumInactive = usePremiumInactive();
 
     return (
         <BackgroundWrapper>
-            <div className='mx-auto flex min-h-svh w-full max-w-7xl flex-col gap-5 px-4 py-5 sm:px-6 lg:flex-row lg:items-start lg:gap-8 lg:py-10'>
-                <aside className='fp-surface shrink-0 rounded-2xl border p-4 shadow-sm sm:p-5 lg:sticky lg:top-8 lg:w-64'>
+            <div className='motion-content relative mx-auto flex min-h-svh w-full max-w-7xl flex-col gap-5 px-4 py-5 sm:px-6 lg:flex-row lg:items-start lg:gap-8 lg:py-10'>
+                <div
+                    aria-hidden
+                    className='pointer-events-none fixed inset-0 -z-10 overflow-hidden motion-reduce:hidden'
+                >
+                    <div className='bg-primary/15 absolute -top-32 -left-24 h-96 w-96 animate-pulse rounded-full blur-3xl [animation-duration:6s]' />
+                    <div className='bg-primary/10 absolute -right-24 bottom-0 h-[28rem] w-[28rem] animate-pulse rounded-full blur-3xl [animation-delay:2s] [animation-duration:8s]' />
+                </div>
+
+                <aside className='fp-surface animate-in fade-in slide-in-from-left-4 shrink-0 rounded-2xl border p-4 shadow-sm duration-500 motion-reduce:animate-none sm:p-5 lg:sticky lg:top-8 lg:w-72'>
                     <div className='mb-5 flex items-center gap-3'>
-                        <div className='fp-icon-tile flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl p-1.5'>
+                        <div className='fp-icon-tile flex h-11 w-11 items-center justify-center overflow-hidden rounded-xl p-1.5'>
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
                                 src={logoUrl}
@@ -396,26 +469,41 @@ export function SetupWizard() {
                             </p>
                         </div>
                     </div>
-                    <div className='bg-muted/40 mb-3 h-1.5 overflow-hidden rounded-full lg:hidden'>
-                        <div className='bg-primary h-full transition-all' style={{ width: `${progress}%` }} />
+
+                    <div
+                        className='bg-muted/40 mb-4 h-1.5 overflow-hidden rounded-full'
+                        role='progressbar'
+                        aria-valuemin={0}
+                        aria-valuemax={100}
+                        aria-valuenow={progress}
+                        aria-label={t('setup_wizard.progress_label')}
+                    >
+                        <div
+                            className='from-primary/70 to-primary h-full rounded-full bg-gradient-to-r transition-[width] duration-700 ease-out'
+                            style={{ width: `${Math.max(progress, 4)}%` }}
+                        />
                     </div>
-                    <div className='mb-4 flex items-center justify-between gap-3 lg:hidden'>
-                        <span className='text-muted-foreground text-xs font-medium'>{t(STEP_TITLES[step.id])}</span>
+
+                    <div className='mb-1 flex items-center justify-between gap-3 lg:hidden'>
+                        <span className='text-xs font-medium'>{t(STEP_TITLES[step.id])}</span>
                         <span className='text-muted-foreground text-xs tabular-nums'>{progress}%</span>
                     </div>
-                    <ol className='hidden space-y-1 lg:block'>
+
+                    <ol className='relative hidden lg:block'>
+                        <span aria-hidden className='bg-border absolute top-4 bottom-4 left-[1.15rem] w-px' />
                         {STEPS.map((s, i) => {
                             const done = i < stepIndex;
                             const active = i === stepIndex;
                             const clickable = !isLast && i < stepIndex;
                             return (
-                                <li key={s.id}>
+                                <li key={s.id} className='relative'>
                                     <button
                                         type='button'
                                         disabled={!clickable}
                                         onClick={() => goTo(i)}
+                                        aria-current={active ? 'step' : undefined}
                                         className={cn(
-                                            'flex w-full items-center gap-3 rounded-xl px-2.5 py-2 text-left text-sm transition-colors',
+                                            'flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left text-sm transition-all duration-300',
                                             active && 'bg-primary/10 text-primary',
                                             !active && done && 'text-foreground hover:bg-muted/30',
                                             !active && !done && 'text-muted-foreground',
@@ -423,12 +511,17 @@ export function SetupWizard() {
                                     >
                                         <span
                                             className={cn(
-                                                'flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border text-xs font-semibold',
-                                                active && 'border-primary/40 bg-primary/15',
-                                                done && 'border-emerald-500/30 bg-emerald-500/10 text-emerald-500',
+                                                'bg-background relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-xs font-semibold transition-all duration-300',
+                                                active &&
+                                                    'border-primary bg-primary text-primary-foreground scale-110 shadow-md',
+                                                done && 'border-emerald-500/40 bg-emerald-500/10 text-emerald-500',
                                             )}
                                         >
-                                            {done ? <Check className='h-3.5 w-3.5' /> : i + 1}
+                                            {done ? (
+                                                <Check className='animate-in zoom-in h-3.5 w-3.5 duration-300' />
+                                            ) : (
+                                                <s.icon className='h-3.5 w-3.5' />
+                                            )}
                                         </span>
                                         <span className='truncate font-medium'>{t(STEP_TITLES[s.id])}</span>
                                     </button>
@@ -436,14 +529,21 @@ export function SetupWizard() {
                             );
                         })}
                     </ol>
+
+                    <p className='text-muted-foreground mt-4 hidden text-[11px] leading-relaxed lg:block'>
+                        {t('setup_wizard.keyboard_hint')}
+                    </p>
                 </aside>
 
-                <main className='fp-surface min-w-0 flex-1 rounded-2xl border shadow-sm'>
+                <main className='fp-surface animate-in fade-in slide-in-from-bottom-4 min-w-0 flex-1 overflow-hidden rounded-2xl border shadow-sm duration-500 motion-reduce:animate-none'>
                     <header className='flex items-start gap-4 border-b p-5 sm:p-7'>
-                        <div className='bg-primary/10 text-primary flex h-11 w-11 shrink-0 items-center justify-center rounded-xl'>
+                        <div
+                            key={`icon-${step.id}`}
+                            className='bg-primary/10 text-primary animate-in zoom-in-75 fade-in flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl duration-500 motion-reduce:animate-none'
+                        >
                             <step.icon className='h-5 w-5' />
                         </div>
-                        <div className='min-w-0'>
+                        <div key={`head-${step.id}`} className='animate-in fade-in min-w-0 duration-500'>
                             <p className='text-primary mb-1 text-[11px] font-semibold tracking-[0.16em] uppercase'>
                                 {t('setup_wizard.progress', {
                                     current: String(stepIndex + 1),
@@ -453,72 +553,102 @@ export function SetupWizard() {
                             <h1 className='text-xl font-semibold tracking-tight sm:text-2xl'>
                                 {t(STEP_TITLES[step.id])}
                             </h1>
-                            <p className='text-muted-foreground mt-0.5 text-sm'>{t(STEP_DESCRIPTIONS[step.id])}</p>
+                            <p className='text-muted-foreground mt-1 max-w-2xl text-sm'>
+                                {t(STEP_DESCRIPTIONS[step.id])}
+                            </p>
                         </div>
                     </header>
 
-                    <div className='space-y-6 p-5 sm:p-7'>
+                    <div
+                        key={step.id}
+                        className={cn(
+                            'animate-in fade-in space-y-6 p-5 duration-500 ease-out motion-reduce:animate-none sm:p-7',
+                            direction === 'forward' ? 'slide-in-from-right-6' : 'slide-in-from-left-6',
+                        )}
+                    >
                         {loading ? (
-                            <div className='text-muted-foreground flex items-center gap-2 py-16 text-sm'>
-                                <Loader2 className='h-4 w-4 animate-spin' />
-                                {t('setup_wizard.loading')}
+                            <div className='space-y-3 py-6' aria-busy>
+                                <div className='bg-muted/40 h-24 animate-pulse rounded-2xl' />
+                                <div className='grid gap-3 sm:grid-cols-2'>
+                                    <div className='bg-muted/40 h-11 animate-pulse rounded-lg' />
+                                    <div className='bg-muted/40 h-11 animate-pulse rounded-lg' />
+                                </div>
+                                <p className='text-muted-foreground flex items-center gap-2 text-sm'>
+                                    <Loader2 className='h-4 w-4 animate-spin' />
+                                    {t('setup_wizard.loading')}
+                                </p>
                             </div>
                         ) : step.id === 'welcome' ? (
                             <>
-                                <div className='grid gap-5 sm:grid-cols-2'>
-                                    <Input
-                                        label={t('setup_wizard.welcome.name_label')}
-                                        value={values.app_name || ''}
-                                        onChange={(e) => set('app_name', e.target.value)}
-                                        maxLength={64}
-                                    />
-                                    <Input
-                                        label={t('setup_wizard.welcome.url_label')}
-                                        value={values.app_url || ''}
-                                        onChange={(e) => set('app_url', e.target.value.trim())}
-                                        error={url.error ? t(url.error) : undefined}
-                                        icon={<Globe className='h-4 w-4' />}
-                                        inputMode='url'
-                                        description={t('setup_wizard.welcome.url_help')}
-                                    />
-                                </div>
-                                {!url.error && url.warnings.length > 0 ? (
-                                    <div className='space-y-2'>
-                                        {url.warnings.map((w) => (
-                                            <TipCard
-                                                key={w}
-                                                variant='warning'
-                                                icon={AlertTriangle}
-                                                title={t('setup_wizard.welcome.url_check')}
-                                            >
-                                                <p>{t(w, { origin: window.location.origin })}</p>
-                                            </TipCard>
-                                        ))}
-                                        {values.app_url !== window.location.origin ? (
-                                            <Button
-                                                size='sm'
-                                                variant='outline'
-                                                onClick={() => set('app_url', window.location.origin)}
-                                            >
-                                                {t('setup_wizard.welcome.use_current', {
-                                                    origin: window.location.origin,
-                                                })}
-                                            </Button>
+                                <WelcomeHero logoUrl={logoUrl} />
+                                <div className='grid gap-6 lg:grid-cols-[minmax(0,1fr)_17rem]'>
+                                    <div className='space-y-5'>
+                                        <div className='grid gap-5 sm:grid-cols-2'>
+                                            <Input
+                                                label={t('setup_wizard.welcome.name_label')}
+                                                value={values.app_name || ''}
+                                                onChange={(e) => set('app_name', e.target.value)}
+                                                maxLength={64}
+                                                error={showErrors && errors.app_name ? t(errors.app_name) : undefined}
+                                            />
+                                            <Input
+                                                label={t('setup_wizard.welcome.url_label')}
+                                                value={values.app_url || ''}
+                                                onChange={(e) => set('app_url', e.target.value.trim())}
+                                                error={
+                                                    url.error && (showErrors || values.app_url)
+                                                        ? t(url.error)
+                                                        : undefined
+                                                }
+                                                icon={<Globe className='h-4 w-4' />}
+                                                inputMode='url'
+                                                description={t('setup_wizard.welcome.url_help')}
+                                            />
+                                        </div>
+                                        {!url.error && url.warnings.length > 0 ? (
+                                            <div className='space-y-2'>
+                                                {url.warnings.map((w) => (
+                                                    <TipCard
+                                                        key={w}
+                                                        variant='warning'
+                                                        icon={AlertTriangle}
+                                                        title={t('setup_wizard.welcome.url_check')}
+                                                    >
+                                                        <p>{t(w, { origin: window.location.origin })}</p>
+                                                    </TipCard>
+                                                ))}
+                                                {values.app_url !== window.location.origin ? (
+                                                    <Button
+                                                        size='sm'
+                                                        variant='outline'
+                                                        onClick={() => set('app_url', window.location.origin)}
+                                                    >
+                                                        {t('setup_wizard.welcome.use_current', {
+                                                            origin: window.location.origin,
+                                                        })}
+                                                    </Button>
+                                                ) : null}
+                                            </div>
                                         ) : null}
+                                        <div className='border-border/70 bg-muted/15 rounded-2xl border p-4 sm:p-5'>
+                                            <ImageAttachmentField
+                                                id='setup-panel-logo'
+                                                label={t('setup_wizard.welcome.logo_label')}
+                                                description={t('setup_wizard.welcome.logo_help')}
+                                                value={values.app_logo_dark || ''}
+                                                onChange={(value) => {
+                                                    set('app_logo_dark', value.trim());
+                                                    set('app_logo_white', value.trim());
+                                                }}
+                                                allowManualUrl
+                                                placeholder='https://… or /attachments/…'
+                                            />
+                                        </div>
                                     </div>
-                                ) : null}
-                                <div className='border-border/70 bg-muted/15 rounded-2xl border p-4 sm:p-5'>
-                                    <ImageAttachmentField
-                                        id='setup-panel-logo'
-                                        label={t('setup_wizard.welcome.logo_label')}
-                                        description={t('setup_wizard.welcome.logo_help')}
-                                        value={values.app_logo_dark || ''}
-                                        onChange={(value) => {
-                                            set('app_logo_dark', value.trim());
-                                            set('app_logo_white', value.trim());
-                                        }}
-                                        allowManualUrl
-                                        placeholder='https://… or /attachments/…'
+                                    <BrandPreview
+                                        name={values.app_name || ''}
+                                        url={values.app_url || ''}
+                                        logo={values.app_logo_dark || logoUrl}
                                     />
                                 </div>
                             </>
@@ -574,12 +704,14 @@ export function SetupWizard() {
                                             label={t('setup_wizard.mail.host')}
                                             value={values.smtp_host || ''}
                                             onChange={(e) => set('smtp_host', e.target.value.trim())}
+                                            error={showErrors && errors.smtp_host ? t(errors.smtp_host) : undefined}
                                         />
                                         <div className='grid grid-cols-2 gap-4'>
                                             <Input
                                                 label={t('setup_wizard.mail.port')}
                                                 value={values.smtp_port || ''}
                                                 onChange={(e) => set('smtp_port', e.target.value.replace(/\D/g, ''))}
+                                                error={showErrors && errors.smtp_port ? t(errors.smtp_port) : undefined}
                                                 inputMode='numeric'
                                             />
                                             <HeadlessSelect
@@ -610,6 +742,7 @@ export function SetupWizard() {
                                             label={t('setup_wizard.mail.from')}
                                             value={values.smtp_from || ''}
                                             onChange={(e) => set('smtp_from', e.target.value.trim())}
+                                            error={showErrors && errors.smtp_from ? t(errors.smtp_from) : undefined}
                                             className='sm:col-span-2'
                                         />
                                         <div className='sm:col-span-2'>
@@ -631,17 +764,20 @@ export function SetupWizard() {
                                 )}
                             </>
                         ) : step.id === 'modules' ? (
-                            <div className='grid gap-3'>
-                                {MODULES.map((m) => (
+                            <div className='grid gap-3 sm:grid-cols-2'>
+                                {MODULES.map((m, idx) => (
                                     <ToggleRow
                                         key={m.key}
+                                        delay={idx * 45}
                                         title={t(m.title)}
                                         body={t(m.body)}
                                         checked={bool(m.key, m.defaultOn)}
                                         onChange={(v) => setBool(m.key, v)}
                                     />
                                 ))}
-                                <p className='text-muted-foreground text-xs'>{t('setup_wizard.modules.note')}</p>
+                                <p className='text-muted-foreground text-xs sm:col-span-2'>
+                                    {t('setup_wizard.modules.note')}
+                                </p>
                             </div>
                         ) : step.id === 'security' ? (
                             <div className='grid gap-3'>
@@ -669,6 +805,11 @@ export function SetupWizard() {
                                                 label={t('setup_wizard.security.site_key')}
                                                 value={values.turnstile_key_pub || ''}
                                                 onChange={(e) => set('turnstile_key_pub', e.target.value.trim())}
+                                                error={
+                                                    showErrors && errors.turnstile_key_pub
+                                                        ? t(errors.turnstile_key_pub)
+                                                        : undefined
+                                                }
                                             />
                                             <Input
                                                 label={t('setup_wizard.security.secret_key')}
@@ -680,6 +821,11 @@ export function SetupWizard() {
                                                 }
                                                 placeholder={initial.turnstile_key_priv ? '••••••••' : ''}
                                                 onChange={(e) => set('turnstile_key_priv', e.target.value.trim())}
+                                                error={
+                                                    showErrors && errors.turnstile_key_priv
+                                                        ? t(errors.turnstile_key_priv)
+                                                        : undefined
+                                                }
                                                 autoComplete='new-password'
                                             />
                                         </div>
@@ -751,48 +897,17 @@ export function SetupWizard() {
                                 </div>
                             </div>
                         ) : (
-                            <div className='space-y-5'>
-                                <div className='flex items-center gap-3 rounded-xl border border-emerald-500/25 bg-emerald-500/[0.06] p-4'>
-                                    <Check className='h-5 w-5 shrink-0 text-emerald-500' />
-                                    <p className='text-sm'>{t('setup_wizard.done.saved')}</p>
-                                </div>
-                                <div className='grid gap-3 sm:grid-cols-2'>
-                                    <NextLink
-                                        href='/admin/nodes/create'
-                                        icon={Server}
-                                        title={t('setup_wizard.done.node_title')}
-                                        body={t('setup_wizard.done.node_body')}
-                                    />
-                                    <NextLink
-                                        href='/admin/feathercloud/marketplace'
-                                        icon={Store}
-                                        title={t('setup_wizard.done.marketplace_title')}
-                                        body={t('setup_wizard.done.marketplace_body')}
-                                    />
-                                    <NextLink
-                                        href='/admin/users'
-                                        icon={Users}
-                                        title={t('setup_wizard.done.users_title')}
-                                        body={t('setup_wizard.done.users_body')}
-                                    />
-                                    <NextLink
-                                        href='/admin/settings'
-                                        icon={Settings}
-                                        title={t('setup_wizard.done.settings_title')}
-                                        body={t('setup_wizard.done.settings_body')}
-                                    />
-                                </div>
-                            </div>
+                            <DoneScreen premiumInactive={premiumInactive} />
                         )}
                     </div>
 
-                    <footer className='flex flex-col-reverse gap-3 border-t p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6'>
+                    <footer className='bg-muted/10 flex flex-col-reverse gap-3 border-t p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6'>
                         {isLast ? (
                             <span />
                         ) : (
                             <div className='flex gap-2'>
                                 {stepIndex > 0 ? (
-                                    <Button variant='ghost' onClick={() => goTo(stepIndex - 1)} disabled={saving}>
+                                    <Button variant='ghost' onClick={back} disabled={saving}>
                                         <ArrowLeft className='mr-2 h-4 w-4' />
                                         {t('setup_wizard.actions.back')}
                                     </Button>
@@ -829,21 +944,179 @@ export function SetupWizard() {
     );
 }
 
+function WelcomeHero({ logoUrl }: { logoUrl: string }) {
+    const { t } = useTranslation();
+    return (
+        <div className='border-primary/20 from-primary/15 via-primary/5 relative overflow-hidden rounded-2xl border bg-gradient-to-br to-transparent p-5 sm:p-6'>
+            <Sparkles
+                aria-hidden
+                className='text-primary/30 absolute top-4 right-4 h-16 w-16 animate-pulse motion-reduce:animate-none'
+            />
+            <div className='relative flex items-center gap-4'>
+                <div className='fp-icon-tile animate-in zoom-in-50 flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl p-2 shadow-sm duration-700 motion-reduce:animate-none'>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={logoUrl} alt='' className='h-full w-full object-contain' />
+                </div>
+                <div className='min-w-0'>
+                    <h2 className='text-lg font-semibold tracking-tight sm:text-xl'>{t('setup_wizard.hero.title')}</h2>
+                    <p className='text-muted-foreground mt-0.5 text-sm'>{t('setup_wizard.hero.body')}</p>
+                </div>
+            </div>
+            <div className='relative mt-4 flex flex-wrap gap-2'>
+                {(['time', 'later', 'saves'] as const).map((chip, idx) => (
+                    <span
+                        key={chip}
+                        style={{ animationDelay: `${150 + idx * 90}ms` }}
+                        className='bg-background/70 animate-in fade-in slide-in-from-bottom-2 fill-mode-both rounded-full border px-3 py-1 text-xs font-medium backdrop-blur duration-500 motion-reduce:animate-none'
+                    >
+                        {t(`setup_wizard.hero.chip_${chip}`)}
+                    </span>
+                ))}
+            </div>
+        </div>
+    );
+}
+
+function BrandPreview({ name, url, logo }: { name: string; url: string; logo: string }) {
+    const { t } = useTranslation();
+    let host = url;
+    try {
+        host = new URL(url).host;
+    } catch {
+        // Keep the raw value while the admin is typing.
+    }
+    return (
+        <div className='space-y-2'>
+            <p className='text-muted-foreground text-xs font-medium'>{t('setup_wizard.preview.label')}</p>
+            <div className='fp-surface-inset overflow-hidden rounded-2xl border shadow-sm'>
+                <div className='bg-muted/30 flex items-center gap-1.5 border-b px-3 py-2'>
+                    <span className='h-2 w-2 rounded-full bg-red-400/70' />
+                    <span className='h-2 w-2 rounded-full bg-amber-400/70' />
+                    <span className='h-2 w-2 rounded-full bg-emerald-400/70' />
+                    <span className='bg-background/80 text-muted-foreground ml-2 min-w-0 flex-1 truncate rounded-md px-2 py-0.5 text-[10px]'>
+                        {host || '-'}
+                    </span>
+                </div>
+                <div className='flex'>
+                    <div className='w-full space-y-3 p-3'>
+                        <div className='flex items-center gap-2'>
+                            <div className='fp-icon-tile flex h-8 w-8 items-center justify-center overflow-hidden rounded-lg p-1'>
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img
+                                    key={logo}
+                                    src={logo}
+                                    alt=''
+                                    className='animate-in fade-in h-full w-full object-contain'
+                                />
+                            </div>
+                            <span className='truncate text-sm font-semibold transition-all'>
+                                {name.trim() || t('setup_wizard.preview.placeholder_name')}
+                            </span>
+                        </div>
+                        {[70, 55, 80, 45].map((w, idx) => (
+                            <div key={idx} className='flex items-center gap-2'>
+                                <span className={cn('h-3 w-3 rounded', idx === 0 ? 'bg-primary/60' : 'bg-muted')} />
+                                <span
+                                    className={cn('h-2 rounded-full', idx === 0 ? 'bg-primary/40' : 'bg-muted')}
+                                    style={{ width: `${w}%` }}
+                                />
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+            <p className='text-muted-foreground text-[11px]'>{t('setup_wizard.preview.hint')}</p>
+        </div>
+    );
+}
+
+function DoneScreen({ premiumInactive }: { premiumInactive: boolean }) {
+    const { t } = useTranslation();
+    const items: { href: string; icon: ComponentType<{ className?: string }>; key: string; external?: boolean }[] = [
+        { href: '/admin/locations', icon: MapPin, key: 'location' },
+        { href: '/admin/nodes/create', icon: Server, key: 'node' },
+        { href: '/admin/spells', icon: Egg, key: 'spell' },
+        { href: '/admin/servers/create', icon: Rocket, key: 'server' },
+        { href: 'https://docs.featherpanel.com', icon: BookOpen, key: 'docs', external: true },
+        { href: '/admin/feathercloud/marketplace', icon: Store, key: 'marketplace' },
+        { href: '/admin/users', icon: Users, key: 'users' },
+        { href: '/admin/settings', icon: Settings, key: 'settings' },
+    ];
+    return (
+        <div className='space-y-6'>
+            <div className='flex flex-col items-center gap-3 py-4 text-center'>
+                <div className='relative'>
+                    <span className='absolute inset-0 animate-ping rounded-full bg-emerald-500/30 [animation-iteration-count:2] motion-reduce:hidden' />
+                    <div className='animate-in zoom-in-50 relative flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-500 duration-700 motion-reduce:animate-none'>
+                        <PartyPopper className='h-8 w-8' />
+                    </div>
+                </div>
+                <h2 className='animate-in fade-in slide-in-from-bottom-2 text-xl font-semibold tracking-tight duration-500 sm:text-2xl'>
+                    {t('setup_wizard.done.headline')}
+                </h2>
+                <p className='text-muted-foreground max-w-lg text-sm'>{t('setup_wizard.done.saved')}</p>
+            </div>
+            <div>
+                <p className='text-muted-foreground mb-3 text-xs font-semibold tracking-[0.14em] uppercase'>
+                    {t('setup_wizard.done.next_steps')}
+                </p>
+                <div className='grid gap-3 sm:grid-cols-2'>
+                    {items.map((item, idx) => (
+                        <NextLink
+                            key={item.key}
+                            href={item.href}
+                            external={item.external}
+                            delay={idx * 60}
+                            icon={item.icon}
+                            title={t(`setup_wizard.done.${item.key}_title`)}
+                            body={t(`setup_wizard.done.${item.key}_body`)}
+                        />
+                    ))}
+                </div>
+            </div>
+            {premiumInactive ? (
+                <p className='text-muted-foreground flex items-center justify-center gap-1.5 text-center text-xs'>
+                    <Heart className='text-primary h-3.5 w-3.5 shrink-0' />
+                    <span>
+                        {t('setup_wizard.done.support_note')}{' '}
+                        <a
+                            href={FEATHERPANEL_DONATE_URL}
+                            target='_blank'
+                            rel='noopener noreferrer'
+                            className='text-primary underline-offset-2 hover:underline'
+                        >
+                            {t('setup_wizard.done.support_link')}
+                        </a>
+                    </span>
+                </p>
+            ) : null}
+        </div>
+    );
+}
+
 function ToggleRow({
     title,
     body,
     checked,
     onChange,
     children,
+    delay = 0,
 }: {
     title: string;
     body: string;
     checked: boolean;
     onChange: (value: boolean) => void;
     children?: ReactNode;
+    delay?: number;
 }) {
     return (
-        <div className='fp-surface-inset rounded-xl border p-4'>
+        <div
+            style={delay ? { animationDelay: `${delay}ms` } : undefined}
+            className={cn(
+                'fp-surface-inset animate-in fade-in slide-in-from-bottom-2 fill-mode-both rounded-xl border p-4 transition-colors duration-300 motion-reduce:animate-none',
+                checked && 'border-primary/30 bg-primary/[0.04]',
+            )}
+        >
             <label className='flex cursor-pointer items-start justify-between gap-4'>
                 <span className='min-w-0'>
                     <span className='block text-sm font-medium'>{title}</span>
@@ -900,19 +1173,26 @@ function NextLink({
     icon: Icon,
     title,
     body,
+    external = false,
+    delay = 0,
 }: {
     href: string;
     icon: ComponentType<{ className?: string }>;
     title: string;
     body: string;
+    external?: boolean;
+    delay?: number;
 }) {
     return (
         <Link
             href={href}
-            className='fp-surface-inset group hover:border-primary/30 flex items-start gap-3 rounded-xl border p-4 transition-colors'
+            target={external ? '_blank' : undefined}
+            rel={external ? 'noopener noreferrer' : undefined}
+            style={delay ? { animationDelay: `${delay}ms` } : undefined}
+            className='fp-surface-inset group hover:border-primary/30 animate-in fade-in slide-in-from-bottom-2 fill-mode-both flex items-start gap-3 rounded-xl border p-4 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md motion-reduce:animate-none motion-reduce:hover:translate-y-0'
         >
             <div className='fp-icon-tile flex h-9 w-9 shrink-0 items-center justify-center rounded-lg'>
-                <Icon className='h-4 w-4' />
+                <Icon className='h-4 w-4 transition-transform duration-300 group-hover:scale-110' />
             </div>
             <div className='min-w-0 flex-1'>
                 <p className='text-sm font-medium'>{title}</p>
