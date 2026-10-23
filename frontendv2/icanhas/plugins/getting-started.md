@@ -65,15 +65,15 @@ Follow [ai-guide.md](./ai-guide.md) + [recipes.md](./recipes.md). Study [example
 ### C. Author tooling (`devutils`)
 
 ```bash
-php fuse makeplugincron
-php fuse makeplugincommand
-php fuse makemigration
+php cli makeplugincron
+php cli makeplugincommand
+php cli makemigration
 ```
 
 ## Boot sequence
 
 1. Kernel creates `PluginManager` + `PluginEvents`
-2. `loadKernel()` validates each addon, deps, mixins
+2. `loadKernel()` registers mixin classes (`MixinRegistry::registerMixins()`), then validates each addon's `conf.yml` and dependencies and attaches its declared mixins
 3. `processEvents($eventManager)` per plugin
 4. Core routes + each `Routes/*.php`
 5. `AppEvent::onRouterReady` with `RouteCollection`

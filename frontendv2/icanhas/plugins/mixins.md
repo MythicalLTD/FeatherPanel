@@ -2,9 +2,25 @@
 
 Mixins are reusable PHP capabilities that plugins can opt into. Core code lives under `backend/app/Plugins/Mixins/`.
 
-**Status:** the mixin framework exists (`AppMixin`, `MixinManager`, `MixinRegistry`, reflection helpers), but **no built-in mixins are registered** today (`MixinRegistry::registerBuiltInMixins()` is empty) and **no live addons declare mixins**. Custom classes would go in `backend/app/Plugins/Mixins/Custom/` (currently empty besides `.gitkeep`).
+**Status:** the framework is wired in. On every web request boot, `PluginManager::loadKernel()` calls `MixinRegistry::registerMixins()` once, then loads each plugin and attaches the mixins it declares. The panel ships **no built-in mixins** (`MixinRegistry::registerBuiltInMixins()` is empty) and no live addons declare mixins yet, so a mixin id only resolves if a mixin class has been added to the panel as described below.
 
-Documented so AIs do not invent wrong APIs — and so you can implement mixins correctly when you need them.
+Documented so AIs do not invent wrong APIs, and so you can implement mixins correctly when you need them.
+
+## What works
+
+| Step | Behaviour |
+|------|-----------|
+| Registration | `MixinRegistry::registerMixins()` registers built-in mixins (none today) and every class in `backend/app/Plugins/Mixins/Custom/**/*.php` that implements `AppMixin`. It runs once per process, before any plugin is loaded. |
+| Declaration | A plugin lists mixin ids in `conf.yml` (see below). Both the top-level `mixins` map and `plugin.mixins` are read and validated. |
+| Attach | While the plugin loads, `MixinManager::loadMixinsForPlugin()` creates one instance per declared id and calls `initialize($pluginIdentifier, $options)`. |
+| Access | `PluginProcessor::getMixin($id, $mixinId)`, `PluginProcessor::getMixins($id)`, `$pluginManager->getPluginMixins($id)`, `$pluginManager->hasPluginMixin($id, $mixinId)`. |
+
+Limits:
+
+- Mixins are attached only in the web kernel boot. The cron runner (`CRON_MODE`) and `php cli` do not call `loadKernel()`, so no mixins are attached there.
+- An unknown mixin id does not stop the plugin from loading. The panel logs `No mixin registered with identifier: …` and the plugin runs without it.
+- Mixin classes are discovered only from the panel's `Custom/` directory. Classes inside an addon folder are not scanned. An addon can still call `MixinManager::registerMixin(MyMixin::class)` itself, but only plugins that load after that call can use it.
+- Mixin ids must be unique. A second class with the same `getMixinIdentifier()` is rejected with a warning.
 
 ## `AppMixin` contract
 
@@ -19,11 +35,11 @@ interface AppMixin
 }
 ```
 
-`AbstractMixin` provides a base implementation you can extend.
+`AbstractMixin` implements `initialize()` and adds `getPluginIdentifier()`, `getConfig()`, `getConfigValue($key, $default)` and an `onInitialize()` hook.
 
 ## Declaring mixins on a plugin
 
-**Runtime loader** (`MixinManager::loadMixinsForPlugin`) reads **top-level** YAML:
+Use the top-level `mixins` map. The key is the mixin id, the value is an options map passed to `initialize()` (`{}` or `null` for no options):
 
 ```yaml
 plugin:
@@ -31,38 +47,54 @@ plugin:
   identifier: myplugin
   # …required fields…
 mixins:
-  some-mixin-id:
-    option: value
+  RateLimiter:
+    per_minute: 30
 ```
 
-**Validation quirk:** `PluginConfig::isConfigValid()` historically looks for mixins on the **`plugin`** object (`plugin.mixins`). `getPluginMixinsConfig()` returns top-level `mixins`.
+`plugin.mixins` uses the same format and is read too, so manifests that only declare it there keep working. When both declare the same id, the top-level entry wins. A non-map value (for example `mixins: RateLimiter`) or a mixin entry whose options are not a map makes `conf.yml` invalid and the plugin is not loaded.
 
-**Recommendation until core is unified:** put the same map in **both** places if you need validation + runtime:
+## Writing a custom mixin
 
-```yaml
-plugin:
-  name: MyPlugin
-  identifier: myplugin
-  # …
-  mixins:
-    some-mixin-id: {}
-mixins:
-  some-mixin-id: {}
-```
-
-Or verify against your exact panel version before shipping.
-
-## Registering a custom mixin class
-
-1. Implement `AppMixin` under `backend/app/Plugins/Mixins/Custom/YourMixin.php` (panel core path — not inside the addon)
-2. Ensure `MixinRegistry` discovers/registers it (see current `MixinRegistry` implementation for the scan/register path in your version)
-3. Reference the mixin id from plugin YAML
-4. Access via:
+1. Add the class to the panel at `backend/app/Plugins/Mixins/Custom/RateLimiter.php`:
 
 ```php
-$pluginManager->getPluginMixins('myplugin');
-$pluginManager->hasPluginMixin('myplugin', 'some-mixin-id');
-PluginProcessor::getMixin('myplugin', 'some-mixin-id');
+<?php
+
+namespace App\Plugins\Mixins\Custom;
+
+use App\Plugins\Mixins\AbstractMixin;
+
+class RateLimiter extends AbstractMixin
+{
+    public static function getMixinIdentifier(): string
+    {
+        return 'RateLimiter';
+    }
+
+    public static function getMixinVersion(): string
+    {
+        return '1.0.0';
+    }
+
+    public function perMinute(): int
+    {
+        return (int) $this->getConfigValue('per_minute', 60);
+    }
+}
+```
+
+The namespace must match the folder (`App\Plugins\Mixins\Custom\…`) so the autoloader finds it.
+
+2. Declare `RateLimiter` under `mixins:` in the plugin `conf.yml`.
+3. Use it from the plugin:
+
+```php
+use App\Plugins\PluginProcessor;
+
+$limiter = PluginProcessor::getMixin('myplugin', 'RateLimiter');
+if ($limiter !== null) {
+    $limit = $limiter->perMinute();
+}
 ```
 
 ## What mixins are *not*
@@ -79,4 +111,4 @@ Prefer plain PHP helpers under `Helpers/` or `Services/` inside your addon unles
 - `backend/app/Plugins/Mixins/AbstractMixin.php`
 - `backend/app/Plugins/Mixins/MixinManager.php`
 - `backend/app/Plugins/Mixins/MixinRegistry.php`
-- `backend/app/Plugins/Mixins/Reflection/*` (advanced class patching — use carefully)
+- `backend/app/Plugins/Mixins/Reflection/*` (advanced class patching, use carefully)

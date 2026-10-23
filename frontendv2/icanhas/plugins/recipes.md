@@ -109,23 +109,30 @@ class HelloPurgeCron implements TimeTask
 
 ## Recipe 8 — CLI command
 
-`Commands/HelloWorld.php` implementing `CommandBuilder` → `php fuse helloworld` ([cron-and-commands.md](./cron-and-commands.md)).
+`Commands/HelloWorld.php` implementing `CommandBuilder` → `php cli helloworld` ([cron-and-commands.md](./cron-and-commands.md)).
 
 ---
 
 ## Recipe 9 — Server-scoped route (minecraftutils-style)
 
 ```php
+use Symfony\Component\HttpFoundation\Request;
+
 App::getInstance(true)->registerServerRoute(
     $routes,
     'helloplugin-server-tool',
     '/api/user/servers/{uuidShort}/addons/helloplugin/tool',
-    function ($request, $uuidShort) {
+    function (Request $request, array $args) {
+        $uuidShort = $args['uuidShort'];
+
         return (new \App\Addons\helloplugin\Controllers\Servers\ToolController())->index($request, $uuidShort);
     },
+    'uuidShort', // route parameter that holds the server short UUID
     ['GET']
 );
 ```
+
+The fifth argument is required: it names the `{uuidShort}` placeholder so `ServerMiddleware` can check server access. Route closures receive the path parameters as an array (`$args`), not as separate arguments. See [backend.md](./backend.md#server-route-sketch-minecraftutils-style).
 
 Pair with `sidebar.json` → `server` section + `group`.
 

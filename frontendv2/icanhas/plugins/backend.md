@@ -12,7 +12,7 @@ Your code: `backend/storage/addons/{identifier}/`
 | `Chat/` | PDO models | featherimages, billinglinks |
 | `Migrations/` | SQL | featherimages, billinglinks |
 | `Cron/` | Scheduled tasks | billinglinks |
-| `Commands/` | `php fuse …` | devutils |
+| `Commands/` | `php cli …` | devutils |
 | `Helpers/` / `Services/` / `Libs/` | Shared PHP | discordplus, minecraftutils |
 | `middleware/` | HTTP middleware classes | discordplus |
 | `Events/` | Plugin-local helpers | discordplus, fivemutils |
@@ -97,16 +97,27 @@ App::getInstance(true)->registerAuthRoute(
 ### Server route sketch (minecraftutils-style)
 
 ```php
+use Symfony\Component\HttpFoundation\Request;
+
 App::getInstance(true)->registerServerRoute(
     $routes,
     'mcutils-player-manager',
     '/api/user/servers/{uuidShort}/addons/mcutils/playermanager',
-    function ($request, $uuidShort) {
+    function (Request $request, array $args) {
+        $uuidShort = $args['uuidShort'];
+
         return (new PlayerManagerController())->index($request, $uuidShort);
     },
+    'uuidShort', // name of the route parameter that holds the server short UUID
     ['GET']
 );
 ```
+
+`registerServerRoute($routes, $name, $path, $controller, $serverShortUuid, $methods = ['GET'], $rateLimit = null, $rateLimitNamespace = null)`:
+
+- `$serverShortUuid` is **required** and comes before `$methods`. It is the name of the path placeholder (here `'uuidShort'`), not the value. `ServerMiddleware` reads that parameter, loads the server, checks that the user can access it and rejects suspended servers before your closure runs.
+- Every route closure (auth, admin, server, API) is called as `function (Request $request, array $args)`. `$args` holds the path parameters by name, for example `$args['uuidShort']`. A closure written as `function ($request, $uuidShort)` gets that array, not the string.
+- The other helpers have no server argument: `registerAuthRoute($routes, $name, $path, $controller, $methods, ...)` and `registerAdminRoute($routes, $name, $path, $controller, $permission, $methods, ...)`.
 
 **Controllers are not auto-discovered** — import and call them from the route closure.
 
@@ -119,14 +130,16 @@ use App\Plugins\PluginSettings;
 
 PluginSettings::setSetting($id, $key, (string) $value);
 PluginSettings::getSetting($id, $key); // ?string
-PluginSettings::getSettings($id);
+PluginSettings::getSettings($id);      // raw rows (key, value, ...)
+PluginSettings::getSettingValues($id); // ['key' => 'value', ...]
+PluginSettings::applyDefaults($id);    // save conf.yml defaults for keys that are not stored yet
 PluginSettings::deleteSettings($id, $key);
 ```
 
-Admin HTTP: `POST /api/admin/plugins/{identifier}/settings/set` `{ "key", "value" }`.
+Admin HTTP: `POST /api/admin/plugins/{identifier}/settings/set` `{ "key", "value" }`. When the key is declared under `config:` in `conf.yml`, the value is checked against `required` and `validation` first and a failing value returns `400` with `error_code: PLUGIN_SETTING_INVALID`. `PluginSettings::setSetting()` from PHP does not run these checks.
 
-Schema for the admin UI comes from top-level `config:` in `conf.yml` — see [conf-yml.md](./conf-yml.md).  
-`requiredConfigs` lists keys that must exist for “configured” status (`minecraftpluginmanger` / CurseForge key).
+The admin UI form, the defaults and the validation rules come from top-level `config:` in `conf.yml`. See [conf-yml.md](./conf-yml.md#config-admin-settings).  
+`requiredConfigs` lists keys that must have a non-empty value before the plugin counts as configured (`minecraftpluginmanger` / CurseForge key). A plugin with missing settings is still loaded; the admin plugin list shows it as "Not configured". Call `PluginRequiredConfigs::getMissingConfigs($id)` or `PluginRequiredConfigs::areRequiredConfigsSet($id)` from your own code if a feature must not run without them.
 
 ## Permissions
 
@@ -134,7 +147,7 @@ Use `App\Permissions` constants on admin routes. Full list: [../permissions/](..
 
 ## Plugin PHP events
 
-Catalog: [../events/](../events/) + `../events/all.json`.  
+Complete list and listener example: [events.md](./events.md). Payload keys per event: [../events/](../events/) + `../events/all.json`.  
 Registration details: [middleware-and-hooks.md](./middleware-and-hooks.md).
 
 ## Dependencies between plugins

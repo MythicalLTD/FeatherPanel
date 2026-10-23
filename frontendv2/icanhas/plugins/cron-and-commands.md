@@ -16,7 +16,7 @@ Loaded by `backend/storage/cron/runner.php` (separate from core jobs in `backend
 namespace App\Addons\{identifier}\Cron;
 ```
 
-⚠️ Some older starter scaffolds incorrectly used `namespace App\Cron;` — that is for **core** cron only. Addon jobs must use the `App\Addons\…\Cron` namespace (as `devutils` `MakePluginCron` and `createPluginCron` generate).
+`namespace App\Cron;` is for **core** cron jobs only. The runner loads addon jobs as `App\Addons\{identifier}\Cron\{ClassName}`, so a class in any other namespace is never found. The `starter` template, the Admin → Dev → Plugins cron file creator and `devutils` `MakePluginCron` all generate the addon namespace. Plugins created with the `starter` template before this was fixed have `namespace App\Cron;` in `Cron/{ClassName}CronExample.php`; change it to `namespace App\Addons\{identifier}\Cron;`.
 
 ### Interface
 
@@ -52,7 +52,19 @@ class LinkPurgeCron implements TimeTask
 
 ### Schedule tokens
 
-`Cron` schedule strings are panel cron intervals (examples seen in code: `'1D'`, `'1H'`). Use the same helpers as core timed tasks.
+`new Cron($id, $interval)` takes an interval written as a whole number followed by a unit. The job runs when at least that much time has passed since its last run.
+
+| Unit | Meaning | Example |
+|------|---------|---------|
+| `S` | seconds | `'30S'` |
+| `M` | minutes | `'5M'` |
+| `H` | hours | `'1H'` |
+| `D` | days | `'1D'` |
+| `W` | weeks | `'2W'` |
+| `MO` | months (30 days) | `'1MO'` |
+| `Y` | years (365 days) | `'1Y'` |
+
+Units are upper case. Anything else (`'1d'`, `'1.5H'`, `'H'`) throws an `\Exception` when the `Cron` object is created. The installer schedules `runner.php` once a minute, so any interval under `60S` means the job runs on every runner pass.
 
 ### Empty Cron dirs
 
@@ -62,7 +74,7 @@ Some plugins (e.g. `fivemutils`) ship an empty `Cron/` folder — harmless. Pref
 
 ```bash
 # with devutils installed
-php fuse makeplugincron
+php cli makeplugincron
 ```
 
 Or Admin → Dev → Plugins → create file type cron (developer mode).
@@ -79,17 +91,25 @@ Or Admin → Dev → Plugins → create file type cron (developer mode).
 
 Namespace: `App\Addons\{identifier}\Commands`
 
-Discovered by `backend/app/Cli/App.php`. Match is **case-insensitive class basename**.
+Discovered by `backend/app/Cli/Utils/PluginCommandLocator.php` (used by `backend/app/Cli/App.php` and `help`). The command name is the **case-insensitive class basename**.
+
+The locator reads the addons directory from `APP_ADDONS_DIR` (`backend/storage/addons`), so plugin commands work no matter which directory you run `php cli` from (including with `--skip-path-check`). Older installs that keep addons under `{cwd}/backend/storage/addons` are still checked as a fallback. Obsolete addons (see `ObsoleteAddons`) are skipped.
+
+Plugin commands are checked **before** core commands. A plugin command named like a core command (`migrate`, `help`, `users`, …) replaces it, so pick a unique name.
 
 ### Invoke
 
+Run from the backend directory (inside Docker: `docker exec -it featherpanel_backend php cli …`, or the `featherpanel` wrapper on the host):
+
 ```bash
-php fuse {CommandName}
+php cli {commandname}
 # examples from devutils:
-php fuse exportpermissions
-php fuse makeplugincron
-php fuse makeplugincommand
+php cli exportpermissions
+php cli makeplugincron
+php cli makeplugincommand
 ```
+
+`php cli help` lists core commands and every plugin command it finds.
 
 ### Contract (`CommandBuilder`)
 
@@ -141,5 +161,5 @@ Study these when building author tooling — not required for normal feature plu
 - [ ] Cron implements `TimeTask` and uses `Cron::runIfDue`
 - [ ] Cron id string is unique (`{plugin}-{task}`)
 - [ ] Command class implements `CommandBuilder`
-- [ ] Command name does not collide with core fuse commands
+- [ ] Command name does not collide with a core `php cli` command
 - [ ] No secrets printed to CLI logs
