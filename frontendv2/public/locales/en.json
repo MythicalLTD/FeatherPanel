@@ -1563,7 +1563,12 @@
             "IMPERSONATION_ACTIVE": "Stop viewing as the current user first",
             "IMPERSONATION_SESSION_REQUIRED": "Viewing as a user needs a browser session",
             "IMPERSONATION_NOT_ALLOWED": "You are not allowed to view the panel as this user",
-            "INVALID_AUTO_RESTART": "Auto restart must be turned on or off"
+            "INVALID_AUTO_RESTART": "Auto restart must be turned on or off",
+            "INVITE_INVALID": "This invite link is invalid, expired or used up.",
+            "INVITE_OWN_SERVER": "You already own this server.",
+            "INVITE_NOT_FOUND": "Invite not found.",
+            "INVALID_INVITE_EXPIRY": "Expiry must be between 1 and 720 hours.",
+            "INVALID_INVITE_USES": "Uses must be between 1 and 50."
         },
         "global": {}
     },
@@ -5375,7 +5380,54 @@
             }
         },
         "username": "User",
-        "email": "Email"
+        "email": "Email",
+        "presets": {
+            "title": "Presets",
+            "readOnly": {
+                "name": "Read only",
+                "description": "View files, backups, databases, schedules and activity without changing anything"
+            },
+            "console": {
+                "name": "Console operator",
+                "description": "Use the console and start, stop or restart the server"
+            },
+            "files": {
+                "name": "File manager",
+                "description": "Full file access including SFTP"
+            },
+            "manager": {
+                "name": "Full access",
+                "description": "Everything you can grant except managing other users"
+            }
+        },
+        "invites": {
+            "button": "Invite link",
+            "title": "Invite by link",
+            "description": "Create a link that adds whoever opens it as a subuser with the permissions below.",
+            "loadFailed": "Failed to load invite links",
+            "created": "Invite link created",
+            "createFailed": "Failed to create the invite link",
+            "revoked": "Invite link revoked",
+            "revokeFailed": "Failed to revoke the invite link",
+            "copied": "Link copied",
+            "copyFailed": "Could not copy the link",
+            "linkReady": "Your invite link",
+            "linkOnce": "Copy it now. For security it will not be shown again.",
+            "expiresIn": "Expires after",
+            "hours": "{hours} hours",
+            "maxUses": "Maximum uses",
+            "create": "Create link",
+            "active": "Active links",
+            "none": "No active invite links.",
+            "summary": "{count} permissions, used {uses} of {max}",
+            "expires": "Expires {date}",
+            "revoke": "Revoke link",
+            "invalid": "This invite link is invalid, expired or used up.",
+            "joined": "You now have access to this server",
+            "acceptTitle": "Server invite",
+            "acceptBody": "{user} invited you to {server} with these permissions:",
+            "accept": "Accept invite"
+        }
     },
     "serverStartup": {
         "softwareEnvironment": "Transfer to another software",

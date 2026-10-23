@@ -1,5 +1,43 @@
 # Changelog
 
+## v1.5.3 STABLE
+
+> **Wings update required.** Update FeatherWings to the latest release together with this panel version. FeatherWings #19 and #20 are needed for the auto start and crash auto restart fixes below; older Wings ignores the per server crash setting.
+
+### Added
+
+- Email and Discord webhook notifications for server events (crash, backup completed or failed, file transfer finished, resource limit). Opt-out per event and per channel under Account, Notifications, with a test button for the webhook. (#352) by @nayskutzu
+- Calendar view for scheduled backups on Admin, Backup schedules: planned and finished runs per day, failed days highlighted. (#354) by @nayskutzu
+- Maintenance mode (`maintenance_mode_enabled`, `maintenance_mode_message` in Settings, Status Page). Non staff get `503 MAINTENANCE_MODE`, staff keep working with a banner, the status page stays reachable. (#355) by @nayskutzu
+- Cmd+K / Ctrl+K command palette with live user search for staff, `g` then a letter to jump between pages and a `?` shortcut help overlay. (#356) by @nayskutzu
+- Admin Security center (`/admin/security`): require 2FA per role, password policy, IP allow list for staff or everyone, and new sign-in email alerts. (#357) by @nayskutzu
+- Admin System health page (`/admin/health`): database, Redis, Wings nodes, scheduled tasks, queues, disk and versions. (#358) by @nayskutzu
+- View as user: new `admin.users.impersonate` permission, read only for one hour, audit logged, with a banner and a Stop button. Staff accounts need `admin.root`. Role editor gets presets (Read-only admin, Support, Moderator, Server manager). (#359) by @nayskutzu
+- Per server resource graphs (24 hours and 7 days, with limit lines) and alerts when CPU, memory or disk stays at 90% or more of the limit for 15 minutes (at most every 6 hours). Resource samples are kept for 7 days. (#360) by @nayskutzu
+- Crash detection stores the crash time and the last 50 console lines, shown on the console with a dismiss button. Crash auto restart can be turned off per server (console card or Settings, Crash detection). (#361) by @nayskutzu
+- Subuser invite links with a permission set, expiry (1 to 720 hours) and use limit (1 to 50), revocable, accepted at `/dashboard/invites/{token}`. Permission presets (Read only, Console operator, File manager, Full access) in the invite and permissions dialogs. (#362) by @nayskutzu
+- Global "Reset alt detection for all users" on the admin users page (`POST /api/admin/users/alt-detection/reset`, `admin.users.edit`). (#342) by @nayskutzu
+- FeatherOS: native server window with a Finder style sidebar for every server section, including a file manager pane, plus Settings and Activity panes. (#343) by @nayskutzu
+- FeatherOS: windows close with a macOS style animation (skipped with reduce motion). (#344) by @nayskutzu
+
+### Improved
+
+- Memory use of the Docker image is bounded. `FRANKENPHP_MAX_THREADS=auto` is now sized from the container memory, pool defaults are lower and workers recycle when their heap grows. New and changed environment variables: `PHP_MEMORY_LIMIT` (512M), `PHP_CLI_MEMORY_LIMIT` (1024M, was unlimited), `FEATHERPANEL_WORKER_MAX_MEMORY` (256M), `FEATHERPANEL_WORKER_MAX_REQUESTS` (500, was 1000), `FEATHERPANEL_WORKERS`, `FEATHERPANEL_WORKER_MAX_THREADS` (3 x CPU, max 32), `FEATHERPANEL_SLOW_WORKERS` (2), `FEATHERPANEL_SLOW_MAX_THREADS` (4, was 16) and `CRON_TIMEOUT` (900s). Under load the backend now stays flat at around 160 to 175 MiB. (#338) by @nayskutzu
+- Hotfix to the memory fix: dropped the FrankenPHP file watcher, which added native threads and CPU and memory use; workers already check the restart stamp between requests. (#341) by @nayskutzu
+- The built in API reference pins Redoc, falls back to the live `/api/openapi.json` and shows load errors instead of a blank page. API keys: public key Bearer auth works again by default since v1.5.2, private keys are preferred. (#337) by @nayskutzu
+
+### Fixed
+
+- Production containers no longer grow to many GB and get OOM killed; cron no longer runs every job twice after a failed run. (#338) by @nayskutzu
+- Clearing a user's fingerprint in alt detection now also drops IP based alt links. (#342) by @nayskutzu
+- Missing setup wizard module step translations. (#339) by @nayskutzu
+- FeatherOS: plugin context menus no longer open over the desktop menu (#340); the server window console opens its own server (#345); the server window file manager no longer shows a double sidebar (#349). by @nayskutzu
+- Missing `ALT_RESET_FAILED` error translation. (#350) by @nayskutzu
+- The login page no longer shows the Password/Passkey row twice when Discord or OIDC is the primary method. (#351) by @nayskutzu
+- Crashes were never detected because Wings reports a crash as running to offline, not as `crashed`; crash notifications and the crash hook now fire. Server log requests now use the `size` parameter Wings expects. (#361) by @nayskutzu
+- Auto start on Wings boot now respects the panel setting (FeatherWings #19), and crash auto restart is no longer applied when it is switched off (FeatherWings #20). Requires the Wings update. by @nayskutzu
+- Backup ignore parsing tests and a Cloudflare IP range check script for maintainers. (#353) by @nayskutzu
+
 ## v1.5.2 STABLE
 
 ### Security
