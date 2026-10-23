@@ -32,6 +32,9 @@ class InboxNotifier
 {
     public const REALTIME_TYPE = 'inbox.updated';
 
+    /** Resource limit alerts repeat at most every six hours per server and metric. */
+    public const RESOURCE_ALERT_COOLDOWN = 6 * 3600;
+
     /** A staff reply on someone's ticket (internal notes never notify). */
     public static function ticketReply(array $ticket, array $message, ?string $replierUuid): void
     {
@@ -117,6 +120,34 @@ class InboxNotifier
                 ],
                 '/server/' . rawurlencode($uuidShort),
                 'crash:' . (int) ($server['id'] ?? 0)
+            );
+        });
+    }
+
+    /**
+     * A server stayed above its CPU, memory or disk limit threshold. One alert per
+     * server and metric every RESOURCE_ALERT_COOLDOWN seconds per user.
+     */
+    public static function resourceLimit(array $server, string $metric, int $percent): void
+    {
+        self::guard(static function () use ($server, $metric, $percent): void {
+            $uuidShort = (string) ($server['uuidShort'] ?? '');
+            $groupKey = 'limit:' . (int) ($server['id'] ?? 0) . ':' . $metric;
+            $audience = array_values(array_filter(
+                self::serverAudience($server, SubuserPermissions::CONTROL_CONSOLE),
+                static fn (array $user): bool => !UserNotification::sentWithin((int) $user['id'], $groupKey, self::RESOURCE_ALERT_COOLDOWN)
+            ));
+            self::send(
+                $audience,
+                UserNotification::KIND_RESOURCE_LIMIT,
+                [
+                    'server_name' => mb_substr((string) ($server['name'] ?? ''), 0, 120),
+                    'server' => $uuidShort,
+                    'metric' => $metric,
+                    'percent' => (string) $percent,
+                ],
+                '/server/' . rawurlencode($uuidShort),
+                $groupKey
             );
         });
     }

@@ -25,7 +25,7 @@ import { Input } from '@/components/featherui/Input';
 import { Switch } from '@/components/ui/switch';
 import { getApiErrorMessage } from '@/lib/api-errors';
 
-type EventKey = 'server_crashed' | 'backup_completed' | 'backup_failed' | 'file_transfer';
+type EventKey = 'server_crashed' | 'backup_completed' | 'backup_failed' | 'file_transfer' | 'resource_limit';
 
 interface NotificationSettings {
     email_enabled: boolean;
@@ -34,13 +34,19 @@ interface NotificationSettings {
     events: Record<EventKey, boolean>;
 }
 
-const EVENTS: EventKey[] = ['server_crashed', 'backup_completed', 'backup_failed', 'file_transfer'];
+const EVENTS: EventKey[] = ['server_crashed', 'backup_completed', 'backup_failed', 'file_transfer', 'resource_limit'];
 
 const DEFAULTS: NotificationSettings = {
     email_enabled: true,
     discord_enabled: true,
     discord_webhook_url: '',
-    events: { server_crashed: true, backup_completed: true, backup_failed: true, file_transfer: true },
+    events: {
+        server_crashed: true,
+        backup_completed: true,
+        backup_failed: true,
+        file_transfer: true,
+        resource_limit: true,
+    },
 };
 
 function Row({

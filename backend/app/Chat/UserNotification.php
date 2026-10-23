@@ -33,6 +33,7 @@ class UserNotification
     public const KIND_SERVER_CRASHED = 'server_crashed';
     public const KIND_FILE_TRANSFER_COMPLETED = 'file_transfer_completed';
     public const KIND_FILE_TRANSFER_FAILED = 'file_transfer_failed';
+    public const KIND_RESOURCE_LIMIT = 'resource_limit';
 
     public const KINDS = [
         self::KIND_TICKET_REPLY,
@@ -41,6 +42,7 @@ class UserNotification
         self::KIND_SERVER_CRASHED,
         self::KIND_FILE_TRANSFER_COMPLETED,
         self::KIND_FILE_TRANSFER_FAILED,
+        self::KIND_RESOURCE_LIMIT,
     ];
 
     /** Read items are kept this long, unread ones three times as long. */
@@ -99,6 +101,22 @@ class UserNotification
         } catch (\PDOException $e) {
             App::getInstance(true)->getLogger()->error('Failed to add user notification: ' . $e->getMessage());
 
+            return false;
+        }
+    }
+
+    /** True when this user got a notification with the group key within the last $seconds. */
+    public static function sentWithin(int $userId, string $groupKey, int $seconds): bool
+    {
+        try {
+            $pdo = Database::getPdoConnection();
+            $stmt = $pdo->prepare(
+                'SELECT 1 FROM ' . self::$table . ' WHERE user_id = :user_id AND group_key = :group_key AND created_at >= DATE_SUB(CURRENT_TIMESTAMP, INTERVAL :seconds SECOND) LIMIT 1'
+            );
+            $stmt->execute(['user_id' => $userId, 'group_key' => mb_substr($groupKey, 0, 191), 'seconds' => $seconds]);
+
+            return $stmt->fetchColumn() !== false;
+        } catch (\PDOException $e) {
             return false;
         }
     }

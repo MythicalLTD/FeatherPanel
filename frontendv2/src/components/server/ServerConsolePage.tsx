@@ -47,6 +47,7 @@ import { getApiErrorMessageFromPayload } from '@/lib/api-errors';
 import { resolveServerSpellBannerStyle } from '@/lib/server-spell-banner';
 import { useServerResourceHistory } from '@/lib/resource-history';
 import { ResourceTrendStrip } from '@/components/dashboard/ResourceTrends';
+import { ServerResourceGraphs } from '@/components/server/ServerResourceGraphs';
 
 interface WingsStats {
     uptime?: number;
@@ -952,6 +953,14 @@ export default function ServerConsolePage() {
             </div>
 
             <WidgetRenderer widgets={getWidgets('server-console', 'before-performance')} />
+            {shouldConnectToWings && (
+                <ServerResourceGraphs
+                    uuidShort={serverUuid}
+                    cpuLimit={server.cpu || 0}
+                    memoryLimit={server.memory || 0}
+                    diskLimit={server.disk || 0}
+                />
+            )}
             <WidgetRenderer widgets={getWidgets('server-console', 'after-performance')} />
 
             <WidgetRenderer widgets={getWidgets('server-console', 'bottom-of-page')} />
