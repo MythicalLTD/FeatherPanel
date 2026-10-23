@@ -71,6 +71,8 @@ interface FileActionToolbarProps {
     canCreate: boolean;
     canDelete: boolean;
     currentDirectory: string;
+    /** Secondary row inside the toolbar card (sort, view and panel controls), aligned right. */
+    secondary?: React.ReactNode;
 }
 
 export function FileActionToolbar({
@@ -98,306 +100,315 @@ export function FileActionToolbar({
     canCreate,
     canDelete,
     currentDirectory,
+    secondary,
 }: FileActionToolbarProps) {
     const { t } = useTranslation();
     const hasSelection = selectedCount > 0;
 
     return (
         <div className='sticky top-0 z-20 pb-4'>
-            <div className='fp-surface flex flex-row items-center justify-between gap-2 rounded-xl border p-1.5 sm:gap-4 sm:p-2'>
-                {hasSelection ? (
-                    <>
-                        <div className='flex items-center gap-3 px-2'>
-                            <div className='bg-primary/10 text-primary animate-in zoom-in-50 flex h-8 w-8 items-center justify-center rounded-lg duration-300'>
-                                <span className='text-xs font-bold'>{selectedCount}</span>
+            <div className='fp-surface rounded-xl border p-1.5 sm:p-2'>
+                <div className='flex flex-row items-center justify-between gap-2 sm:gap-4'>
+                    {hasSelection ? (
+                        <>
+                            <div className='flex items-center gap-3 px-2'>
+                                <div className='bg-primary/10 text-primary animate-in zoom-in-50 flex h-8 w-8 items-center justify-center rounded-lg duration-300'>
+                                    <span className='text-xs font-bold'>{selectedCount}</span>
+                                </div>
+                                <span className='text-muted-foreground xs:inline hidden text-sm font-medium'>
+                                    {t('files.toolbar.selected')}
+                                </span>
+                                <div className='bg-border xs:block mx-1 hidden h-4 w-px' />
+                                <Button
+                                    variant='ghost'
+                                    size='sm'
+                                    onClick={onClearSelection}
+                                    className='text-muted-foreground hover:text-foreground h-8 px-3 text-xs font-bold tracking-wider uppercase'
+                                >
+                                    {t('files.toolbar.cancel')}
+                                </Button>
                             </div>
-                            <span className='text-muted-foreground xs:inline hidden text-sm font-medium'>
-                                {t('files.toolbar.selected')}
-                            </span>
-                            <div className='bg-border xs:block mx-1 hidden h-4 w-px' />
-                            <Button
-                                variant='ghost'
-                                size='sm'
-                                onClick={onClearSelection}
-                                className='text-muted-foreground hover:text-foreground h-8 px-3 text-xs font-bold tracking-wider uppercase'
-                            >
-                                {t('files.toolbar.cancel')}
-                            </Button>
-                        </div>
-                        <div className='no-scrollbar flex items-center gap-1.5 overflow-x-auto pl-2'>
-                            <Button variant='secondary' size='sm' onClick={onArchiveSelected} className='h-9 px-3'>
-                                <Archive className='mr-2 h-4 w-4' />
-                                <span className='hidden sm:inline'>{t('files.toolbar.compress')}</span>
-                            </Button>
-                            {onTransferSelected && (
+                            <div className='no-scrollbar flex items-center gap-1.5 overflow-x-auto pl-2'>
+                                <Button variant='secondary' size='sm' onClick={onArchiveSelected} className='h-9 px-3'>
+                                    <Archive className='mr-2 h-4 w-4' />
+                                    <span className='hidden sm:inline'>{t('files.toolbar.compress')}</span>
+                                </Button>
+                                {onTransferSelected && (
+                                    <Button
+                                        variant='secondary'
+                                        size='sm'
+                                        onClick={onTransferSelected}
+                                        className='h-9 px-3'
+                                        title={t('files.transfer.title')}
+                                        aria-label={t('files.transfer.title')}
+                                    >
+                                        <Send className='h-4 w-4 sm:mr-2' />
+                                        <span className='hidden sm:inline'>{t('files.transfer.button')}</span>
+                                    </Button>
+                                )}
+                                {onDownloadSelected && (
+                                    <Button
+                                        variant='secondary'
+                                        size='sm'
+                                        onClick={onDownloadSelected}
+                                        className='h-9 px-3'
+                                        title={t('files.toolbar.download_selected')}
+                                        aria-label={t('files.toolbar.download_selected')}
+                                    >
+                                        <Download className='h-4 w-4 sm:mr-2' />
+                                        <span className='hidden sm:inline'>{t('files.toolbar.download')}</span>
+                                    </Button>
+                                )}
                                 <Button
                                     variant='secondary'
                                     size='sm'
-                                    onClick={onTransferSelected}
+                                    onClick={onPermissionsSelected}
                                     className='h-9 px-3'
-                                    title={t('files.transfer.title')}
-                                    aria-label={t('files.transfer.title')}
+                                    title={t('files.toolbar.permissions')}
+                                    aria-label={t('files.toolbar.permissions')}
                                 >
-                                    <Send className='h-4 w-4 sm:mr-2' />
-                                    <span className='hidden sm:inline'>{t('files.transfer.button')}</span>
+                                    <ShieldCheck className='h-4 w-4 sm:mr-2' />
+                                    <span className='hidden sm:inline'>{t('files.toolbar.chmod')}</span>
                                 </Button>
-                            )}
-                            {onDownloadSelected && (
                                 <Button
                                     variant='secondary'
                                     size='sm'
-                                    onClick={onDownloadSelected}
+                                    onClick={onMoveSelected}
                                     className='h-9 px-3'
-                                    title={t('files.toolbar.download_selected')}
-                                    aria-label={t('files.toolbar.download_selected')}
+                                    title={t('files.toolbar.move')}
+                                    aria-label={t('files.toolbar.move')}
                                 >
-                                    <Download className='h-4 w-4 sm:mr-2' />
-                                    <span className='hidden sm:inline'>{t('files.toolbar.download')}</span>
+                                    <Move className='h-4 w-4 sm:mr-2' />
+                                    <span className='hidden sm:inline'>{t('files.toolbar.move')}</span>
                                 </Button>
-                            )}
-                            <Button
-                                variant='secondary'
-                                size='sm'
-                                onClick={onPermissionsSelected}
-                                className='h-9 px-3'
-                                title={t('files.toolbar.permissions')}
-                                aria-label={t('files.toolbar.permissions')}
-                            >
-                                <ShieldCheck className='h-4 w-4 sm:mr-2' />
-                                <span className='hidden sm:inline'>{t('files.toolbar.chmod')}</span>
-                            </Button>
-                            <Button
-                                variant='secondary'
-                                size='sm'
-                                onClick={onMoveSelected}
-                                className='h-9 px-3'
-                                title={t('files.toolbar.move')}
-                                aria-label={t('files.toolbar.move')}
-                            >
-                                <Move className='h-4 w-4 sm:mr-2' />
-                                <span className='hidden sm:inline'>{t('files.toolbar.move')}</span>
-                            </Button>
-                            <Button
-                                variant='secondary'
-                                size='sm'
-                                onClick={onDeleteSelected}
-                                className='h-9 bg-red-500/10 px-3 text-red-600 hover:bg-red-500/20 dark:text-red-400'
-                            >
-                                <Trash2 className='h-4 w-4' />
-                            </Button>
+                                <Button
+                                    variant='secondary'
+                                    size='sm'
+                                    onClick={onDeleteSelected}
+                                    className='h-9 bg-red-500/10 px-3 text-red-600 hover:bg-red-500/20 dark:text-red-400'
+                                >
+                                    <Trash2 className='h-4 w-4' />
+                                </Button>
 
-                            <DropdownMenu>
-                                <DropdownMenuTrigger as={Button} variant='ghost' size='icon' className='h-9 w-9'>
-                                    <MoreVertical className='h-4 w-4' />
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align='end'>
-                                    <DropdownMenuItem onClick={onMoveSelected}>
-                                        <Move className='mr-2 h-4 w-4' /> {t('files.toolbar.move')}
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={onCopySelected}>
-                                        <Copy className='mr-2 h-4 w-4' /> {t('files.toolbar.copy')}
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={onPermissionsSelected}>
-                                        <ShieldCheck className='mr-2 h-4 w-4' /> {t('files.toolbar.permissions')}
-                                    </DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                        </div>
-                    </>
-                ) : (
-                    <>
-                        <div className='flex min-w-0 items-center gap-0.5 sm:flex-wrap sm:gap-1.5'>
-                            <Button
-                                variant='ghost'
-                                size='sm'
-                                onClick={onRefresh}
-                                disabled={loading}
-                                className='text-muted-foreground hover:text-foreground h-9 px-2.5 hover:bg-black/5 sm:px-3 dark:hover:bg-white/5'
-                                aria-label={t('files.toolbar.refresh')}
-                                title={t('files.toolbar.refresh')}
-                            >
-                                <RefreshCw className={cn('h-4 w-4 sm:mr-2', loading && 'animate-spin')} />
-                                <span className='hidden sm:inline'>{t('files.toolbar.refresh')}</span>
-                            </Button>
-                            {canCreate && (
-                                <>
-                                    <div className='bg-border mx-1 hidden h-4 w-px sm:block' />
-                                    <Button
-                                        variant='ghost'
-                                        size='sm'
-                                        onClick={onCreateFile}
-                                        className='text-muted-foreground hover:text-foreground h-9 px-2.5 hover:bg-black/5 sm:px-3 dark:hover:bg-white/5'
-                                        aria-label={t('files.toolbar.new_file')}
-                                        title={t('files.toolbar.new_file')}
-                                    >
-                                        <FilePlus className='h-4 w-4 lg:mr-2' />
-                                        <span className='hidden lg:inline'>{t('files.toolbar.new_file')}</span>
-                                    </Button>
-                                    <Button
-                                        variant='ghost'
-                                        size='sm'
-                                        onClick={onCreateFolder}
-                                        className='text-muted-foreground hover:text-foreground h-9 px-2.5 hover:bg-black/5 sm:px-3 dark:hover:bg-white/5'
-                                        aria-label={t('files.toolbar.new_folder')}
-                                        title={t('files.toolbar.new_folder')}
-                                    >
-                                        <FolderPlus className='h-4 w-4 lg:mr-2' />
-                                        <span className='hidden lg:inline'>{t('files.toolbar.new_folder')}</span>
-                                    </Button>
-                                </>
-                            )}
-                        </div>
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger as={Button} variant='ghost' size='icon' className='h-9 w-9'>
+                                        <MoreVertical className='h-4 w-4' />
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align='end'>
+                                        <DropdownMenuItem onClick={onMoveSelected}>
+                                            <Move className='mr-2 h-4 w-4' /> {t('files.toolbar.move')}
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={onCopySelected}>
+                                            <Copy className='mr-2 h-4 w-4' /> {t('files.toolbar.copy')}
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={onPermissionsSelected}>
+                                            <ShieldCheck className='mr-2 h-4 w-4' /> {t('files.toolbar.permissions')}
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            </div>
+                        </>
+                    ) : (
+                        <>
+                            <div className='flex min-w-0 items-center gap-0.5 sm:flex-wrap sm:gap-1.5'>
+                                <Button
+                                    variant='ghost'
+                                    size='sm'
+                                    onClick={onRefresh}
+                                    disabled={loading}
+                                    className='text-muted-foreground hover:text-foreground h-9 px-2.5 hover:bg-black/5 sm:px-3 dark:hover:bg-white/5'
+                                    aria-label={t('files.toolbar.refresh')}
+                                    title={t('files.toolbar.refresh')}
+                                >
+                                    <RefreshCw className={cn('h-4 w-4 sm:mr-2', loading && 'animate-spin')} />
+                                    <span className='hidden sm:inline'>{t('files.toolbar.refresh')}</span>
+                                </Button>
+                                {canCreate && (
+                                    <>
+                                        <div className='bg-border mx-1 hidden h-4 w-px sm:block' />
+                                        <Button
+                                            variant='ghost'
+                                            size='sm'
+                                            onClick={onCreateFile}
+                                            className='text-muted-foreground hover:text-foreground h-9 px-2.5 hover:bg-black/5 sm:px-3 dark:hover:bg-white/5'
+                                            aria-label={t('files.toolbar.new_file')}
+                                            title={t('files.toolbar.new_file')}
+                                        >
+                                            <FilePlus className='h-4 w-4 lg:mr-2' />
+                                            <span className='hidden lg:inline'>{t('files.toolbar.new_file')}</span>
+                                        </Button>
+                                        <Button
+                                            variant='ghost'
+                                            size='sm'
+                                            onClick={onCreateFolder}
+                                            className='text-muted-foreground hover:text-foreground h-9 px-2.5 hover:bg-black/5 sm:px-3 dark:hover:bg-white/5'
+                                            aria-label={t('files.toolbar.new_folder')}
+                                            title={t('files.toolbar.new_folder')}
+                                        >
+                                            <FolderPlus className='h-4 w-4 lg:mr-2' />
+                                            <span className='hidden lg:inline'>{t('files.toolbar.new_folder')}</span>
+                                        </Button>
+                                    </>
+                                )}
+                            </div>
 
-                        <div className='flex shrink-0 items-center gap-1 sm:gap-2'>
-                            <Button
-                                variant='ghost'
-                                size='sm'
-                                onClick={onPullFile}
-                                className='text-muted-foreground hover:text-foreground hidden h-9 px-3 hover:bg-black/5 sm:inline-flex dark:hover:bg-white/5'
-                            >
-                                <Download className='mr-2 h-4 w-4' />
-                                <span className='xs:inline hidden'>{t('files.toolbar.pull')}</span>
-                            </Button>
+                            <div className='flex shrink-0 items-center gap-1 sm:gap-2'>
+                                <Button
+                                    variant='ghost'
+                                    size='sm'
+                                    onClick={onPullFile}
+                                    className='text-muted-foreground hover:text-foreground hidden h-9 px-3 hover:bg-black/5 sm:inline-flex dark:hover:bg-white/5'
+                                >
+                                    <Download className='mr-2 h-4 w-4' />
+                                    <span className='xs:inline hidden'>{t('files.toolbar.pull')}</span>
+                                </Button>
 
-                            {canCreate &&
-                                (onUpload || onUploadFiles || onUploadFolders) &&
-                                (onUploadFiles || onUploadFolders ? (
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger
-                                            as={Button}
+                                {canCreate &&
+                                    (onUpload || onUploadFiles || onUploadFolders) &&
+                                    (onUploadFiles || onUploadFolders ? (
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger
+                                                as={Button}
+                                                variant='default'
+                                                size='sm'
+                                                className='h-9 px-3 font-semibold shadow-sm sm:px-6'
+                                            >
+                                                <Upload className='mr-2 h-4 w-4' />
+                                                {t('files.toolbar.upload')}
+                                                <ChevronDown className='ml-1 h-4 w-4 opacity-70 sm:ml-2' />
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align='start'>
+                                                {onUploadFiles && (
+                                                    <DropdownMenuItem onClick={onUploadFiles}>
+                                                        <FileUp className='mr-2 h-4 w-4' />
+                                                        {t('files.toolbar.upload_files')}
+                                                    </DropdownMenuItem>
+                                                )}
+                                                {onUploadFolders && (
+                                                    <DropdownMenuItem onClick={onUploadFolders}>
+                                                        <FolderUp className='mr-2 h-4 w-4' />
+                                                        {t('files.toolbar.upload_folders')}
+                                                    </DropdownMenuItem>
+                                                )}
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    ) : (
+                                        <Button
                                             variant='default'
                                             size='sm'
+                                            onClick={onUpload}
                                             className='h-9 px-3 font-semibold shadow-sm sm:px-6'
                                         >
                                             <Upload className='mr-2 h-4 w-4' />
                                             {t('files.toolbar.upload')}
-                                            <ChevronDown className='ml-1 h-4 w-4 opacity-70 sm:ml-2' />
+                                        </Button>
+                                    ))}
+
+                                {onOpenInIDE && (
+                                    <Button
+                                        variant='ghost'
+                                        size='sm'
+                                        onClick={onOpenInIDE}
+                                        className='text-muted-foreground hover:text-foreground hidden h-9 shrink-0 px-3 hover:bg-black/5 sm:inline-flex dark:hover:bg-white/5'
+                                    >
+                                        <Boxes className='mr-2 h-4 w-4 shrink-0' />
+                                        <span className='xs:inline hidden'>{t('files.toolbar.open_in_ide')}</span>
+                                    </Button>
+                                )}
+
+                                {onOpenInCalagopus && (
+                                    <Button
+                                        variant='ghost'
+                                        size='sm'
+                                        onClick={onOpenInCalagopus}
+                                        className='text-muted-foreground hover:text-foreground hidden h-9 shrink-0 px-3 hover:bg-black/5 sm:inline-flex dark:hover:bg-white/5'
+                                    >
+                                        <Code2 className='mr-2 h-4 w-4 shrink-0' />
+                                        <span className='xs:inline hidden'>{t('files.toolbar.open_in_vscode')}</span>
+                                    </Button>
+                                )}
+
+                                {(onIgnoredContent || (onWipeAll && canDelete && currentDirectory === '/')) && (
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger
+                                            as={Button}
+                                            variant='ghost'
+                                            size='sm'
+                                            className='text-muted-foreground hover:text-foreground hidden h-9 w-9 shrink-0 p-0 hover:bg-black/5 sm:inline-flex dark:hover:bg-white/5'
+                                            aria-label={t('files.toolbar.more_actions')}
+                                        >
+                                            <Settings className='h-4 w-4 shrink-0' />
                                         </DropdownMenuTrigger>
-                                        <DropdownMenuContent align='start'>
-                                            {onUploadFiles && (
-                                                <DropdownMenuItem onClick={onUploadFiles}>
-                                                    <FileUp className='mr-2 h-4 w-4' />
-                                                    {t('files.toolbar.upload_files')}
+                                        <DropdownMenuContent align='end'>
+                                            {onIgnoredContent && (
+                                                <DropdownMenuItem onClick={onIgnoredContent}>
+                                                    <ShieldCheck className='mr-2 h-4 w-4' />
+                                                    {t('files.toolbar.ignored_content')}
                                                 </DropdownMenuItem>
                                             )}
-                                            {onUploadFolders && (
-                                                <DropdownMenuItem onClick={onUploadFolders}>
-                                                    <FolderUp className='mr-2 h-4 w-4' />
-                                                    {t('files.toolbar.upload_folders')}
+                                            {onWipeAll && canDelete && currentDirectory === '/' && (
+                                                <DropdownMenuItem
+                                                    onClick={onWipeAll}
+                                                    className='text-red-500 focus:bg-red-500/10 focus:text-red-500'
+                                                >
+                                                    <Trash2 className='mr-2 h-4 w-4' /> {t('files.toolbar.wipe_all')}
                                                 </DropdownMenuItem>
                                             )}
                                         </DropdownMenuContent>
                                     </DropdownMenu>
-                                ) : (
-                                    <Button
-                                        variant='default'
-                                        size='sm'
-                                        onClick={onUpload}
-                                        className='h-9 px-3 font-semibold shadow-sm sm:px-6'
-                                    >
-                                        <Upload className='mr-2 h-4 w-4' />
-                                        {t('files.toolbar.upload')}
-                                    </Button>
-                                ))}
+                                )}
 
-                            {onOpenInIDE && (
-                                <Button
-                                    variant='ghost'
-                                    size='sm'
-                                    onClick={onOpenInIDE}
-                                    className='text-muted-foreground hover:text-foreground hidden h-9 shrink-0 px-3 hover:bg-black/5 sm:inline-flex dark:hover:bg-white/5'
-                                >
-                                    <Boxes className='mr-2 h-4 w-4 shrink-0' />
-                                    <span className='xs:inline hidden'>{t('files.toolbar.open_in_ide')}</span>
-                                </Button>
-                            )}
-
-                            {onOpenInCalagopus && (
-                                <Button
-                                    variant='ghost'
-                                    size='sm'
-                                    onClick={onOpenInCalagopus}
-                                    className='text-muted-foreground hover:text-foreground hidden h-9 shrink-0 px-3 hover:bg-black/5 sm:inline-flex dark:hover:bg-white/5'
-                                >
-                                    <Code2 className='mr-2 h-4 w-4 shrink-0' />
-                                    <span className='xs:inline hidden'>{t('files.toolbar.open_in_vscode')}</span>
-                                </Button>
-                            )}
-
-                            {(onIgnoredContent || (onWipeAll && canDelete && currentDirectory === '/')) && (
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger
-                                        as={Button}
-                                        variant='ghost'
-                                        size='sm'
-                                        className='text-muted-foreground hover:text-foreground hidden h-9 w-9 shrink-0 p-0 hover:bg-black/5 sm:inline-flex dark:hover:bg-white/5'
-                                        aria-label={t('files.toolbar.more_actions')}
-                                    >
-                                        <Settings className='h-4 w-4 shrink-0' />
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align='end'>
-                                        {onIgnoredContent && (
-                                            <DropdownMenuItem onClick={onIgnoredContent}>
-                                                <ShieldCheck className='mr-2 h-4 w-4' />
-                                                {t('files.toolbar.ignored_content')}
+                                <div className='sm:hidden'>
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger
+                                            as={Button}
+                                            variant='ghost'
+                                            size='sm'
+                                            className='text-muted-foreground hover:text-foreground h-9 w-9 shrink-0 p-0'
+                                            aria-label={t('files.toolbar.more_actions')}
+                                        >
+                                            <MoreVertical className='h-4 w-4' />
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align='end'>
+                                            <DropdownMenuItem onClick={onPullFile}>
+                                                <Download className='mr-2 h-4 w-4' /> {t('files.toolbar.pull')}
                                             </DropdownMenuItem>
-                                        )}
-                                        {onWipeAll && canDelete && currentDirectory === '/' && (
-                                            <DropdownMenuItem
-                                                onClick={onWipeAll}
-                                                className='text-red-500 focus:bg-red-500/10 focus:text-red-500'
-                                            >
-                                                <Trash2 className='mr-2 h-4 w-4' /> {t('files.toolbar.wipe_all')}
-                                            </DropdownMenuItem>
-                                        )}
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
-                            )}
-
-                            <div className='sm:hidden'>
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger
-                                        as={Button}
-                                        variant='ghost'
-                                        size='sm'
-                                        className='text-muted-foreground hover:text-foreground h-9 w-9 shrink-0 p-0'
-                                        aria-label={t('files.toolbar.more_actions')}
-                                    >
-                                        <MoreVertical className='h-4 w-4' />
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align='end'>
-                                        <DropdownMenuItem onClick={onPullFile}>
-                                            <Download className='mr-2 h-4 w-4' /> {t('files.toolbar.pull')}
-                                        </DropdownMenuItem>
-                                        {onOpenInIDE && (
-                                            <DropdownMenuItem onClick={onOpenInIDE}>
-                                                <Boxes className='mr-2 h-4 w-4' /> {t('files.toolbar.open_in_ide')}
-                                            </DropdownMenuItem>
-                                        )}
-                                        {onOpenInCalagopus && (
-                                            <DropdownMenuItem onClick={onOpenInCalagopus}>
-                                                <Code2 className='mr-2 h-4 w-4' /> {t('files.toolbar.open_in_vscode')}
-                                            </DropdownMenuItem>
-                                        )}
-                                        {onIgnoredContent && (
-                                            <DropdownMenuItem onClick={onIgnoredContent}>
-                                                <ShieldCheck className='mr-2 h-4 w-4' />
-                                                {t('files.toolbar.ignored_content')}
-                                            </DropdownMenuItem>
-                                        )}
-                                        {onWipeAll && canDelete && currentDirectory === '/' && (
-                                            <DropdownMenuItem
-                                                onClick={onWipeAll}
-                                                className='text-red-500 focus:bg-red-500/10 focus:text-red-500'
-                                            >
-                                                <Trash2 className='mr-2 h-4 w-4' /> {t('files.toolbar.wipe_all')}
-                                            </DropdownMenuItem>
-                                        )}
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
+                                            {onOpenInIDE && (
+                                                <DropdownMenuItem onClick={onOpenInIDE}>
+                                                    <Boxes className='mr-2 h-4 w-4' /> {t('files.toolbar.open_in_ide')}
+                                                </DropdownMenuItem>
+                                            )}
+                                            {onOpenInCalagopus && (
+                                                <DropdownMenuItem onClick={onOpenInCalagopus}>
+                                                    <Code2 className='mr-2 h-4 w-4' />{' '}
+                                                    {t('files.toolbar.open_in_vscode')}
+                                                </DropdownMenuItem>
+                                            )}
+                                            {onIgnoredContent && (
+                                                <DropdownMenuItem onClick={onIgnoredContent}>
+                                                    <ShieldCheck className='mr-2 h-4 w-4' />
+                                                    {t('files.toolbar.ignored_content')}
+                                                </DropdownMenuItem>
+                                            )}
+                                            {onWipeAll && canDelete && currentDirectory === '/' && (
+                                                <DropdownMenuItem
+                                                    onClick={onWipeAll}
+                                                    className='text-red-500 focus:bg-red-500/10 focus:text-red-500'
+                                                >
+                                                    <Trash2 className='mr-2 h-4 w-4' /> {t('files.toolbar.wipe_all')}
+                                                </DropdownMenuItem>
+                                            )}
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                </div>
                             </div>
-                        </div>
-                    </>
+                        </>
+                    )}
+                </div>
+                {secondary && (
+                    <div className='mt-1.5 border-t border-[var(--fp-surface-border)] pt-1.5 sm:mt-2 sm:pt-2'>
+                        {secondary}
+                    </div>
                 )}
             </div>
         </div>

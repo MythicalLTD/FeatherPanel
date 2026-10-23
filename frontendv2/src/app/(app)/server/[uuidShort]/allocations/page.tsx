@@ -398,7 +398,8 @@ export default function ServerAllocationsPage() {
                             placeholder={t('serverAllocations.searchAllocations')}
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className='h-14 pl-12 text-lg'
+                            variant='surface'
+                            className='h-14 pl-12 text-base'
                         />
                     </div>
                 </div>

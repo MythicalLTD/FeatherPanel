@@ -251,7 +251,8 @@ export default function WebSpaceUsersPage() {
                         <div className='relative'>
                             <Mail className='text-muted-foreground absolute top-1/2 left-4 z-10 h-5 w-5 -translate-y-1/2' />
                             <Input
-                                className='h-14 pl-12'
+                                variant='surface'
+                                className='h-14 pl-12 text-base'
                                 placeholder={t('webSpaces.users.emailPlaceholder')}
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}

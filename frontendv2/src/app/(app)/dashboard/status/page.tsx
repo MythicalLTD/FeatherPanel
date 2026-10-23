@@ -463,7 +463,8 @@ export default function StatusPage() {
                             placeholder={t('dashboard.status.searchPlaceholder')}
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className='bg-background/50 border-border/50 focus:border-primary/50 h-10 w-full pr-10'
+                            variant='surface'
+                            className='h-10 w-full pr-10'
                         />
                         <Search className='text-muted-foreground absolute top-3 right-3 h-4 w-4 opacity-40' />
                     </div>

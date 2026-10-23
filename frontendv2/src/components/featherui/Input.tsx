@@ -24,10 +24,12 @@ export interface InputProps extends Omit<React.InputHTMLAttributes<HTMLInputElem
     label?: string;
     description?: string;
     icon?: React.ReactNode;
+    /** `surface`: same translucent fill and hairline border as cards, for fields that sit directly on the page (list search bars). */
+    variant?: 'default' | 'surface';
 }
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
-    ({ className, type, error, label, description, icon, id, ...props }, ref) => {
+    ({ className, type, error, label, description, icon, id, variant = 'default', ...props }, ref) => {
         const hasError = Boolean(error);
         const errorMessage = typeof error === 'string' ? error : undefined;
         const inputId = id || (label ? `input-${label.replace(/\s+/g, '-').toLowerCase()}` : undefined);
@@ -43,11 +45,16 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
                     id={inputId}
                     type={type}
                     className={cn(
-                        'bg-muted/30 placeholder:text-muted-foreground/50 text-foreground h-12 w-full rounded-xl border py-3 text-sm font-semibold shadow-sm transition-all duration-200 hover:shadow-md focus:shadow-lg focus:ring-4 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50',
+                        'placeholder:text-muted-foreground/50 text-foreground h-12 w-full rounded-xl border py-3 text-sm font-semibold transition-all duration-200 focus:ring-4 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50',
+                        variant === 'surface'
+                            ? 'fp-surface-field'
+                            : 'bg-muted/30 shadow-sm hover:shadow-md focus:shadow-lg',
                         icon ? 'pr-4 pl-10' : 'px-4',
                         hasError
                             ? 'border-destructive focus:border-destructive focus:ring-destructive/20'
-                            : 'border-border/50 focus:border-primary focus:ring-primary/20 hover:border-border',
+                            : variant === 'surface'
+                              ? 'focus:border-primary/60 focus:ring-primary/10'
+                              : 'border-border/50 focus:border-primary focus:ring-primary/20 hover:border-border',
                         className,
                     )}
                     ref={ref}

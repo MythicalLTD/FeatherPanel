@@ -358,7 +358,8 @@ export default function TicketsPage() {
                             placeholder={t('tickets.searchTickets')}
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className='bg-background/50 border-border/50 focus:border-primary/50 w-full md:w-64'
+                            variant='surface'
+                            className='w-full md:w-64'
                         />
                         <Button type='submit' variant='ghost' size='icon' className='absolute top-1 right-1'>
                             <Search className='text-muted-foreground h-4 w-4' />
