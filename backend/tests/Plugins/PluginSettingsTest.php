@@ -90,4 +90,40 @@ class PluginSettingsTest extends TestCase
         $this->assertContains('active_setting', $keys);
         $this->assertNotContains('deleted_setting', $keys);
     }
+
+    public function testGetSettingValuesReturnsKeyValueMap()
+    {
+        PluginSettings::setSetting($this->testIdentifier, 'one', '1');
+        PluginSettings::setSetting($this->testIdentifier, 'two', '2');
+
+        $this->assertSame(['one' => '1', 'two' => '2'], PluginSettings::getSettingValues($this->testIdentifier));
+    }
+
+    public function testApplyDefaultsSavesMissingDefaultsOnly()
+    {
+        $schema = [
+            ['name' => 'api_url', 'type' => 'url', 'default' => 'https://example.com'],
+            ['name' => 'enabled', 'type' => 'boolean', 'default' => false],
+            ['name' => 'limit', 'type' => 'number', 'default' => 25],
+            ['name' => 'token', 'type' => 'text'],
+        ];
+
+        PluginSettings::setSetting($this->testIdentifier, 'limit', '99');
+
+        $saved = PluginSettings::applyDefaults($this->testIdentifier, $schema);
+
+        $this->assertSame(['api_url' => 'https://example.com', 'enabled' => 'false'], $saved);
+        $this->assertSame('https://example.com', PluginSettings::getSetting($this->testIdentifier, 'api_url'));
+        $this->assertSame('false', PluginSettings::getSetting($this->testIdentifier, 'enabled'));
+        $this->assertSame('99', PluginSettings::getSetting($this->testIdentifier, 'limit'), 'existing values must not be overwritten');
+        $this->assertNull(PluginSettings::getSetting($this->testIdentifier, 'token'));
+
+        // Running it again is a no-op.
+        $this->assertSame([], PluginSettings::applyDefaults($this->testIdentifier, $schema));
+    }
+
+    public function testApplyDefaultsHandlesEmptySchema()
+    {
+        $this->assertSame([], PluginSettings::applyDefaults($this->testIdentifier, []));
+    }
 }

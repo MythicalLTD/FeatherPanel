@@ -16,6 +16,7 @@
  */
 
 use App\App;
+use App\Plugins\PluginSettings;
 use PHPUnit\Framework\TestCase;
 use App\Plugins\PluginRequiredConfigs;
 
@@ -57,5 +58,38 @@ class PluginRequiredConfigsTest extends TestCase
         // Test with invalid identifier
         $result = PluginRequiredConfigs::areRequiredConfigsSet('');
         $this->assertIsBool($result);
+    }
+
+    public function testGetMissingConfigsTreatsEmptyValuesAsMissing()
+    {
+        $identifier = 'test_required_' . uniqid();
+        $config = [
+            'plugin' => ['identifier' => $identifier, 'requiredConfigs' => ['api_key', 'secret']],
+            'config' => [
+                ['name' => 'api_key', 'type' => 'text'],
+                ['name' => 'region', 'type' => 'text', 'required' => true],
+            ],
+        ];
+
+        try {
+            $this->assertSame(['api_key', 'secret', 'region'], PluginRequiredConfigs::getMissingConfigs($identifier, $config));
+
+            PluginSettings::setSetting($identifier, 'api_key', '');
+            PluginSettings::setSetting($identifier, 'secret', 'value');
+            $this->assertSame(['api_key', 'region'], PluginRequiredConfigs::getMissingConfigs($identifier, $config));
+
+            PluginSettings::setSetting($identifier, 'api_key', 'key');
+            PluginSettings::setSetting($identifier, 'region', 'eu');
+            $this->assertSame([], PluginRequiredConfigs::getMissingConfigs($identifier, $config));
+        } finally {
+            foreach (['api_key', 'secret', 'region'] as $key) {
+                PluginSettings::deleteSettings($identifier, $key);
+            }
+        }
+    }
+
+    public function testGetMissingConfigsIsEmptyWithoutRequirements()
+    {
+        $this->assertSame([], PluginRequiredConfigs::getMissingConfigs('test_none_' . uniqid(), ['plugin' => []]));
     }
 }

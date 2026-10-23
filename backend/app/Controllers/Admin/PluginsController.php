@@ -31,7 +31,9 @@ use App\Plugins\PluginSettings;
 use App\Helpers\AddonPackageHelper;
 use App\Plugins\PluginDependencies;
 use App\CloudFlare\CloudFlareRealIP;
+use App\Plugins\PluginSettingsSchema;
 use App\Plugins\PluginFrontendScanner;
+use App\Plugins\PluginRequiredConfigs;
 use App\Plugins\PluginFrontendVisibility;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -55,6 +57,7 @@ use App\Plugins\Events\Events\PluginsSettingsEvent;
             new OA\Property(property: 'loaded', type: 'boolean', description: 'Whether plugin is loaded in memory'),
             new OA\Property(property: 'unmetDependencies', type: 'array', items: new OA\Items(type: 'string'), description: 'List of unmet dependencies'),
             new OA\Property(property: 'missingConfigs', type: 'array', items: new OA\Items(type: 'string'), description: 'List of missing required configurations'),
+            new OA\Property(property: 'configured', type: 'boolean', description: 'False when required settings are missing or empty. The plugin stays loaded.'),
         ]),
         new OA\Property(property: 'configSchema', type: 'array', items: new OA\Items(type: 'object'), description: 'Plugin configuration schema'),
     ]
@@ -190,6 +193,15 @@ class PluginsController
                 ]);
             }
 
+            // Save conf.yml defaults for settings that were never stored (plugins installed before defaults were applied).
+            try {
+                PluginSettings::applyDefaults($identifier, PluginConfig::getPluginRequiredAdminConfig($identifier));
+            } catch (\Throwable $e) {
+                App::getInstance(true)->getLogger()->warning(
+                    'Failed to apply default settings for plugin ' . $identifier . ': ' . $e->getMessage()
+                );
+            }
+
             global $pluginManager;
             $info = $this->addRuntimeStatus($identifier, $info, $pluginManager->getLoadedMemoryPlugins());
 
@@ -295,7 +307,7 @@ class PluginsController
                     ]
                 )
             ),
-            new OA\Response(response: 400, description: 'Bad request - Invalid JSON, missing key/value, or invalid plugin identifier'),
+            new OA\Response(response: 400, description: 'Bad request - Invalid JSON, missing key/value, invalid plugin identifier, or a value that fails the conf.yml required/validation rules (PLUGIN_SETTING_INVALID)'),
             new OA\Response(response: 401, description: 'Unauthorized'),
             new OA\Response(response: 403, description: 'Forbidden - Insufficient permissions'),
             new OA\Response(response: 404, description: 'Plugin not found'),
@@ -326,7 +338,19 @@ class PluginsController
             }
 
             $key = $data['key'];
-            $value = $data['value'];
+            $value = is_bool($data['value']) ? ($data['value'] ? 'true' : 'false') : $data['value'];
+
+            // Enforce `required` and `validation` from the conf.yml `config:` block for declared settings.
+            $field = PluginSettingsSchema::field(PluginConfig::getPluginRequiredAdminConfig($identifier), $key);
+            if ($field !== null) {
+                $errors = PluginSettingsSchema::validateValue($field, $value);
+                if ($errors !== []) {
+                    return ApiResponse::error(implode(' ', $errors), 'PLUGIN_SETTING_INVALID', 400, [
+                        'key' => $key,
+                        'errors' => $errors,
+                    ]);
+                }
+            }
 
             PluginSettings::setSettings($identifier, $key, ['value' => $value]);
 
@@ -988,16 +1012,7 @@ class PluginsController
 
         $missingConfigs = [];
         try {
-            $required = $info['plugin']['requiredConfigs'] ?? [];
-            if (is_array($required) && $required !== []) {
-                $settings = PluginSettings::getSettings($identifier);
-                $configuredKeys = array_column($settings, 'key');
-                foreach ($required as $requiredKey) {
-                    if (!in_array($requiredKey, $configuredKeys, true)) {
-                        $missingConfigs[] = $requiredKey;
-                    }
-                }
-            }
+            $missingConfigs = PluginRequiredConfigs::getMissingConfigs($identifier, $info);
         } catch (\Throwable $e) {
             App::getInstance(true)->getLogger()->warning(
                 'Failed to check required configuration for plugin ' . $identifier . ': ' . $e->getMessage()
@@ -1007,6 +1022,8 @@ class PluginsController
         $info['plugin']['loaded'] = in_array($identifier, $loaded, true);
         $info['plugin']['unmetDependencies'] = $unmetDependencies;
         $info['plugin']['missingConfigs'] = $missingConfigs;
+        // The plugin stays loaded when settings are missing; the admin UI shows it as not configured.
+        $info['plugin']['configured'] = $missingConfigs === [];
 
         return $info;
     }

@@ -36,7 +36,34 @@ class PluginRequiredConfigs
     }
 
     /**
+     * Get the settings the plugin still needs before it counts as configured.
+     *
+     * A setting is missing when it has no stored value or only an empty one.
+     * Both `plugin.requiredConfigs` and `config:` fields with `required: true` count.
+     *
+     * @param string $identifier The plugin identifier
+     * @param array|null $config The parsed conf.yml (loaded when null)
+     *
+     * @return list<string> The missing setting keys
+     */
+    public static function getMissingConfigs(string $identifier, ?array $config = null): array
+    {
+        $config ??= PluginConfig::getConfig($identifier);
+        $requiredConfigs = $config['plugin']['requiredConfigs'] ?? [];
+        $schema = $config['config'] ?? [];
+
+        if (PluginSettingsSchema::missingConfigs($requiredConfigs, $schema, []) === []) {
+            return [];
+        }
+
+        return PluginSettingsSchema::missingConfigs($requiredConfigs, $schema, PluginSettings::getSettingValues($identifier));
+    }
+
+    /**
      * Check if all required configs are set for a plugin.
+     *
+     * A plugin with missing settings is still loaded. The admin plugin list and
+     * the plugin settings page show it as "not configured" until the settings are saved.
      *
      * @param string $identifier The plugin identifier
      *
@@ -45,22 +72,13 @@ class PluginRequiredConfigs
     public static function areRequiredConfigsSet(string $identifier): bool
     {
         try {
-            $requiredConfigs = self::getRequiredConfigs($identifier);
-            if (empty($requiredConfigs)) {
-                return true;
-            }
+            $missing = self::getMissingConfigs($identifier);
+            if ($missing !== []) {
+                App::getInstance(true)->getLogger()->warning(
+                    'Missing required config ' . implode(', ', $missing) . " for plugin: $identifier"
+                );
 
-            $settings = PluginSettings::getSettings($identifier);
-            $configuredKeys = array_column($settings, 'key');
-
-            foreach ($requiredConfigs as $required) {
-                if (!in_array($required, $configuredKeys)) {
-                    App::getInstance(true)->getLogger()->warning(
-                        "Missing required config '$required' for plugin: $identifier"
-                    );
-
-                    return false;
-                }
+                return false;
             }
 
             return true;

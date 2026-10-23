@@ -1199,6 +1199,13 @@ class CloudPluginsController
                 }
             }
 
+            // Save conf.yml defaults for settings that do not exist yet (new install, or new settings added by an update)
+            try {
+                \App\Plugins\PluginSettings::applyDefaults($identifier);
+            } catch (\Throwable $e) {
+                App::getInstance(true)->getLogger()->warning('Failed to apply default settings for plugin ' . $identifier . ': ' . $e->getMessage());
+            }
+
             // Get new version and plugin name from config before calling hooks
             $newVersion = null;
             $pluginName = null;
