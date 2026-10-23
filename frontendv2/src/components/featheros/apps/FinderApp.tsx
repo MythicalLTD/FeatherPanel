@@ -928,27 +928,33 @@ export default function FinderApp({ win }: OsAppProps) {
 
     return (
         <div className='fos-finder select-none' onKeyDown={onKeyDown} tabIndex={-1}>
-            <aside className='fos-finder-sidebar fos-scroll overflow-y-auto'>
-                <div className='fos-finder-sidebar-label'>{t('featheros.files.locations')}</div>
-                {locations.map((s) => (
-                    <button
-                        key={s.uuidShort}
-                        type='button'
-                        onClick={() => s.uuidShort !== uuid && setWindowServer(win.id, s.uuidShort)}
-                        onDragOver={allowDrop(`srv:${s.uuidShort}`)}
-                        onDragLeave={() => setDropTarget(null)}
-                        onDrop={dropInto('/', s.uuidShort)}
-                        className={cn(
-                            'fos-finder-location',
-                            s.uuidShort === uuid && 'is-active',
-                            dropTarget === `srv:${s.uuidShort}` && 'bg-[#0a84ff]/15 ring-2 ring-[#0a84ff]',
-                        )}
-                    >
-                        <HardDrive className='h-3.5 w-3.5 shrink-0 text-[var(--fos-window-muted)]' strokeWidth={1.75} />
-                        <span className='truncate'>{s.name}</span>
-                    </button>
-                ))}
-            </aside>
+            {/* Inside a server window the window sidebar already picks the server. */}
+            {win.props?.embedded !== true && (
+                <aside className='fos-finder-sidebar fos-scroll overflow-y-auto'>
+                    <div className='fos-finder-sidebar-label'>{t('featheros.files.locations')}</div>
+                    {locations.map((s) => (
+                        <button
+                            key={s.uuidShort}
+                            type='button'
+                            onClick={() => s.uuidShort !== uuid && setWindowServer(win.id, s.uuidShort)}
+                            onDragOver={allowDrop(`srv:${s.uuidShort}`)}
+                            onDragLeave={() => setDropTarget(null)}
+                            onDrop={dropInto('/', s.uuidShort)}
+                            className={cn(
+                                'fos-finder-location',
+                                s.uuidShort === uuid && 'is-active',
+                                dropTarget === `srv:${s.uuidShort}` && 'bg-[#0a84ff]/15 ring-2 ring-[#0a84ff]',
+                            )}
+                        >
+                            <HardDrive
+                                className='h-3.5 w-3.5 shrink-0 text-[var(--fos-window-muted)]'
+                                strokeWidth={1.75}
+                            />
+                            <span className='truncate'>{s.name}</span>
+                        </button>
+                    ))}
+                </aside>
+            )}
             <div className='fos-finder-main'>
                 <div className='fos-finder-toolbar' data-fos-window-drag>
                     <div className='fos-finder-toolbar-nav' data-no-drag>

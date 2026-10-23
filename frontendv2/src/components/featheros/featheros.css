@@ -5523,3 +5523,8 @@ html:has(.fos-root[data-fos-theme='dark']) {
         transform: scale(0.94) translateY(6px);
     }
 }
+
+/* Server window: panes sit on the content surface, not on the desktop glass. */
+.fos-server-ws > section {
+    background: var(--fos-content-soft);
+}

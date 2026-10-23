@@ -118,9 +118,9 @@ export default function ServerWorkspaceApp({ win }: OsAppProps) {
         if (!section?.app) return win;
         if (section.app === 'terminal') {
             const tabs = Array.isArray(win.props?.tabs) && win.props.tabs.length > 0 ? win.props.tabs : [uuid];
-            return { ...win, app: section.app, props: { ...win.props, tabs } };
+            return { ...win, app: section.app, props: { ...win.props, tabs, embedded: true } };
         }
-        return { ...win, app: section.app };
+        return { ...win, app: section.app, props: { ...win.props, embedded: true } };
     }, [section, win, uuid]);
     const state = live[uuid]?.status ?? server?.status;
 
