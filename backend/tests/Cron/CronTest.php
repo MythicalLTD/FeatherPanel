@@ -174,4 +174,61 @@ class CronTest extends TestCase
 
         $this->assertFalse($result);
     }
+
+    public function testSecondsIntervalIsNotTruncatedToZero()
+    {
+        $cron = new Cron('test-seconds-' . uniqid(), '30S');
+        $this->assertSame(30, $cron->getIntervalSeconds());
+
+        $cron = new Cron('test-seconds-one-' . uniqid(), '1S');
+        $this->assertSame(1, $cron->getIntervalSeconds());
+    }
+
+    public function testIntervalUnitsConvertToSeconds()
+    {
+        $expected = [
+            '45S' => 45,
+            '5M' => 300,
+            '2H' => 7200,
+            '1D' => 86400,
+            '1W' => 604800,
+            '1MO' => 2592000,
+            '1Y' => 31536000,
+        ];
+
+        foreach ($expected as $interval => $seconds) {
+            $cron = new Cron('test-units-' . uniqid(), $interval);
+            $this->assertSame($seconds, $cron->getIntervalSeconds(), "Interval {$interval}");
+        }
+    }
+
+    public function testSecondsIntervalIsNotDueRightAfterRun()
+    {
+        $identifier = 'test-seconds-due-' . uniqid();
+        $cron = new Cron($identifier, '30S');
+        $cron->markAsRun();
+
+        $this->assertFalse((new Cron($identifier, '30S'))->shouldRun());
+    }
+
+    public function testSecondsIntervalIsDueOnceElapsed()
+    {
+        $identifier = 'test-seconds-elapsed-' . uniqid();
+        $cron = new Cron($identifier, '30S');
+        $cron->markAsRun();
+        file_put_contents($this->testCacheDir . '/cron/' . $identifier . '.fptj', (string) (time() - 31));
+
+        $this->assertTrue((new Cron($identifier, '30S'))->shouldRun());
+    }
+
+    public function testNextRunTimeUsesSeconds()
+    {
+        $identifier = 'test-seconds-next-' . uniqid();
+        $cron = new Cron($identifier, '30S');
+        $cron->markAsRun();
+
+        $lastRun = $cron->getLastRunTime();
+        $this->assertNotNull($lastRun);
+        $this->assertSame(30, $cron->getNextRunTime()->getTimestamp() - $lastRun->getTimestamp());
+    }
 }

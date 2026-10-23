@@ -22,16 +22,16 @@ use App\App;
 class Cron
 {
     /**
-     * @var array Supported time units and their minute equivalents
+     * @var array<string, int> Supported time units and their length in seconds
      */
     private const TIME_UNITS = [
-        'S' => 1 / 60,          // Seconds → 1/60 minute
-        'M' => 1,               // Minutes
-        'H' => 60,              // Hours
-        'D' => 1440,            // Days
-        'W' => 10080,           // Weeks
-        'MO' => 43200,          // Months (approx. 30 days)
-        'Y' => 525600,          // Years (365 days)
+        'S' => 1,               // Seconds
+        'M' => 60,              // Minutes
+        'H' => 3600,            // Hours
+        'D' => 86400,           // Days
+        'W' => 604800,          // Weeks
+        'MO' => 2592000,        // Months (approx. 30 days)
+        'Y' => 31536000,        // Years (365 days)
     ];
 
     /**
@@ -40,7 +40,7 @@ class Cron
     private string $identifier;
 
     /**
-     * @var int Minutes between executions
+     * @var int Seconds between executions
      */
     private int $interval;
 
@@ -53,7 +53,7 @@ class Cron
      * Initialize a new Cron instance.
      *
      * @param string $identifier Unique identifier for this cron job
-     * @param string $interval Interval string (e.g., "30M", "1H", "1D")
+     * @param string $interval Interval string (e.g., "30S", "30M", "1H", "1D")
      *
      * @throws \Exception If interval format is invalid
      */
@@ -79,9 +79,8 @@ class Cron
         }
 
         $lastRun = (int) file_get_contents($this->storageFile);
-        $minutesSinceLastRun = (time() - $lastRun) / 60;
 
-        return $minutesSinceLastRun >= $this->interval;
+        return (time() - $lastRun) >= $this->interval;
     }
 
     /**
@@ -114,7 +113,7 @@ class Cron
         $lastRun = $this->getLastRunTime() ?? new \DateTime();
         $nextRun = clone $lastRun;
 
-        return $nextRun->modify("+{$this->interval} minutes");
+        return $nextRun->modify("+{$this->interval} seconds");
     }
 
     /**
@@ -146,25 +145,36 @@ class Cron
     }
 
     /**
-     * Parse the interval string into minutes.
+     * Get the interval between executions in seconds.
+     */
+    public function getIntervalSeconds(): int
+    {
+        return $this->interval;
+    }
+
+    /**
+     * Parse the interval string into seconds.
      *
-     * @param string $interval Interval string (e.g., "30M", "1H", "1D")
+     * Seconds are kept as whole seconds, so "30S" is 30 seconds and not
+     * a fraction of a minute that gets truncated to 0.
+     *
+     * @param string $interval Interval string (e.g., "30S", "30M", "1H", "1D", "1MO", "1Y")
      *
      * @throws \Exception If interval format is invalid
      *
-     * @return int Minutes
+     * @return int Seconds
      */
     private function parseInterval(string $interval): int
     {
-        if (!preg_match('/^(\d+)([MHDWS])$/', $interval, $matches)) {
-            throw new \Exception('Invalid interval format. Use number followed by M (minutes), H (hours), D (days), W (weeks), or S (seconds). Example: 30M');
+        if (!preg_match('/^(\d+)(MO|[SMHDWY])$/', $interval, $matches)) {
+            throw new \Exception('Invalid interval format. Use number followed by S (seconds), M (minutes), H (hours), D (days), W (weeks), MO (months) or Y (years). Example: 30M');
         }
 
         $value = (int) $matches[1];
         $unit = $matches[2];
 
         if (!isset(self::TIME_UNITS[$unit])) {
-            throw new \Exception('Invalid time unit. Use M, H, D, W, or S');
+            throw new \Exception('Invalid time unit. Use S, M, H, D, W, MO or Y');
         }
 
         return $value * self::TIME_UNITS[$unit];
