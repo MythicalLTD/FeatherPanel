@@ -585,7 +585,7 @@ export default function TerminalApp({ win }: OsAppProps) {
                 {/* Always-available drag strip between tabs and actions (Finder-style). */}
                 <div className='fos-term-chrome-drag min-h-full min-w-8 flex-1' aria-hidden />
 
-                <div className='relative shrink-0' data-no-drag>
+                <div className={cn('relative shrink-0', win.props?.embedded === true && 'hidden')} data-no-drag>
                     <button
                         type='button'
                         onClick={() => setAdding((a) => !a)}
