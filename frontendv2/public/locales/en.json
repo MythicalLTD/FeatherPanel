@@ -7810,7 +7810,17 @@
                 "success": "Connected {count} node(s) returned in {ms}ms.",
                 "failed": "Connection failed.",
                 "token_setup_reminder_title": "Token setup reminder",
-                "token_setup_reminder_description": "Use a Proxmox API token created for the intended account, and verify the permissions match the actions FeatherPanel will perform on this node."
+                "token_setup_reminder_description": "Use a Proxmox API token created for the intended account, and verify the permissions match the actions FeatherPanel will perform on this node.",
+                "vnc_upstream_title": "VNC console upstream",
+                "vnc_upstream_description": "Where async-runner opens the Proxmox VNC WebSocket when “Proxy VNC via panel” is enabled. Leave empty to reuse the API hostname above.",
+                "vnc_upstream_hint_title": "Needed behind Cloudflare / Access",
+                "vnc_upstream_hint_description": "Orange-cloud or Cloudflare Access hostnames usually break VNC WebSockets (browser shows connection closed / 1006). Point this at a DNS-only hostname or private IP that reaches pveproxy (typically port 8006). API calls still use the hostname and Access headers above.",
+                "vnc_upstream_host": "VNC upstream host / IP",
+                "vnc_upstream_host_placeholder": "e.g. 10.0.0.5 or pve-direct.example.com",
+                "vnc_upstream_host_help": "Empty = use the Proxmox hostname from API access. Set this only when the API host cannot carry WebSockets.",
+                "vnc_upstream_scheme": "VNC upstream scheme",
+                "vnc_upstream_port": "VNC upstream port",
+                "vnc_upstream_port_help": "Usually 8006 for direct pveproxy."
             },
             "storage": {
                 "fetch_failed": "Failed to fetch storages",

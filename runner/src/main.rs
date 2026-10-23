@@ -73,8 +73,9 @@ async fn main() -> Result<()> {
     // and bridges to the node vncwebsocket endpoint using single-use tickets.
     {
         let proxy_pool = pool.clone();
+        let encryption_key = config.encryption_key.clone();
         tokio::spawn(async move {
-            vnc_proxy::serve(proxy_pool).await;
+            vnc_proxy::serve(proxy_pool, encryption_key).await;
         });
         tokio::spawn(vnc_proxy::cleanup_loop(pool.clone()));
     }

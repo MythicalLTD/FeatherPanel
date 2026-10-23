@@ -2,8 +2,6 @@
 
 ## v1.5.3 STABLE
 
-> **Wings update required.** Update FeatherWings to the latest release together with this panel version. FeatherWings #19 and #20 are needed for the auto start and crash auto restart fixes below; FeatherWings #23 for the node options and #25 for transfer power restore. Older Wings ignores the per server crash setting.
-
 ### Added
 
 - Email and Discord webhook notifications for server events (crash, backup completed or failed, file transfer finished, resource limit). Opt-out per event and per channel under Account, Notifications, with a test button for the webhook. (#352) by @nayskutzu
@@ -47,6 +45,7 @@
 - Auto start on Wings boot now respects the panel setting (FeatherWings #19), and crash auto restart is no longer applied when it is switched off (FeatherWings #20). Requires the Wings update. by @nayskutzu
 - FeatherOS follows the panel light/dark preference instead of switching the panel to the light theme; FeatherOS can still override the theme temporarily without locking the panel setting. by @nayskutzu
 - Plugins: plugin CLI commands are found from `APP_ADDONS_DIR` instead of the working directory, Cron intervals are stored in seconds so the `S` unit works, mixins register before plugins load, and the generated starter Cron example uses the addon namespace. (#365) by @nayskutzu
+- Real working VNC proxy. Now it fully works with any kind of setup by @nayskutzu!
 
 ### Security
 

@@ -23,6 +23,7 @@ declare module '@novnc/novnc' {
         scaleViewport: boolean;
         resizeSession: boolean;
         disconnect(): void;
+        sendCredentials(credentials: { password: string }): void;
         addEventListener(event: string, handler: (e?: { detail?: { status?: string } }) => void): void;
     }
 }

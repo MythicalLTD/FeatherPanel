@@ -52,6 +52,18 @@ final class VmInstanceUtil
      *
      * Magic. Do not touch.
      */
+    /**
+     * Keys stored in `additional_params` for FeatherPanel only (VNC relay, etc.).
+     * Never forwarded as Proxmox API query parameters.
+     *
+     * @var list<string>
+     */
+    public const PANEL_ONLY_ADDITIONAL_PARAM_KEYS = [
+        'vnc_upstream_host',
+        'vnc_upstream_port',
+        'vnc_upstream_scheme',
+    ];
+
     public static function buildProxmoxClientForNode(array $vmNode): Proxmox
     {
         $tlsNoVerify = ($vmNode['tls_no_verify'] ?? 'false') === 'true';
@@ -77,7 +89,11 @@ final class VmInstanceUtil
             $decoded = json_decode($vmNode['additional_params'], true);
             if (is_array($decoded)) {
                 foreach ($decoded as $key => $value) {
-                    if (is_string($key) && (is_string($value) || is_numeric($value))) {
+                    if (
+                        is_string($key)
+                        && (is_string($value) || is_numeric($value))
+                        && !in_array($key, self::PANEL_ONLY_ADDITIONAL_PARAM_KEYS, true)
+                    ) {
                         $extraParams[$key] = $value;
                     }
                 }
@@ -775,9 +791,13 @@ final class VmInstanceUtil
 
         $vnc = $client->createVncProxy($node, $vmid, $vmType);
         if (!$vnc['ok'] || $vnc['ticket'] === null || $vnc['port'] === null) {
+            App::getInstance(true)->getLogger()->error(
+                'VNC proxy failed for instance ' . $instanceIdForLabel . ': ' . ($vnc['error'] ?? 'unknown')
+            );
+
             return [
                 'ok' => false,
-                'error' => 'VNC proxy failed: ' . ($vnc['error'] ?? 'unknown'),
+                'error' => 'Failed to open VNC console. Ensure the VM is running and the node is reachable.',
                 'code' => 'VNC_PROXY_FAILED',
                 'http_status' => 503,
             ];
@@ -842,21 +862,26 @@ final class VmInstanceUtil
             'wss_url' => $wssUrl,
         ];
 
-        $tempUser = self::FP_CONSOLE_USER_PREFIX . $instanceIdForLabel . '-' . bin2hex(random_bytes(4)) . '@pve';
-        $tempPass = bin2hex(random_bytes(16));
-        $expire = time() + 300;
-        $cr = $client->createUser($tempUser, $tempPass, $expire);
-        if ($cr['ok']) {
-            $aclPath = '/vms/' . $vmid;
-            $ar = $client->addAcl($aclPath, 'PVEVMUser', $tempUser);
-            if ($ar['ok']) {
-                $ticketResult = $client->getTicketWithPassword($tempUser, $tempPass);
-                if ($ticketResult['ok'] && $ticketResult['ticket'] !== null) {
-                    $scheme = ($vmNode['scheme'] ?? 'https') === 'https' ? 'https' : 'http';
-                    $pvePort = $portApi > 0 ? $portApi : 8006;
-                    $consoleType = $vmType === 'qemu' ? 'kvm' : 'lxc';
-                    $payload['pve_redirect_url'] = $scheme . '://' . $host . ':' . $pvePort . '/novnc/mgnovnc.html?novnc=1&token=' . rawurlencode($ticketResult['ticket'])
-                        . '&vmid=' . $vmid . '&node=' . rawurlencode($node) . '&console=' . $consoleType;
+        // Optional legacy path: open Proxmox noVNC in a new tab. Frontend prefers
+        // pve_redirect_url over wss_url, so leave this off when using panel proxy.
+        $usePveRedirect = $config->getSetting(ConfigInterface::VNC_USE_PVE_REDIRECT, 'false') === 'true';
+        if ($usePveRedirect) {
+            $tempUser = self::FP_CONSOLE_USER_PREFIX . $instanceIdForLabel . '-' . bin2hex(random_bytes(4)) . '@pve';
+            $tempPass = bin2hex(random_bytes(16));
+            $expire = time() + 300;
+            $cr = $client->createUser($tempUser, $tempPass, $expire);
+            if ($cr['ok']) {
+                $aclPath = '/vms/' . $vmid;
+                $ar = $client->addAcl($aclPath, 'PVEVMUser', $tempUser);
+                if ($ar['ok']) {
+                    $ticketResult = $client->getTicketWithPassword($tempUser, $tempPass);
+                    if ($ticketResult['ok'] && $ticketResult['ticket'] !== null) {
+                        $scheme = ($vmNode['scheme'] ?? 'https') === 'https' ? 'https' : 'http';
+                        $pvePort = $portApi > 0 ? $portApi : 8006;
+                        $consoleType = $vmType === 'qemu' ? 'kvm' : 'lxc';
+                        $payload['pve_redirect_url'] = $scheme . '://' . $host . ':' . $pvePort . '/novnc/mgnovnc.html?novnc=1&token=' . rawurlencode($ticketResult['ticket'])
+                            . '&vmid=' . $vmid . '&node=' . rawurlencode($node) . '&console=' . $consoleType;
+                    }
                 }
             }
         }

@@ -438,8 +438,20 @@ fn build_proxmox_client(node: &sqlx::mysql::MySqlRow, encryption_key: &str) -> R
     
     let token_id = encryptor.decrypt(&enc_token_id)?;
     let secret = encryptor.decrypt(&enc_secret)?;
-    let extra_headers: std::collections::HashMap<String, String> = serde_json::from_str(&dynamic_headers_str).unwrap_or_default();
-    let extra_params: std::collections::HashMap<String, String> = serde_json::from_str(&dynamic_params_str).unwrap_or_default();
+    let extra_headers: std::collections::HashMap<String, String> =
+        serde_json::from_str(&dynamic_headers_str).unwrap_or_default();
+    // Panel-only keys (VNC relay upstream) must never be sent as Proxmox query params.
+    const PANEL_ONLY: &[&str] = &[
+        "vnc_upstream_host",
+        "vnc_upstream_port",
+        "vnc_upstream_scheme",
+    ];
+    let extra_params: std::collections::HashMap<String, String> =
+        serde_json::from_str::<std::collections::HashMap<String, String>>(&dynamic_params_str)
+            .unwrap_or_default()
+            .into_iter()
+            .filter(|(k, _)| !PANEL_ONLY.contains(&k.as_str()))
+            .collect();
 
     ProxmoxClient::new(
         &fqdn,

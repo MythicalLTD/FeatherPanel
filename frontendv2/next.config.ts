@@ -101,7 +101,15 @@ const nextConfig: NextConfig = {
     async rewrites() {
         const mcpOrigin = process.env.MCP_DEV_URL?.replace(/\/+$/, '') || 'http://127.0.0.1:3001';
 
+        // Prefer nginx/Caddy in front for /vnc-proxy (WebSocket upgrades).
+        // Rewrite helps plain HTTP probes; WS should hit async-runner :9100 via the edge proxy.
+        const vncProxyOrigin = process.env.VNC_PROXY_DEV_URL?.replace(/\/+$/, '') || 'http://127.0.0.1:9100';
+
         return [
+            {
+                source: '/vnc-proxy/:path*',
+                destination: `${vncProxyOrigin}/vnc-proxy/:path*`,
+            },
             {
                 source: '/api/:path*',
                 destination: 'http://localhost:8721/api/:path*',

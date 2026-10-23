@@ -153,6 +153,8 @@ class SettingsController
         ConfigInterface::MODULE_WEB_ENABLED,
         ConfigInterface::MODULE_VDS_ENABLED,
         ConfigInterface::PTERODACTYL_IMPORTER_VISIBILITY,
+        ConfigInterface::VNC_PROXY_VIA_PANEL,
+        ConfigInterface::VNC_USE_PVE_REDIRECT,
     ];
 
     private $app;
@@ -225,6 +227,15 @@ class SettingsController
                 ConfigInterface::MODULE_WEB_ENABLED,
                 ConfigInterface::MODULE_VDS_ENABLED,
                 ConfigInterface::PTERODACTYL_IMPORTER_VISIBILITY,
+            ],
+        ],
+        'vds' => [
+            'name' => 'VDS',
+            'description' => 'Virtual server (Proxmox) console and VNC settings. Panel proxy needs async-runner and reverse-proxy /vnc-proxy* → :9100.',
+            'icon' => 'server',
+            'settings' => [
+                ConfigInterface::VNC_PROXY_VIA_PANEL,
+                ConfigInterface::VNC_USE_PVE_REDIRECT,
             ],
         ],
         'links' => [
@@ -549,6 +560,38 @@ class SettingsController
                 'validation' => 'required|string|max:255',
                 'options' => ['true', 'false'],
                 'category' => 'modules',
+            ],
+            ConfigInterface::VNC_PROXY_VIA_PANEL => [
+                'name' => ConfigInterface::VNC_PROXY_VIA_PANEL,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::VNC_PROXY_VIA_PANEL,
+                        'false',
+                    ),
+                'description' => 'Proxy VNC through the panel (wss://panel/vnc-proxy/{token}). Requires async-runner and reverse-proxy forwarding /vnc-proxy* to it. Hides Proxmox from the browser.',
+                'type' => 'select',
+                'required' => true,
+                'placeholder' => 'false',
+                'validation' => 'required|string|max:255',
+                'options' => ['true', 'false'],
+                'category' => 'vds',
+            ],
+            ConfigInterface::VNC_USE_PVE_REDIRECT => [
+                'name' => ConfigInterface::VNC_USE_PVE_REDIRECT,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::VNC_USE_PVE_REDIRECT,
+                        'false',
+                    ),
+                'description' => 'Open Proxmox noVNC in a new tab (creates a short-lived PVE console user). Takes priority over the panel VNC proxy when enabled.',
+                'type' => 'select',
+                'required' => true,
+                'placeholder' => 'false',
+                'validation' => 'required|string|max:255',
+                'options' => ['true', 'false'],
+                'category' => 'vds',
             ],
             ConfigInterface::PTERODACTYL_IMPORTER_VISIBILITY => [
                 'name' => ConfigInterface::PTERODACTYL_IMPORTER_VISIBILITY,

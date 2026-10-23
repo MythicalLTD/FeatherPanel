@@ -97,6 +97,8 @@ const ADMIN_SETTING_DISPLAY_NAMES: Record<string, string> = {
     login_default_method: 'Default login method',
     login_methods_order: 'Login methods order',
     login_hidden_methods: 'Hidden login methods',
+    vnc_proxy_via_panel: 'Proxy VNC via panel',
+    vnc_use_pve_redirect: 'Open Proxmox noVNC in new tab',
 };
 
 function formatSettingName(name: string, key: string) {
@@ -532,6 +534,8 @@ export default function SettingsPage() {
             case 'database':
                 return Database;
             case 'server':
+            case 'servers':
+            case 'vds':
                 return Server;
             case 'seo':
                 return Search;

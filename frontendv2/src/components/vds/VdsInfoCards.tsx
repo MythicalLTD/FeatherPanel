@@ -118,7 +118,7 @@ export function VdsNetworkCard({
     );
 
     return (
-        <div className={cn('fp-surface rounded-xl border p-4', className)}>
+        <div className={cn('fp-surface-solid rounded-xl border p-4', className)}>
             <h3 className='text-muted-foreground mb-3 flex items-center gap-2 text-sm font-medium'>
                 <Wifi className='h-4 w-4' />
                 {t('servers.console.info_cards.network_title')}
@@ -253,7 +253,7 @@ export default React.memo(function VdsInfoCards({
 
     return (
         <div className={cn('space-y-4', className)}>
-            <div className='fp-surface rounded-xl border p-4'>
+            <div className='fp-surface-solid rounded-xl border p-4'>
                 <h3 className='text-muted-foreground mb-3 text-sm font-medium'>
                     {t('servers.console.info_cards.resources_title')}
                 </h3>
@@ -344,7 +344,7 @@ export default React.memo(function VdsInfoCards({
                 </div>
             </div>
 
-            <div className='fp-surface rounded-xl border p-4'>
+            <div className='fp-surface-solid rounded-xl border p-4'>
                 <h3 className='text-muted-foreground mb-3 flex items-center gap-2 text-sm font-medium'>
                     <Monitor className='h-4 w-4' />
                     {t('vds.console.console_access.title')}
@@ -352,8 +352,8 @@ export default React.memo(function VdsInfoCards({
 
                 {!canConsole ? (
                     <div className='flex items-start gap-3'>
-                        <div className='flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-amber-500/20 bg-amber-500/10'>
-                            <AlertTriangle className='h-5 w-5 text-amber-400' />
+                        <div className='fp-icon-tile flex h-10 w-10 shrink-0 items-center justify-center rounded-xl'>
+                            <AlertTriangle className='text-primary h-5 w-5' />
                         </div>
                         <div className='min-w-0'>
                             <p className='text-sm font-semibold'>{t('vds.console.console_access.no_access_title')}</p>
@@ -365,8 +365,8 @@ export default React.memo(function VdsInfoCards({
                 ) : !isRunning ? (
                     <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
                         <div className='flex items-start gap-3'>
-                            <div className='bg-muted/20 border-border/20 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border'>
-                                <Server className='text-muted-foreground h-5 w-5' />
+                            <div className='fp-icon-tile flex h-10 w-10 shrink-0 items-center justify-center rounded-xl'>
+                                <Server className='text-primary h-5 w-5' />
                             </div>
                             <div className='min-w-0'>
                                 <p className='text-sm font-semibold'>{t('vds.console.console_access.offline_title')}</p>
@@ -376,7 +376,7 @@ export default React.memo(function VdsInfoCards({
                             </div>
                         </div>
                         {canPower && (
-                            <Button size='sm' onClick={onStart} disabled={powering !== null} className='shrink-0'>
+                            <Button size='sm' onClick={onStart} disabled={powering !== null} className='h-11 shrink-0'>
                                 {powering === 'start' ? (
                                     <Loader2 className='mr-1.5 h-4 w-4 animate-spin' />
                                 ) : (
@@ -389,8 +389,8 @@ export default React.memo(function VdsInfoCards({
                 ) : (
                     <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
                         <div className='flex items-start gap-3'>
-                            <div className='flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-emerald-500/20 bg-emerald-500/10'>
-                                <Monitor className='h-5 w-5 text-emerald-400' />
+                            <div className='fp-icon-tile flex h-10 w-10 shrink-0 items-center justify-center rounded-xl'>
+                                <Monitor className='text-primary h-5 w-5' />
                             </div>
                             <div className='min-w-0'>
                                 <p className='text-sm font-semibold'>{t('vds.console.console_access.ready_title')}</p>
@@ -399,7 +399,7 @@ export default React.memo(function VdsInfoCards({
                                 </p>
                             </div>
                         </div>
-                        <Button size='sm' onClick={onOpenVnc} disabled={vncLoading} className='shrink-0'>
+                        <Button size='sm' onClick={onOpenVnc} disabled={vncLoading} className='h-11 shrink-0'>
                             {vncLoading ? (
                                 <Loader2 className='mr-1.5 h-4 w-4 animate-spin' />
                             ) : (

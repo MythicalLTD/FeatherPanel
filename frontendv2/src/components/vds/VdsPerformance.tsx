@@ -133,21 +133,16 @@ const PerformanceChartCard = React.memo(function PerformanceChartCard({
     }, [formatTooltip]);
 
     return (
-        <div className='fp-surface min-w-0 rounded-xl border p-4 sm:p-5'>
+        <div className='fp-surface-solid min-w-0 rounded-xl border p-4 sm:p-5'>
             <div className='mb-3 flex items-center justify-between gap-2'>
                 <h3 className='text-foreground truncate text-sm font-medium'>{title}</h3>
-                <div className='flex items-center gap-2'>
-                    <div className='h-2 w-2 rounded-full' style={{ backgroundColor: color }} />
-                    <Icon className='text-muted-foreground h-4 w-4 shrink-0' />
-                </div>
+                <Icon className='text-muted-foreground h-4 w-4 shrink-0' />
             </div>
 
             <div className='space-y-3'>
                 <div className='flex items-start justify-between gap-2 text-xs'>
                     <span className='text-muted-foreground min-w-0 truncate'>{limitLabel}</span>
-                    <span className='shrink-0 font-medium tabular-nums' style={{ color }}>
-                        {currentValue}
-                    </span>
+                    <span className='text-foreground shrink-0 font-medium tabular-nums'>{currentValue}</span>
                 </div>
 
                 <div className='h-[140px] w-full min-w-0'>
@@ -217,12 +212,15 @@ export default function VdsPerformance({
             ? t('vds.console.performance.cpu_cores', { cores: String(cpuCores) })
             : t('servers.console.info_cards.unlimited');
 
+    // One chart stroke for the page — rainbow per-metric colors read as vibecode.
+    const chartColor = 'hsl(var(--primary))';
+
     const charts: PerformanceChartCardProps[] = [
         {
             id: 'cpu',
             title: t('vds.console.performance.cpu'),
             data: cpuData,
-            color: '#ef4444',
+            color: chartColor,
             icon: Cpu,
             currentValue: `${cpuCurrent.toFixed(1)}%`,
             limitLabel: coresLabel,
@@ -234,7 +232,7 @@ export default function VdsPerformance({
             id: 'memory',
             title: t('vds.console.performance.memory'),
             data: memoryData,
-            color: '#3b82f6',
+            color: chartColor,
             icon: Database,
             currentValue: formatMemoryBytes(memoryCurrent),
             limitLabel: t('servers.console.info_cards.limit', {
@@ -248,7 +246,7 @@ export default function VdsPerformance({
             id: 'network',
             title: t('vds.console.performance.network'),
             data: networkData,
-            color: '#f59e0b',
+            color: chartColor,
             icon: Globe,
             currentValue: formatBytesPerSecond(networkCurrent),
             limitLabel: t('servers.console.info_cards.all_time_label', {

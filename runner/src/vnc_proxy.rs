@@ -23,10 +23,15 @@ use axum::{
 use futures_util::{SinkExt, StreamExt};
 use sqlx::mysql::MySqlPool;
 use sqlx::Row;
+use std::collections::HashMap;
 use std::time::Duration;
 use tokio_tungstenite::{
     connect_async_tls_with_config,
-    tungstenite::{self, client::IntoClientRequest},
+    tungstenite::{
+        self,
+        client::IntoClientRequest,
+        http::{HeaderName, HeaderValue},
+    },
     Connector,
 };
 use tracing::{debug, error, info, warn};
@@ -41,20 +46,30 @@ struct VncTicket {
     node_port: i64,
     scheme: String,
     tls_no_verify: String,
+    /// Extra HTTP headers for the upstream Proxmox request (e.g. Cloudflare Access).
+    extra_headers: HashMap<String, String>,
+    /// Optional WS upstream overrides from `additional_params`
+    /// (`vnc_upstream_host` / `vnc_upstream_port` / `vnc_upstream_scheme`).
+    upstream_host: Option<String>,
+    upstream_port: Option<i64>,
+    upstream_scheme: Option<String>,
+    /// `Authorization: PVEAPIToken=user!tokenid=secret` for pveproxy.
+    pve_api_token: Option<String>,
 }
 
 /// Starts the VNC console WebSocket proxy HTTP listener.
 ///
 /// Serves `GET /vnc-proxy/:token` and bridges authenticated clients to the
 /// Proxmox `vncwebsocket` endpoint of the VM's node.
-pub async fn serve(pool: MySqlPool) {
+pub async fn serve(pool: MySqlPool, encryption_key: String) {
     let listen = std::env::var("VNC_PROXY_LISTEN").unwrap_or_else(|_| "0.0.0.0:9100".to_string());
 
     let app = Router::new().route(
         "/vnc-proxy/:token",
         get(move |Path(token): Path<String>, ws: WebSocketUpgrade| {
             let pool = pool.clone();
-            async move { ws_handler(pool, token, ws).await }
+            let encryption_key = encryption_key.clone();
+            async move { ws_handler(pool, encryption_key, token, ws).await }
         }),
     );
 
@@ -75,8 +90,13 @@ pub async fn serve(pool: MySqlPool) {
 ///
 /// Returns 403 for unknown, expired, or already-used tokens before any
 /// upstream connection is attempted.
-async fn ws_handler(pool: MySqlPool, token: String, ws: WebSocketUpgrade) -> Response {
-    match load_ticket(&pool, &token).await {
+async fn ws_handler(
+    pool: MySqlPool,
+    encryption_key: String,
+    token: String,
+    ws: WebSocketUpgrade,
+) -> Response {
+    match load_ticket(&pool, &encryption_key, &token).await {
         Ok(Some(ticket)) => ws
             .protocols(["binary"])
             .on_upgrade(move |socket| bridge(socket, ticket)),
@@ -93,12 +113,14 @@ async fn ws_handler(pool: MySqlPool, token: String, ws: WebSocketUpgrade) -> Res
 }
 
 /// Fetch + immediately delete the ticket so it cannot be replayed.
-async fn load_ticket(pool: &MySqlPool, token: &str) -> Result<Option<VncTicket>> {
+async fn load_ticket(pool: &MySqlPool, encryption_key: &str, token: &str) -> Result<Option<VncTicket>> {
     let mut tx = pool.begin().await?;
 
     let row = sqlx::query(
         "SELECT t.pve_node, t.vm_type, t.vmid, t.port, t.vncticket,
-                n.fqdn, n.port AS node_port, n.scheme, n.tls_no_verify
+                n.fqdn, n.port AS node_port, n.scheme, n.tls_no_verify,
+                n.addional_headers, n.additional_params,
+                n.user AS pve_user, n.token_id, n.secret
          FROM featherpanel_vnc_tickets t
          JOIN featherpanel_vm_instances i ON i.id = t.vm_instance_id
          JOIN featherpanel_vm_nodes n ON n.id = i.vm_node_id
@@ -120,6 +142,59 @@ async fn load_ticket(pool: &MySqlPool, token: &str) -> Result<Option<VncTicket>>
         .await?;
     tx.commit().await?;
 
+    let headers_json: String = row
+        .try_get::<Option<String>, _>("addional_headers")
+        .ok()
+        .flatten()
+        .unwrap_or_default();
+    let extra_headers: HashMap<String, String> =
+        serde_json::from_str(&headers_json).unwrap_or_default();
+
+    let params_json: String = row
+        .try_get::<Option<String>, _>("additional_params")
+        .ok()
+        .flatten()
+        .unwrap_or_default();
+    let params: HashMap<String, serde_json::Value> =
+        serde_json::from_str(&params_json).unwrap_or_default();
+
+    let upstream_host = params
+        .get("vnc_upstream_host")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
+    let upstream_port = params
+        .get("vnc_upstream_port")
+        .and_then(|v| v.as_i64().or_else(|| v.as_str().and_then(|s| s.parse().ok())));
+    let upstream_scheme = params
+        .get("vnc_upstream_scheme")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
+
+    let pve_user: String = row.try_get("pve_user").unwrap_or_default();
+    let enc_token_id: String = row.try_get("token_id").unwrap_or_default();
+    let enc_secret: String = row.try_get("secret").unwrap_or_default();
+    let pve_api_token = match crate::encryption::Encryptor::new(encryption_key) {
+        Ok(encryptor) => match (encryptor.decrypt(&enc_token_id), encryptor.decrypt(&enc_secret)) {
+            (Ok(token_id), Ok(secret))
+                if !pve_user.is_empty() && !token_id.is_empty() && !secret.is_empty() =>
+            {
+                Some(format!(
+                    "PVEAPIToken={}!{}={}",
+                    pve_user, token_id, secret
+                ))
+            }
+            (Err(e), _) | (_, Err(e)) => {
+                warn!("VNC proxy: failed to decrypt node API token: {}", e);
+                None
+            }
+            _ => None,
+        },
+        Err(e) => {
+            warn!("VNC proxy: encryption init failed: {}", e);
+            None
+        }
+    };
+
     Ok(Some(VncTicket {
         pve_node: row.try_get("pve_node")?,
         vm_type: row.try_get::<String, _>("vm_type")?,
@@ -130,6 +205,11 @@ async fn load_ticket(pool: &MySqlPool, token: &str) -> Result<Option<VncTicket>>
         node_port: row.try_get("node_port")?,
         scheme: row.try_get::<String, _>("scheme")?,
         tls_no_verify: row.try_get::<String, _>("tls_no_verify")?,
+        extra_headers,
+        upstream_host,
+        upstream_port,
+        upstream_scheme,
+        pve_api_token,
     }))
 }
 
@@ -138,12 +218,23 @@ async fn load_ticket(pool: &MySqlPool, token: &str) -> Result<Option<VncTicket>>
 /// Ends when either side closes; Proxmox close frames are propagated to the
 /// client.
 async fn bridge(client: WebSocket, ticket: VncTicket) {
-    let scheme = if ticket.scheme == "http" { "ws" } else { "wss" };
-    let port = if ticket.node_port > 0 { ticket.node_port } else { 8006 };
+    let host = ticket
+        .upstream_host
+        .as_deref()
+        .unwrap_or(ticket.fqdn.as_str());
+    let scheme_http = ticket
+        .upstream_scheme
+        .as_deref()
+        .unwrap_or(ticket.scheme.as_str());
+    let scheme = if scheme_http == "http" { "ws" } else { "wss" };
+    let port = ticket
+        .upstream_port
+        .filter(|p| *p > 0)
+        .unwrap_or_else(|| if ticket.node_port > 0 { ticket.node_port } else { 8006 });
     let url = format!(
         "{}://{}:{}/api2/json/nodes/{}/{}/{}/vncwebsocket?port={}&vncticket={}",
         scheme,
-        ticket.fqdn,
+        host,
         port,
         ticket.pve_node,
         ticket.vm_type,
@@ -162,7 +253,45 @@ async fn bridge(client: WebSocket, ticket: VncTicket) {
     // Proxmox vncwebsocket negotiates the `binary` subprotocol.
     request
         .headers_mut()
-        .insert("Sec-WebSocket-Protocol", tungstenite::http::HeaderValue::from_static("binary"));
+        .insert("Sec-WebSocket-Protocol", HeaderValue::from_static("binary"));
+    request.headers_mut().insert(
+        HeaderName::from_static("user-agent"),
+        HeaderValue::from_static("FeatherPanel-AsyncRunner/1.5"),
+    );
+
+    // pveproxy authenticates the websocket with the node API token. The vncticket
+    // query param alone is not enough (returns 401). PVEVNC tickets are not valid
+    // PVEAuthCookies — those come from /access/ticket.
+    if let Some(ref auth) = ticket.pve_api_token {
+        match HeaderValue::from_str(auth) {
+            Ok(value) => {
+                request
+                    .headers_mut()
+                    .insert(HeaderName::from_static("authorization"), value);
+            }
+            Err(e) => {
+                warn!("VNC proxy: could not set Authorization header: {}", e);
+            }
+        }
+    } else {
+        warn!("VNC proxy: missing decrypted PVE API token; upstream will likely 401");
+    }
+
+    // Same extra headers the PHP Proxmox client uses (Cloudflare Access service tokens, etc.).
+    // Skip them when using a direct/non-CF upstream override — Access tokens confuse raw pveproxy.
+    let use_extra_headers = ticket.upstream_host.is_none();
+    if use_extra_headers {
+        for (k, v) in &ticket.extra_headers {
+            match (HeaderName::from_bytes(k.as_bytes()), HeaderValue::from_str(v)) {
+                (Ok(name), Ok(value)) => {
+                    request.headers_mut().insert(name, value);
+                }
+                _ => {
+                    warn!("VNC proxy: skipping invalid extra header {:?}", k);
+                }
+            }
+        }
+    }
 
     let connector = match build_connector(ticket.tls_no_verify == "true") {
         Ok(c) => Some(c),
@@ -177,7 +306,7 @@ async fn bridge(client: WebSocket, ticket: VncTicket) {
         Err(e) => {
             warn!(
                 "VNC proxy: upstream connect to {}:{} failed: {}",
-                ticket.fqdn, port, e
+                host, port, e
             );
             return;
         }

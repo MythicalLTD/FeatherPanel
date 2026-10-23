@@ -17,6 +17,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import axios from 'axios';
 import { useVmInstance } from '@/contexts/VmInstanceContext';
 import { useTranslation } from '@/contexts/TranslationContext';
@@ -24,12 +25,14 @@ import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 import VdsPerformance from '@/components/vds/VdsPerformance';
 import VdsInfoCards, { VdsNetworkCard } from '@/components/vds/VdsInfoCards';
-import { VncConsole } from '@/components/vds/VncConsole';
+
+const VncConsole = dynamic(() => import('@/components/vds/VncConsole').then((m) => m.VncConsole), {
+    ssr: false,
+});
 import {
     Play,
     Square,
@@ -173,6 +176,7 @@ export default function VdsConsolePage() {
     const [powering, setPowering] = useState<string | null>(null);
     const [vncLoading, setVncLoading] = useState(false);
     const [vncUrl, setVncUrl] = useState<string | null>(null);
+    const [vncPassword, setVncPassword] = useState<string | null>(null);
     const [showAccessPassword, setShowAccessPassword] = useState(false);
     const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const statusInFlightRef = useRef(false);
@@ -329,6 +333,7 @@ export default function VdsConsolePage() {
                 if (payload.pve_redirect_url) {
                     window.open(payload.pve_redirect_url, '_blank', 'noopener,noreferrer');
                 } else if (payload.wss_url) {
+                    setVncPassword(typeof payload.ticket === 'string' ? payload.ticket : null);
                     setVncUrl(payload.wss_url);
                 }
             } else {
@@ -461,7 +466,6 @@ export default function VdsConsolePage() {
                                 <Button
                                     variant='glass'
                                     size='sm'
-                                    className='border-emerald-400/20 text-emerald-400 hover:bg-emerald-400/10'
                                     disabled={powering !== null || liveStatus === 'running'}
                                     onClick={() => handlePower('start')}
                                 >
@@ -475,7 +479,6 @@ export default function VdsConsolePage() {
                                 <Button
                                     variant='glass'
                                     size='sm'
-                                    className='border-amber-400/20 text-amber-400 hover:bg-amber-400/10'
                                     disabled={powering !== null || liveStatus !== 'running'}
                                     onClick={() => handlePower('reboot')}
                                 >
@@ -487,9 +490,8 @@ export default function VdsConsolePage() {
                                     {t('vds.console.power.reboot')}
                                 </Button>
                                 <Button
-                                    variant='glass'
+                                    variant='destructive'
                                     size='sm'
-                                    className='text-muted-foreground border-border/20 hover:bg-muted/10 hover:text-red-400'
                                     disabled={powering !== null || liveStatus === 'stopped'}
                                     onClick={() => handlePower('stop')}
                                 >
@@ -510,103 +512,96 @@ export default function VdsConsolePage() {
 
             <div className='grid grid-cols-1 gap-6 lg:grid-cols-12'>
                 <div className='space-y-4 lg:col-span-5'>
-                    <Card className='border-border/50 bg-card/50 backdrop-blur-xl'>
-                        <CardHeader className='pb-2'>
-                            <CardTitle className='flex items-center gap-2 text-sm font-medium'>
-                                <Info className='text-primary h-4 w-4' />
-                                {t('vds.console.details.instance_details')}
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className='pt-0'>
-                            <div className='grid grid-cols-1 gap-x-4 gap-y-0 sm:grid-cols-2'>
-                                {(
-                                    [
-                                        { label: t('vds.console.details.hostname'), value: instance.hostname ?? '—' },
-                                        { label: t('vds.console.details.vmid'), value: String(instance.vmid) },
-                                        {
-                                            label: t('vds.console.details.type'),
-                                            value: instance.vm_type?.toUpperCase() ?? 'QEMU',
-                                        },
-                                        { label: t('vds.console.details.status'), value: liveStatus },
-                                        {
-                                            label: t('vds.console.details.node'),
-                                            value: instance.node_name ?? instance.pve_node ?? '—',
-                                        },
-                                        { label: t('vds.console.details.plan'), value: instance.plan_name ?? '—' },
-                                        {
-                                            label: t('vds.console.details.role'),
-                                            value: instance.is_owner
-                                                ? t('vds.console.details.role_owner')
-                                                : t('vds.console.details.role_subuser'),
-                                        },
-                                    ] as { label: string; value: string }[]
-                                ).map(({ label, value }) => (
-                                    <div
-                                        key={label}
-                                        className='border-border/10 flex items-center justify-between gap-2 border-b py-1.5'
-                                    >
-                                        <span className='text-muted-foreground shrink-0 text-xs font-medium'>
-                                            {label}
-                                        </span>
-                                        <span className='truncate font-mono text-sm font-medium tabular-nums'>
-                                            {value}
-                                        </span>
-                                    </div>
-                                ))}
-                                {instance.expires_at ? (
-                                    <div className='border-border/10 flex items-center justify-between gap-2 border-b py-1.5 sm:col-span-2'>
-                                        <span className='text-muted-foreground shrink-0 text-xs font-medium'>
-                                            {t('service_expiry.label')}
-                                        </span>
-                                        <span className='flex min-w-0 flex-wrap items-center justify-end gap-2'>
-                                            <ServiceExpiryChip expiresAt={instance.expires_at} />
-                                            <span className='text-muted-foreground truncate font-mono text-xs tabular-nums'>
-                                                {formatExpiryAbsolute(instance.expires_at, dateOpts)}
-                                            </span>
-                                        </span>
-                                    </div>
-                                ) : null}
-                            </div>
-                            {canViewAccessPassword && (
-                                <div className='border-primary/20 bg-primary/5 mt-3 space-y-3 rounded-xl border p-4'>
-                                    <div className='flex items-start justify-between gap-3'>
-                                        <div className='space-y-1'>
-                                            <div className='text-primary/80 flex items-center gap-2 text-sm font-medium'>
-                                                <Lock className='h-4 w-4' />
-                                                {t('vds.console.password.title')}
-                                            </div>
-                                            <p className='text-muted-foreground text-xs'>
-                                                {t('vds.console.password.description')}
-                                            </p>
-                                        </div>
-                                        <Button
-                                            variant='glass'
-                                            size='sm'
-                                            onClick={() => setShowAccessPassword((value) => !value)}
-                                        >
-                                            {showAccessPassword ? (
-                                                <EyeOff className='mr-1.5 h-4 w-4' />
-                                            ) : (
-                                                <Eye className='mr-1.5 h-4 w-4' />
-                                            )}
-                                            {showAccessPassword ? t('common.hide') : t('common.show')}
-                                        </Button>
-                                    </div>
-                                    <div className='border-border/20 bg-background/60 rounded-lg border px-4 py-3'>
-                                        <span
-                                            className={cn(
-                                                'font-mono text-sm font-medium tracking-wide transition-all duration-200',
-                                                !showAccessPassword && 'blur-sm select-none',
-                                            )}
-                                        >
-                                            {instance.access_password}
-                                        </span>
-                                    </div>
-                                    <p className='text-xs text-amber-300/90'>{t('vds.console.password.change_asap')}</p>
+                    <div className='fp-surface-solid rounded-xl border p-4'>
+                        <h3 className='text-muted-foreground mb-3 flex items-center gap-2 text-sm font-medium'>
+                            <Info className='h-4 w-4' />
+                            {t('vds.console.details.instance_details')}
+                        </h3>
+                        <div className='grid grid-cols-1 gap-x-4 gap-y-0 sm:grid-cols-2'>
+                            {(
+                                [
+                                    { label: t('vds.console.details.hostname'), value: instance.hostname ?? '—' },
+                                    { label: t('vds.console.details.vmid'), value: String(instance.vmid) },
+                                    {
+                                        label: t('vds.console.details.type'),
+                                        value: instance.vm_type?.toUpperCase() ?? 'QEMU',
+                                    },
+                                    { label: t('vds.console.details.status'), value: liveStatus },
+                                    {
+                                        label: t('vds.console.details.node'),
+                                        value: instance.node_name ?? instance.pve_node ?? '—',
+                                    },
+                                    { label: t('vds.console.details.plan'), value: instance.plan_name ?? '—' },
+                                    {
+                                        label: t('vds.console.details.role'),
+                                        value: instance.is_owner
+                                            ? t('vds.console.details.role_owner')
+                                            : t('vds.console.details.role_subuser'),
+                                    },
+                                ] as { label: string; value: string }[]
+                            ).map(({ label, value }) => (
+                                <div
+                                    key={label}
+                                    className='border-border/40 flex items-center justify-between gap-2 border-b py-1.5'
+                                >
+                                    <span className='text-muted-foreground shrink-0 text-xs font-medium'>{label}</span>
+                                    <span className='truncate font-mono text-sm font-medium tabular-nums'>{value}</span>
                                 </div>
-                            )}
-                        </CardContent>
-                    </Card>
+                            ))}
+                            {instance.expires_at ? (
+                                <div className='border-border/40 flex items-center justify-between gap-2 border-b py-1.5 sm:col-span-2'>
+                                    <span className='text-muted-foreground shrink-0 text-xs font-medium'>
+                                        {t('service_expiry.label')}
+                                    </span>
+                                    <span className='flex min-w-0 flex-wrap items-center justify-end gap-2'>
+                                        <ServiceExpiryChip expiresAt={instance.expires_at} />
+                                        <span className='text-muted-foreground truncate font-mono text-xs tabular-nums'>
+                                            {formatExpiryAbsolute(instance.expires_at, dateOpts)}
+                                        </span>
+                                    </span>
+                                </div>
+                            ) : null}
+                        </div>
+                        {canViewAccessPassword && (
+                            <div className='fp-surface-solid mt-3 space-y-3 rounded-xl border p-4'>
+                                <div className='flex items-start justify-between gap-3'>
+                                    <div className='space-y-1'>
+                                        <div className='flex items-center gap-2 text-sm font-medium'>
+                                            <Lock className='text-primary h-4 w-4' />
+                                            {t('vds.console.password.title')}
+                                        </div>
+                                        <p className='text-muted-foreground text-xs'>
+                                            {t('vds.console.password.description')}
+                                        </p>
+                                    </div>
+                                    <Button
+                                        variant='outline'
+                                        size='sm'
+                                        className='h-9'
+                                        onClick={() => setShowAccessPassword((value) => !value)}
+                                    >
+                                        {showAccessPassword ? (
+                                            <EyeOff className='mr-1.5 h-4 w-4' />
+                                        ) : (
+                                            <Eye className='mr-1.5 h-4 w-4' />
+                                        )}
+                                        {showAccessPassword ? t('common.hide') : t('common.show')}
+                                    </Button>
+                                </div>
+                                <div className='border-border bg-background/60 rounded-lg border px-4 py-3'>
+                                    <span
+                                        className={cn(
+                                            'font-mono text-sm font-medium tracking-wide transition-all duration-200',
+                                            !showAccessPassword && 'blur-sm select-none',
+                                        )}
+                                    >
+                                        {instance.access_password}
+                                    </span>
+                                </div>
+                                <p className='text-muted-foreground text-xs'>{t('vds.console.password.change_asap')}</p>
+                            </div>
+                        )}
+                    </div>
 
                     <VdsNetworkCard
                         ipAddress={ip}
@@ -642,11 +637,18 @@ export default function VdsConsolePage() {
             {vncUrl && (
                 <div className='relative'>
                     <div className='absolute top-2 right-2 z-20'>
-                        <Button variant='glass' size='sm' onClick={() => setVncUrl(null)}>
+                        <Button
+                            variant='glass'
+                            size='sm'
+                            onClick={() => {
+                                setVncUrl(null);
+                                setVncPassword(null);
+                            }}
+                        >
                             {t('vds.console.close_console')}
                         </Button>
                     </div>
-                    <VncConsole url={vncUrl} />
+                    <VncConsole url={vncUrl} password={vncPassword ?? undefined} />
                 </div>
             )}
 
