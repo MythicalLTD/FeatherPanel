@@ -48,6 +48,8 @@ class Permissions
     public const ADMIN_USERS_EDIT = 'admin.users.edit';
     /** Delete users */
     public const ADMIN_USERS_DELETE = 'admin.users.delete';
+    /** View the panel as another user (audit logged) */
+    public const ADMIN_USERS_IMPERSONATE = 'admin.users.impersonate';
 
     // Admin Banned IPs Permissions
     /** View banned panel IPs */
@@ -430,6 +432,12 @@ class Permissions
                 'value' => self::ADMIN_USERS_DELETE,
                 'category' => 'Admin Users',
                 'description' => 'Delete users',
+            ],
+            [
+                'constant' => 'ADMIN_USERS_IMPERSONATE',
+                'value' => self::ADMIN_USERS_IMPERSONATE,
+                'category' => 'Admin Users',
+                'description' => 'View the panel as another user (audit logged)',
             ],
             [
                 'constant' => 'ADMIN_BLOCKED_IPS_VIEW',
