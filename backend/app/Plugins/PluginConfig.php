@@ -92,6 +92,7 @@ class PluginConfig
             }
 
             $config_Requirements = self::getRequired();
+            $fullConfig = $config;
             $config = $config['plugin'];
 
             if (!array_key_exists('identifier', $config)) {
@@ -126,11 +127,16 @@ class PluginConfig
                 return false;
             }
 
-            // Validate mixins if they exist
-            if (isset($config['mixins']) && !self::validateMixins($config['mixins'], $config['identifier'])) {
-                $app->getLogger()->warning('Invalid mixins configuration for plugin: ' . $config['identifier']);
+            // Validate mixins if they exist (top-level `mixins` is the documented place, `plugin.mixins` is accepted too)
+            foreach ([$fullConfig['mixins'] ?? null, $config['mixins'] ?? null] as $mixins) {
+                if ($mixins === null) {
+                    continue;
+                }
+                if (!is_array($mixins) || !self::validateMixins($mixins, $config['identifier'])) {
+                    $app->getLogger()->warning('Invalid mixins configuration for plugin: ' . $config['identifier']);
 
-                return false;
+                    return false;
+                }
             }
 
             // Validate optional fields if they exist
@@ -155,9 +161,36 @@ class PluginConfig
      */
     public static function getPluginMixinsConfig(string $identifier): array
     {
-        $config = self::getConfig($identifier);
+        return self::getMixinsFromConfig(self::getConfig($identifier));
+    }
 
-        return $config['mixins'] ?? [];
+    /**
+     * Get the mixins declared in a parsed conf.yml.
+     *
+     * The documented place is the top-level `mixins` map. `plugin.mixins` is
+     * also read so manifests written for the older validator keep working.
+     * When both declare the same mixin id, the top-level entry wins.
+     *
+     * @param array $config The full parsed conf.yml
+     *
+     * @return array<string, array> Mixin id => mixin options
+     */
+    public static function getMixinsFromConfig(array $config): array
+    {
+        $mixins = [];
+        foreach ([$config['plugin']['mixins'] ?? null, $config['mixins'] ?? null] as $source) {
+            if (!is_array($source)) {
+                continue;
+            }
+            foreach ($source as $mixinId => $mixinConfig) {
+                if (!is_string($mixinId) || $mixinId === '') {
+                    continue;
+                }
+                $mixins[$mixinId] = is_array($mixinConfig) ? $mixinConfig : [];
+            }
+        }
+
+        return $mixins;
     }
 
     /**

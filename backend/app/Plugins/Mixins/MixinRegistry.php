@@ -27,13 +27,24 @@ use App\App;
  */
 class MixinRegistry
 {
+    /** @var bool Whether registerMixins() already ran in this process */
+    private static bool $registered = false;
+
     /**
      * Register all built-in and custom mixins.
      *
-     * This should be called during application startup.
+     * Called once by PluginManager::loadKernel() before plugins are loaded, so
+     * MixinManager::loadMixinsForPlugin() can resolve the mixin ids that
+     * plugins declare in conf.yml. Safe to call more than once: later calls
+     * do nothing (long-running workers may boot the plugin kernel again).
      */
     public static function registerMixins(): void
     {
+        if (self::$registered) {
+            return;
+        }
+        self::$registered = true;
+
         $logger = App::getInstance(true)->getLogger();
         $logger->debug('Registering mixins...');
 
@@ -115,13 +126,14 @@ class MixinRegistry
 
             // Extract namespace
             $namespaceMatches = [];
-            if (preg_match('/namespace\s+([^;]+);/', $content, $namespaceMatches) !== 1) {
+            if (preg_match('/^\s*namespace\s+([^;\s]+)\s*;/m', $content, $namespaceMatches) !== 1) {
                 return null;
             }
 
             // Extract class name
             $classMatches = [];
-            if (preg_match('/class\s+(\w+)/', $content, $classMatches) !== 1) {
+            // Anchor to the start of a line so the word "class" in a docblock is not picked up
+            if (preg_match('/^\s*(?:(?:final|abstract|readonly)\s+)*class\s+(\w+)/m', $content, $classMatches) !== 1) {
                 return null;
             }
 
