@@ -12173,7 +12173,13 @@
             "info": {
                 "title": "Excluded Data",
                 "description": "The following items are excluded from migration to ensure a clean import.",
-                "items": [null, null, null, null, null],
+                "items": [
+                    null,
+                    null,
+                    null,
+                    null,
+                    null
+                ],
                 "footer": "Excluding this data significantly reduces migration time."
             },
             "create_key": {
@@ -12189,7 +12195,12 @@
                 "creating": "Creating..."
             },
             "warning_dialog": {
-                "items": [null, null, null, null]
+                "items": [
+                    null,
+                    null,
+                    null,
+                    null
+                ]
             },
             "visibility": {
                 "hide": "Hide importer",
