@@ -42,6 +42,11 @@ class ExternalNotifier
         'file_transfer' => [UserNotification::KIND_FILE_TRANSFER_COMPLETED, UserNotification::KIND_FILE_TRANSFER_FAILED],
         'resource_limit' => [UserNotification::KIND_RESOURCE_LIMIT],
         'transfer_power' => [UserNotification::KIND_TRANSFER_POWER_FAILED],
+        'vds_down' => [UserNotification::KIND_VDS_DOWN],
+        'vds_high_cpu' => [UserNotification::KIND_VDS_HIGH_CPU],
+        'vds_backup_failed' => [UserNotification::KIND_VDS_BACKUP_FAILED],
+        'vds_bandwidth' => [UserNotification::KIND_VDS_BANDWIDTH],
+        'vds_expiring' => [UserNotification::KIND_VDS_EXPIRING],
     ];
 
     private const TITLES = [
@@ -52,6 +57,11 @@ class ExternalNotifier
         UserNotification::KIND_FILE_TRANSFER_FAILED => 'File transfer failed',
         UserNotification::KIND_RESOURCE_LIMIT => 'Server near its resource limit',
         UserNotification::KIND_TRANSFER_POWER_FAILED => 'Server could not be started after transfer',
+        UserNotification::KIND_VDS_DOWN => 'VDS went down',
+        UserNotification::KIND_VDS_HIGH_CPU => 'VDS CPU usage is high',
+        UserNotification::KIND_VDS_BACKUP_FAILED => 'VDS backup failed',
+        UserNotification::KIND_VDS_BANDWIDTH => 'VDS traffic limit',
+        UserNotification::KIND_VDS_EXPIRING => 'VDS expires soon',
     ];
 
     private const COLORS = [
@@ -60,6 +70,11 @@ class ExternalNotifier
         UserNotification::KIND_FILE_TRANSFER_FAILED => 0xEF4444,
         UserNotification::KIND_RESOURCE_LIMIT => 0xF59E0B,
         UserNotification::KIND_TRANSFER_POWER_FAILED => 0xEF4444,
+        UserNotification::KIND_VDS_DOWN => 0xEF4444,
+        UserNotification::KIND_VDS_HIGH_CPU => 0xF59E0B,
+        UserNotification::KIND_VDS_BACKUP_FAILED => 0xEF4444,
+        UserNotification::KIND_VDS_BANDWIDTH => 0xF59E0B,
+        UserNotification::KIND_VDS_EXPIRING => 0xF97316,
     ];
 
     /** Stored preferences merged over the defaults. */
@@ -151,6 +166,27 @@ class ExternalNotifier
         $lines = [];
         if (!empty($data['server_name'])) {
             $lines[] = 'Server: ' . $data['server_name'];
+        }
+        if (!empty($data['vds_name'])) {
+            $lines[] = 'VDS: ' . $data['vds_name'];
+        }
+        if ($kind === UserNotification::KIND_VDS_DOWN) {
+            $lines[] = 'The VDS stopped without a power action from the panel.';
+        }
+        if ($kind === UserNotification::KIND_VDS_HIGH_CPU && isset($data['percent'], $data['minutes'])) {
+            $lines[] = 'CPU: ' . $data['percent'] . '% for at least ' . $data['minutes'] . ' minutes';
+        }
+        if ($kind === UserNotification::KIND_VDS_EXPIRING && isset($data['expires_at'])) {
+            $lines[] = 'Expires: ' . $data['expires_at'] . ' UTC';
+        }
+        if ($kind === UserNotification::KIND_VDS_BANDWIDTH && isset($data['percent'], $data['used_gb'], $data['limit_gb'])) {
+            $lines[] = 'Traffic this month: ' . $data['used_gb'] . ' GB of ' . $data['limit_gb'] . ' GB (' . $data['percent'] . '%)';
+            if (!empty($data['action_label'])) {
+                $lines[] = $data['action_label'];
+            }
+        }
+        if ($kind === UserNotification::KIND_VDS_BACKUP_FAILED && !empty($data['error'])) {
+            $lines[] = 'Error: ' . $data['error'];
         }
         if (!empty($data['backup_name'])) {
             $lines[] = 'Backup: ' . $data['backup_name'];

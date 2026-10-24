@@ -510,6 +510,9 @@ class VmUserBackupController
     )]
     public function restoreBackup(Request $request, int $id): Response
     {
+        if (($reauth = \App\Services\Vm\VdsReauth::check($request, 'restore')) !== null) {
+            return $reauth;
+        }
         $user = $request->attributes->get('user');
         $instance = $request->attributes->get('vmInstance');
         if (!$instance) {

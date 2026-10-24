@@ -20,7 +20,8 @@ import { useParams, useRouter } from 'next/navigation';
 import axios, { isAxiosError } from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useVmInstance } from '@/contexts/VmInstanceContext';
-import { PageHeader } from '@/components/featherui/PageHeader';
+import { VdsPageHeader } from '@/components/vds/VdsPageHeader';
+import { VdsPageLoading } from '@/components/vds/VdsPageLoading';
 import { EmptyState } from '@/components/featherui/EmptyState';
 import { Users, Plus, RefreshCw, Trash2, User, Loader2, AlertTriangle, Lock, Shield, CheckCircle2 } from 'lucide-react';
 import { ResourceCard } from '@/components/featherui/ResourceCard';
@@ -33,7 +34,18 @@ import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 
-const VM_PERMISSIONS = ['power', 'console', 'backup', 'reinstall', 'settings', 'activity.read'];
+const VM_PERMISSIONS = [
+    'power',
+    'console',
+    'backup',
+    'snapshot',
+    'reinstall',
+    'settings',
+    'iso.upload',
+    'firewall',
+    'schedules',
+    'activity.read',
+];
 
 interface VmSubuser {
     id: number;
@@ -195,21 +207,14 @@ export default function VdsSubusersPage() {
     };
 
     if (instanceLoading || loading) {
-        return (
-            <div className='flex flex-col items-center justify-center py-24'>
-                <Loader2 className='text-primary h-12 w-12 animate-spin opacity-50' />
-                <p className='text-muted-foreground mt-4 animate-pulse font-medium'>
-                    {t('ui.vds.users.loadingSubusers')}
-                </p>
-            </div>
-        );
+        return <VdsPageLoading label={t('ui.vds.users.loadingSubusers')} />;
     }
 
     if (!instance) {
         return (
             <div className='flex flex-col items-center justify-center py-24 text-center'>
                 <AlertTriangle className='text-destructive mb-4 h-12 w-12' />
-                <h2 className='text-xl font-black'>{t('vds.console.not_found_title')}</h2>
+                <h2 className='text-xl font-semibold'>{t('vds.console.not_found_title')}</h2>
             </div>
         );
     }
@@ -217,11 +222,11 @@ export default function VdsSubusersPage() {
     if (!instance.is_owner) {
         return (
             <div className='flex flex-col items-center justify-center space-y-6 py-24 text-center'>
-                <div className='flex h-20 w-20 items-center justify-center rounded-3xl bg-red-500/10'>
+                <div className='flex h-20 w-20 items-center justify-center rounded-xl bg-red-500/10'>
                     <Lock className='h-10 w-10 text-red-400' />
                 </div>
                 <div>
-                    <h2 className='text-2xl font-black'>{t('common.accessDenied')}</h2>
+                    <h2 className='text-2xl font-semibold'>{t('common.accessDenied')}</h2>
                     <p className='text-muted-foreground mt-2'>{t('vds.subusers.owner_only')}</p>
                 </div>
                 <Button variant='outline' onClick={() => router.push(`/vds/${id}`)}>
@@ -235,12 +240,12 @@ export default function VdsSubusersPage() {
         <div className='space-y-8 pb-12'>
             <WidgetRenderer widgets={getWidgets('vds-users', 'top-of-page')} />
 
-            <PageHeader
+            <VdsPageHeader
                 title={t('navigation.items.users') || t('vds.subusers.title')}
                 description={
                     <div className='flex flex-wrap items-center gap-x-3 gap-y-2'>
                         <span>{t('vds.subusers.description')}</span>
-                        <span className='bg-primary/5 text-primary border-primary/20 rounded-full border px-3 py-1 text-[10px] font-black tracking-widest whitespace-nowrap uppercase'>
+                        <span className='bg-primary/5 text-primary border-primary/20 rounded-full border px-3 py-1 text-[10px] font-semibold tracking-wide whitespace-nowrap uppercase'>
                             {subusers.length} {t('common.users')}
                         </span>
                     </div>
@@ -297,7 +302,7 @@ export default function VdsSubusersPage() {
                                     {(sub.permissions || []).map((p) => (
                                         <span
                                             key={p}
-                                            className='bg-primary/5 text-primary border-primary/20 rounded-full border px-2 py-0.5 text-[10px] font-black tracking-widest uppercase'
+                                            className='bg-primary/5 text-primary border-primary/20 rounded-full border px-2 py-0.5 text-[10px] font-semibold tracking-wide uppercase'
                                         >
                                             {p}
                                         </span>
@@ -349,7 +354,7 @@ export default function VdsSubusersPage() {
                 </DialogHeader>
                 <div className='space-y-6 py-4'>
                     <div className='space-y-2'>
-                        <label className='text-muted-foreground text-sm font-black tracking-wider uppercase'>
+                        <label className='text-muted-foreground text-sm font-semibold'>
                             {t('ui.vds.users.emailAddress')}
                         </label>
                         <div className='relative'>
@@ -365,7 +370,7 @@ export default function VdsSubusersPage() {
                         </div>
                     </div>
                     <div className='space-y-3'>
-                        <label className='text-muted-foreground text-sm font-black tracking-wider uppercase'>
+                        <label className='text-muted-foreground text-sm font-semibold'>
                             {t('ui.vds.users.permissions')}
                         </label>
                         <div className='space-y-2'>
@@ -533,7 +538,7 @@ export default function VdsSubusersPage() {
                             </div>
                         </label>
                     ))}
-                    <div className='text-primary/80 bg-primary/5 border-primary/10 flex items-center gap-3 rounded-2xl border px-5 py-4 text-xs font-black tracking-widest uppercase'>
+                    <div className='text-primary/80 bg-primary/5 border-primary/10 flex items-center gap-3 rounded-2xl border px-5 py-4 text-xs font-semibold tracking-wide uppercase'>
                         <Shield className='h-4 w-4' />
                         {editPerms.length} permission{editPerms.length !== 1 ? 's' : ''} selected
                     </div>

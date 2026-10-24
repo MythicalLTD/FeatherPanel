@@ -145,7 +145,7 @@ function CircleGauge({
                 </div>
             </div>
             <span className='text-muted-foreground text-[11px] font-semibold tracking-wide uppercase'>{label}</span>
-            {sub && <span className='text-muted-foreground text-[10px]'>{sub}</span>}
+            {sub && <span className='text-muted-foreground text-xs'>{sub}</span>}
         </div>
     );
 }
@@ -206,7 +206,7 @@ function NodeCard({ node }: { node: ProxmoxNode }) {
     return (
         <div
             className={cn(
-                'space-y-5 rounded-2xl border p-5 transition-all',
+                'space-y-5 rounded-xl border p-5 transition-all',
                 isOnline ? 'border-green-500/20 bg-green-500/5' : 'border-red-500/20 bg-red-500/5 opacity-70',
             )}
         >
@@ -223,14 +223,12 @@ function NodeCard({ node }: { node: ProxmoxNode }) {
                     </div>
                     <div>
                         <p className='font-mono font-bold'>{node.node}</p>
-                        <p className='text-muted-foreground text-[10px] font-semibold tracking-widest uppercase'>
-                            {node.type}
-                        </p>
+                        <p className='text-muted-foreground text-xs font-semibold'>{node.type}</p>
                     </div>
                 </div>
                 <div className='flex items-center gap-2'>
                     {node.level && (
-                        <span className='bg-primary/10 text-primary border-primary/20 rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase'>
+                        <span className='bg-primary/10 text-primary border-primary/20 rounded-full border px-2 py-0.5 text-xs font-bold uppercase'>
                             {node.level}
                         </span>
                     )}
@@ -399,9 +397,7 @@ export function InfoTab({ nodeId, nodeName }: InfoTabProps) {
                             >
                                 <Icon className='text-primary mt-0.5 h-5 w-5 shrink-0' />
                                 <div>
-                                    <p className='text-muted-foreground text-[10px] font-bold tracking-wider uppercase'>
-                                        {label}
-                                    </p>
+                                    <p className='text-muted-foreground text-xs font-medium'>{label}</p>
                                     <p className='mt-0.5 font-mono text-sm font-semibold' title={value}>
                                         {value}
                                     </p>
@@ -412,7 +408,7 @@ export function InfoTab({ nodeId, nodeName }: InfoTabProps) {
                 ) : null}
 
                 {lastFetched && (
-                    <p className='text-muted-foreground mt-3 text-[10px] italic'>
+                    <p className='text-muted-foreground mt-3 text-xs'>
                         {t('admin.vdsNodes.info.last_fetched', { time: lastFetched.toLocaleTimeString() })}
                     </p>
                 )}
@@ -436,7 +432,7 @@ export function InfoTab({ nodeId, nodeName }: InfoTabProps) {
                         </p>
                     </div>
                 ) : info && info.nodes.length === 0 ? (
-                    <p className='text-muted-foreground py-4 text-sm italic'>{t('admin.vdsNodes.info.no_nodes')}</p>
+                    <p className='text-muted-foreground py-4 text-sm'>{t('admin.vdsNodes.info.no_nodes')}</p>
                 ) : info ? (
                     <div className='grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3'>
                         {info.nodes.map((node) => (

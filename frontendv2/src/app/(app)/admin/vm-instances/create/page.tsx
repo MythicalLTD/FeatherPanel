@@ -161,6 +161,7 @@ export default function VmInstancesCreatePage() {
 
     const [nodes, setNodes] = useState<VmNode[]>([]);
     const [nodeId, setNodeId] = useState<number>(0);
+    const [recommendedNodeId, setRecommendedNodeId] = useState<number | null>(null);
     const [pveNodes, setPveNodes] = useState<VmClusterNode[]>([]);
     const [pveNode, setPveNode] = useState('');
     const [memory, setMemory] = useState(1024);
@@ -215,6 +216,19 @@ export default function VmInstancesCreatePage() {
             .then((res) => setNodes(res.data.data?.vm_nodes ?? []))
             .catch((error) => toast.error(getApiErrorMessage(error, t, 'admin.vmInstances.errors.fetch_failed')))
             .finally(() => setLoadingPlans(false));
+        // Auto-placement: preselect the node recommended by the capacity overview.
+        axios
+            .get('/api/admin/vm-capacity')
+            .then((res) => {
+                const rec = res.data?.data?.recommended_node_id;
+                if (typeof rec === 'number') {
+                    setRecommendedNodeId(rec);
+                    setNodeId((cur) => (cur > 0 ? cur : rec));
+                }
+            })
+            .catch(() => {
+                // Without capacity info the admin simply picks a node.
+            });
     }, [t]);
 
     useEffect(() => {
@@ -436,7 +450,14 @@ export default function VmInstancesCreatePage() {
 
     const choiceOptions: ChoiceOption[] =
         choicePicker === 'node'
-            ? nodes.map((node) => ({ id: node.id, name: node.name, description: node.fqdn }))
+            ? nodes.map((node) => ({
+                  id: node.id,
+                  name:
+                      node.id === recommendedNodeId
+                          ? `${node.name} ★ ${t('admin.vdsCapacity.recommended')}`
+                          : node.name,
+                  description: node.fqdn,
+              }))
             : choicePicker === 'pveNode'
               ? pveNodes.map((node) => ({ id: node.node, name: node.node, description: node.status }))
               : choicePicker === 'storage'
@@ -734,7 +755,7 @@ export default function VmInstancesCreatePage() {
             <WidgetRenderer widgets={getWidgets('admin-vm-instances-create', 'after-header')} />
 
             {infraGate.status === 'blocked' && (
-                <div className='fp-surface mt-6 rounded-2xl border'>
+                <div className='fp-surface mt-6 rounded-xl border'>
                     <div className='flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6'>
                         <div className='flex min-w-0 flex-1 gap-3'>
                             <div className='bg-primary/12 text-primary ring-primary/20 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ring-1'>
@@ -791,7 +812,7 @@ export default function VmInstancesCreatePage() {
                 </div>
             )}
 
-            <div className='fp-surface mt-8 mb-12 rounded-2xl border p-6'>
+            <div className='fp-surface mt-8 mb-12 rounded-xl border p-6'>
                 <StepIndicator steps={wizardSteps} currentStep={currentStep} onStepClick={setCurrentStep} />
                 {loadingPlans && (
                     <p className='text-muted-foreground mt-4 flex items-center gap-2 text-sm'>
@@ -1306,7 +1327,7 @@ export default function VmInstancesCreatePage() {
                                 return (
                                     <section
                                         key={group.step}
-                                        className='border-border/50 bg-muted/15 rounded-2xl border p-5'
+                                        className='border-border/50 bg-muted/15 rounded-xl border p-5'
                                     >
                                         <div className='mb-4 flex items-center justify-between gap-3'>
                                             <h3 className='flex items-center gap-2 text-base font-semibold'>
@@ -1350,7 +1371,7 @@ export default function VmInstancesCreatePage() {
                     </p>
                 )}
 
-                <div className='fp-surface mt-8 flex items-center justify-between rounded-2xl border p-6'>
+                <div className='fp-surface mt-8 flex items-center justify-between rounded-xl border p-6'>
                     <Button
                         type='button'
                         variant='outline'

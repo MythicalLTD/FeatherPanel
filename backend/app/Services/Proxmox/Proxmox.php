@@ -286,10 +286,12 @@ class Proxmox
                 ],
             ];
 
-            $response = $this->client->post($path, ['multipart' => $multipart]);
+            $response = $this->client->post($path, ['multipart' => $multipart, 'timeout' => 3600]);
 
-            // Ensure file handle is closed even when JSON parsing throws.
-            fclose($file);
+            // Guzzle may already have closed the stream after sending it.
+            if (is_resource($file)) {
+                fclose($file);
+            }
 
             $resBody = json_decode((string) $response->getBody(), true);
             $data = is_array($resBody) && array_key_exists('data', $resBody) ? $resBody['data'] : $resBody;

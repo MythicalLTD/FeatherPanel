@@ -155,13 +155,9 @@ export function StorageConfigurationTab({ nodeId, form, setForm, errors }: Stora
                             <p className='text-muted-foreground/70 text-xs'>
                                 {t('admin.vdsNodes.form.backup_storage_help')}
                             </p>
-                            {storagesError && (
-                                <p className='mt-1 text-[10px] font-bold text-red-500 uppercase'>{storagesError}</p>
-                            )}
+                            {storagesError && <p className='mt-1 text-xs font-medium text-red-500'>{storagesError}</p>}
                             {errors.storage_backups && (
-                                <p className='mt-1 text-[10px] font-bold text-red-500 uppercase'>
-                                    {errors.storage_backups}
-                                </p>
+                                <p className='mt-1 text-xs font-medium text-red-500'>{errors.storage_backups}</p>
                             )}
                         </div>
                     </div>

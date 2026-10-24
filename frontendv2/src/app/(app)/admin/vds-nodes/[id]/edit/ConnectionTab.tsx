@@ -45,9 +45,7 @@ export function ConnectionTab({ form, setForm, errors }: ConnectionTabProps) {
                                 error={!!errors.user}
                                 className='text-base'
                             />
-                            {errors.user && (
-                                <p className='mt-2 text-[10px] font-bold text-red-500 uppercase'>{errors.user}</p>
-                            )}
+                            {errors.user && <p className='mt-2 text-xs font-medium text-red-500'>{errors.user}</p>}
                             <p className='text-muted-foreground mt-2 text-xs'>{t('admin.vdsNodes.form.user_help')}</p>
                         </div>
 
@@ -64,7 +62,7 @@ export function ConnectionTab({ form, setForm, errors }: ConnectionTabProps) {
                                 className='text-base'
                             />
                             {errors.token_id && (
-                                <p className='mt-2 text-[10px] font-bold text-red-500 uppercase'>{errors.token_id}</p>
+                                <p className='mt-2 text-xs font-medium text-red-500'>{errors.token_id}</p>
                             )}
                             <p className='text-muted-foreground mt-2 text-xs'>
                                 {t('admin.vdsNodes.form.token_id_help')}
@@ -101,9 +99,7 @@ export function ConnectionTab({ form, setForm, errors }: ConnectionTabProps) {
                                     error={!!errors.fqdn}
                                     className='text-base'
                                 />
-                                {errors.fqdn && (
-                                    <p className='mt-2 text-[10px] font-bold text-red-500 uppercase'>{errors.fqdn}</p>
-                                )}
+                                {errors.fqdn && <p className='mt-2 text-xs font-medium text-red-500'>{errors.fqdn}</p>}
                             </div>
 
                             <div className='grid grid-cols-2 gap-4'>
@@ -134,9 +130,7 @@ export function ConnectionTab({ form, setForm, errors }: ConnectionTabProps) {
                                         className='text-base'
                                     />
                                     {errors.port && (
-                                        <p className='mt-2 text-[10px] font-bold text-red-500 uppercase'>
-                                            {errors.port}
-                                        </p>
+                                        <p className='mt-2 text-xs font-medium text-red-500'>{errors.port}</p>
                                     )}
                                 </div>
                             </div>
@@ -169,9 +163,7 @@ export function ConnectionTab({ form, setForm, errors }: ConnectionTabProps) {
                                     className='text-base'
                                 />
                                 {errors.timeout && (
-                                    <p className='mt-2 text-[10px] font-bold text-red-500 uppercase'>
-                                        {errors.timeout}
-                                    </p>
+                                    <p className='mt-2 text-xs font-medium text-red-500'>{errors.timeout}</p>
                                 )}
                             </div>
                         </div>

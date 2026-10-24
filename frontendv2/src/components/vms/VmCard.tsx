@@ -19,12 +19,18 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import Link from 'next/link';
+import { useCallback, useEffect, useState } from 'react';
+import axios from 'axios';
+import { toast } from 'sonner';
+import { Globe, Play, Square, RotateCcw, Terminal, Server, Loader2 } from 'lucide-react';
 import { VmInstance } from '@/lib/vms-api';
-import { HardDrive, Cpu, MemoryStick, Globe, Server, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { formatMemory } from '@/lib/server-utils';
 import { OverflowText } from '@/components/featherui/OverflowText';
 import { Sensitive } from '@/components/common/Sensitive';
 import { ServiceExpiryChip } from '@/components/common/ServiceExpiryChip';
+import { StatusBadge } from '@/components/servers/StatusBadge';
+import { ResourceBar } from '@/components/servers/ResourceBar';
 import { useTranslation } from '@/contexts/TranslationContext';
 
 interface VmCardProps {
@@ -32,176 +38,238 @@ interface VmCardProps {
     layout: 'grid' | 'list';
 }
 
-function StatusDot({ status, suspended }: { status?: string; suspended?: number }) {
-    const isSuspended = suspended === 1 || status === 'suspended';
-    const isRunning = status === 'running' && !isSuspended;
-    const isUnknown = !status || status === 'unknown';
+interface LiveStatus {
+    status?: string;
+    cpu?: number;
+    maxcpu?: number;
+    mem?: number;
+    maxmem?: number;
+}
+
+const STATUS_POLL_MS = 30_000;
+
+/** Live Proxmox status for a card, polled while the card is mounted. */
+function useVmLiveStatus(id: number, enabled: boolean) {
+    const [live, setLive] = useState<LiveStatus | null>(null);
+    const refresh = useCallback(async () => {
+        try {
+            const { data } = await axios.get(`/api/user/vm-instances/${id}/status`, { timeout: 8000 });
+            if (data?.success && data.data?.status) setLive(data.data.status as LiveStatus);
+        } catch {
+            // Keep the last known values; the card falls back to the DB status.
+        }
+    }, [id]);
+    useEffect(() => {
+        if (!enabled) return;
+        const first = setTimeout(() => void refresh(), 0);
+        const timer = setInterval(() => void refresh(), STATUS_POLL_MS);
+        return () => {
+            clearTimeout(first);
+            clearInterval(timer);
+        };
+    }, [enabled, refresh]);
+    return { live, refresh };
+}
+
+function QuickActions({
+    vm,
+    status,
+    onDone,
+    className,
+}: {
+    vm: VmInstance;
+    status: string;
+    onDone: () => void;
+    className?: string;
+}) {
+    const { t } = useTranslation();
+    const [busy, setBusy] = useState<string | null>(null);
+    const running = status === 'running';
+
+    const run = async (action: 'start' | 'stop' | 'reboot', e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setBusy(action);
+        try {
+            await axios.post(`/api/user/vm-instances/${vm.id}/power`, { action });
+            toast.success(t('ui.components.vms.vmCard.action_sent'));
+            setTimeout(onDone, 4000);
+        } catch (err) {
+            const msg = axios.isAxiosError(err) ? err.response?.data?.message : null;
+            toast.error(msg || t('ui.components.vms.vmCard.action_failed'));
+        } finally {
+            setBusy(null);
+        }
+    };
+
+    const btn =
+        'inline-flex h-8 items-center justify-center gap-1.5 rounded-lg border px-2.5 text-xs font-medium transition-colors disabled:pointer-events-none disabled:opacity-50';
+    const icon = (action: string, Icon: typeof Play) =>
+        busy === action ? <Loader2 className='h-3.5 w-3.5 animate-spin' /> : <Icon className='h-3.5 w-3.5' />;
+
     return (
-        <span
-            className={cn(
-                'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold tracking-wide',
-                isSuspended
-                    ? 'bg-amber-500/15 text-amber-400'
-                    : isRunning
-                      ? 'bg-green-500/15 text-green-400'
-                      : isUnknown
-                        ? 'bg-muted/40 text-muted-foreground'
-                        : 'bg-red-500/15 text-red-400',
-            )}
-        >
-            {isUnknown ? (
-                <span className='bg-muted-foreground/40 h-2.5 w-12 animate-pulse rounded-md' aria-busy='true' />
-            ) : (
+        <div className={cn('flex flex-wrap items-center gap-1.5', className)}>
+            {running ? (
                 <>
-                    <span
-                        className={cn(
-                            'h-1.5 w-1.5 rounded-full',
-                            isSuspended ? 'bg-amber-400' : isRunning ? 'animate-pulse bg-green-400' : 'bg-red-400',
-                        )}
-                    />
-                    {isSuspended ? 'suspended' : status}
+                    <button
+                        type='button'
+                        disabled={busy !== null}
+                        onClick={(e) => void run('reboot', e)}
+                        className={cn(btn, 'border-border hover:bg-muted')}
+                        title={t('ui.components.vms.vmCard.restart')}
+                    >
+                        {icon('reboot', RotateCcw)}
+                        <span className='hidden sm:inline'>{t('ui.components.vms.vmCard.restart')}</span>
+                    </button>
+                    <button
+                        type='button'
+                        disabled={busy !== null}
+                        onClick={(e) => void run('stop', e)}
+                        className={cn(btn, 'border-red-500/30 text-red-500 hover:bg-red-500/10')}
+                        title={t('ui.components.vms.vmCard.stop')}
+                    >
+                        {icon('stop', Square)}
+                        <span className='hidden sm:inline'>{t('ui.components.vms.vmCard.stop')}</span>
+                    </button>
                 </>
+            ) : (
+                <button
+                    type='button'
+                    disabled={busy !== null || status === 'unknown'}
+                    onClick={(e) => void run('start', e)}
+                    className={cn(btn, 'border-green-500/30 text-green-600 hover:bg-green-500/10 dark:text-green-400')}
+                    title={t('ui.components.vms.vmCard.start')}
+                >
+                    {icon('start', Play)}
+                    <span className='hidden sm:inline'>{t('ui.components.vms.vmCard.start')}</span>
+                </button>
             )}
-        </span>
-    );
-}
-
-interface SpecProps {
-    icon: React.ComponentType<{ className?: string }>;
-    label: string;
-    value: string;
-}
-
-function Spec({ icon: Icon, label, value }: SpecProps) {
-    return (
-        <div className='flex items-center gap-1.5'>
-            <Icon className='text-muted-foreground h-3.5 w-3.5 shrink-0' />
-            <span className='text-muted-foreground text-xs'>{label}</span>
-            <span className='text-foreground text-xs font-semibold'>{value}</span>
+            <Link
+                href={`/vds/${vm.id}`}
+                onClick={(e) => e.stopPropagation()}
+                className={cn(btn, 'border-border hover:bg-muted')}
+                title={t('ui.components.vms.vmCard.console')}
+            >
+                <Terminal className='h-3.5 w-3.5' />
+                <span className='hidden sm:inline'>{t('ui.components.vms.vmCard.console')}</span>
+            </Link>
         </div>
     );
 }
 
 export function VmCard({ vm, layout }: VmCardProps) {
     const { t } = useTranslation();
-    // Total vCPUs = sockets × cores
-    const totalCores = (vm.cpus ?? 1) * (vm.cores ?? 1);
-    const memoryGb = vm.memory ? (vm.memory / 1024).toFixed(vm.memory >= 1024 ? 0 : 1) : null;
+    const suspended = vm.suspended === 1 || vm.status === 'suspended';
+    const { live, refresh } = useVmLiveStatus(vm.id, !suspended);
+    const status = suspended ? 'suspended' : live?.status || vm.status || 'unknown';
+    const href = `/vds/${vm.id}`;
+    const vcpus = live?.maxcpu ?? (vm.cpus ?? 1) * (vm.cores ?? 1);
+    const memLimit = live?.maxmem ?? (vm.memory ?? 0) * 1024 * 1024;
+    const memUsed = status === 'running' ? (live?.mem ?? 0) : 0;
+    const cpuPercent = status === 'running' ? (live?.cpu ?? 0) * 100 : 0;
     const nodeName = vm.node_name ?? vm.pve_node ?? null;
+    const diskLabel = vm.disk_gb ? `${vm.disk_gb} GB` : 'N/A';
+
+    const meta = (
+        <>
+            <div className='min-w-0 text-sm'>
+                <div className='text-muted-foreground mb-1 text-xs'>{t('ui.components.vms.vmCard.ip')}</div>
+                <div className='flex items-center gap-1 font-medium'>
+                    <Globe className='text-muted-foreground h-3.5 w-3.5 shrink-0' />
+                    {vm.ip_address ? <Sensitive>{vm.ip_address}</Sensitive> : 'N/A'}
+                </div>
+            </div>
+            <div className='min-w-0 text-sm'>
+                <div className='text-muted-foreground mb-1 text-xs'>{t('ui.components.vms.vmCard.specs')}</div>
+                <OverflowText className='font-medium'>
+                    {`${vcpus} vCPU · ${formatMemory(memLimit)} · ${diskLabel}`}
+                </OverflowText>
+            </div>
+        </>
+    );
+
+    const bars = (
+        <>
+            <ResourceBar
+                label={t('ui.components.vms.vmCard.cpu')}
+                used={cpuPercent}
+                limit={100}
+                formatter={(v) => `${v.toFixed(1)}%`}
+            />
+            <ResourceBar
+                label={t('ui.components.vms.vmCard.memory')}
+                used={memUsed}
+                limit={memLimit}
+                formatter={formatMemory}
+            />
+        </>
+    );
+
+    const badges = (
+        <div className='flex flex-wrap items-center gap-2'>
+            <StatusBadge status={status} t={t} liveConnected={live !== null} />
+            <span className='bg-primary/10 text-primary rounded-lg px-2 py-0.5 text-xs font-medium uppercase'>
+                {vm.vm_type}
+            </span>
+            {vm.is_subuser && (
+                <span className='rounded-lg bg-blue-500/10 px-2 py-0.5 text-xs font-medium text-blue-500'>
+                    {t('servers.subuser')}
+                </span>
+            )}
+            <ServiceExpiryChip expiresAt={vm.expires_at} compact />
+        </div>
+    );
 
     if (layout === 'list') {
         return (
-            <Link href={`/vds/${vm.id}`}>
-                <div className='fp-surface fp-surface-interactive group flex items-center gap-4 rounded-xl border p-4 transition-all duration-200'>
-                    {/* Icon */}
-                    <div className='bg-primary/10 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl'>
+            <div className='fp-surface-solid hover:border-primary group relative flex flex-col items-stretch gap-4 rounded-xl border p-4 transition-all sm:flex-row sm:items-center sm:gap-6 sm:p-5'>
+                <Link href={href} className='flex min-w-0 flex-1 items-center gap-3'>
+                    <div className='bg-primary/10 flex h-10 w-10 shrink-0 items-center justify-center rounded-lg'>
                         <Server className='text-primary h-5 w-5' />
                     </div>
-
-                    {/* Name + IP */}
-                    <div className='min-w-0 flex-1'>
-                        <div className='flex flex-wrap items-center gap-2'>
-                            <OverflowText className='text-foreground font-semibold'>{vm.hostname}</OverflowText>
-                            <StatusDot status={vm.status} suspended={vm.suspended} />
-                        </div>
-                        <div className='text-muted-foreground mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs'>
-                            {vm.ip_address && (
-                                <span className='flex items-center gap-1'>
-                                    <Globe className='h-3 w-3' />
-                                    <Sensitive>{vm.ip_address}</Sensitive>
-                                </span>
-                            )}
-                            {nodeName && <span>{nodeName}</span>}
-                            <span className='uppercase opacity-60'>{vm.vm_type}</span>
-                            <ServiceExpiryChip expiresAt={vm.expires_at} compact className='h-5 px-2 text-[10px]' />
-                        </div>
+                    <div className='min-w-0 flex-1 space-y-1.5'>
+                        <h3 className='text-base font-semibold sm:text-lg'>
+                            <OverflowText>{vm.hostname}</OverflowText>
+                        </h3>
+                        {badges}
                     </div>
-
-                    {/* Specs */}
-                    <div className='hidden shrink-0 flex-col gap-1 sm:flex'>
-                        {totalCores > 0 && <Spec icon={Cpu} label='vCPU' value={String(totalCores)} />}
-                        {memoryGb && <Spec icon={MemoryStick} label='RAM' value={`${memoryGb} GB`} />}
-                        {vm.disk_gb && (
-                            <Spec
-                                icon={HardDrive}
-                                label={t('ui.components.vms.vmCard.disk')}
-                                value={`${vm.disk_gb} GB`}
-                            />
-                        )}
-                    </div>
-
-                    {/* Arrow */}
-                    <ArrowRight className='text-muted-foreground group-hover:text-primary ml-2 hidden h-4 w-4 shrink-0 transition-colors sm:block' />
-                </div>
-            </Link>
+                </Link>
+                <Link href={href} className='grid min-w-0 gap-3 sm:w-56 sm:shrink-0'>
+                    {bars}
+                </Link>
+                <Link href={href} className='hidden min-w-0 gap-3 lg:grid lg:w-56 lg:grid-cols-1'>
+                    {meta}
+                </Link>
+                {!suspended && <QuickActions vm={vm} status={status} onDone={refresh} className='sm:shrink-0' />}
+            </div>
         );
     }
 
-    // Grid layout
     return (
-        <Link href={`/vds/${vm.id}`}>
-            <div className='fp-surface fp-surface-interactive group flex h-full flex-col rounded-xl border p-4 transition-all duration-200'>
-                {/* Header */}
-                <div className='mb-3 flex items-start justify-between gap-2'>
-                    <div className='flex min-w-0 flex-1 items-center gap-2.5'>
-                        <div className='bg-primary/10 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg'>
-                            <Server className='text-primary h-4.5 w-4.5' />
-                        </div>
-                        <OverflowText className='text-foreground font-semibold'>{vm.hostname}</OverflowText>
-                    </div>
-                    <StatusDot status={vm.status} suspended={vm.suspended} />
+        <div className='fp-surface-solid hover:border-primary group relative flex h-full flex-col gap-3 rounded-xl border p-4 transition-all sm:p-5'>
+            <Link href={href} className='flex min-w-0 items-center gap-3'>
+                <div className='bg-primary/10 flex h-10 w-10 shrink-0 items-center justify-center rounded-lg'>
+                    <Server className='text-primary h-5 w-5' />
                 </div>
-
-                {/* IP + Node */}
-                <div className='text-muted-foreground mb-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs'>
-                    {vm.ip_address && (
-                        <span className='flex items-center gap-1'>
-                            <Globe className='h-3 w-3 shrink-0' />
-                            <Sensitive>{vm.ip_address}</Sensitive>
-                        </span>
-                    )}
-                    {nodeName && <span>{nodeName}</span>}
-                    <ServiceExpiryChip expiresAt={vm.expires_at} compact className='h-5 px-2 text-[10px]' />
+                <div className='min-w-0 flex-1'>
+                    <h3 className='text-base font-semibold sm:text-lg'>
+                        <OverflowText>{vm.hostname}</OverflowText>
+                    </h3>
+                    {nodeName && <p className='text-muted-foreground truncate text-xs'>{nodeName}</p>}
                 </div>
-
-                {/* Specs grid */}
-                <div className='mt-auto grid grid-cols-3 gap-2'>
-                    <div className='bg-background/60 flex flex-col items-center rounded-lg px-2 py-2.5'>
-                        <Cpu className='text-primary mb-1 h-4 w-4' />
-                        <span className='text-foreground text-sm font-bold'>{totalCores}</span>
-                        <span className='text-muted-foreground text-[10px] tracking-wide uppercase'>vCPU</span>
-                    </div>
-                    <div className='bg-background/60 flex flex-col items-center rounded-lg px-2 py-2.5'>
-                        <MemoryStick className='text-primary mb-1 h-4 w-4' />
-                        <span className='text-foreground text-sm font-bold'>{memoryGb ?? '-'}</span>
-                        <span className='text-muted-foreground text-[10px] tracking-wide uppercase'>
-                            {t('ui.components.vms.vmCard.gBRAM')}
-                        </span>
-                    </div>
-                    <div className='bg-background/60 flex flex-col items-center rounded-lg px-2 py-2.5'>
-                        <HardDrive className='text-primary mb-1 h-4 w-4' />
-                        <span className='text-foreground text-sm font-bold'>{vm.disk_gb ?? '-'}</span>
-                        <span className='text-muted-foreground text-[10px] tracking-wide uppercase'>
-                            {t('ui.components.vms.vmCard.gBDisk')}
-                        </span>
-                    </div>
+            </Link>
+            <Link href={href}>{badges}</Link>
+            <Link href={href} className='grid grid-cols-1 gap-3 pt-1 min-[400px]:grid-cols-2'>
+                {meta}
+            </Link>
+            <Link href={href} className='block min-w-0 space-y-2 pt-1 sm:space-y-2.5'>
+                {bars}
+            </Link>
+            {!suspended && (
+                <div className='border-border/60 mt-auto border-t pt-3'>
+                    <QuickActions vm={vm} status={status} onDone={refresh} />
                 </div>
-
-                {/* Footer */}
-                <div className='border-border/30 mt-3 flex items-center justify-between border-t pt-3'>
-                    <div className='flex gap-1.5'>
-                        <span className='bg-primary/10 text-primary rounded px-2 py-0.5 text-[10px] font-semibold tracking-wider uppercase'>
-                            {vm.vm_type}
-                        </span>
-                        {nodeName && (
-                            <span className='bg-muted/50 text-muted-foreground rounded px-2 py-0.5 text-[10px] font-medium'>
-                                {nodeName}
-                            </span>
-                        )}
-                    </div>
-                    <ArrowRight className='text-muted-foreground group-hover:text-primary h-3.5 w-3.5 transition-colors' />
-                </div>
-            </div>
-        </Link>
+            )}
+        </div>
     );
 }

@@ -26,7 +26,17 @@ import { Switch } from '@/components/ui/switch';
 import { getApiErrorMessage } from '@/lib/api-errors';
 
 type EventKey =
-    'server_crashed' | 'backup_completed' | 'backup_failed' | 'file_transfer' | 'resource_limit' | 'transfer_power';
+    | 'server_crashed'
+    | 'backup_completed'
+    | 'backup_failed'
+    | 'file_transfer'
+    | 'resource_limit'
+    | 'transfer_power'
+    | 'vds_down'
+    | 'vds_high_cpu'
+    | 'vds_backup_failed'
+    | 'vds_bandwidth'
+    | 'vds_expiring';
 
 interface NotificationSettings {
     email_enabled: boolean;
@@ -42,6 +52,11 @@ const EVENTS: EventKey[] = [
     'file_transfer',
     'resource_limit',
     'transfer_power',
+    'vds_down',
+    'vds_high_cpu',
+    'vds_backup_failed',
+    'vds_bandwidth',
+    'vds_expiring',
 ];
 
 const DEFAULTS: NotificationSettings = {
@@ -55,6 +70,11 @@ const DEFAULTS: NotificationSettings = {
         file_transfer: true,
         resource_limit: true,
         transfer_power: true,
+        vds_down: true,
+        vds_high_cpu: true,
+        vds_backup_failed: true,
+        vds_bandwidth: true,
+        vds_expiring: true,
     },
 };
 

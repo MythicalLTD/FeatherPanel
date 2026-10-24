@@ -19,6 +19,7 @@ namespace App\Middleware;
 
 use App\App;
 use App\Chat\VmInstance;
+use App\Config\ConfigInterface;
 use App\Helpers\VmGateway;
 use App\Helpers\ApiResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -83,7 +84,7 @@ class VmInstanceMiddleware implements MiddlewareInterface
                 'Sorry, but you can\'t access VDS instances while they are suspended.',
                 'VM_INSTANCE_SUSPENDED',
                 403,
-                []
+                self::suspensionInfo($vmInstance)
             );
         }
 
@@ -117,5 +118,20 @@ class VmInstanceMiddleware implements MiddlewareInterface
     public static function getVmInstance(Request $request): ?array
     {
         return $request->attributes->get('vmInstance');
+    }
+
+    /** What the owner may see about a suspension (settings vds_suspend_show_reason / vds_suspend_message). */
+    private static function suspensionInfo(array $vmInstance): array
+    {
+        $config = App::getInstance(true)->getConfig();
+        $message = trim((string) $config->getSetting(ConfigInterface::VDS_SUSPEND_MESSAGE, ''));
+        $showReason = $config->getSetting(ConfigInterface::VDS_SUSPEND_SHOW_REASON, 'true') === 'true';
+
+        return [
+            'hostname' => $vmInstance['hostname'] ?? null,
+            'reason' => $showReason ? ($vmInstance['suspension_reason'] ?? null) : null,
+            'suspended_at' => $showReason ? ($vmInstance['suspended_at'] ?? null) : null,
+            'message' => $message !== '' ? mb_substr($message, 0, 500) : null,
+        ];
     }
 }

@@ -15,11 +15,12 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useImperativeHandle, useRef, useState, type Ref } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { cn } from '@/lib/utils';
 import type RFB from '@novnc/novnc';
+import { XK_SHIFT_L, normalizeTypedText, strokeFor } from '@/lib/vnc/usKeymap';
 
 /** noVNC logs (does not throw) if disconnect() runs after the socket is already gone. */
 function disconnectRfb(rfb: RFB): void {
@@ -42,7 +43,35 @@ interface VncConsoleProps {
     password?: string;
     className?: string;
     onDisconnect?: () => void;
+    /** Fill the parent's height instead of using the fixed default viewport height. */
+    fillContainer?: boolean;
+    /** Reports connection state changes to the parent (console header status dot). */
+    onStatusChange?: (status: VncStatus) => void;
+    /** Receives toolbar actions (a plain prop rather than `ref`, so it survives next/dynamic). */
+    handleRef?: Ref<VncConsoleHandle>;
 }
+
+export type VncStatus = 'connecting' | 'connected' | 'disconnected';
+
+/** Imperative actions the console toolbar / text input can trigger on the live session. */
+export interface VncConsoleHandle {
+    sendCtrlAltDel: () => void;
+    /**
+     * Types text into the guest as physical key presses (US layout scancodes + explicit Shift),
+     * in small chunks so QEMU's input queue does not drop keys. `\n` presses Enter.
+     * Resolves false when not connected or when cancelled by a newer call.
+     */
+    typeText: (text: string, onProgress?: (done: number, total: number) => void) => Promise<boolean>;
+    /** PNG data URL of the current screen, or null when nothing is rendered yet. */
+    screenshot: () => string | null;
+    focus: () => void;
+}
+
+/** Keys per burst and pause between bursts while typing. */
+const TYPE_CHUNK = 16;
+const TYPE_PAUSE_MS = 25;
+
+const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
 /**
  * Embedded noVNC console. Connects the browser to a VNC-over-WebSocket
@@ -58,11 +87,69 @@ interface VncConsoleProps {
  * Connection is deferred a tick so React Strict Mode's mount→unmount→remount
  * does not burn the single-use panel ticket on the discarded first mount.
  */
-export function VncConsole({ url, password, className, onDisconnect }: VncConsoleProps) {
+export function VncConsole({
+    url,
+    password,
+    className,
+    onDisconnect,
+    fillContainer = false,
+    onStatusChange,
+    handleRef,
+}: VncConsoleProps) {
     const { t } = useTranslation();
     const containerRef = useRef<HTMLDivElement>(null);
     const rfbRef = useRef<RFB | null>(null);
-    const [status, setStatus] = useState<'connecting' | 'connected' | 'disconnected'>('connecting');
+    const typingRunRef = useRef(0);
+    const [status, setStatus] = useState<VncStatus>('connecting');
+    const onStatusChangeRef = useRef(onStatusChange);
+    useEffect(() => {
+        onStatusChangeRef.current = onStatusChange;
+    }, [onStatusChange]);
+    useEffect(() => {
+        onStatusChangeRef.current?.(status);
+    }, [status]);
+
+    useImperativeHandle(
+        handleRef,
+        () => ({
+            sendCtrlAltDel: () => {
+                rfbRef.current?.sendCtrlAltDel();
+            },
+            typeText: async (text: string, onProgress?: (done: number, total: number) => void) => {
+                const rfb = rfbRef.current;
+                if (!rfb || status !== 'connected') return false;
+                const run = ++typingRunRef.current;
+                const chars = Array.from(normalizeTypedText(text));
+                for (let i = 0; i < chars.length; i++) {
+                    if (typingRunRef.current !== run || rfbRef.current !== rfb) return false;
+                    const { keysym, code, shift } = strokeFor(chars[i]);
+                    if (shift) rfb.sendKey(XK_SHIFT_L, 'ShiftLeft', true);
+                    rfb.sendKey(keysym, code, true);
+                    rfb.sendKey(keysym, code, false);
+                    if (shift) rfb.sendKey(XK_SHIFT_L, 'ShiftLeft', false);
+                    if ((i + 1) % TYPE_CHUNK === 0) {
+                        onProgress?.(i + 1, chars.length);
+                        await sleep(TYPE_PAUSE_MS);
+                    }
+                }
+                onProgress?.(chars.length, chars.length);
+                return true;
+            },
+            screenshot: () => {
+                const canvas = containerRef.current?.querySelector('canvas');
+                if (!canvas || canvas.width === 0 || canvas.height === 0) return null;
+                try {
+                    return canvas.toDataURL('image/png');
+                } catch {
+                    return null;
+                }
+            },
+            focus: () => {
+                rfbRef.current?.focus();
+            },
+        }),
+        [status],
+    );
     const onDisconnectRef = useRef(onDisconnect);
     const passwordRef = useRef(password);
     useEffect(() => {
@@ -82,9 +169,7 @@ export function VncConsole({ url, password, className, onDisconnect }: VncConsol
                 const { default: RFBCtor } = await import('@novnc/novnc');
                 if (disposed || !containerRef.current) return;
 
-                const opts = passwordRef.current
-                    ? { credentials: { password: passwordRef.current } }
-                    : undefined;
+                const opts = passwordRef.current ? { credentials: { password: passwordRef.current } } : undefined;
                 rfb = new RFBCtor(containerRef.current, url, opts);
                 // Scale client-side only. Proxmox qemu VNC rejects ExtendedDesktopSize
                 // ("Invalid screen layout") when resizeSession is true.
@@ -130,7 +215,13 @@ export function VncConsole({ url, password, className, onDisconnect }: VncConsol
     }, [url]);
 
     return (
-        <div className={cn('bg-background relative overflow-hidden rounded-lg border', className)}>
+        <div
+            className={cn(
+                'relative overflow-hidden',
+                fillContainer ? 'h-full min-h-0 bg-black' : 'bg-background rounded-lg border',
+                className,
+            )}
+        >
             {status !== 'connected' && (
                 <div className='absolute inset-0 z-10 flex items-center justify-center bg-black/60 text-sm text-white'>
                     {status === 'connecting' ? (
@@ -145,7 +236,10 @@ export function VncConsole({ url, password, className, onDisconnect }: VncConsol
             )}
             <div
                 ref={containerRef}
-                className='mx-auto h-[min(70vh,720px)] min-h-[480px] w-full overflow-hidden [&_canvas]:h-full [&_canvas]:w-full'
+                className={cn(
+                    'mx-auto w-full overflow-hidden [&_canvas]:h-full [&_canvas]:w-full',
+                    fillContainer ? 'h-full min-h-0' : 'h-[min(70vh,720px)] min-h-[480px]',
+                )}
             />
         </div>
     );

@@ -41,7 +41,6 @@ import {
     Users,
     User,
     Globe,
-    Loader2,
     Server,
     Monitor,
     Copy,
@@ -54,7 +53,8 @@ import { cn } from '@/lib/utils';
 
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
-import { PageHeader } from '@/components/featherui/PageHeader';
+import { VdsPageHeader } from '@/components/vds/VdsPageHeader';
+import { VdsPageLoading } from '@/components/vds/VdsPageLoading';
 import { EmptyState } from '@/components/featherui/EmptyState';
 import { ResourceCard } from '@/components/featherui/ResourceCard';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
@@ -289,19 +289,14 @@ export default function VdsActivitiesPage() {
     };
 
     if (instanceLoading || (loading && activities.length === 0)) {
-        return (
-            <div className='flex flex-col items-center justify-center py-24'>
-                <Loader2 className='text-primary h-12 w-12 animate-spin opacity-50' />
-                <p className='text-muted-foreground mt-4 animate-pulse font-medium'>{t('common.loading')}</p>
-            </div>
-        );
+        return <VdsPageLoading label={t('common.loading')} />;
     }
 
     if (!instance) {
         return (
             <div className='flex flex-col items-center justify-center py-24 text-center'>
                 <AlertTriangle className='text-destructive mb-4 h-12 w-12' />
-                <h2 className='text-xl font-black'>{t('vds.console.not_found_title')}</h2>
+                <h2 className='text-xl font-semibold'>{t('vds.console.not_found_title')}</h2>
             </div>
         );
     }
@@ -310,12 +305,12 @@ export default function VdsActivitiesPage() {
         <div key={pathname} className='space-y-8 pb-12'>
             <WidgetRenderer widgets={getWidgets('vds-activities', 'top-of-page')} />
 
-            <PageHeader
+            <VdsPageHeader
                 title={t('navigation.items.activities')}
                 description={
                     <div className='flex flex-wrap items-center gap-x-3 gap-y-2'>
                         <span>{t('vds.activities.description')}</span>
-                        <span className='bg-primary/5 text-primary border-primary/20 rounded-full border px-3 py-1 text-[10px] font-black tracking-widest whitespace-nowrap uppercase'>
+                        <span className='bg-primary/5 text-primary border-primary/20 rounded-full border px-3 py-1 text-[10px] font-semibold tracking-wide whitespace-nowrap uppercase'>
                             {pagination.total_records} {t('serverActivities.events')}
                         </span>
                     </div>
@@ -428,7 +423,7 @@ export default function VdsActivitiesPage() {
                             iconWrapperClassName={getEventIconClass(activity.event)}
                             title={formatEvent(activity.event)}
                             badges={
-                                <span className='bg-background/50 border-border/40 rounded-full border px-3 py-1 text-[10px] leading-none font-black tracking-widest uppercase'>
+                                <span className='bg-background/50 border-border/40 rounded-full border px-3 py-1 text-[10px] leading-none font-semibold tracking-wide uppercase'>
                                     #{activity.id}
                                 </span>
                             }
@@ -472,7 +467,7 @@ export default function VdsActivitiesPage() {
 
             {pagination.total_records > pagination.per_page && (
                 <div className='border-border/40 flex items-center justify-between border-t px-6 py-8'>
-                    <p className='text-sm font-bold tracking-widest uppercase opacity-40'>
+                    <p className='text-sm font-bold tracking-wide uppercase opacity-40'>
                         {t('serverActivities.pagination.showing', {
                             from: String(pagination.from),
                             to: String(pagination.to),
@@ -489,7 +484,7 @@ export default function VdsActivitiesPage() {
                         >
                             <ChevronLeft className='h-5 w-5' />
                         </Button>
-                        <span className='bg-primary/5 text-primary border-primary/20 flex h-10 min-w-12 items-center justify-center rounded-xl border px-4 text-sm font-black'>
+                        <span className='bg-primary/5 text-primary border-primary/20 flex h-10 min-w-12 items-center justify-center rounded-xl border px-4 text-sm font-semibold'>
                             {pagination.current_page} / {pagination.total_pages}
                         </span>
                         <Button
@@ -559,7 +554,7 @@ export default function VdsActivitiesPage() {
                             <div className='flex items-center gap-6'>
                                 <div
                                     className={cn(
-                                        'flex h-20 w-20 shrink-0 items-center justify-center rounded-4xl border-4 transition-transform group-hover:scale-105 group-hover:rotate-2',
+                                        'flex h-20 w-20 shrink-0 items-center justify-center rounded-xl border-4 transition-transform group-hover:scale-105 group-hover:rotate-2',
                                         getEventIconClass(selectedItem.event),
                                     )}
                                 >
@@ -567,10 +562,10 @@ export default function VdsActivitiesPage() {
                                 </div>
                                 <div className='flex-1 space-y-1.5'>
                                     <div className='flex items-center gap-3'>
-                                        <DialogTitle className='text-4xl leading-none font-black tracking-tighter uppercase'>
+                                        <DialogTitle className='text-2xl leading-tight font-semibold tracking-tight'>
                                             {formatEvent(selectedItem.event)}
                                         </DialogTitle>
-                                        <span className='border-border/50 bg-muted/60 rounded-full border px-4 py-1.5 text-xs font-black tracking-[0.2em] uppercase opacity-40'>
+                                        <span className='border-border/50 bg-muted/60 rounded-full border px-4 py-1.5 text-xs font-semibold tracking-wide uppercase opacity-40'>
                                             #{selectedItem.id}
                                         </span>
                                     </div>
@@ -587,22 +582,22 @@ export default function VdsActivitiesPage() {
                         <div className='grid grid-cols-1 gap-8 xl:grid-cols-2'>
                             <div className='space-y-6'>
                                 <div className='border-border/50 flex items-center justify-between border-b pb-4'>
-                                    <h3 className='text-primary flex items-center gap-3 text-xs font-black tracking-[0.3em] uppercase'>
+                                    <h3 className='text-primary flex items-center gap-3 text-xs font-semibold tracking-wide uppercase'>
                                         <div className='bg-primary h-4 w-1.5 rounded-full' />
                                         {t('ui.vds.activities.metadata')}
                                     </h3>
                                 </div>
                                 <div className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
-                                    <div className='border-border/50 bg-muted/40 flex shrink-0 flex-col gap-2 rounded-3xl border p-5'>
-                                        <span className='text-primary/50 text-[10px] font-black tracking-widest uppercase'>
+                                    <div className='border-border/50 bg-muted/40 flex shrink-0 flex-col gap-2 rounded-xl border p-5'>
+                                        <span className='text-primary/50 text-[10px] font-semibold tracking-wide uppercase'>
                                             {t('ui.vds.activities.user')}
                                         </span>
                                         <span className='text-lg font-bold'>
                                             {selectedItem.user?.username || t('serverActivities.details.system')}
                                         </span>
                                     </div>
-                                    <div className='border-border/50 bg-muted/40 flex shrink-0 flex-col gap-2 rounded-3xl border p-5'>
-                                        <span className='text-primary/50 text-[10px] font-black tracking-widest uppercase'>
+                                    <div className='border-border/50 bg-muted/40 flex shrink-0 flex-col gap-2 rounded-xl border p-5'>
+                                        <span className='text-primary/50 text-[10px] font-semibold tracking-wide uppercase'>
                                             {t('ui.vds.activities.timestamp')}
                                         </span>
                                         <span className='text-lg font-bold'>
@@ -612,8 +607,8 @@ export default function VdsActivitiesPage() {
                                         </span>
                                     </div>
                                     {selectedItem.ip && (
-                                        <div className='border-border/50 bg-muted/40 col-span-2 flex flex-col gap-2 rounded-3xl border p-5'>
-                                            <span className='text-primary/50 text-[10px] font-black tracking-widest uppercase'>
+                                        <div className='border-border/50 bg-muted/40 col-span-2 flex flex-col gap-2 rounded-xl border p-5'>
+                                            <span className='text-primary/50 text-[10px] font-semibold tracking-wide uppercase'>
                                                 {t('ui.vds.activities.iPAddress')}
                                             </span>
                                             <span className='font-mono text-lg font-bold'>
@@ -625,9 +620,9 @@ export default function VdsActivitiesPage() {
                                         Object.entries(selectedItem.metadata).map(([k, v]) => (
                                             <div
                                                 key={k}
-                                                className='group border-border/50 bg-muted/40 hover:bg-muted/70 flex flex-col gap-2 rounded-3xl border p-5 transition-all'
+                                                className='group border-border/50 bg-muted/40 hover:bg-muted/70 flex flex-col gap-2 rounded-xl border p-5 transition-all'
                                             >
-                                                <span className='text-primary/50 decoration-primary/20 text-[10px] font-black tracking-widest uppercase underline decoration-2 underline-offset-4'>
+                                                <span className='text-primary/50 decoration-primary/20 text-[10px] font-semibold tracking-wide uppercase underline decoration-2 underline-offset-4'>
                                                     {k}
                                                 </span>
                                                 <span className='font-mono text-base leading-tight font-bold break-all opacity-90 group-hover:opacity-100'>
@@ -643,14 +638,14 @@ export default function VdsActivitiesPage() {
 
                             <div className='space-y-6'>
                                 <div className='border-border/50 flex items-center justify-between border-b pb-4'>
-                                    <h3 className='text-primary flex items-center gap-3 text-xs font-black tracking-[0.3em] uppercase'>
+                                    <h3 className='text-primary flex items-center gap-3 text-xs font-semibold tracking-wide uppercase'>
                                         <div className='bg-primary h-4 w-1.5 rounded-full' />
                                         {t('ui.vds.activities.rawPayload')}
                                     </h3>
                                     <Button
                                         variant='glass'
                                         size='sm'
-                                        className='border-border/50 h-8 px-4 font-black tracking-wider uppercase opacity-40 hover:opacity-100'
+                                        className='border-border/50 h-8 px-4 font-semibold tracking-wider uppercase opacity-40 hover:opacity-100'
                                         onClick={() => {
                                             navigator.clipboard.writeText(rawJson);
                                             toast.success(t('vds.activities.payload_copied'));
@@ -660,7 +655,7 @@ export default function VdsActivitiesPage() {
                                         {t('common.copy')}
                                     </Button>
                                 </div>
-                                <pre className='custom-scrollbar max-h-[500px] overflow-x-auto rounded-4xl border border-white/5 bg-black/40 p-8 font-mono text-sm leading-relaxed text-emerald-400 backdrop-blur-3xl'>
+                                <pre className='custom-scrollbar max-h-[500px] overflow-x-auto rounded-xl border border-white/5 bg-black/40 p-8 font-mono text-sm leading-relaxed text-emerald-400'>
                                     {displayRawJson || '// No additional metadata'}
                                 </pre>
                             </div>
@@ -669,7 +664,7 @@ export default function VdsActivitiesPage() {
                         <DialogFooter className='border-border/50 mt-4 flex items-center justify-end border-t pt-8'>
                             <Button
                                 size='default'
-                                className='h-14 rounded-2xl px-12 font-black tracking-[0.2em] uppercase'
+                                className='h-11 rounded-xl px-8 font-semibold'
                                 onClick={() => setDetailsOpen(false)}
                             >
                                 {t('common.close')}

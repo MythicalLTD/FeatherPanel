@@ -16,6 +16,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import { AdminPageTips } from '@/components/admin/AdminPageTips';
+import { VdsSettingsSections } from '@/components/admin/VdsSettingsSections';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { useTranslation } from '@/contexts/TranslationContext';
@@ -148,11 +149,14 @@ function SettingFieldRow({
     currentSetting,
     onSettingChange,
     t,
+    switchBooleans = false,
 }: {
     settingKey: string;
     currentSetting: Setting;
     onSettingChange: (key: string, value: string | number | boolean) => void;
     t: (key: string) => string;
+    /** Render true/false selects as switches (value stays the string 'true' / 'false'). */
+    switchBooleans?: boolean;
 }) {
     const labelKey = `admin.settings.fields.${settingKey}.label`;
     const descriptionKey = `admin.settings.fields.${settingKey}.description`;
@@ -160,14 +164,21 @@ function SettingFieldRow({
     const translatedLabel = t(labelKey);
     const translatedDescription = t(descriptionKey);
 
-    const formattedName =
-        translatedLabel !== labelKey ? translatedLabel : formatSettingName(currentSetting.name, settingKey);
+    const rawName = translatedLabel !== labelKey ? translatedLabel : formatSettingName(currentSetting.name, settingKey);
+    const formattedName = switchBooleans ? rawName.replace(/^Vds\s+/i, '') : rawName;
+    const isBoolSelect =
+        switchBooleans &&
+        currentSetting.type === 'select' &&
+        currentSetting.options.length === 2 &&
+        currentSetting.options.includes('true') &&
+        currentSetting.options.includes('false');
     const description = translatedDescription !== descriptionKey ? translatedDescription : currentSetting.description;
 
     if (
         settingKey === 'telemetry' ||
         currentSetting.type === 'toggle' ||
-        (currentSetting.type as string) === 'boolean'
+        (currentSetting.type as string) === 'boolean' ||
+        isBoolSelect
     ) {
         return (
             <div className='fp-surface-inset hover:border-primary/25 flex flex-row items-center justify-between gap-4 rounded-xl border p-4 transition-colors'>
@@ -183,7 +194,10 @@ function SettingFieldRow({
                         currentSetting.value === true || currentSetting.value === 'true' || currentSetting.value === 1
                     }
                     onCheckedChange={(checked: boolean) =>
-                        onSettingChange(settingKey, settingKey === 'telemetry' ? String(checked) : checked)
+                        onSettingChange(
+                            settingKey,
+                            settingKey === 'telemetry' || isBoolSelect ? String(checked) : checked,
+                        )
                     }
                     className='shrink-0'
                 />
@@ -820,18 +834,35 @@ export default function SettingsPage() {
                                                         </div>
                                                     </div>
                                                 )}
-                                                {filteredEntries.map(([settingKey, setting]) => {
-                                                    const currentSetting = settings[settingKey] || setting;
-                                                    return (
-                                                        <SettingFieldRow
-                                                            key={settingKey}
-                                                            settingKey={settingKey}
-                                                            currentSetting={currentSetting}
-                                                            onSettingChange={handleSettingChange}
-                                                            t={t}
-                                                        />
-                                                    );
-                                                })}
+                                                {key === 'vds' ? (
+                                                    <VdsSettingsSections
+                                                        entries={filteredEntries}
+                                                        settings={settings}
+                                                        searching={searchTrimmed !== ''}
+                                                        renderField={(settingKey, currentSetting) => (
+                                                            <SettingFieldRow
+                                                                settingKey={settingKey}
+                                                                currentSetting={currentSetting}
+                                                                onSettingChange={handleSettingChange}
+                                                                t={t}
+                                                                switchBooleans
+                                                            />
+                                                        )}
+                                                    />
+                                                ) : (
+                                                    filteredEntries.map(([settingKey, setting]) => {
+                                                        const currentSetting = settings[settingKey] || setting;
+                                                        return (
+                                                            <SettingFieldRow
+                                                                key={settingKey}
+                                                                settingKey={settingKey}
+                                                                currentSetting={currentSetting}
+                                                                onSettingChange={handleSettingChange}
+                                                                t={t}
+                                                            />
+                                                        );
+                                                    })
+                                                )}
                                             </div>
                                         )}
                                     </PageCard>

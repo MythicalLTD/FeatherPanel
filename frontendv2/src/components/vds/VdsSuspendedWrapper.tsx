@@ -39,11 +39,11 @@ export function VdsSuspendedWrapper({ children }: VdsSuspendedWrapperProps) {
             <div className='flex min-h-[60vh] items-center justify-center'>
                 <div className='mx-auto w-full max-w-2xl px-4'>
                     <div className='group relative'>
-                        <div className='absolute -inset-0.5 rounded-3xl bg-linear-to-r from-amber-500/50 to-red-500/30 opacity-20 blur transition duration-1000 group-hover:opacity-30' />
+                        <div className='absolute -inset-0.5 rounded-xl bg-linear-to-r from-amber-500/50 to-red-500/30 opacity-20 blur transition duration-1000 group-hover:opacity-30' />
 
-                        <div className='bg-card/95 relative rounded-3xl border-2 border-amber-500/20 p-8 backdrop-blur-xl md:p-12'>
+                        <div className='bg-card/95 relative rounded-xl border-2 border-amber-500/20 p-8 md:p-12'>
                             <div className='space-y-6 text-center'>
-                                <div className='mb-4 inline-flex h-24 w-24 items-center justify-center rounded-3xl bg-amber-500/10'>
+                                <div className='mb-4 inline-flex h-24 w-24 items-center justify-center rounded-xl bg-amber-500/10'>
                                     <AlertTriangle className='h-12 w-12 text-amber-500' />
                                 </div>
 
@@ -51,9 +51,24 @@ export function VdsSuspendedWrapper({ children }: VdsSuspendedWrapperProps) {
                                     <h2 className='text-2xl font-bold tracking-tight text-amber-500 md:text-3xl'>
                                         {t('vds.suspended_banner.title')}
                                     </h2>
-                                    <p className='text-muted-foreground mx-auto max-w-md text-lg'>
-                                        {t('vds.suspended_banner.message')}
+                                    <p className='text-muted-foreground mx-auto max-w-md text-lg whitespace-pre-line'>
+                                        {instance.suspension?.message || t('vds.suspended_banner.message')}
                                     </p>
+                                    {instance.suspension?.reason && (
+                                        <div className='bg-muted/40 border-border/50 mx-auto max-w-md rounded-xl border p-3 text-left text-sm'>
+                                            <p className='text-muted-foreground text-xs font-medium uppercase'>
+                                                {t('vds.suspended_banner.reason')}
+                                            </p>
+                                            <p className='mt-1 break-words'>{instance.suspension.reason}</p>
+                                            {instance.suspension.suspended_at && (
+                                                <p className='text-muted-foreground mt-1 text-xs'>
+                                                    {t('vds.suspended_banner.since', {
+                                                        date: instance.suspension.suspended_at,
+                                                    })}
+                                                </p>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
 
                                 <div className='flex flex-col justify-center gap-3 pt-4 sm:flex-row'>

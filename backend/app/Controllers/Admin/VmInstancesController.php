@@ -260,6 +260,11 @@ class VmInstancesController
         $onBoot = isset($data['on_boot']) ? (int) (bool) $data['on_boot'] : 1;
         $backupLimit = isset($data['backup_limit']) && is_numeric($data['backup_limit']) ? max(0, min(100, (int) $data['backup_limit'])) : 5;
         $backupRetentionForMeta = null;
+        if (array_key_exists('snapshot_limit', $data) && $data['snapshot_limit'] !== null && $data['snapshot_limit'] !== '') {
+            if (!is_numeric($data['snapshot_limit']) || (int) $data['snapshot_limit'] < 0 || (int) $data['snapshot_limit'] > 100) {
+                return ApiResponse::error('snapshot_limit must be empty or an integer between 0 and 100', 'INVALID_SNAPSHOT_LIMIT', 400);
+            }
+        }
         if (array_key_exists('backup_retention_mode', $data)) {
             $rawBr = $data['backup_retention_mode'];
             if ($rawBr === null || $rawBr === '') {
@@ -714,7 +719,16 @@ class VmInstancesController
             }
         }
 
-        $dbKeys = ['hostname', 'notes', 'user_uuid', 'vm_ip_id', 'backup_limit', 'backup_retention_mode', 'expires_at'];
+        if (array_key_exists('iso_mode', $data) && $data['iso_mode'] !== null && !in_array($data['iso_mode'], ['', 'inherit', 'provider', 'provider_user', 'disabled'], true)) {
+            return ApiResponse::error('iso_mode must be inherit, provider, provider_user or disabled', 'INVALID_ISO_MODE', 400);
+        }
+
+        if (array_key_exists('bandwidth_limit_gb', $data) && $data['bandwidth_limit_gb'] !== null && $data['bandwidth_limit_gb'] !== ''
+            && (!is_numeric($data['bandwidth_limit_gb']) || (int) $data['bandwidth_limit_gb'] < 0 || (int) $data['bandwidth_limit_gb'] > 10000000)) {
+            return ApiResponse::error('bandwidth_limit_gb must be empty (default), 0 (unlimited) or a positive number of GB', 'INVALID_BANDWIDTH_LIMIT', 400);
+        }
+
+        $dbKeys = ['hostname', 'notes', 'user_uuid', 'vm_ip_id', 'backup_limit', 'backup_retention_mode', 'snapshot_limit', 'iso_mode', 'bandwidth_limit_gb', 'expires_at'];
         $dbUpdate = array_intersect_key($data, array_flip($dbKeys));
         $proxmoxKeys = ['memory', 'cpus', 'cores', 'on_boot', 'vm_ip_id', 'bios', 'efi_enabled', 'efi_storage', 'tpm_enabled', 'tpm_storage'];
         $proxmoxUpdate = array_intersect_key($data, array_flip($proxmoxKeys));

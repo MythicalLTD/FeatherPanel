@@ -604,7 +604,7 @@
             "FASTDL_ENABLE_FAILED": "Failed to enable FastDL",
             "FASTDL_FETCH_FAILED": "Failed to fetch FastDL configuration",
             "FASTDL_UPDATE_FAILED": "Failed to update FastDL configuration",
-            "FEATURE_DISABLED": "Lifecycle hooks are disabled by the administrator.",
+            "FEATURE_DISABLED": "This feature is disabled by the administrator.",
             "FETCH_ERROR": "Failed to fetch country codes",
             "FETCH_FAILED": "Unable to fetch artifacts",
             "FIFO_EVICTION_FAILED": "Failed to connect to node for backup rotation",
@@ -1574,7 +1574,10 @@
             "INVALID_INVITE_USES": "Uses must be between 1 and 50.",
             "ROLE_ASSIGNMENT_FORBIDDEN": "Only a full administrator can assign a role.",
             "ROOT_PERMISSION_GRANT_FORBIDDEN": "Only a full administrator can grant this permission.",
-            "TARGET_OUTRANKS_ACTOR": "Only a full administrator can modify this account."
+            "TARGET_OUTRANKS_ACTOR": "Only a full administrator can modify this account.",
+            "REAUTH_FAILED": "The password or code you entered is incorrect.",
+            "INVALID_BANDWIDTH_LIMIT": "Bandwidth limit must be between 0 and 10,000,000 GB.",
+            "MIGRATION_FAILED": "Proxmox refused the migration."
         },
         "global": {}
     },
@@ -2778,7 +2781,12 @@
                 "backup_failed": "Backup failed",
                 "file_transfer": "File transfer finished",
                 "resource_limit": "Server near a resource limit",
-                "transfer_power": "Server not started after a transfer"
+                "transfer_power": "Server not started after a transfer",
+                "vds_down": "VDS went offline",
+                "vds_high_cpu": "VDS high CPU usage",
+                "vds_backup_failed": "VDS backup failed",
+                "vds_bandwidth": "VDS traffic limit",
+                "vds_expiring": "VDS expires soon"
             },
             "save": "Save",
             "saved": "Notification settings saved",
@@ -3727,7 +3735,9 @@
             "dnsHosts": "DNS hosts",
             "auditLog": "Audit log",
             "securityCenter": "Security center",
-            "health": "System health"
+            "health": "System health",
+            "snapshots": "Snapshots",
+            "vdsIsos": "VDS ISO Library"
         }
     },
     "adminWingsBackups": {
@@ -4145,7 +4155,12 @@
                 "file_transfer_completed": "File transfer finished",
                 "file_transfer_failed": "File transfer failed",
                 "resource_limit": "Resource limit reached",
-                "transfer_power_failed": "Server not started after transfer"
+                "transfer_power_failed": "Server not started after transfer",
+                "vds_down": "VDS went offline",
+                "vds_high_cpu": "VDS high CPU usage",
+                "vds_backup_failed": "VDS backup failed",
+                "vds_bandwidth": "VDS traffic limit",
+                "vds_expiring": "VDS expires soon"
             },
             "bodies": {
                 "ticket_reply": "New reply on \"{ticket}\".",
@@ -4155,7 +4170,12 @@
                 "file_transfer_completed": "{files} item(s) from {server} arrived on {target}.",
                 "file_transfer_failed": "Sending {files} item(s) from {server} to {target} failed.",
                 "resource_limit": "{server} is using {percent}% of its {metric} limit.",
-                "transfer_power_failed": "{server} was running before its transfer but could not be started on the new node. Start it manually."
+                "transfer_power_failed": "{server} was running before its transfer but could not be started on the new node. Start it manually.",
+                "vds_down": "{vds} stopped unexpectedly.",
+                "vds_high_cpu": "{vds} has used over {percent}% CPU for {minutes} minutes.",
+                "vds_backup_failed": "A backup of {vds} failed: {error}",
+                "vds_bandwidth": "{vds} used {used_gb} GB of {limit_gb} GB traffic this month ({percent}%). {action_label}",
+                "vds_expiring": "{vds} expires on {expires_at} UTC ({days} day(s) left). Renew it to avoid suspension."
             },
             "metrics": {
                 "cpu": "CPU",
@@ -8387,7 +8407,20 @@
             "suspend_confirm_title": "Suspend VDS instance?",
             "suspend_confirm_description": "Provide a reason for staff before suspending {hostname}. The owner will be notified by email.",
             "suspend_success": "VDS instance suspended successfully",
-            "unsuspend_success": "VDS instance unsuspended successfully"
+            "unsuspend_success": "VDS instance unsuspended successfully",
+            "snapshot_limit": "Snapshot limit",
+            "snapshot_limit_help": "Leave empty to use the default from Settings → VDS.",
+            "iso_mode": "ISO policy",
+            "iso_mode_help": "Overrides the global VDS ISO mode for this VDS.",
+            "iso_modes": {
+                "inherit": "Inherit global setting",
+                "provider": "Provider ISOs only",
+                "provider_user": "Provider + user ISOs",
+                "disabled": "ISO mounting disabled"
+            },
+            "bandwidth_limit": "Monthly traffic limit (GB)",
+            "bandwidth_limit_placeholder": "Panel default",
+            "bandwidth_limit_help": "Leave empty to use the panel default; 0 means unlimited."
         },
         "node": {
             "title": "Nodes",
@@ -12009,6 +12042,63 @@
             "optionLabels": {
                 "hardLimit": "Hard limit (block at max)",
                 "fifoRolling": "FIFO rolling (drop oldest)"
+            },
+            "vds_groups": {
+                "intro": "{count} sections. Click a section to expand it; each one controls a single VDS feature.",
+                "expand_all": "Expand all",
+                "collapse_all": "Collapse all",
+                "console": {
+                    "title": "Console",
+                    "description": "VNC proxy, paste, screenshots and Ctrl+Alt+Del in the browser console."
+                },
+                "branding": {
+                    "title": "Console branding",
+                    "description": "Name and logo shown on the VDS console header."
+                },
+                "graphs": {
+                    "title": "Resource graphs",
+                    "description": "CPU, memory, network and disk history from Proxmox RRD data."
+                },
+                "iso": {
+                    "title": "ISO & rescue",
+                    "description": "Who may mount which ISOs, user uploads and the rescue boot image."
+                },
+                "snapshots": {
+                    "title": "Snapshots",
+                    "description": "Allow snapshots, default limit per VDS and RAM state."
+                },
+                "firewall": {
+                    "title": "Firewall",
+                    "description": "Proxmox firewall rules users can manage, limits and presets."
+                },
+                "schedules": {
+                    "title": "Schedules",
+                    "description": "Automated power, snapshot and backup tasks per VDS."
+                },
+                "bandwidth": {
+                    "title": "Bandwidth",
+                    "description": "Monthly traffic quota, warnings and what happens when it is exceeded."
+                },
+                "alerts": {
+                    "title": "Monitoring & alerts",
+                    "description": "Background checks and notifications for downtime, high CPU and failed backups."
+                },
+                "security": {
+                    "title": "Security",
+                    "description": "Re-authentication before sensitive actions."
+                },
+                "expiry": {
+                    "title": "Expiry & suspension",
+                    "description": "Expiry warnings, stopping expired VDS and the suspension screen."
+                },
+                "placement": {
+                    "title": "Placement & migration",
+                    "description": "How new VDS pick a node, overcommit and live migration."
+                },
+                "other": {
+                    "title": "Other",
+                    "description": "Remaining VDS settings."
+                }
             }
         },
         "rate_limits": {
@@ -14674,6 +14764,99 @@
                 "settings": "Settings",
                 "other": "Other"
             }
+        },
+        "vdsIsos": {
+            "title": "VDS ISO Library",
+            "description": "Curate the ISOs customers can mount and moderate ISOs uploaded by users.",
+            "tabs": {
+                "provider": "Provider library",
+                "user": "User ISOs"
+            },
+            "add": "Add ISO",
+            "add_short": "Add",
+            "edit": "Edit ISO",
+            "delete": "Delete ISO",
+            "hide": "Hide from customers",
+            "show": "Show to customers",
+            "approve": "Approve",
+            "reject": "Reject",
+            "approved": "ISO approved",
+            "toggled": "Visibility updated",
+            "deleted": "ISO deleted",
+            "saved": "ISO saved",
+            "save_failed": "Could not save the ISO",
+            "load_failed": "Could not load ISOs",
+            "action_failed": "Action failed",
+            "scan": "Scan node",
+            "scan_node": "VDS node",
+            "scan_failed": "Could not scan the node",
+            "scan_empty": "No ISO files found on this node.",
+            "scan_help": "Lists ISO files on every storage of the node. Add a file to the library to give it a name, description, icon and node scope.",
+            "in_library": "In library",
+            "all_nodes": "All nodes",
+            "hidden": "Hidden",
+            "filter_approval": "Filter by approval",
+            "filter_all": "All",
+            "approval": {
+                "pending": "Pending",
+                "approved": "Approved",
+                "rejected": "Rejected"
+            },
+            "user_storage": "User ISOs are stored on storage \"{storage}\".",
+            "user_storage_missing": "No user ISO storage is configured (Settings → VDS), so users cannot add ISOs.",
+            "empty_provider": "No library entries",
+            "empty_provider_help": "Without entries every allowed ISO is offered with its file name. Scan a node to add ISOs.",
+            "empty_user": "No user ISOs",
+            "empty_user_help": "ISOs uploaded or downloaded by customers appear here.",
+            "form_help": "Customers see the name, description and icon. Node scope limits which VDS nodes offer it.",
+            "fields": {
+                "volid": "Volume ID",
+                "name": "Name",
+                "description": "Description",
+                "category": "OS / category",
+                "node": "Available on",
+                "sort_order": "Sort order",
+                "visible": "Visible to customers"
+            },
+            "categories": {
+                "linux": "Linux",
+                "windows": "Windows",
+                "bsd": "BSD",
+                "rescue": "Rescue",
+                "tools": "Tools / drivers",
+                "other": "Other"
+            },
+            "delete_user_confirm": "Delete \"{name}\" and its file from the node?",
+            "delete_provider_confirm": "Remove \"{name}\" from the library? The file stays on the node.",
+            "rejected": "ISO rejected"
+        },
+        "vdsCapacity": {
+            "title": "Capacity overview",
+            "description": "Allocated vs. physical resources. Recommendation strategy: {strategy}, memory overcommit {overcommit}%.",
+            "strategies": {
+                "most_free_memory": "most free memory",
+                "most_free_disk": "most free disk",
+                "fewest_instances": "fewest instances"
+            },
+            "recommended": "Recommended",
+            "offline": "Offline",
+            "full": "Full",
+            "unreachable": "Proxmox unreachable",
+            "instances": "{count} VDS ({suspended} suspended)",
+            "memory_allocated": "Memory allocated",
+            "vcpus": "{vcpus} vCPU on {cpus} threads",
+            "disk": "Disk {used}/{total} GB used"
+        },
+        "vdsMigrate": {
+            "title": "Live migration",
+            "description": "Currently on Proxmox node {node}. Running QEMU VDS migrate online (local disks are copied); containers restart on the target.",
+            "no_targets": "No other online node in this cluster.",
+            "choose": "Choose target node",
+            "start": "Migrate",
+            "started": "Migration to {node} started…",
+            "done": "Migration finished, VDS now on {node}.",
+            "failed": "Migration failed: {error}",
+            "start_failed": "Could not start the migration"
         }
     },
     "webSpaces": {
@@ -15813,7 +15996,65 @@
             },
             "connecting": "Connecting to console...",
             "disconnected": "Console disconnected",
-            "close_console": "Close console"
+            "close_console": "Close console",
+            "screen": {
+                "title": "Screen",
+                "connect": "Connect to console",
+                "idle_title": "Console not connected",
+                "idle_description": "Open a VNC session to see and control the server screen directly in your browser.",
+                "offline_title": "Server is offline",
+                "offline_description": "Start the server to connect to its console.",
+                "no_permission_title": "No console access",
+                "no_permission_description": "You do not have permission to open the console of this server.",
+                "ctrl_alt_del": "Ctrl+Alt+Del",
+                "fullscreen": "Toggle fullscreen",
+                "send": "Send",
+                "input_label": "Type into the server",
+                "input_placeholder": "Type text and press Enter to send it to the server…",
+                "input_disabled": "Connect to the console to type into the server",
+                "state": {
+                    "connecting": "Connecting…",
+                    "connected": "Connected",
+                    "disconnected": "Disconnected"
+                }
+            },
+            "stats_unavailable_title": "Live status unavailable",
+            "stats_unavailable_description": "The panel could not reach the hypervisor for this server. Stats and status will update automatically once it responds again.",
+            "actions": {
+                "title": "Console actions",
+                "keyboard": "Keyboard",
+                "paste": "Paste clipboard into VM",
+                "screenshot": "Save screenshot (PNG)",
+                "boot_media": "Boot media",
+                "iso_mount": "Mount ISO…",
+                "iso_unmount": "Unmount ISO",
+                "rescue_checking": "Checking rescue mode…",
+                "rescue_exit": "Exit rescue mode",
+                "rescue_enter": "Reboot into rescue",
+                "paste_done": "Text typed into the VM",
+                "paste_failed": "Typing was interrupted",
+                "screenshot_failed": "Could not capture the screen",
+                "iso_list_failed": "Could not load the ISO list",
+                "iso_mounted": "ISO mounted. Reboot the VM to boot from it.",
+                "iso_mount_failed": "Could not mount the ISO",
+                "iso_unmounted": "ISO unmounted",
+                "iso_unmount_failed": "Could not unmount the ISO",
+                "rescue_enter_done": "Rebooting into rescue mode",
+                "rescue_exit_done": "Leaving rescue mode, booting from disk",
+                "rescue_failed": "Rescue mode change failed",
+                "paste_title": "Paste into VM",
+                "paste_description": "The text is typed key by key into the VM (up to {max} characters). Proxmox VNC has no shared clipboard.",
+                "paste_placeholder": "Text to type into the VM…",
+                "paste_progress": "Typing {done} / {total}",
+                "paste_layout_hint": "Keys are sent as US-layout scancodes. Set the guest keyboard layout to US (English) or some characters will come out wrong.",
+                "paste_send": "Type into VM",
+                "iso_title": "Mount ISO",
+                "iso_description": "Attach an installer or tools image as a virtual CD-ROM. It boots first on the next reboot.",
+                "iso_empty": "No ISO images are available.",
+                "iso_mount_one": "Mount",
+                "rescue_exit_confirm": "The rescue ISO will be detached and the VM restarted from its disk.",
+                "rescue_enter_confirm": "The VM will be stopped and restarted from the rescue ISO. Unsaved work inside the VM is lost."
+            }
         },
         "subusers": {
             "title": "Subuser Management",
@@ -15852,6 +16093,26 @@
                 "activity.read": {
                     "label": "View Activities",
                     "description": "View the activity log for this VDS instance."
+                },
+                "snapshot": {
+                    "label": "Snapshots",
+                    "description": "Create, roll back and delete snapshots of this VDS instance."
+                },
+                "backup": {
+                    "label": "Backups",
+                    "description": "Create, restore and delete backups of this VDS instance."
+                },
+                "iso.upload": {
+                    "label": "Custom ISOs",
+                    "description": "Upload or download own ISO images (when the provider allows it). Mounting needs Settings Access."
+                },
+                "firewall": {
+                    "label": "Firewall",
+                    "description": "View and change the firewall rules, presets and inbound policy of this VDS."
+                },
+                "schedules": {
+                    "label": "Scheduled tasks",
+                    "description": "Create, edit and delete automatic reboots and snapshots."
                 }
             }
         },
@@ -15889,7 +16150,9 @@
         },
         "suspended_banner": {
             "title": "This VDS is suspended",
-            "message": "Access to this VDS has been temporarily restricted. Contact support for details."
+            "message": "Access to this VDS has been temporarily restricted. Contact support for details.",
+            "reason": "Reason",
+            "since": "Suspended since {date} UTC"
         },
         "settings": {
             "title": "VDS Settings",
@@ -15954,7 +16217,7 @@
             },
             "iso": {
                 "title": "ISO Mount",
-                "description": "Upload an ISO (browser -> panel -> Proxmox) or use ISO URL (Proxmox downloads directly), then boot this VM from it.",
+                "description": "Mount an ISO from the provider library or one of your own ISOs (if allowed), then boot this VM from it.",
                 "loading": "Loading…",
                 "mode_upload": "Upload ISO",
                 "mode_url": "ISO URL",
@@ -16031,6 +16294,219 @@
                     "lxc": "Additional IPs are provisioned as extra container network interfaces such as net1, net2, and so on."
                 }
             }
+        },
+        "graphs": {
+            "title": "Resource history",
+            "range": "Time range",
+            "cpu": "CPU",
+            "memory": "Memory",
+            "network": "Network",
+            "disk_io": "Disk I/O",
+            "inbound": "In",
+            "outbound": "Out",
+            "read": "Read",
+            "write": "Write",
+            "error": "Could not load graph data",
+            "no_data": "No data for this range yet",
+            "timeframes": {
+                "hour": "1h",
+                "day": "24h",
+                "week": "7d",
+                "month": "30d",
+                "year": "1y"
+            }
+        },
+        "snapshots": {
+            "title": "Snapshots",
+            "description": "Save the state of the VDS disks and roll back to it later.",
+            "create": "Create snapshot",
+            "create_description": "Snapshots are stored on the same storage as the VDS. They are not backups.",
+            "name": "Name",
+            "name_invalid": "2–40 characters: start with a letter, then letters, numbers, - or _.",
+            "note": "Description (optional)",
+            "include_ram": "Include RAM state",
+            "include_ram_hint": "Also saves running memory. Takes longer and uses more space.",
+            "with_ram": "RAM",
+            "rollback": "Roll back",
+            "delete": "Delete",
+            "rollback_title": "Roll back to {name}?",
+            "delete_title": "Delete snapshot {name}?",
+            "rollback_confirm": "The VDS returns to the state of this snapshot. All changes made after it are lost.",
+            "delete_confirm": "The snapshot will be removed permanently.",
+            "create_started": "Snapshot is being created",
+            "rollback_started": "Rollback started",
+            "delete_started": "Snapshot is being deleted",
+            "create_failed": "Could not create the snapshot",
+            "rollback_failed": "Rollback failed",
+            "delete_failed": "Could not delete the snapshot",
+            "fetch_failed": "Could not load snapshots",
+            "fetch_failed_description": "The node could not be reached. Try again in a moment.",
+            "limit_reached": "Snapshot limit reached ({limit}). Delete one to create a new one.",
+            "empty_title": "No snapshots yet",
+            "empty_description": "Create a snapshot before risky changes so you can roll back.",
+            "empty_no_quota": "Snapshots are not available for this VDS.",
+            "disabled_title": "Snapshots are disabled",
+            "disabled_description": "The administrator has turned off snapshots.",
+            "latest": "Latest"
+        },
+        "iso": {
+            "provider_section": "Provider ISOs",
+            "my_section": "My ISOs",
+            "my_empty": "You have no custom ISOs yet.",
+            "quota": "{used} / {max} used",
+            "upload": "Upload ISO",
+            "from_url": "Download from URL",
+            "download": "Download",
+            "choose_file": "Choose .iso file",
+            "name_placeholder": "Display name (optional)",
+            "limits": "Max {max} MB per ISO.",
+            "domains": "Allowed domains: {domains}.",
+            "approval_hint": "An administrator must approve new ISOs before they can be mounted.",
+            "too_large": "The ISO is larger than {max} MB",
+            "added": "ISO added",
+            "add_failed": "Could not add the ISO",
+            "deleted": "ISO deleted",
+            "delete_failed": "Could not delete the ISO",
+            "delete": "Delete ISO",
+            "delete_confirm": "Delete \"{name}\" from storage? This cannot be undone.",
+            "source_url": "Downloaded from URL",
+            "source_upload": "Uploaded",
+            "no_upload_permission": "You do not have permission to add custom ISOs on this VDS.",
+            "library_hint": "Pick an ISO from the library to mount it.",
+            "status": {
+                "downloading": "Downloading",
+                "failed": "Failed",
+                "awaiting_approval": "Awaiting approval",
+                "rejected": "Rejected",
+                "ready": "Ready"
+            }
+        },
+        "firewall": {
+            "title": "Firewall",
+            "description": "Filter traffic to and from this VDS with Proxmox firewall rules.",
+            "fetch_failed": "Failed to load the firewall",
+            "unavailable": "Firewall unavailable",
+            "enabled": "Firewall enabled",
+            "enabled_hint": "Rules only apply while the firewall is on. Enabling it also turns on filtering for the network interfaces.",
+            "policy_in": "Inbound policy",
+            "policy_hint": "What happens to incoming traffic that matches no rule. Use DROP only after allowing SSH/RDP.",
+            "presets": "Quick presets",
+            "preset_applied": "Preset applied",
+            "preset_failed": "Failed to apply preset",
+            "preset": {
+                "ssh": "Allow SSH",
+                "web": "Allow HTTP/HTTPS",
+                "rdp": "Allow RDP",
+                "mail": "Allow mail",
+                "dns": "Allow DNS",
+                "ping": "Allow ping",
+                "ftp": "Allow FTP",
+                "mysql": "Allow MySQL",
+                "minecraft": "Allow Minecraft"
+            },
+            "updated": "Firewall updated",
+            "update_failed": "Failed to update the firewall",
+            "add_rule": "Add rule",
+            "add_rule_description": "New rules are added at the top and evaluated first.",
+            "rule_added": "Rule added",
+            "rule_add_failed": "Failed to add rule",
+            "delete_rule": "Delete rule",
+            "delete_confirm": "This rule will be removed immediately.",
+            "rule_deleted": "Rule deleted",
+            "rule_delete_failed": "Failed to delete rule",
+            "empty_title": "No firewall rules",
+            "empty_description": "Add a rule or apply a preset to get started.",
+            "direction": "Direction",
+            "in": "Inbound",
+            "out": "Outbound",
+            "action": "Action",
+            "protocol": "Protocol",
+            "any": "Any",
+            "ports": "Ports",
+            "source": "Source",
+            "anywhere": "anywhere",
+            "source_placeholder": "Any, or e.g. 203.0.113.0/24",
+            "comment": "Comment"
+        },
+        "schedules": {
+            "title": "Scheduled tasks",
+            "description": "Automatic reboots and snapshots run by the panel. Times are in {timezone}.",
+            "fetch_failed": "Failed to load scheduled tasks",
+            "unavailable": "Scheduled tasks unavailable",
+            "create": "New schedule",
+            "edit": "Edit schedule",
+            "delete": "Delete schedule",
+            "delete_confirm": "Delete the schedule \"{name}\"? Existing snapshots are kept.",
+            "deleted": "Schedule deleted",
+            "delete_failed": "Failed to delete schedule",
+            "saved": "Schedule saved",
+            "save_failed": "Failed to save schedule",
+            "empty_title": "No scheduled tasks",
+            "empty_description": "Create a schedule to reboot or snapshot this VDS automatically.",
+            "no_quota": "Your plan does not include scheduled tasks.",
+            "timezone_hint": "Times are in {timezone}. Snapshot schedules rotate their own automatic snapshots.",
+            "name": "Name",
+            "action": "Action",
+            "frequency": "Frequency",
+            "weekday": "Day",
+            "hour": "Hour",
+            "minute": "Minute",
+            "keep": "Snapshots to keep",
+            "enabled": "Enabled",
+            "actions": {
+                "reboot": "Reboot",
+                "snapshot": "Snapshot"
+            },
+            "frequencies": {
+                "hourly": "Hourly",
+                "daily": "Daily",
+                "weekly": "Weekly"
+            },
+            "weekdays": {
+                "0": "Sunday",
+                "1": "Monday",
+                "2": "Tuesday",
+                "3": "Wednesday",
+                "4": "Thursday",
+                "5": "Friday",
+                "6": "Saturday"
+            },
+            "every_hour": "Every hour at :{minute}",
+            "every_day": "Every day at {time}",
+            "every_week": "Every {day} at {time}",
+            "keeps": "keeps {count}",
+            "next_run": "Next run",
+            "last_run": "Last run",
+            "status": {
+                "ok": "Succeeded",
+                "failed": "Failed",
+                "skipped": "Skipped"
+            }
+        },
+        "reauth": {
+            "title": "Confirm it's you",
+            "description_password": "This action is protected. Enter your account password to continue.",
+            "description_2fa": "This action is protected. Enter the 6-digit code from your authenticator app.",
+            "password_placeholder": "Account password",
+            "code_placeholder": "123456",
+            "failed": "That didn't match. Please try again.",
+            "confirm": "Confirm"
+        },
+        "bandwidth": {
+            "title": "Monthly traffic",
+            "description": "Network traffic used in {period}.",
+            "unlimited": "Unlimited",
+            "count_both": "Inbound + outbound counted",
+            "count_in": "Inbound counted",
+            "count_out": "Outbound counted",
+            "resets": "Resets {date}",
+            "inbound": "Inbound",
+            "outbound": "Outbound",
+            "action_notify": "You'll be notified when the limit is reached.",
+            "action_throttle": "When the limit is reached, network speed is reduced until the next month.",
+            "action_suspend": "When the limit is reached, the VDS is suspended until the next month.",
+            "throttled_now": "Your network speed is currently limited because the monthly traffic limit was reached.",
+            "history": "Previous months"
         }
     },
     "chatbot": {
@@ -16834,7 +17310,17 @@
                 "vmCard": {
                     "disk": "Disk",
                     "gBRAM": "GB RAM",
-                    "gBDisk": "GB Disk"
+                    "gBDisk": "GB Disk",
+                    "action_sent": "Power action sent",
+                    "action_failed": "Power action failed",
+                    "restart": "Restart",
+                    "stop": "Stop",
+                    "start": "Start",
+                    "console": "Console",
+                    "ip": "IP",
+                    "specs": "Specs",
+                    "cpu": "CPU",
+                    "memory": "Memory"
                 }
             },
             "webspace": {

@@ -20,6 +20,7 @@ use App\Permissions;
 use App\Helpers\ApiResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RouteCollection;
+use App\Controllers\Admin\VmCapacityController;
 use App\Controllers\Admin\VmInstancesController;
 
 return function (RouteCollection $routes): void {
@@ -475,5 +476,32 @@ return function (RouteCollection $routes): void {
         },
         Permissions::ADMIN_NODES_DELETE,
         ['DELETE']
+    );
+    // Node capacity overview + recommended node for new VDS placement.
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-vm-capacity',
+        '/api/admin/vm-capacity',
+        static fn (Request $request) => (new VmCapacityController())->capacity($request),
+        Permissions::ADMIN_NODES_VIEW,
+    );
+
+    // Live migration within a Proxmox cluster (setting vds_migration_enabled, off by default).
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-vm-instances-migrate',
+        '/api/admin/vm-instances/{id}/migrate',
+        static function (Request $request, array $args) {
+            $id = $args['id'] ?? null;
+            if (!$id || !is_numeric($id)) {
+                return ApiResponse::error('Missing or invalid ID', 'INVALID_ID', 400);
+            }
+
+            return $request->getMethod() === 'POST'
+                ? (new VmCapacityController())->migrate($request, (int) $id)
+                : (new VmCapacityController())->migrationStatus($request, (int) $id);
+        },
+        Permissions::ADMIN_NODES_EDIT,
+        ['GET', 'POST']
     );
 };

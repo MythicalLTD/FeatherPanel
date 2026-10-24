@@ -66,6 +66,7 @@ import { ResourcesTab } from './ResourcesTab';
 import { DisksTab } from './DisksTab';
 import type { OwnerUser, FreeIp, NetworkRow } from './types';
 import { Sensitive } from '@/components/common/Sensitive';
+import { VdsMigrateCard } from '@/components/admin/VdsMigrateCard';
 
 export default function VmInstanceEditPage() {
     const { t } = useTranslation();
@@ -132,6 +133,9 @@ export default function VmInstanceEditPage() {
         reason_details: '',
     });
     const [vmBackupLimit, setVmBackupLimit] = useState(5);
+    const [snapshotLimit, setSnapshotLimit] = useState('');
+    const [isoMode, setIsoMode] = useState('inherit');
+    const [bandwidthLimit, setBandwidthLimit] = useState('');
     const [vmBackupRetention, setVmBackupRetention] = useState<'inherit' | 'hard_limit' | 'fifo_rolling'>('inherit');
 
     const { fetchWidgets, getWidgets } = usePluginWidgets('admin-vm-instance-edit');
@@ -149,6 +153,9 @@ export default function VmInstanceEditPage() {
             setHostname((inst.hostname as string) ?? '');
             setNotes((inst.notes as string) ?? '');
             setVmBackupLimit(Math.max(0, Math.min(100, Number(inst.backup_limit ?? 5))));
+            setSnapshotLimit(inst.snapshot_limit == null ? '' : String(inst.snapshot_limit));
+            setIsoMode(typeof inst.iso_mode === 'string' && inst.iso_mode ? inst.iso_mode : 'inherit');
+            setBandwidthLimit(inst.bandwidth_limit_gb == null ? '' : String(inst.bandwidth_limit_gb));
             const br = (inst.backup_retention_mode as string) || '';
             setVmBackupRetention(
                 br === 'fifo_rolling' || br === 'hard_limit' ? (br as 'fifo_rolling' | 'hard_limit') : 'inherit',
@@ -233,6 +240,9 @@ export default function VmInstanceEditPage() {
                     setNotes((inst.notes as string) ?? '');
                     setExpiresAt(inst.expires_at ? String(inst.expires_at).slice(0, 16) : null);
                     setVmBackupLimit(Math.max(0, Math.min(100, Number(inst.backup_limit ?? 5))));
+                    setSnapshotLimit(inst.snapshot_limit == null ? '' : String(inst.snapshot_limit));
+                    setIsoMode(typeof inst.iso_mode === 'string' && inst.iso_mode ? inst.iso_mode : 'inherit');
+                    setBandwidthLimit(inst.bandwidth_limit_gb == null ? '' : String(inst.bandwidth_limit_gb));
                     const br0 = (inst.backup_retention_mode as string) || '';
                     setVmBackupRetention(
                         br0 === 'fifo_rolling' || br0 === 'hard_limit'
@@ -477,6 +487,9 @@ export default function VmInstanceEditPage() {
                 // TPM storage is enforced server-side from the VDS node default.
             }
             payload.backup_limit = vmBackupLimit;
+            payload.snapshot_limit = snapshotLimit === '' ? null : Number(snapshotLimit);
+            payload.iso_mode = isoMode === 'inherit' ? null : isoMode;
+            payload.bandwidth_limit_gb = bandwidthLimit === '' ? null : Number(bandwidthLimit);
             payload.backup_retention_mode = vmBackupRetention === 'inherit' ? null : vmBackupRetention;
             await axios.patch(`/api/admin/vm-instances/${id}`, payload);
             toast.success(t('admin.vmInstances.update_success'));
@@ -717,7 +730,7 @@ export default function VmInstanceEditPage() {
                 className='flex w-full flex-col gap-6 md:flex-row'
             >
                 <aside className='w-full shrink-0 md:sticky md:top-24 md:w-64 md:self-start'>
-                    <ScrollableTabsList className='fp-surface flex h-auto w-full flex-row gap-2 rounded-2xl border p-2 md:flex-col md:gap-1 md:overflow-visible'>
+                    <ScrollableTabsList className='fp-surface flex h-auto w-full flex-row gap-2 rounded-xl border p-2 md:flex-col md:gap-1 md:overflow-visible'>
                         {editTabs.map((tab) => {
                             const Icon = tab.icon;
                             return (
@@ -784,6 +797,12 @@ export default function VmInstanceEditPage() {
                             setVmBackupLimit={setVmBackupLimit}
                             vmBackupRetention={vmBackupRetention}
                             setVmBackupRetention={setVmBackupRetention}
+                            snapshotLimit={snapshotLimit}
+                            setSnapshotLimit={setSnapshotLimit}
+                            isoMode={isoMode}
+                            setIsoMode={setIsoMode}
+                            bandwidthLimit={bandwidthLimit}
+                            setBandwidthLimit={setBandwidthLimit}
                             config={config}
                             memory={memory}
                             setMemory={setMemory}
@@ -811,6 +830,14 @@ export default function VmInstanceEditPage() {
                             onSave={handleSaveResources}
                             saving={savingTab === 'resources'}
                         />
+                        {instance && typeof instance.pve_node === 'string' && instance.pve_node !== '' && (
+                            <VdsMigrateCard
+                                instanceId={id}
+                                vmNodeId={Number(instance.vm_node_id)}
+                                pveNode={instance.pve_node}
+                                onMigrated={() => window.location.reload()}
+                            />
+                        )}
                     </TabsContent>
 
                     <TabsContent value='history' className='mt-0 focus-visible:ring-0 focus-visible:outline-none'>

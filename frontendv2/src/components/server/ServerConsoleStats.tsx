@@ -117,11 +117,12 @@ interface StatCardProps {
     data: Point[];
     max?: number;
     ready: boolean;
+    className?: string;
 }
 
-function StatCard({ icon: Icon, label, value, sub, percent, warn, data, max, ready }: StatCardProps) {
+function StatCard({ icon: Icon, label, value, sub, percent, warn, data, max, ready, className }: StatCardProps) {
     return (
-        <div className='fp-surface relative flex min-w-0 flex-col overflow-hidden rounded-xl border'>
+        <div className={cn('fp-surface relative flex min-w-0 flex-col overflow-hidden rounded-xl border', className)}>
             <div className='flex items-start justify-between gap-2 p-3 pb-0 sm:p-4 sm:pb-0'>
                 <div className='flex min-w-0 items-center gap-2'>
                     <span className='bg-muted/60 text-muted-foreground flex h-7 w-7 shrink-0 items-center justify-center rounded-lg'>
@@ -271,6 +272,7 @@ export default React.memo(function ServerConsoleStats({
             />
             {diskIo ? (
                 <StatCard
+                    className='col-span-2 xl:col-span-1'
                     icon={HardDrive}
                     label={t('servers.console.info_cards.disk_io_title')}
                     value={`${formatFileSize(diskIo.read + diskIo.write)}/s`}

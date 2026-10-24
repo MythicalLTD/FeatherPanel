@@ -81,7 +81,7 @@ export function NetworkTab({
                                 >
                                     <div className='w-20 shrink-0'>
                                         <span className='font-mono text-sm'>{n.key}</span>
-                                        <p className='text-muted-foreground mt-1 text-[10px]'>
+                                        <p className='text-muted-foreground mt-1 text-xs'>
                                             {n.key === 'net0'
                                                 ? t('admin.vmInstances.primary_ip')
                                                 : t('admin.vmInstances.secondary_ip')}

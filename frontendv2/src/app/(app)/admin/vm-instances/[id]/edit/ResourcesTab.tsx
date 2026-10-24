@@ -28,6 +28,12 @@ interface ResourcesTabProps {
     setVmBackupLimit?: (v: number) => void;
     vmBackupRetention?: 'inherit' | 'hard_limit' | 'fifo_rolling';
     setVmBackupRetention?: (v: 'inherit' | 'hard_limit' | 'fifo_rolling') => void;
+    snapshotLimit?: string;
+    setSnapshotLimit?: (v: string) => void;
+    isoMode?: string;
+    bandwidthLimit?: string;
+    setBandwidthLimit?: (v: string) => void;
+    setIsoMode?: (v: string) => void;
     config: Record<string, unknown> | null;
     memory: number;
     setMemory: (v: number) => void;
@@ -61,6 +67,12 @@ export function ResourcesTab({
     setVmBackupLimit,
     vmBackupRetention,
     setVmBackupRetention,
+    snapshotLimit,
+    setSnapshotLimit,
+    isoMode,
+    setIsoMode,
+    bandwidthLimit,
+    setBandwidthLimit,
     config,
     memory,
     setMemory,
@@ -263,6 +275,68 @@ export function ResourcesTab({
                                         {t('admin.vmInstances.backups.retention_help_edit')}
                                     </p>
                                 </div>
+                                {snapshotLimit !== undefined && setSnapshotLimit && (
+                                    <div className='space-y-3'>
+                                        <Label>{t('admin.vmInstances.snapshot_limit')}</Label>
+                                        <Input
+                                            type='number'
+                                            min={0}
+                                            max={100}
+                                            value={snapshotLimit}
+                                            placeholder='—'
+                                            onChange={(e) =>
+                                                setSnapshotLimit(
+                                                    e.target.value === ''
+                                                        ? ''
+                                                        : String(
+                                                              Math.max(
+                                                                  0,
+                                                                  Math.min(100, parseInt(e.target.value, 10) || 0),
+                                                              ),
+                                                          ),
+                                                )
+                                            }
+                                            className='bg-muted/30 h-11 rounded-xl'
+                                        />
+                                        <p className='text-muted-foreground text-xs'>
+                                            {t('admin.vmInstances.snapshot_limit_help')}
+                                        </p>
+                                    </div>
+                                )}
+                                {isoMode !== undefined && setIsoMode && (
+                                    <div className='space-y-3'>
+                                        <Label>{t('admin.vmInstances.iso_mode')}</Label>
+                                        <select
+                                            className='border-input bg-muted/30 h-11 w-full rounded-xl border px-3 text-sm'
+                                            value={isoMode}
+                                            onChange={(e) => setIsoMode(e.target.value)}
+                                        >
+                                            {['inherit', 'provider', 'provider_user', 'disabled'].map((m) => (
+                                                <option key={m} value={m}>
+                                                    {t(`admin.vmInstances.iso_modes.${m}`)}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        <p className='text-muted-foreground text-xs'>
+                                            {t('admin.vmInstances.iso_mode_help')}
+                                        </p>
+                                    </div>
+                                )}
+                                {bandwidthLimit !== undefined && setBandwidthLimit && (
+                                    <div className='space-y-3'>
+                                        <Label>{t('admin.vmInstances.bandwidth_limit')}</Label>
+                                        <Input
+                                            type='number'
+                                            min={0}
+                                            placeholder={t('admin.vmInstances.bandwidth_limit_placeholder')}
+                                            value={bandwidthLimit}
+                                            onChange={(e) => setBandwidthLimit(e.target.value)}
+                                        />
+                                        <p className='text-muted-foreground text-xs'>
+                                            {t('admin.vmInstances.bandwidth_limit_help')}
+                                        </p>
+                                    </div>
+                                )}
                             </>
                         )}
                     </div>

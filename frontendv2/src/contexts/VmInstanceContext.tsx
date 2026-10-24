@@ -50,6 +50,8 @@ export interface VmInstance {
     access_password?: string | null;
     suspended?: number;
     expires_at?: string | null;
+    /** Only set on the synthetic record built from a VM_INSTANCE_SUSPENDED response. */
+    suspension?: { reason: string | null; suspended_at: string | null; message: string | null } | null;
 }
 
 interface VmInstanceContextType {
@@ -93,7 +95,7 @@ export function VmInstanceProvider({ children, instanceId, initialInstance }: Vm
                     const suspendedVm: VmInstance = {
                         id: instanceId,
                         vmid: 0,
-                        hostname: 'Suspended VDS',
+                        hostname: errorData?.data?.hostname || 'Suspended VDS',
                         status: 'suspended',
                         vm_type: 'qemu',
                         ip_address: null,
@@ -103,6 +105,11 @@ export function VmInstanceProvider({ children, instanceId, initialInstance }: Vm
                         is_owner: true,
                         is_subuser: false,
                         permissions: [],
+                        suspension: {
+                            reason: errorData?.data?.reason ?? null,
+                            suspended_at: errorData?.data?.suspended_at ?? null,
+                            message: errorData?.data?.message ?? null,
+                        },
                     };
                     setInstance(suspendedVm);
                     setError(null);

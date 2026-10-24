@@ -72,11 +72,7 @@ export interface KVPair {
 }
 
 /** Stored inside `additional_params` JSON; peeled into dedicated GUI fields. */
-export const VNC_UPSTREAM_PARAM_KEYS = [
-    'vnc_upstream_host',
-    'vnc_upstream_port',
-    'vnc_upstream_scheme',
-] as const;
+export const VNC_UPSTREAM_PARAM_KEYS = ['vnc_upstream_host', 'vnc_upstream_port', 'vnc_upstream_scheme'] as const;
 
 export interface VdsNodeForm {
     name: string;
@@ -281,12 +277,7 @@ export default function EditVdsNodePage() {
                 }
             }
 
-            const {
-                vnc_upstream_host: _vh,
-                vnc_upstream_port: _vp,
-                vnc_upstream_scheme: _vs,
-                ...formRest
-            } = form;
+            const { vnc_upstream_host: _vh, vnc_upstream_port: _vp, vnc_upstream_scheme: _vs, ...formRest } = form;
             const payload: Record<string, unknown> = {
                 ...formRest,
                 addional_headers: Object.keys(headersMap).length ? JSON.stringify(headersMap) : null,
@@ -396,7 +387,7 @@ export default function EditVdsNodePage() {
 
             {connectionResult && (
                 <div
-                    className={`space-y-3 rounded-2xl border-2 px-5 py-4 ${
+                    className={`space-y-3 rounded-xl border-2 px-5 py-4 ${
                         connectionResult.ok ? 'border-green-500/40 bg-green-500/5' : 'border-red-500/40 bg-red-500/5'
                     }`}
                 >
@@ -427,7 +418,7 @@ export default function EditVdsNodePage() {
             <div className='block'>
                 <Tabs defaultValue='details' orientation='vertical' className='flex w-full flex-col gap-6 md:flex-row'>
                     <aside className='w-full shrink-0 md:sticky md:top-24 md:w-64 md:self-start'>
-                        <ScrollableTabsList className='fp-surface flex h-auto w-full flex-row gap-2 rounded-2xl border p-2 md:flex-col md:gap-1 md:overflow-visible'>
+                        <ScrollableTabsList className='fp-surface flex h-auto w-full flex-row gap-2 rounded-xl border p-2 md:flex-col md:gap-1 md:overflow-visible'>
                             {tabs.map((tab) => {
                                 const Icon = tab.icon;
 
@@ -528,7 +519,7 @@ export default function EditVdsNodePage() {
                         </div>
                         <div className='max-h-[60vh] space-y-2 overflow-y-auto'>
                             {filteredLocations.length === 0 ? (
-                                <p className='text-muted-foreground py-6 text-center text-sm italic'>
+                                <p className='text-muted-foreground py-6 text-center text-sm'>
                                     {t('admin.vdsNodes.form.no_locations')}
                                 </p>
                             ) : (

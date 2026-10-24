@@ -124,6 +124,45 @@ export function ServerPageHeader({
     ];
 
     return (
+        <ResourcePageHeader
+            trail={trail}
+            title={title}
+            description={description}
+            icon={Icon}
+            actions={actions}
+            className={className}
+        >
+            {children}
+        </ResourcePageHeader>
+    );
+}
+
+interface ResourcePageHeaderProps {
+    /** Breadcrumbs before the title. Index 1 (the resource itself) stays visible on phones. */
+    trail: ServerPageCrumb[];
+    title: string;
+    description?: ReactNode;
+    icon: LucideIcon | ComponentType<{ className?: string }>;
+    actions?: ReactNode;
+    className?: string;
+    children?: ReactNode;
+}
+
+/**
+ * Presentational header card used by game server pages and VDS pages alike, so both modules share
+ * the same breadcrumbs, icon tile, title, description and actions layout.
+ */
+export function ResourcePageHeader({
+    trail,
+    title,
+    description,
+    icon: Icon,
+    actions,
+    className,
+    children,
+}: ResourcePageHeaderProps) {
+    const { t } = useTranslation();
+    return (
         <section className={cn('fp-surface rounded-xl border px-4 py-3 sm:px-5 sm:py-4', className)}>
             <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
                 <div className='flex min-w-0 items-center gap-3'>

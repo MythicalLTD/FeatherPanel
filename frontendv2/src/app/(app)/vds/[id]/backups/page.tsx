@@ -40,13 +40,15 @@ import { formatBackupLimitLabel, isBackupLimitDisabled } from '@/lib/server-util
 
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
-import { PageHeader } from '@/components/featherui/PageHeader';
+import { VdsPageHeader } from '@/components/vds/VdsPageHeader';
+import { VdsPageLoading } from '@/components/vds/VdsPageLoading';
 import { EmptyState } from '@/components/featherui/EmptyState';
 import { ResourceCard } from '@/components/featherui/ResourceCard';
 import { Dialog, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
+import { isReauthCancelled, useVdsReauth } from '@/components/vds/VdsReauth';
 
 type VmBackup = {
     id: number;
@@ -79,6 +81,7 @@ export default function VdsBackupsPage() {
     const { id } = useParams() as { id: string };
     const router = useRouter();
     const { t } = useTranslation();
+    const withReauth = useVdsReauth();
     const dateOpts = useDateFormatOptions();
     const { instance, loading: instanceLoading } = useVmInstance();
     const { fetchWidgets, getWidgets } = usePluginWidgets('vds-backups');
@@ -233,10 +236,13 @@ export default function VdsBackupsPage() {
         if (!selectedForRestore) return;
         setRestoring(true);
         try {
-            const { data } = await axios.post(`/api/user/vm-instances/${id}/backups/restore`, {
-                volid: selectedForRestore.volid,
-                storage: selectedForRestore.storage,
-            });
+            const { data } = await withReauth((headers) =>
+                axios.post(
+                    `/api/user/vm-instances/${id}/backups/restore`,
+                    { volid: selectedForRestore.volid, storage: selectedForRestore.storage },
+                    { headers },
+                ),
+            );
             if (!data.success) {
                 toast.error(getApiErrorMessageFromPayload(data, t, 'serverBackups.restoreStartFailed'));
                 return;
@@ -251,6 +257,7 @@ export default function VdsBackupsPage() {
                 pollRestoreStatus(restoreId);
             }
         } catch (err) {
+            if (isReauthCancelled(err)) return;
             toast.error(getApiErrorMessage(err, t, 'serverBackups.restoreStartFailed'));
         } finally {
             setRestoring(false);
@@ -306,24 +313,19 @@ export default function VdsBackupsPage() {
     );
 
     if (instanceLoading || (loading && backups.length === 0)) {
-        return (
-            <div className='flex flex-col items-center justify-center py-24'>
-                <Loader2 className='text-primary h-12 w-12 animate-spin opacity-50' />
-                <p className='text-muted-foreground mt-4 animate-pulse font-medium'>{t('common.loading')}</p>
-            </div>
-        );
+        return <VdsPageLoading label={t('common.loading')} />;
     }
 
     return (
         <div className='space-y-8 pb-12'>
             <WidgetRenderer widgets={getWidgets('vds-backups', 'top-of-page')} />
 
-            <PageHeader
+            <VdsPageHeader
                 title={t('serverBackups.title')}
                 description={
                     <div className='flex flex-wrap items-center gap-x-3 gap-y-2'>
                         <span>{t('serverBackups.description')}</span>
-                        <span className='bg-primary/5 text-primary border-primary/20 rounded-full border px-3 py-1 text-[10px] font-black tracking-widest whitespace-nowrap uppercase'>
+                        <span className='bg-primary/5 text-primary border-primary/20 rounded-full border px-3 py-1 text-[10px] font-semibold tracking-wide whitespace-nowrap uppercase'>
                             {backups.length} / {formatBackupLimitLabel(backupLimit, t('common.disabled'))}
                             {fifoRolling ? ' · FIFO' : ''}
                         </span>
@@ -358,7 +360,7 @@ export default function VdsBackupsPage() {
             />
 
             {fifoRolling && backupLimit > 0 && (
-                <div className='relative overflow-hidden rounded-3xl border border-sky-500/20 bg-sky-500/10 p-6 backdrop-blur-xl'>
+                <div className='relative overflow-hidden rounded-xl border border-sky-500/20 bg-sky-500/10 p-6'>
                     <div className='relative z-10 flex items-start gap-5'>
                         <div className='flex h-12 w-12 items-center justify-center rounded-2xl border border-sky-500/30 bg-sky-500/20'>
                             <Info className='h-6 w-6 text-sky-500' />
@@ -376,7 +378,7 @@ export default function VdsBackupsPage() {
             )}
 
             {limitReached && (
-                <div className='relative overflow-hidden rounded-3xl border border-yellow-500/20 bg-yellow-500/10 p-6 backdrop-blur-xl'>
+                <div className='relative overflow-hidden rounded-xl border border-yellow-500/20 bg-yellow-500/10 p-6'>
                     <div className='relative z-10 flex items-start gap-5'>
                         <div className='flex h-12 w-12 items-center justify-center rounded-2xl border border-yellow-500/30 bg-yellow-500/20'>
                             <AlertTriangle className='h-6 w-6 text-yellow-500' />
@@ -493,12 +495,12 @@ export default function VdsBackupsPage() {
                                     badges={
                                         <div className='flex items-center gap-2'>
                                             {backup.storage && (
-                                                <span className='bg-background/50 border-border/40 rounded-full border px-3 py-1 text-[10px] leading-none font-black tracking-widest uppercase'>
+                                                <span className='bg-background/50 border-border/40 rounded-full border px-3 py-1 text-[10px] leading-none font-semibold tracking-wide uppercase'>
                                                     {backup.storage}
                                                 </span>
                                             )}
                                             {isPending && (
-                                                <span className='animate-pulse rounded-full border border-blue-500/20 bg-blue-500/10 px-3 py-1 text-[10px] leading-none font-black tracking-widest text-blue-500 uppercase'>
+                                                <span className='animate-pulse rounded-full border border-blue-500/20 bg-blue-500/10 px-3 py-1 text-[10px] leading-none font-semibold tracking-wide text-blue-500 uppercase'>
                                                     {t(
                                                         backup.is_stale
                                                             ? 'serverBackups.statusStale'
@@ -507,7 +509,7 @@ export default function VdsBackupsPage() {
                                                 </span>
                                             )}
                                             {isFailed && (
-                                                <span className='rounded-full border border-red-500/20 bg-red-500/10 px-3 py-1 text-[10px] leading-none font-black tracking-widest text-red-500 uppercase'>
+                                                <span className='rounded-full border border-red-500/20 bg-red-500/10 px-3 py-1 text-[10px] leading-none font-semibold tracking-wide text-red-500 uppercase'>
                                                     {t('serverBackups.failed')}
                                                 </span>
                                             )}

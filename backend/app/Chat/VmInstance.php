@@ -335,7 +335,7 @@ class VmInstance
      */
     public static function update(int $id, array $data): bool
     {
-        $allowed = ['hostname', 'notes', 'user_uuid', 'vm_ip_id', 'memory', 'cpus', 'cores', 'disk_gb', 'on_boot', 'suspended', 'suspension_reason', 'suspended_at', 'suspended_by_uuid', 'backup_limit', 'backup_retention_mode'];
+        $allowed = ['hostname', 'notes', 'user_uuid', 'vm_ip_id', 'memory', 'cpus', 'cores', 'disk_gb', 'on_boot', 'suspended', 'suspension_reason', 'suspended_at', 'suspended_by_uuid', 'backup_limit', 'backup_retention_mode', 'snapshot_limit', 'iso_mode', 'bandwidth_limit_gb', 'expires_at'];
         $updates = [];
         $params = ['id' => $id];
 
@@ -350,6 +350,54 @@ class VmInstance
                 }
                 $updates[] = 'backup_limit = :backup_limit';
                 $params['backup_limit'] = $val;
+
+                continue;
+            }
+            if ($key === 'iso_mode') {
+                $raw = $data[$key];
+                if ($raw === null || $raw === '' || $raw === 'inherit') {
+                    $updates[] = 'iso_mode = NULL';
+                } elseif (in_array($raw, ['provider', 'provider_user', 'disabled'], true)) {
+                    $updates[] = 'iso_mode = :iso_mode';
+                    $params['iso_mode'] = $raw;
+                }
+
+                continue;
+            }
+            if ($key === 'expires_at') {
+                // A new expiry date re-arms the "expires soon" warning.
+                $raw = $data[$key];
+                if ($raw === null || $raw === '') {
+                    $updates[] = 'expires_at = NULL';
+                } elseif (is_string($raw) && strtotime($raw) !== false) {
+                    $updates[] = 'expires_at = :expires_at';
+                    $params['expires_at'] = date('Y-m-d H:i:s', (int) strtotime($raw));
+                } else {
+                    continue;
+                }
+                $updates[] = 'expiry_warned_at = NULL';
+
+                continue;
+            }
+            if ($key === 'bandwidth_limit_gb') {
+                $raw = $data[$key];
+                if ($raw === null || $raw === '') {
+                    $updates[] = 'bandwidth_limit_gb = NULL';
+                } elseif (is_numeric($raw) && (int) $raw >= 0 && (int) $raw <= 10000000) {
+                    $updates[] = 'bandwidth_limit_gb = :bandwidth_limit_gb';
+                    $params['bandwidth_limit_gb'] = (int) $raw;
+                }
+
+                continue;
+            }
+            if ($key === 'snapshot_limit') {
+                $raw = $data[$key];
+                if ($raw === null || $raw === '') {
+                    $updates[] = 'snapshot_limit = NULL';
+                } elseif (is_numeric($raw) && (int) $raw >= 0 && (int) $raw <= 100) {
+                    $updates[] = 'snapshot_limit = :snapshot_limit';
+                    $params['snapshot_limit'] = (int) $raw;
+                }
 
                 continue;
             }

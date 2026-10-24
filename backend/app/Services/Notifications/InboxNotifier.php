@@ -20,6 +20,7 @@ namespace App\Services\Notifications;
 use App\App;
 use App\Chat\User;
 use App\Chat\Subuser;
+use App\Chat\VmSubuser;
 use App\Realtime\Mercure;
 use App\SubuserPermissions;
 use App\Chat\UserNotification;
@@ -175,6 +176,103 @@ class InboxNotifier
      *
      * @return array<int, array> user rows
      */
+    /** A VDS stopped without a panel power action (detected by the VDS monitor cron). */
+    public static function vdsDown(array $vds, int $cooldownSeconds): void
+    {
+        self::vdsSend($vds, UserNotification::KIND_VDS_DOWN, 'vds_down', 'power', [], $cooldownSeconds);
+    }
+
+    /** A VDS stayed above the CPU threshold for the configured duration. */
+    public static function vdsHighCpu(array $vds, int $percent, int $minutes, int $cooldownSeconds): void
+    {
+        self::vdsSend($vds, UserNotification::KIND_VDS_HIGH_CPU, 'vds_high_cpu', 'console', [
+            'percent' => (string) $percent,
+            'minutes' => (string) $minutes,
+        ], $cooldownSeconds);
+    }
+
+    /** A VDS reached the warning threshold or its monthly traffic limit (once per level per month). */
+    public static function vdsBandwidth(array $vds, int $percent, string $usedGb, string $limitGb, string $actionLabel, string $period): void
+    {
+        self::vdsSend($vds, UserNotification::KIND_VDS_BANDWIDTH, 'vds_bandwidth', 'console', [
+            'percent' => (string) $percent,
+            'used_gb' => $usedGb,
+            'limit_gb' => $limitGb,
+            'action_label' => $actionLabel,
+        ], 40 * 86400, 'vds-bandwidth:' . ($vds['id'] ?? 0) . ':' . $period . ':' . ($percent >= 100 ? 'limit' : 'warn'));
+    }
+
+    /** A VDS expires soon. One notification per expiry date. */
+    public static function vdsExpiring(array $vds, string $expiresAt, int $days): void
+    {
+        self::vdsSend($vds, UserNotification::KIND_VDS_EXPIRING, 'vds_expiring', 'console', [
+            'expires_at' => $expiresAt,
+            'days' => (string) $days,
+        ], 90 * 86400, 'vds-expiring:' . ($vds['id'] ?? 0) . ':' . $expiresAt);
+    }
+
+    /** A VDS backup task failed. The group key is per task, so every failure is reported once. */
+    public static function vdsBackupFailed(array $vds, string $taskId, string $error): void
+    {
+        self::vdsSend($vds, UserNotification::KIND_VDS_BACKUP_FAILED, 'vds_backup_failed', 'backup', [
+            'error' => mb_substr($error, 0, 300),
+        ], 30 * 86400, 'vds-backup:' . $taskId);
+    }
+
+    private static function vdsSend(array $vds, string $kind, string $event, string $permission, array $extra, int $cooldownSeconds, ?string $groupKey = null): void
+    {
+        self::guard(static function () use ($vds, $kind, $event, $permission, $extra, $cooldownSeconds, $groupKey): void {
+            $vdsId = (int) ($vds['id'] ?? 0);
+            if ($vdsId <= 0) {
+                return;
+            }
+            $groupKey ??= $kind . ':' . $vdsId;
+            $audience = array_values(array_filter(
+                self::vdsAudience($vds, $permission),
+                static function (array $user) use ($groupKey, $cooldownSeconds, $event): bool {
+                    $prefs = ExternalNotifier::getPreferences((string) ($user['uuid'] ?? ''));
+                    if (empty($prefs['events'][$event])) {
+                        return false;
+                    }
+
+                    return !UserNotification::sentWithin((int) $user['id'], $groupKey, $cooldownSeconds);
+                }
+            ));
+            self::send(
+                $audience,
+                $kind,
+                array_merge(['vds_name' => mb_substr((string) ($vds['hostname'] ?? ('VDS #' . $vdsId)), 0, 120), 'vds' => (string) $vdsId], $extra),
+                '/vds/' . $vdsId,
+                $groupKey
+            );
+        });
+    }
+
+    /** VDS owner plus subusers that hold the given VDS permission. */
+    private static function vdsAudience(array $vds, string $permission): array
+    {
+        $users = [];
+        $ownerUuid = (string) ($vds['user_uuid'] ?? '');
+        if ($ownerUuid !== '' && ($owner = User::getUserByUuid($ownerUuid))) {
+            $users[(int) $owner['id']] = $owner;
+        }
+        foreach (VmSubuser::getSubusersByVmInstance((int) ($vds['id'] ?? 0)) as $row) {
+            $userId = (int) ($row['user_id'] ?? 0);
+            if ($userId <= 0 || isset($users[$userId])) {
+                continue;
+            }
+            $permissions = json_decode((string) ($row['permissions'] ?? ''), true);
+            if (!is_array($permissions) || !in_array($permission, $permissions, true)) {
+                continue;
+            }
+            if ($user = User::getUserById($userId)) {
+                $users[$userId] = $user;
+            }
+        }
+
+        return array_values($users);
+    }
+
     private static function serverAudience(array $server, string $permission): array
     {
         $users = [];

@@ -368,7 +368,7 @@ export default function VmInstancesPage() {
 
             <WidgetRenderer widgets={getWidgets('admin-vm-instances', 'after-header')} />
 
-            <div className='fp-surface flex flex-col items-stretch gap-4 rounded-2xl border p-4'>
+            <div className='fp-surface flex flex-col items-stretch gap-4 rounded-xl border p-4'>
                 <div className='group relative w-full flex-1'>
                     <Search className='text-muted-foreground group-focus-within:text-primary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transition-colors' />
                     <Input
@@ -829,8 +829,8 @@ export default function VmInstancesPage() {
 
                             <div className='mt-8 space-y-6'>
                                 <div className='grid grid-cols-1 gap-4'>
-                                    <div className='bg-muted/30 border-border/50 rounded-2xl border p-5'>
-                                        <h4 className='text-primary mb-4 text-xs font-black tracking-widest uppercase'>
+                                    <div className='bg-muted/30 border-border/50 rounded-xl border p-5'>
+                                        <h4 className='text-primary mb-4 text-xs font-semibold'>
                                             {t('admin.vmInstances.details.basic_info')}
                                         </h4>
                                         <div className='space-y-4'>
@@ -886,8 +886,8 @@ export default function VmInstancesPage() {
                                         </div>
                                     </div>
 
-                                    <div className='bg-muted/30 border-border/50 rounded-2xl border p-5'>
-                                        <h4 className='text-primary mb-4 text-xs font-black tracking-widest uppercase'>
+                                    <div className='bg-muted/30 border-border/50 rounded-xl border p-5'>
+                                        <h4 className='text-primary mb-4 text-xs font-semibold'>
                                             {t('admin.vmInstances.details.ownership_node')}
                                         </h4>
                                         <div className='space-y-4'>

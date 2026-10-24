@@ -31,6 +31,7 @@ import { usePersistedListFilters } from '@/hooks/usePersistedListFilters';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { toast } from 'sonner';
 import { getApiErrorMessage } from '@/lib/api-errors';
+import { VdsCapacityOverview } from '@/components/admin/VdsCapacityOverview';
 import {
     Server,
     Search,
@@ -292,7 +293,9 @@ export default function VdsNodesPage() {
 
             <WidgetRenderer widgets={getWidgets('admin-vm-nodes', 'after-header')} />
 
-            <div className='fp-surface flex flex-col items-center gap-4 rounded-2xl border p-4 sm:flex-row'>
+            <VdsCapacityOverview />
+
+            <div className='fp-surface flex flex-col items-center gap-4 rounded-xl border p-4 sm:flex-row'>
                 <div className='group relative w-full flex-1'>
                     <Search className='text-muted-foreground group-focus-within:text-primary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transition-colors' />
                     <Input

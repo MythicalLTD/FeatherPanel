@@ -280,7 +280,7 @@ export function TemplatesTab({ nodeId }: TemplatesTabProps) {
             </PageCard>
 
             <Tabs defaultValue='qemu'>
-                <TabsList className='fp-surface mb-6 grid h-auto w-full grid-cols-2 gap-2 rounded-2xl border p-2'>
+                <TabsList className='fp-surface mb-6 grid h-auto w-full grid-cols-2 gap-2 rounded-xl border p-2'>
                     <TabsTrigger
                         value='qemu'
                         className='data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:border-primary/10 flex items-center gap-2 rounded-xl border border-transparent py-3'
@@ -371,7 +371,7 @@ export function TemplatesTab({ nodeId }: TemplatesTabProps) {
                                 <AlertTitle className='text-xs'>
                                     {t('ui.admin.vdsNodes.edit.templatesTab.securityRecommendation')}
                                 </AlertTitle>
-                                <AlertDescription className='text-[10px] leading-tight'>
+                                <AlertDescription className='text-xs leading-tight'>
                                     {t('ui.admin.vdsNodes.edit.templatesTab.lXCIsNotRecommendedForPublic')}
                                 </AlertDescription>
                             </Alert>

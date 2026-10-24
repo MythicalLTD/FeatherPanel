@@ -30,6 +30,7 @@ import {
     MessageSquareText,
     TriangleAlert,
     Gauge,
+    CalendarClock,
     Power,
     type LucideProps,
     ArrowRightLeft,
@@ -52,6 +53,11 @@ type InboxKind =
     | 'file_transfer_failed'
     | 'resource_limit'
     | 'transfer_power_failed'
+    | 'vds_down'
+    | 'vds_high_cpu'
+    | 'vds_backup_failed'
+    | 'vds_bandwidth'
+    | 'vds_expiring'
     | 'announcement';
 
 export interface InboxItem {
@@ -81,6 +87,11 @@ const KIND_ICONS: Record<InboxKind, { icon: ComponentType<LucideProps>; tone: st
     file_transfer_failed: { icon: ArrowRightLeft, tone: 'text-red-500 bg-red-500/10' },
     resource_limit: { icon: Gauge, tone: 'text-amber-500 bg-amber-500/10' },
     transfer_power_failed: { icon: Power, tone: 'text-red-500 bg-red-500/10' },
+    vds_down: { icon: Power, tone: 'text-red-500 bg-red-500/10' },
+    vds_high_cpu: { icon: Gauge, tone: 'text-amber-500 bg-amber-500/10' },
+    vds_backup_failed: { icon: ArchiveX, tone: 'text-red-500 bg-red-500/10' },
+    vds_bandwidth: { icon: Gauge, tone: 'text-amber-500 bg-amber-500/10' },
+    vds_expiring: { icon: CalendarClock, tone: 'text-orange-500 bg-orange-500/10' },
     announcement: { icon: Megaphone, tone: 'text-sky-500 bg-sky-500/10' },
 };
 
@@ -93,6 +104,11 @@ const KIND_TITLES: Record<InboxKind, string> = {
     file_transfer_failed: 'navbar.inbox.kinds.file_transfer_failed',
     resource_limit: 'navbar.inbox.kinds.resource_limit',
     transfer_power_failed: 'navbar.inbox.kinds.transfer_power_failed',
+    vds_down: 'navbar.inbox.kinds.vds_down',
+    vds_high_cpu: 'navbar.inbox.kinds.vds_high_cpu',
+    vds_backup_failed: 'navbar.inbox.kinds.vds_backup_failed',
+    vds_bandwidth: 'navbar.inbox.kinds.vds_bandwidth',
+    vds_expiring: 'navbar.inbox.kinds.vds_expiring',
     announcement: 'navbar.inbox.kinds.announcement',
 };
 
@@ -105,6 +121,11 @@ const KIND_BODIES: Record<Exclude<InboxKind, 'announcement'>, string> = {
     file_transfer_failed: 'navbar.inbox.bodies.file_transfer_failed',
     resource_limit: 'navbar.inbox.bodies.resource_limit',
     transfer_power_failed: 'navbar.inbox.bodies.transfer_power_failed',
+    vds_down: 'navbar.inbox.bodies.vds_down',
+    vds_high_cpu: 'navbar.inbox.bodies.vds_high_cpu',
+    vds_backup_failed: 'navbar.inbox.bodies.vds_backup_failed',
+    vds_bandwidth: 'navbar.inbox.bodies.vds_bandwidth',
+    vds_expiring: 'navbar.inbox.bodies.vds_expiring',
 };
 
 function isKnownKind(kind: string): kind is InboxKind {
@@ -122,6 +143,9 @@ function bodyParams(item: InboxItem): Record<string, string> {
         target: d.target_name ?? '',
         files: d.count ?? '',
         percent: d.percent ?? '',
+        vds: d.vds_name ?? '',
+        minutes: d.minutes ?? '',
+        error: d.error ?? '',
         count: String(item.count),
     };
 }

@@ -20,6 +20,7 @@ import { getBaseUrl } from '@/lib/settings-api';
 import { cookies } from 'next/headers';
 import { VmInstanceProvider, VmInstance } from '@/contexts/VmInstanceContext';
 import { VdsSuspendedWrapper } from '@/components/vds/VdsSuspendedWrapper';
+import { VdsReauthProvider } from '@/components/vds/VdsReauth';
 
 type Props = {
     params: Promise<{ id: string }>;
@@ -74,7 +75,9 @@ export default async function VdsLayout({
     return (
         <VmInstanceProvider instanceId={parseInt(id, 10)} initialInstance={instance}>
             <DashboardShell>
-                <VdsSuspendedWrapper>{children}</VdsSuspendedWrapper>
+                <VdsReauthProvider>
+                    <VdsSuspendedWrapper>{children}</VdsSuspendedWrapper>
+                </VdsReauthProvider>
             </DashboardShell>
             <ChatbotWidget />
         </VmInstanceProvider>

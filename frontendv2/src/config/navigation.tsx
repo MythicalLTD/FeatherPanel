@@ -18,6 +18,9 @@ import { NavigationItem } from '@/types/navigation';
 import { applyModulesToNavigation } from '@/lib/modules';
 import type { AppSettings } from '@/types/settings';
 import {
+    Disc3,
+    CalendarClock,
+    Shield,
     Home,
     LayoutDashboard,
     Server,
@@ -69,6 +72,7 @@ import {
     Mail,
     Palette,
     LifeBuoy,
+    Camera,
 } from 'lucide-react';
 import { isEnabled, isEnabledUnlessExplicitlyFalse } from '@/lib/utils';
 import { supportsDaemonFeature, type DaemonFeature } from '@/lib/daemonCapabilities';
@@ -292,6 +296,18 @@ const buildAdminNavigationItems = (
             title: t('navigation.items.vdsNodes'),
             url: '/admin/vds-nodes',
             icon: Server,
+            isActive: false,
+            category: 'admin',
+            permission: Permissions.ADMIN_NODES_VIEW,
+            group: 'infrastructure',
+        },
+        {
+            id: 'admin-vds-isos',
+            module: 'vds',
+            name: t('navigation.items.vdsIsos'),
+            title: t('navigation.items.vdsIsos'),
+            url: '/admin/vds-isos',
+            icon: Disc3,
             isActive: false,
             category: 'admin',
             permission: Permissions.ADMIN_NODES_VIEW,
@@ -1213,6 +1229,17 @@ export const getVdsNavigationItems = (t: TFunction, instanceId: string): Navigat
             permission: 'backup',
         },
         {
+            id: 'vds-snapshots',
+            name: t('navigation.items.snapshots'),
+            title: t('navigation.items.snapshots'),
+            url: `/vds/${instanceId}/snapshots`,
+            icon: Camera,
+            isActive: false,
+            category: 'server',
+            group: 'files',
+            permission: 'snapshot',
+        },
+        {
             id: 'vds-users',
             name: t('navigation.items.users'),
             title: t('navigation.items.users'),
@@ -1232,6 +1259,28 @@ export const getVdsNavigationItems = (t: TFunction, instanceId: string): Navigat
             isActive: false,
             category: 'server',
             group: 'configuration',
+        },
+        {
+            id: 'vds-firewall',
+            name: t('navigation.items.firewall'),
+            title: t('navigation.items.firewall'),
+            url: `/vds/${instanceId}/firewall`,
+            icon: Shield,
+            isActive: false,
+            category: 'server',
+            group: 'configuration',
+            permission: 'firewall',
+        },
+        {
+            id: 'vds-schedules',
+            name: t('navigation.items.schedules'),
+            title: t('navigation.items.schedules'),
+            url: `/vds/${instanceId}/schedules`,
+            icon: CalendarClock,
+            isActive: false,
+            category: 'server',
+            group: 'automation',
+            permission: 'schedules',
         },
         {
             id: 'vds-settings',

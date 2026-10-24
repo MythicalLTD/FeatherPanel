@@ -17,38 +17,25 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import dynamic from 'next/dynamic';
 import axios from 'axios';
 import { useVmInstance } from '@/contexts/VmInstanceContext';
 import { useTranslation } from '@/contexts/TranslationContext';
-import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
+import { EmptyState } from '@/components/featherui/EmptyState';
+import { PageCard } from '@/components/featherui/PageCard';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
+import ServerHeader from '@/components/server/ServerHeader';
+import ServerConsoleStats from '@/components/server/ServerConsoleStats';
 import { toast } from 'sonner';
 import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 import VdsPerformance from '@/components/vds/VdsPerformance';
-import VdsInfoCards, { VdsNetworkCard } from '@/components/vds/VdsInfoCards';
-
-const VncConsole = dynamic(() => import('@/components/vds/VncConsole').then((m) => m.VncConsole), {
-    ssr: false,
-});
-import {
-    Play,
-    Square,
-    RotateCw,
-    Loader2,
-    Monitor,
-    AlertTriangle,
-    Globe,
-    RefreshCw,
-    Info,
-    Eye,
-    EyeOff,
-    Lock,
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { Sensitive } from '@/components/common/Sensitive';
+import { VdsScreen } from '@/components/vds/VdsScreen';
+import { VdsResourceGraphs } from '@/components/vds/VdsResourceGraphs';
+import { useVdsFeatures } from '@/hooks/useVdsFeatures';
+import { VdsPageLoading } from '@/components/vds/VdsPageLoading';
+import { Monitor, AlertTriangle, RefreshCw, Info, Eye, EyeOff, Lock, Copy, Check } from 'lucide-react';
+import { cn, copyToClipboard } from '@/lib/utils';
 import { ServiceExpiryChip } from '@/components/common/ServiceExpiryChip';
 import { useDateFormatOptions } from '@/contexts/PreferencesContext';
 import { formatExpiryAbsolute } from '@/lib/service-expiry';
@@ -65,11 +52,11 @@ interface VmStatus {
     uptime?: number;
     netin?: number;
     netout?: number;
+    diskread?: number;
+    diskwrite?: number;
     vmid?: number;
     name?: string;
 }
-
-type TranslateFn = (key: string, params?: Record<string, string>) => string;
 
 function formatUptime(seconds: number): string {
     if (!seconds) return '—';
@@ -85,73 +72,13 @@ function formatUptime(seconds: number): string {
     return parts.join(' ');
 }
 
-function getVmStatusStyles(t: TranslateFn): Record<string, { badge: string; dot: string; label: string }> {
-    return {
-        running: {
-            badge: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
-            dot: 'bg-emerald-400',
-            label: t('vds.console.status.running'),
-        },
-        stopped: {
-            badge: 'bg-red-500/15 text-red-400 border-red-500/30',
-            dot: 'bg-red-400',
-            label: t('vds.console.status.stopped'),
-        },
-        starting: {
-            badge: 'bg-blue-500/15 text-blue-400 border-blue-500/30',
-            dot: 'bg-blue-400 animate-pulse',
-            label: t('vds.console.status.starting'),
-        },
-        stopping: {
-            badge: 'bg-orange-500/15 text-orange-400 border-orange-500/30',
-            dot: 'bg-orange-400 animate-pulse',
-            label: t('vds.console.status.stopping'),
-        },
-        suspended: {
-            badge: 'bg-amber-500/15 text-amber-400 border-amber-500/30',
-            dot: 'bg-amber-400',
-            label: t('vds.console.status.suspended'),
-        },
-        creating: {
-            badge: 'bg-blue-500/15 text-blue-400 border-blue-500/30',
-            dot: 'bg-blue-400 animate-pulse',
-            label: t('vds.console.status.creating'),
-        },
-        reinstalling: {
-            badge: 'bg-blue-500/15 text-blue-400 border-blue-500/30',
-            dot: 'bg-blue-400 animate-pulse',
-            label: t('vds.console.status.reinstalling'),
-        },
-        unknown: {
-            badge: 'bg-muted/50 text-muted-foreground border-border/30',
-            dot: 'bg-muted-foreground',
-            label: t('vds.console.status.unknown'),
-        },
-    };
-}
-
-function StatusBadge({ status, t }: { status: string; t: TranslateFn }) {
-    const vmStatusStyles = getVmStatusStyles(t);
-    const s = vmStatusStyles[status] ?? vmStatusStyles.unknown;
-    return (
-        <span
-            className={cn(
-                'inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-xs font-medium',
-                s.badge,
-            )}
-        >
-            <span className={cn('h-1.5 w-1.5 shrink-0 rounded-full', s.dot)} />
-            {s.label}
-        </span>
-    );
-}
-
 export default function VdsConsolePage() {
     const { id } = useParams() as { id: string };
     const router = useRouter();
     const { t } = useTranslation();
     const dateOpts = useDateFormatOptions();
     const { instance, loading: instanceLoading, refreshInstance, hasPermission } = useVmInstance();
+    const features = useVdsFeatures(instance?.id);
     const { fetchWidgets, getWidgets } = usePluginWidgets('vds-console');
 
     const getVdsWidgets = useCallback(
@@ -173,11 +100,13 @@ export default function VdsConsolePage() {
 
     const [vmStatus, setVmStatus] = useState<VmStatus | null>(null);
     const [statusLoading, setStatusLoading] = useState(false);
+    const [statusError, setStatusError] = useState(false);
     const [powering, setPowering] = useState<string | null>(null);
     const [vncLoading, setVncLoading] = useState(false);
     const [vncUrl, setVncUrl] = useState<string | null>(null);
     const [vncPassword, setVncPassword] = useState<string | null>(null);
     const [showAccessPassword, setShowAccessPassword] = useState(false);
+    const [copied, setCopied] = useState(false);
     const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const statusInFlightRef = useRef(false);
 
@@ -185,7 +114,16 @@ export default function VdsConsolePage() {
     const [memoryData, setMemoryData] = useState<{ timestamp: number; value: number }[]>([]);
     const [networkRxData, setNetworkRxData] = useState<{ timestamp: number; value: number }[]>([]);
     const [networkTxData, setNetworkTxData] = useState<{ timestamp: number; value: number }[]>([]);
-    const prevStatsRef = useRef<{ netin: number; netout: number; timestamp: number } | null>(null);
+    const [diskData, setDiskData] = useState<{ timestamp: number; value: number }[]>([]);
+    const [diskIoData, setDiskIoData] = useState<{ timestamp: number; value: number }[]>([]);
+    const [diskIoRate, setDiskIoRate] = useState<{ read: number; write: number } | null>(null);
+    const prevStatsRef = useRef<{
+        netin: number;
+        netout: number;
+        diskread: number;
+        diskwrite: number;
+        timestamp: number;
+    } | null>(null);
     const maxDataPoints = 60;
 
     const fetchStatus = useCallback(async () => {
@@ -207,6 +145,25 @@ export default function VdsConsolePage() {
                     ...prev.slice(-maxDataPoints + 1),
                     { timestamp: now, value: status.mem ?? 0 },
                 ]);
+
+                // Proxmox reports disk=0 for QEMU guests without the agent; only chart real values (MiB).
+                if (status.disk) {
+                    const diskMib = status.disk / 1024 / 1024;
+                    setDiskData((prev) => [...prev.slice(-maxDataPoints + 1), { timestamp: now, value: diskMib }]);
+                }
+
+                if (prevStatsRef.current && status.diskread != null && status.diskwrite != null) {
+                    const dt = (now - prevStatsRef.current.timestamp) / 1000;
+                    if (dt > 0) {
+                        const read = Math.max(0, status.diskread - prevStatsRef.current.diskread) / dt;
+                        const write = Math.max(0, status.diskwrite - prevStatsRef.current.diskwrite) / dt;
+                        setDiskIoRate({ read, write });
+                        setDiskIoData((prev) => [
+                            ...prev.slice(-maxDataPoints + 1),
+                            { timestamp: now, value: read + write },
+                        ]);
+                    }
+                }
 
                 if (prevStatsRef.current && status.netin != null && status.netout != null) {
                     const timeDiff = (now - prevStatsRef.current.timestamp) / 1000;
@@ -231,11 +188,15 @@ export default function VdsConsolePage() {
                 prevStatsRef.current = {
                     netin: status.netin ?? 0,
                     netout: status.netout ?? 0,
+                    diskread: status.diskread ?? 0,
+                    diskwrite: status.diskwrite ?? 0,
                     timestamp: now,
                 };
             }
+            setStatusError(!data.success);
         } catch {
-            // silent
+            // Keep the last known values; just flag that live stats are unreachable.
+            setStatusError(true);
         } finally {
             statusInFlightRef.current = false;
             setStatusLoading(false);
@@ -347,29 +308,22 @@ export default function VdsConsolePage() {
     };
 
     if (instanceLoading) {
-        return (
-            <div className='flex min-h-[60vh] items-center justify-center'>
-                <div className='flex flex-col items-center gap-4'>
-                    <Loader2 className='text-primary h-10 w-10 animate-spin' />
-                    <p className='text-muted-foreground animate-pulse font-medium'>{t('vds.console.loading')}</p>
-                </div>
-            </div>
-        );
+        return <VdsPageLoading label={t('vds.console.loading')} />;
     }
 
     if (!instance) {
         return (
             <div className='flex min-h-[60vh] items-center justify-center'>
-                <div className='space-y-4 text-center'>
-                    <div className='bg-destructive/10 border-destructive/20 mx-auto flex h-20 w-20 items-center justify-center rounded-3xl border'>
-                        <AlertTriangle className='text-destructive h-10 w-10' />
-                    </div>
-                    <h2 className='text-2xl font-bold'>{t('vds.console.not_found_title')}</h2>
-                    <p className='text-muted-foreground'>{t('vds.console.not_found_description')}</p>
-                    <Button variant='outline' onClick={() => router.push('/dashboard')} className='mt-4'>
-                        {t('common.goBack')}
-                    </Button>
-                </div>
+                <EmptyState
+                    icon={AlertTriangle}
+                    title={t('vds.console.not_found_title')}
+                    description={t('vds.console.not_found_description')}
+                    action={
+                        <Button variant='outline' onClick={() => router.push('/dashboard')}>
+                            {t('common.goBack')}
+                        </Button>
+                    }
+                />
             </div>
         );
     }
@@ -379,297 +333,268 @@ export default function VdsConsolePage() {
 
     const ip = instance.ip_pool_address ?? instance.ip_address ?? null;
     const liveStatus = vmStatus?.status ?? instance.status;
-    const cpuPercent = vmStatus?.cpu != null ? vmStatus.cpu * 100 : 0;
-    const memUsed = vmStatus?.mem ?? null;
-    const memMax =
-        vmStatus?.maxmem ||
-        (instance.plan_memory
-            ? instance.plan_memory * 1024 * 1024
-            : instance.memory
-              ? instance.memory * 1024 * 1024
-              : 0);
+    // While a power task runs, show the transitional state the way game servers do.
+    const displayStatus =
+        powering === 'start' ? 'starting' : powering === 'stop' || powering === 'reboot' ? 'stopping' : liveStatus;
+    const MiB = 1024 * 1024;
+    const cpuCores = instance.plan_cpus ?? instance.cpus ?? vmStatus?.maxcpu ?? 0;
+    const memLimitMib = vmStatus?.maxmem ? vmStatus.maxmem / MiB : (instance.plan_memory ?? instance.memory ?? 0);
     // Proxmox returns disk=0 for QEMU VMs when the guest agent isn't reporting
-    // filesystem usage - treat 0 as "no data" (null) rather than "0 bytes used".
-    const diskUsed = vmStatus?.disk ? vmStatus.disk : null;
-    const diskMax =
-        vmStatus?.maxdisk ||
-        (instance.plan_disk
-            ? instance.plan_disk * 1024 * 1024 * 1024
-            : instance.disk_gb
-              ? instance.disk_gb * 1024 * 1024 * 1024
-              : 0);
-    const uptime = vmStatus?.uptime != null ? formatUptime(vmStatus.uptime) : '—';
+    // filesystem usage - treat 0 as "no data" rather than "0 bytes used".
+    const diskReady = Boolean(vmStatus?.disk);
+    const diskLimitMib = vmStatus?.maxdisk
+        ? vmStatus.maxdisk / MiB
+        : (instance.plan_disk ?? instance.disk_gb ?? 0) * 1024;
+    const uptime = vmStatus?.uptime ? formatUptime(vmStatus.uptime) : undefined;
     const canViewAccessPassword = Boolean(instance.is_owner && instance.access_password);
-    const cpuCores = instance.plan_cpus ?? instance.cpus ?? 0;
     const networkRxRate = networkRxData.length ? networkRxData[networkRxData.length - 1].value : 0;
     const networkTxRate = networkTxData.length ? networkTxData[networkTxData.length - 1].value : 0;
     const networkRxTotal = vmStatus?.netin ?? 0;
     const networkTxTotal = vmStatus?.netout ?? 0;
     const statsReady = vmStatus != null;
+    // ServerConsoleStats uses game-server units: CPU percent where 100 = one core, memory/disk in MiB.
+    const cpuScale = cpuCores > 0 ? cpuCores * 100 : 100;
+    const statusLabel = t(`vds.console.status.${displayStatus}`, { defaultValue: displayStatus });
+
+    const details: { label: string; value: string; mono?: boolean }[] = [
+        { label: t('vds.console.details.hostname'), value: instance.hostname ?? '—' },
+        { label: t('vds.console.details.vmid'), value: String(instance.vmid), mono: true },
+        { label: t('vds.console.details.type'), value: instance.vm_type?.toUpperCase() ?? 'QEMU' },
+        { label: t('vds.console.details.status'), value: statusLabel },
+        { label: t('vds.console.details.node'), value: instance.node_name ?? instance.pve_node ?? '—' },
+        { label: t('vds.console.details.plan'), value: instance.plan_name ?? '—' },
+        { label: t('vds.console.details.ip'), value: ip ?? '—', mono: true },
+        {
+            label: t('vds.console.details.role'),
+            value: instance.is_owner ? t('vds.console.details.role_owner') : t('vds.console.details.role_subuser'),
+        },
+    ];
+
+    const copyPassword = async () => {
+        if (!instance.access_password) return;
+        await copyToClipboard(instance.access_password, t);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1500);
+    };
 
     return (
-        <div className='space-y-6 pb-12'>
+        <div className='space-y-4 pb-12'>
             <WidgetRenderer widgets={getVdsWidgets('top-of-page')} />
 
-            <PageHeader
-                title={instance.hostname ?? t('vds.console.title')}
-                description={
-                    <div className='mt-1 flex flex-wrap items-center gap-2'>
-                        <StatusBadge status={liveStatus} t={t} />
-                        <span className='text-muted-foreground/70 border-border/30 rounded-md border px-2 py-0.5 text-xs font-medium'>
-                            {t('ui.vds.vdsConsolePage.vMIDVmid', { vmid: String(instance.vmid) })}
-                        </span>
-                        <span className='text-muted-foreground/70 border-border/30 rounded-md border px-2 py-0.5 text-xs font-medium'>
-                            {instance.vm_type?.toUpperCase() ?? 'QEMU'}
-                        </span>
-                        {ip && (
-                            <span className='text-muted-foreground/70 flex items-center gap-1 font-mono text-xs'>
-                                <Globe className='h-3.5 w-3.5' />
-                                <Sensitive>{ip}</Sensitive>
-                            </span>
-                        )}
-                    </div>
-                }
-                actions={
-                    <div className='flex flex-wrap items-center gap-2'>
-                        <Button
-                            variant='glass'
-                            size='sm'
-                            onClick={() => {
-                                fetchStatus();
-                                refreshInstance();
-                            }}
-                            disabled={statusLoading}
-                        >
-                            <RefreshCw className={cn('mr-1.5 h-4 w-4', statusLoading && 'animate-spin')} />
-                            {t('navigation.items.refresh')}
-                        </Button>
-
-                        {canConsole && (
-                            <Button
-                                variant='glass'
-                                size='sm'
-                                onClick={openVnc}
-                                disabled={vncLoading || liveStatus !== 'running'}
-                            >
-                                {vncLoading ? (
-                                    <Loader2 className='mr-1.5 h-4 w-4 animate-spin' />
-                                ) : (
-                                    <Monitor className='mr-1.5 h-4 w-4' />
-                                )}
-                                {t('vds.console.vnc_console')}
-                            </Button>
-                        )}
-
-                        {canPower && (
-                            <>
-                                <Button
-                                    variant='glass'
-                                    size='sm'
-                                    disabled={powering !== null || liveStatus === 'running'}
-                                    onClick={() => handlePower('start')}
-                                >
-                                    {powering === 'start' ? (
-                                        <Loader2 className='mr-1.5 h-4 w-4 animate-spin' />
-                                    ) : (
-                                        <Play className='mr-1.5 h-4 w-4' />
-                                    )}
-                                    {t('vds.console.power.start')}
-                                </Button>
-                                <Button
-                                    variant='glass'
-                                    size='sm'
-                                    disabled={powering !== null || liveStatus !== 'running'}
-                                    onClick={() => handlePower('reboot')}
-                                >
-                                    {powering === 'reboot' ? (
-                                        <Loader2 className='mr-1.5 h-4 w-4 animate-spin' />
-                                    ) : (
-                                        <RotateCw className='mr-1.5 h-4 w-4' />
-                                    )}
-                                    {t('vds.console.power.reboot')}
-                                </Button>
-                                <Button
-                                    variant='destructive'
-                                    size='sm'
-                                    disabled={powering !== null || liveStatus === 'stopped'}
-                                    onClick={() => handlePower('stop')}
-                                >
-                                    {powering === 'stop' ? (
-                                        <Loader2 className='mr-1.5 h-4 w-4 animate-spin' />
-                                    ) : (
-                                        <Square className='mr-1.5 h-4 w-4' />
-                                    )}
-                                    {t('vds.console.power.stop')}
-                                </Button>
-                            </>
-                        )}
-                    </div>
+            <ServerHeader
+                serverName={instance.hostname ?? t('vds.console.title')}
+                serverStatus={displayStatus}
+                statusLabel={statusLabel}
+                description={instance.plan_name ?? undefined}
+                icon={Monitor}
+                address={ip ?? undefined}
+                uptime={uptime}
+                expiresAt={instance.expires_at}
+                nodeName={instance.node_name ?? instance.pve_node ?? undefined}
+                spellName={`${instance.vm_type?.toUpperCase() ?? 'QEMU'} · VMID ${instance.vmid}`}
+                canStart={canPower}
+                canRestart={canPower}
+                canStop={canPower}
+                connectionLive={powering === null}
+                onStart={() => handlePower('start')}
+                onRestart={() => handlePower('reboot')}
+                onStop={() => handlePower('stop')}
+                extraActions={
+                    <Button
+                        variant='outline'
+                        size='sm'
+                        onClick={() => {
+                            fetchStatus();
+                            refreshInstance();
+                        }}
+                        disabled={statusLoading}
+                        aria-label={t('navigation.items.refresh')}
+                        title={t('navigation.items.refresh')}
+                    >
+                        <RefreshCw className={cn('h-4 w-4', statusLoading && 'animate-spin')} />
+                    </Button>
                 }
             />
 
             <WidgetRenderer widgets={getVdsWidgets('after-header')} />
 
-            <div className='grid grid-cols-1 gap-6 lg:grid-cols-12'>
-                <div className='space-y-4 lg:col-span-5'>
-                    <div className='fp-surface-solid rounded-xl border p-4'>
-                        <h3 className='text-muted-foreground mb-3 flex items-center gap-2 text-sm font-medium'>
-                            <Info className='h-4 w-4' />
-                            {t('vds.console.details.instance_details')}
-                        </h3>
-                        <div className='grid grid-cols-1 gap-x-4 gap-y-0 sm:grid-cols-2'>
-                            {(
-                                [
-                                    { label: t('vds.console.details.hostname'), value: instance.hostname ?? '—' },
-                                    { label: t('vds.console.details.vmid'), value: String(instance.vmid) },
-                                    {
-                                        label: t('vds.console.details.type'),
-                                        value: instance.vm_type?.toUpperCase() ?? 'QEMU',
-                                    },
-                                    { label: t('vds.console.details.status'), value: liveStatus },
-                                    {
-                                        label: t('vds.console.details.node'),
-                                        value: instance.node_name ?? instance.pve_node ?? '—',
-                                    },
-                                    { label: t('vds.console.details.plan'), value: instance.plan_name ?? '—' },
-                                    {
-                                        label: t('vds.console.details.role'),
-                                        value: instance.is_owner
-                                            ? t('vds.console.details.role_owner')
-                                            : t('vds.console.details.role_subuser'),
-                                    },
-                                ] as { label: string; value: string }[]
-                            ).map(({ label, value }) => (
-                                <div
-                                    key={label}
-                                    className='border-border/40 flex items-center justify-between gap-2 border-b py-1.5'
-                                >
-                                    <span className='text-muted-foreground shrink-0 text-xs font-medium'>{label}</span>
-                                    <span className='truncate font-mono text-sm font-medium tabular-nums'>{value}</span>
-                                </div>
-                            ))}
-                            {instance.expires_at ? (
-                                <div className='border-border/40 flex items-center justify-between gap-2 border-b py-1.5 sm:col-span-2'>
-                                    <span className='text-muted-foreground shrink-0 text-xs font-medium'>
-                                        {t('service_expiry.label')}
-                                    </span>
-                                    <span className='flex min-w-0 flex-wrap items-center justify-end gap-2'>
-                                        <ServiceExpiryChip expiresAt={instance.expires_at} />
-                                        <span className='text-muted-foreground truncate font-mono text-xs tabular-nums'>
-                                            {formatExpiryAbsolute(instance.expires_at, dateOpts)}
-                                        </span>
-                                    </span>
-                                </div>
-                            ) : null}
-                        </div>
-                        {canViewAccessPassword && (
-                            <div className='fp-surface-solid mt-3 space-y-3 rounded-xl border p-4'>
-                                <div className='flex items-start justify-between gap-3'>
-                                    <div className='space-y-1'>
-                                        <div className='flex items-center gap-2 text-sm font-medium'>
-                                            <Lock className='text-primary h-4 w-4' />
-                                            {t('vds.console.password.title')}
-                                        </div>
-                                        <p className='text-muted-foreground text-xs'>
-                                            {t('vds.console.password.description')}
-                                        </p>
-                                    </div>
-                                    <Button
-                                        variant='outline'
-                                        size='sm'
-                                        className='h-9'
-                                        onClick={() => setShowAccessPassword((value) => !value)}
-                                    >
-                                        {showAccessPassword ? (
-                                            <EyeOff className='mr-1.5 h-4 w-4' />
-                                        ) : (
-                                            <Eye className='mr-1.5 h-4 w-4' />
-                                        )}
-                                        {showAccessPassword ? t('common.hide') : t('common.show')}
-                                    </Button>
-                                </div>
-                                <div className='border-border bg-background/60 rounded-lg border px-4 py-3'>
-                                    <span
-                                        className={cn(
-                                            'font-mono text-sm font-medium tracking-wide transition-all duration-200',
-                                            !showAccessPassword && 'blur-sm select-none',
-                                        )}
-                                    >
-                                        {instance.access_password}
-                                    </span>
-                                </div>
-                                <p className='text-muted-foreground text-xs'>{t('vds.console.password.change_asap')}</p>
-                            </div>
-                        )}
+            {statusError && (
+                <div
+                    role='status'
+                    className='flex items-start gap-3 rounded-xl border border-yellow-500/20 bg-yellow-500/10 px-4 py-3 text-sm'
+                >
+                    <AlertTriangle
+                        className='mt-0.5 h-4 w-4 shrink-0 text-yellow-600 dark:text-yellow-400'
+                        aria-hidden
+                    />
+                    <div className='min-w-0'>
+                        <p className='font-medium text-yellow-700 dark:text-yellow-300'>
+                            {t('vds.console.stats_unavailable_title')}
+                        </p>
+                        <p className='text-muted-foreground text-xs'>
+                            {t('vds.console.stats_unavailable_description')}
+                        </p>
                     </div>
+                </div>
+            )}
 
-                    <VdsNetworkCard
-                        ipAddress={ip}
-                        uptime={uptime}
+            <div className='grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_18rem] 2xl:grid-cols-[minmax(0,1fr)_20rem]'>
+                <div className='flex min-w-0 flex-col'>
+                    <VdsScreen
+                        status={displayStatus}
+                        canConsole={canConsole}
+                        vncUrl={vncUrl}
+                        vncPassword={vncPassword}
+                        vncLoading={vncLoading}
+                        onConnect={openVnc}
+                        vmId={instance.id}
+                        hostname={instance.hostname ?? undefined}
+                        features={features}
+                        canPower={canPower}
+                        canSettings={hasPermission('settings')}
+                        onClose={() => {
+                            setVncUrl(null);
+                            setVncPassword(null);
+                        }}
+                        className='h-[calc(75vw+6.5rem)] max-h-[70dvh] min-h-[18rem] sm:h-[min(70dvh,40rem)] sm:max-h-none sm:min-h-[22rem] xl:h-auto xl:min-h-[max(32rem,calc(100dvh-22rem))] xl:flex-1'
+                    />
+                </div>
+                <div className='flex min-w-0 flex-col'>
+                    <ServerConsoleStats
+                        className='xl:flex-1 xl:auto-rows-fr'
                         statsReady={statsReady}
+                        diskReady={diskReady}
+                        cpuUsage={(vmStatus?.cpu ?? 0) * cpuScale}
+                        cpuLimit={cpuCores > 0 ? cpuCores * 100 : 0}
+                        memoryUsage={(vmStatus?.mem ?? 0) / MiB}
+                        memoryLimit={memLimitMib}
+                        diskUsage={(vmStatus?.disk ?? 0) / MiB}
+                        diskLimit={diskLimitMib}
                         networkRx={networkRxRate}
                         networkTx={networkTxRate}
                         networkRxTotal={networkRxTotal}
                         networkTxTotal={networkTxTotal}
-                    />
-                </div>
-
-                <div className='lg:col-span-7'>
-                    <VdsInfoCards
-                        statsReady={statsReady}
-                        cpuUsage={cpuPercent}
-                        cpuCores={cpuCores}
-                        memoryUsage={memUsed}
-                        memoryLimit={memMax}
-                        diskUsage={diskUsed}
-                        diskLimit={diskMax}
-                        liveStatus={liveStatus}
-                        canConsole={canConsole}
-                        canPower={canPower}
-                        powering={powering}
-                        vncLoading={vncLoading}
-                        onStart={() => handlePower('start')}
-                        onOpenVnc={openVnc}
+                        cpuData={cpuData.map((p) => ({ timestamp: p.timestamp, value: (p.value / 100) * cpuScale }))}
+                        memoryData={memoryData.map((p) => ({ timestamp: p.timestamp, value: p.value / MiB }))}
+                        diskData={diskData}
+                        networkData={networkRxData.map((p, i) => ({
+                            timestamp: p.timestamp,
+                            value: p.value + (networkTxData[i]?.value ?? 0),
+                        }))}
+                        diskIo={
+                            diskIoRate
+                                ? {
+                                      read: diskIoRate.read,
+                                      write: diskIoRate.write,
+                                      readTotal: vmStatus?.diskread ?? 0,
+                                      writeTotal: vmStatus?.diskwrite ?? 0,
+                                      data: diskIoData,
+                                  }
+                                : null
+                        }
                     />
                 </div>
             </div>
 
-            {vncUrl && (
-                <div className='relative'>
-                    <div className='absolute top-2 right-2 z-20'>
-                        <Button
-                            variant='glass'
-                            size='sm'
-                            onClick={() => {
-                                setVncUrl(null);
-                                setVncPassword(null);
-                            }}
-                        >
-                            {t('vds.console.close_console')}
-                        </Button>
-                    </div>
-                    <VncConsole url={vncUrl} password={vncPassword ?? undefined} />
-                </div>
-            )}
-
             <WidgetRenderer widgets={getVdsWidgets('after-stats')} />
 
-            <VdsPerformance
-                cpuData={cpuData}
-                memoryData={memoryData}
-                networkRxData={networkRxData}
-                networkTxData={networkTxData}
-                cpuCores={cpuCores}
-                memoryLimit={
-                    instance.plan_memory
-                        ? instance.plan_memory * 1024 * 1024
-                        : instance.memory
-                          ? instance.memory * 1024 * 1024
-                          : 0
-                }
-                networkRxTotal={networkRxTotal}
-                networkTxTotal={networkTxTotal}
-            />
+            <div className='grid grid-cols-1 gap-4 lg:grid-cols-2'>
+                <PageCard
+                    title={t('vds.console.details.instance_details')}
+                    icon={Info}
+                    className={cn(!canViewAccessPassword && 'lg:col-span-2')}
+                >
+                    <dl className='grid grid-cols-1 gap-x-6 sm:grid-cols-2'>
+                        {details.map(({ label, value, mono }) => (
+                            <div
+                                key={label}
+                                className='border-border/40 flex items-center justify-between gap-3 border-b py-2 last:border-b-0 sm:[&:nth-last-child(2)]:border-b-0'
+                            >
+                                <dt className='text-muted-foreground shrink-0 text-xs font-medium'>{label}</dt>
+                                <dd
+                                    className={cn(
+                                        'min-w-0 truncate text-sm font-medium',
+                                        mono && 'font-mono tabular-nums',
+                                    )}
+                                >
+                                    {value}
+                                </dd>
+                            </div>
+                        ))}
+                    </dl>
+                    {instance.expires_at ? (
+                        <div className='border-border/40 bg-muted/30 flex flex-wrap items-center justify-between gap-2 rounded-lg border px-3 py-2'>
+                            <span className='text-muted-foreground text-xs font-medium'>
+                                {t('service_expiry.label')}
+                            </span>
+                            <span className='flex min-w-0 flex-wrap items-center justify-end gap-2'>
+                                <ServiceExpiryChip expiresAt={instance.expires_at} />
+                                <span className='text-muted-foreground truncate font-mono text-xs tabular-nums'>
+                                    {formatExpiryAbsolute(instance.expires_at, dateOpts)}
+                                </span>
+                            </span>
+                        </div>
+                    ) : null}
+                </PageCard>
+
+                {canViewAccessPassword && (
+                    <PageCard
+                        title={t('vds.console.password.title')}
+                        description={t('vds.console.password.description')}
+                        icon={Lock}
+                        variant='warning'
+                    >
+                        <div className='flex items-center gap-2'>
+                            <div className='border-border/50 bg-muted/20 flex h-10 min-w-0 flex-1 items-center rounded-lg border px-3'>
+                                <span
+                                    className={cn(
+                                        'truncate font-mono text-sm font-medium tracking-wide transition-all duration-200',
+                                        !showAccessPassword && 'blur-sm select-none',
+                                    )}
+                                >
+                                    {instance.access_password}
+                                </span>
+                            </div>
+                            <Button
+                                variant='outline'
+                                size='icon'
+                                className='h-10 w-10 shrink-0'
+                                onClick={() => setShowAccessPassword((value) => !value)}
+                                aria-label={showAccessPassword ? t('common.hide') : t('common.show')}
+                                title={showAccessPassword ? t('common.hide') : t('common.show')}
+                            >
+                                {showAccessPassword ? <EyeOff className='h-4 w-4' /> : <Eye className='h-4 w-4' />}
+                            </Button>
+                            <Button
+                                variant='outline'
+                                size='icon'
+                                className='h-10 w-10 shrink-0'
+                                onClick={copyPassword}
+                                aria-label={t('common.copy')}
+                                title={t('common.copy')}
+                            >
+                                {copied ? <Check className='h-4 w-4 text-emerald-500' /> : <Copy className='h-4 w-4' />}
+                            </Button>
+                        </div>
+                        <p className='text-muted-foreground text-xs'>{t('vds.console.password.change_asap')}</p>
+                    </PageCard>
+                )}
+            </div>
+
+            {canConsole && features?.graphs.enabled && features.graphs.timeframes.length > 0 ? (
+                <VdsResourceGraphs vmId={instance.id} timeframes={features.graphs.timeframes} />
+            ) : (
+                <VdsPerformance
+                    cpuData={cpuData}
+                    memoryData={memoryData}
+                    networkRxData={networkRxData}
+                    networkTxData={networkTxData}
+                    cpuCores={cpuCores}
+                    memoryLimit={memLimitMib * MiB}
+                    networkRxTotal={networkRxTotal}
+                    networkTxTotal={networkTxTotal}
+                />
+            )}
         </div>
     );
 }

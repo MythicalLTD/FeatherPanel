@@ -496,6 +496,66 @@ interface ConfigInterface
     public const MODULE_VDS_ENABLED = 'module_vds_enabled';
 
     /**
+     * VDS console, graphs, snapshots and monitoring (admin settings, category "vds").
+     */
+    public const VDS_GRAPHS_ENABLED = 'vds_graphs_enabled';
+    public const VDS_GRAPHS_MAX_TIMEFRAME = 'vds_graphs_max_timeframe';
+    public const VDS_CONSOLE_PASTE_ENABLED = 'vds_console_paste_enabled';
+    public const VDS_CONSOLE_PASTE_MAX_CHARS = 'vds_console_paste_max_chars';
+    public const VDS_CONSOLE_SCREENSHOT_ENABLED = 'vds_console_screenshot_enabled';
+    public const VDS_CTRL_ALT_DEL_ENABLED = 'vds_ctrl_alt_del_enabled';
+    public const VDS_ISO_MODE = 'vds_iso_mode';
+    public const VDS_ISO_LIBRARY_ONLY = 'vds_iso_library_only';
+    public const VDS_ISO_USER_STORAGE = 'vds_iso_user_storage';
+    public const VDS_ISO_USER_UPLOAD_ENABLED = 'vds_iso_user_upload_enabled';
+    public const VDS_ISO_USER_URL_ENABLED = 'vds_iso_user_url_enabled';
+    public const VDS_ISO_USER_MAX_SIZE_MB = 'vds_iso_user_max_size_mb';
+    public const VDS_ISO_USER_MAX_PER_USER = 'vds_iso_user_max_per_user';
+    public const VDS_ISO_USER_URL_DOMAINS = 'vds_iso_user_url_domains';
+    public const VDS_ISO_USER_REQUIRE_APPROVAL = 'vds_iso_user_require_approval';
+    public const VDS_ISO_ALLOWED_STORAGES = 'vds_iso_allowed_storages';
+    public const VDS_ISO_ALLOWED_ISOS = 'vds_iso_allowed_isos';
+    public const VDS_RESCUE_ENABLED = 'vds_rescue_enabled';
+    public const VDS_RESCUE_ISO = 'vds_rescue_iso';
+    public const VDS_SNAPSHOTS_ENABLED = 'vds_snapshots_enabled';
+    public const VDS_SNAPSHOTS_DEFAULT_LIMIT = 'vds_snapshots_default_limit';
+    public const VDS_SNAPSHOTS_INCLUDE_RAM = 'vds_snapshots_include_ram';
+    public const VDS_MONITOR_ENABLED = 'vds_monitor_enabled';
+    public const VDS_MONITOR_INTERVAL_MINUTES = 'vds_monitor_interval_minutes';
+    public const VDS_NOTIFY_DOWN_ENABLED = 'vds_notify_down_enabled';
+    public const VDS_NOTIFY_HIGH_CPU_ENABLED = 'vds_notify_high_cpu_enabled';
+    public const VDS_HIGH_CPU_THRESHOLD = 'vds_high_cpu_threshold';
+    public const VDS_HIGH_CPU_DURATION_MINUTES = 'vds_high_cpu_duration_minutes';
+    public const VDS_NOTIFY_BACKUP_FAILED_ENABLED = 'vds_notify_backup_failed_enabled';
+    public const VDS_NOTIFY_COOLDOWN_HOURS = 'vds_notify_cooldown_hours';
+    public const VDS_SUSPEND_SHOW_REASON = 'vds_suspend_show_reason';
+    public const VDS_SUSPEND_MESSAGE = 'vds_suspend_message';
+    public const VDS_EXPIRY_WARN_DAYS = 'vds_expiry_warn_days';
+    public const VDS_EXPIRY_STOP_VM = 'vds_expiry_stop_vm';
+    public const VDS_PLACEMENT_STRATEGY = 'vds_placement_strategy';
+    public const VDS_PLACEMENT_OVERCOMMIT_PERCENT = 'vds_placement_overcommit_percent';
+    public const VDS_MIGRATION_ENABLED = 'vds_migration_enabled';
+    public const VDS_CONSOLE_BRAND_NAME = 'vds_console_brand_name';
+    public const VDS_CONSOLE_BRAND_LOGO = 'vds_console_brand_logo';
+    public const VDS_REAUTH_MODE = 'vds_reauth_mode';
+    public const VDS_REAUTH_ACTIONS = 'vds_reauth_actions';
+    public const VDS_BANDWIDTH_ENABLED = 'vds_bandwidth_enabled';
+    public const VDS_BANDWIDTH_LIMIT_GB = 'vds_bandwidth_limit_gb';
+    public const VDS_BANDWIDTH_COUNT = 'vds_bandwidth_count';
+    public const VDS_BANDWIDTH_ACTION = 'vds_bandwidth_action';
+    public const VDS_BANDWIDTH_THROTTLE_MBIT = 'vds_bandwidth_throttle_mbit';
+    public const VDS_BANDWIDTH_WARN_PERCENT = 'vds_bandwidth_warn_percent';
+    public const VDS_FIREWALL_ENABLED = 'vds_firewall_enabled';
+    public const VDS_FIREWALL_MAX_RULES = 'vds_firewall_max_rules';
+    public const VDS_FIREWALL_ALLOW_POLICY = 'vds_firewall_allow_policy';
+    public const VDS_FIREWALL_PRESETS = 'vds_firewall_presets';
+    public const VDS_SCHEDULES_ENABLED = 'vds_schedules_enabled';
+    public const VDS_SCHEDULES_MAX_PER_VDS = 'vds_schedules_max_per_vds';
+    public const VDS_SCHEDULES_ACTIONS = 'vds_schedules_actions';
+    public const VDS_SCHEDULES_ALLOW_HOURLY = 'vds_schedules_allow_hourly';
+    public const VDS_SCHEDULES_MAX_KEEP = 'vds_schedules_max_keep';
+
+    /**
      * First-install setup wizard. 'true' once an admin finished or the install was upgraded.
      * Missing means a fresh install that still needs the wizard.
      */

@@ -320,13 +320,7 @@ export function IpPoolTab({ nodeId, nodeName }: IpPoolTabProps) {
                                 className='h-11 pl-10'
                             />
                         </div>
-                        <Button
-                            variant='outline'
-                            size='icon'
-                            onClick={loadIps}
-                            loading={loading}
-                            className='h-11 w-11'
-                        >
+                        <Button variant='outline' size='icon' onClick={loadIps} loading={loading} className='h-11 w-11'>
                             <RefreshCw className='h-4 w-4' />
                         </Button>
                     </TabToolbar>
@@ -385,7 +379,7 @@ export function IpPoolTab({ nodeId, nodeName }: IpPoolTabProps) {
                                                     </span>
                                                     {ip.is_primary === 'true' && (
                                                         <span
-                                                            className='rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[10px] font-bold text-amber-600 uppercase dark:text-amber-400'
+                                                            className='rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-xs font-bold text-amber-600 uppercase dark:text-amber-400'
                                                             title={t('admin.vdsNodes.ips.primary_proxmox_help')}
                                                         >
                                                             {t('admin.vdsNodes.ips.primary_badge')}
@@ -404,7 +398,7 @@ export function IpPoolTab({ nodeId, nodeName }: IpPoolTabProps) {
                                             </td>
                                             <td className='px-4 py-3'>
                                                 {ip.in_use ? (
-                                                    <span className='rounded-full border border-blue-500/30 bg-blue-500/10 px-2 py-0.5 text-[10px] font-medium text-blue-600 dark:text-blue-400'>
+                                                    <span className='rounded-full border border-blue-500/30 bg-blue-500/10 px-2 py-0.5 text-xs font-medium text-blue-600 dark:text-blue-400'>
                                                         {t('admin.vdsNodes.ips.in_use_badge')}
                                                     </span>
                                                 ) : (
@@ -592,9 +586,7 @@ export function IpPoolTab({ nodeId, nodeName }: IpPoolTabProps) {
                                 className='h-11 font-mono'
                                 onChange={(e) => setCreateForm((p) => ({ ...p, ip: e.target.value }))}
                             />
-                            {createErrors.ip && (
-                                <p className='text-[10px] font-bold text-red-500 uppercase'>{createErrors.ip}</p>
-                            )}
+                            {createErrors.ip && <p className='text-xs font-medium text-red-500'>{createErrors.ip}</p>}
                         </div>
                     )}
                     <div className='grid grid-cols-2 gap-4'>
@@ -610,7 +602,7 @@ export function IpPoolTab({ nodeId, nodeName }: IpPoolTabProps) {
                                 onChange={(e) => setCreateForm((p) => ({ ...p, cidr: e.target.value }))}
                             />
                             {createErrors.cidr && (
-                                <p className='text-[10px] font-bold text-red-500 uppercase'>{createErrors.cidr}</p>
+                                <p className='text-xs font-medium text-red-500'>{createErrors.cidr}</p>
                             )}
                         </div>
                         <div className='space-y-2'>
@@ -622,7 +614,7 @@ export function IpPoolTab({ nodeId, nodeName }: IpPoolTabProps) {
                                 onChange={(e) => setCreateForm((p) => ({ ...p, gateway: e.target.value }))}
                             />
                             {createErrors.gateway && (
-                                <p className='text-[10px] font-bold text-red-500 uppercase'>{createErrors.gateway}</p>
+                                <p className='text-xs font-medium text-red-500'>{createErrors.gateway}</p>
                             )}
                         </div>
                     </div>
@@ -666,9 +658,7 @@ export function IpPoolTab({ nodeId, nodeName }: IpPoolTabProps) {
                             disabled
                             className='bg-muted/30 h-11 font-mono'
                         />
-                        <p className='text-muted-foreground text-[10px] italic'>
-                            {t('admin.vdsNodes.ips.edit.ip_immutable')}
-                        </p>
+                        <p className='text-muted-foreground text-xs'>{t('admin.vdsNodes.ips.edit.ip_immutable')}</p>
                     </div>
                     <div className='grid grid-cols-2 gap-4'>
                         <div className='space-y-2'>
@@ -682,9 +672,7 @@ export function IpPoolTab({ nodeId, nodeName }: IpPoolTabProps) {
                                 className='h-11 font-mono'
                                 onChange={(e) => setEditForm((p) => ({ ...p, cidr: e.target.value }))}
                             />
-                            {editErrors.cidr && (
-                                <p className='text-[10px] font-bold text-red-500 uppercase'>{editErrors.cidr}</p>
-                            )}
+                            {editErrors.cidr && <p className='text-xs font-medium text-red-500'>{editErrors.cidr}</p>}
                         </div>
                         <div className='space-y-2'>
                             <Label className='text-sm font-semibold'>{t('admin.vdsNodes.ips.col_gateway')}</Label>
@@ -695,7 +683,7 @@ export function IpPoolTab({ nodeId, nodeName }: IpPoolTabProps) {
                                 onChange={(e) => setEditForm((p) => ({ ...p, gateway: e.target.value }))}
                             />
                             {editErrors.gateway && (
-                                <p className='text-[10px] font-bold text-red-500 uppercase'>{editErrors.gateway}</p>
+                                <p className='text-xs font-medium text-red-500'>{editErrors.gateway}</p>
                             )}
                         </div>
                     </div>

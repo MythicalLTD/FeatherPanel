@@ -60,9 +60,7 @@ export function DetailsTab({
                             placeholder='e.g., Node-01'
                             className='text-base'
                         />
-                        {errors.name && (
-                            <p className='mt-2 text-[10px] font-bold text-red-500 uppercase'>{errors.name}</p>
-                        )}
+                        {errors.name && <p className='mt-2 text-xs font-medium text-red-500'>{errors.name}</p>}
                     </div>
 
                     <div>
@@ -85,7 +83,7 @@ export function DetailsTab({
                                 <MapPin className='text-primary h-5 w-5' />
                             </div>
                             <div>
-                                <p className='text-muted-foreground text-xs font-bold tracking-wider uppercase'>
+                                <p className='text-muted-foreground text-xs font-medium'>
                                     {t('admin.vdsNodes.form.location')}
                                 </p>
                                 <p className='text-muted-foreground mt-0.5 text-xs'>
@@ -110,7 +108,7 @@ export function DetailsTab({
                                 {form.location_id && selectedLocationName ? (
                                     <span className='text-foreground font-medium'>{selectedLocationName}</span>
                                 ) : (
-                                    <span className='text-muted-foreground italic'>
+                                    <span className='text-muted-foreground'>
                                         {t('admin.vdsNodes.form.select_location')}
                                     </span>
                                 )}
@@ -125,7 +123,7 @@ export function DetailsTab({
                             </Button>
                         </div>
                         {errors.location_id && (
-                            <p className='mt-2 text-[10px] font-bold text-red-500 uppercase'>{errors.location_id}</p>
+                            <p className='mt-2 text-xs font-medium text-red-500'>{errors.location_id}</p>
                         )}
                     </div>
                 </div>

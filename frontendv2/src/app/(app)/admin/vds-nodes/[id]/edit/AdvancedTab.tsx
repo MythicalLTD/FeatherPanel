@@ -68,15 +68,15 @@ function KeyValueList({
                 }
             >
                 {pairs.length === 0 ? (
-                    <div className='fp-surface rounded-2xl border border-dashed px-4 py-8 text-center'>
-                        <p className='text-muted-foreground text-xs italic'>{emptyLabel}</p>
+                    <div className='fp-surface rounded-xl border border-dashed px-4 py-8 text-center'>
+                        <p className='text-muted-foreground text-xs'>{emptyLabel}</p>
                     </div>
                 ) : (
                     <div className='space-y-3'>
                         {pairs.map((pair, index) => (
                             <div
                                 key={index}
-                                className='border-border/40 bg-background/40 grid grid-cols-1 gap-3 rounded-2xl border p-3 md:grid-cols-[1fr_1fr_auto] md:items-center'
+                                className='border-border/40 bg-background/40 grid grid-cols-1 gap-3 rounded-xl border p-3 md:grid-cols-[1fr_1fr_auto] md:items-center'
                             >
                                 <Input
                                     className='flex-1'
@@ -151,17 +151,15 @@ export function AdvancedTab({
                     }
                 >
                     {params.length === 0 ? (
-                        <div className='fp-surface rounded-2xl border border-dashed px-4 py-8 text-center'>
-                            <p className='text-muted-foreground text-xs italic'>
-                                {t('admin.vdsNodes.advanced.no_params')}
-                            </p>
+                        <div className='fp-surface rounded-xl border border-dashed px-4 py-8 text-center'>
+                            <p className='text-muted-foreground text-xs'>{t('admin.vdsNodes.advanced.no_params')}</p>
                         </div>
                     ) : (
                         <div className='space-y-3'>
                             {params.map((pair, index) => (
                                 <div
                                     key={index}
-                                    className='border-border/40 bg-background/40 grid grid-cols-1 gap-3 rounded-2xl border p-3 md:grid-cols-[1fr_1fr_auto] md:items-center'
+                                    className='border-border/40 bg-background/40 grid grid-cols-1 gap-3 rounded-xl border p-3 md:grid-cols-[1fr_1fr_auto] md:items-center'
                                 >
                                     <Input
                                         className='flex-1'

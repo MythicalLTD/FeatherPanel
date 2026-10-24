@@ -24,6 +24,9 @@ declare module '@novnc/novnc' {
         resizeSession: boolean;
         disconnect(): void;
         sendCredentials(credentials: { password: string }): void;
+        sendCtrlAltDel(): void;
+        sendKey(keysym: number, code: string | null, down?: boolean): void;
+        focus(): void;
         addEventListener(event: string, handler: (e?: { detail?: { status?: string } }) => void): void;
     }
 }
