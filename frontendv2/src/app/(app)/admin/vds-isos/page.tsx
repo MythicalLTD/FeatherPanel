@@ -189,9 +189,9 @@ export default function AdminVdsIsosPage() {
         try {
             if (action === 'toggle') await axios.patch(`/api/admin/vm-isos/${iso.id}`, { visible: !iso.visible });
             else await axios.post(`/api/admin/vm-isos/${iso.id}/${action}`);
-            toast.success(
-                t(`admin.vdsIsos.${action === 'approve' ? 'approved' : action === 'reject' ? 'rejected' : 'toggled'}`),
-            );
+            if (action === 'approve') toast.success(t('admin.vdsIsos.approved'));
+            else if (action === 'reject') toast.success(t('admin.vdsIsos.rejected'));
+            else toast.success(t('admin.vdsIsos.toggled'));
             await load();
         } catch (err) {
             toast.error(getApiErrorMessage(err, t, 'admin.vdsIsos.action_failed'));
