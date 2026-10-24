@@ -99,7 +99,7 @@ interface ConfigInterface
     /**
      * Captcha Settings.
      */
-    public const CAPTCHA_PROVIDER = 'captcha_provider'; // turnstile, hcaptcha, recaptcha, friendlycaptcha, reforge
+    public const CAPTCHA_PROVIDER = 'captcha_provider'; // turnstile, hcaptcha, recaptcha, friendlycaptcha
     public const TURNSTILE_ENABLED = 'turnstile_enabled';
     public const TURNSTILE_KEY_PUB = 'turnstile_key_pub';
     public const TURNSTILE_KEY_PRIV = 'turnstile_key_priv';
@@ -115,20 +115,6 @@ interface ConfigInterface
     public const RECAPTCHA_V3_ACTION = 'recaptcha_v3_action';
     public const FRIENDLY_CAPTCHA_SITE_KEY = 'friendly_captcha_site_key';
     public const FRIENDLY_CAPTCHA_SECRET_KEY = 'friendly_captcha_secret_key';
-    /** reForge Captcha (https://reforgecaptcha.cloud/) public site key. */
-    public const REFORGE_CAPTCHA_SITE_KEY = 'reforge_captcha_site_key';
-    /** reForge Captcha secret key (server-side verify only). */
-    public const REFORGE_CAPTCHA_SECRET_KEY = 'reforge_captcha_secret_key';
-    /** Widget type: checkbox, invisible, managed, image. */
-    public const REFORGE_CAPTCHA_WIDGET_TYPE = 'reforge_captcha_widget_type';
-    /** Theme: auto, dark, light. */
-    public const REFORGE_CAPTCHA_THEME = 'reforge_captcha_theme';
-    /** Size: normal, compact. */
-    public const REFORGE_CAPTCHA_SIZE = 'reforge_captcha_size';
-    /** Optional UI language (e.g. en, nl, de). Empty = widget default. */
-    public const REFORGE_CAPTCHA_LANG = 'reforge_captcha_lang';
-    /** Minimum verify score (0.0–1.0) when the API returns a score; extra check after success. */
-    public const REFORGE_CAPTCHA_MIN_SCORE = 'reforge_captcha_min_score';
     /**
      * SMTP.
      */

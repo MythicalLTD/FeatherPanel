@@ -15,7 +15,6 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import type { AppSettings } from '@/types/settings';
 import { executeRecaptchaV3 } from '@/lib/recaptchaV3';
-import { readReforgeCaptchaTokenFromDom } from '@/lib/reforgeCaptcha';
 
 /** True when global captcha is on and the active provider has a public site key configured. */
 export function isCaptchaConfigured(settings: AppSettings | null | undefined): boolean {
@@ -30,8 +29,6 @@ export function isCaptchaConfigured(settings: AppSettings | null | undefined): b
             return Boolean(settings.recaptcha_site_key?.trim());
         case 'friendlycaptcha':
             return Boolean(settings.friendly_captcha_site_key?.trim());
-        case 'reforge':
-            return Boolean(settings.reforge_captcha_site_key?.trim());
         case 'turnstile':
         default:
             return Boolean(settings.turnstile_key_pub?.trim());
@@ -53,20 +50,8 @@ export function isRecaptchaV3Configured(settings: AppSettings | null | undefined
     return Boolean(settings.recaptcha_site_key?.trim());
 }
 
-/** reForge Captcha: https://reforgecaptcha.cloud/ */
-export function isReforgeConfigured(settings: AppSettings | null | undefined): boolean {
-    if (!settings || settings.turnstile_enabled !== 'true') {
-        return false;
-    }
-    if ((settings.captcha_provider || 'turnstile') !== 'reforge') {
-        return false;
-    }
-    return Boolean(settings.reforge_captcha_site_key?.trim());
-}
-
 /**
  * Value to send as `turnstile_token` on auth APIs. For reCAPTCHA v3, always runs `execute()` at call time.
- * For reForge, uses the widget token from state or a one-shot read from the hidden input.
  * Other providers use the interactive widget token from state.
  */
 export async function obtainCaptchaResponseToken(
@@ -80,13 +65,6 @@ export async function obtainCaptchaResponseToken(
         const action = (settings.recaptcha_v3_action || 'submit').trim() || 'submit';
         const token = await executeRecaptchaV3(settings.recaptcha_site_key.trim(), action);
         return token?.trim() ?? '';
-    }
-    if (isReforgeConfigured(settings)) {
-        const fromState = widgetToken.trim();
-        if (fromState) {
-            return fromState;
-        }
-        return readReforgeCaptchaTokenFromDom();
     }
     return widgetToken.trim();
 }

@@ -64,12 +64,6 @@ class CaptchaHelper
                 );
             case 'friendlycaptcha':
                 return self::validateFriendlyCaptcha($token, $config->getSetting(ConfigInterface::FRIENDLY_CAPTCHA_SECRET_KEY, ''), $config->getSetting(ConfigInterface::FRIENDLY_CAPTCHA_SITE_KEY, ''));
-            case 'reforge':
-                return self::validateReForgeCaptcha(
-                    $token,
-                    $config->getSetting(ConfigInterface::REFORGE_CAPTCHA_SECRET_KEY, ''),
-                    $config->getSetting(ConfigInterface::REFORGE_CAPTCHA_MIN_SCORE, '0.5'),
-                );
             case 'turnstile':
             default:
                 return CloudFlareTurnstile::validate($token, $ip, $config->getSetting(ConfigInterface::TURNSTILE_KEY_PRIV, ''));
@@ -171,47 +165,6 @@ class CaptchaHelper
             $data = json_decode($response->getBody()->getContents(), true);
 
             return $data['success'] ?? false;
-        } catch (\Exception $e) {
-            return false;
-        }
-    }
-
-    /**
-     * Validate reForge Captcha token via https://reforgecaptcha.cloud/api/verify.
-     */
-    private static function validateReForgeCaptcha(string $token, string $secret, string $minScoreRaw): bool
-    {
-        if (empty($secret) || trim($token) === '') {
-            return false;
-        }
-
-        $parsedMin = filter_var($minScoreRaw, FILTER_VALIDATE_FLOAT);
-        $minScore = $parsedMin !== false ? max(0.0, min(1.0, (float) $parsedMin)) : 0.5;
-
-        $client = new Client(['timeout' => 5.0]);
-        try {
-            $response = $client->post('https://reforgecaptcha.cloud/api/verify', [
-                'headers' => [
-                    'Content-Type' => 'application/json',
-                    'Accept' => 'application/json',
-                ],
-                'json' => [
-                    'secret' => $secret,
-                    'token' => $token,
-                ],
-            ]);
-            $data = json_decode($response->getBody()->getContents(), true);
-            if (!is_array($data) || !($data['success'] ?? false)) {
-                return false;
-            }
-            if (isset($data['score']) && is_numeric($data['score'])) {
-                $score = (float) $data['score'];
-                if ($score < $minScore) {
-                    return false;
-                }
-            }
-
-            return true;
         } catch (\Exception $e) {
             return false;
         }

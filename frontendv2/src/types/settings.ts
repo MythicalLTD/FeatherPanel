@@ -56,7 +56,7 @@ export interface AppSettings {
     ticket_system_enabled: string;
     turnstile_enabled: string;
     turnstile_key_pub: string;
-    captcha_provider: 'turnstile' | 'hcaptcha' | 'recaptcha' | 'friendlycaptcha' | 'reforge';
+    captcha_provider: 'turnstile' | 'hcaptcha' | 'recaptcha' | 'friendlycaptcha';
     hcaptcha_site_key: string;
     recaptcha_site_key: string;
     /** Google reCAPTCHA: v2 (checkbox) or v3 (score). */
@@ -66,13 +66,6 @@ export interface AppSettings {
     /** v3 action name; must match server setting. */
     recaptcha_v3_action?: string;
     friendly_captcha_site_key: string;
-    /** reForge Captcha (https://reforgecaptcha.cloud/) */
-    reforge_captcha_site_key?: string;
-    reforge_captcha_widget_type?: string;
-    reforge_captcha_theme?: string;
-    reforge_captcha_size?: string;
-    reforge_captcha_lang?: string;
-    reforge_captcha_min_score?: string;
     app_url: string;
     branding_show_powered_by?: string;
     /** Premium: when false, hide the version badge in the sidebar */

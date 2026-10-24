@@ -130,16 +130,6 @@ export default function LoginForm() {
         return () => root.removeEventListener('submit', blockNativeFormNavigation, true);
     }, []);
 
-    /** Remove captcha token from the address bar (GET submit / widget) so we do not leak it via referrers or confuse the SPA. */
-    useEffect(() => {
-        const fromUrl = searchParams.get('reforge-captcha-token');
-        if (!fromUrl) return;
-        const params = new URLSearchParams(searchParams.toString());
-        params.delete('reforge-captcha-token');
-        const qs = params.toString();
-        router.replace(qs ? `/auth/login?${qs}` : '/auth/login');
-    }, [router, searchParams]);
-
     useEffect(() => {
         const token = searchParams.get('token');
         if (!token) return;

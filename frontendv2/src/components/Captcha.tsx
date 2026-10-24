@@ -21,7 +21,6 @@ import HCaptcha from '@hcaptcha/react-hcaptcha';
 import ReCAPTCHA from 'react-google-recaptcha';
 import { useSettings } from '@/contexts/SettingsContext';
 import { executeRecaptchaV3 } from '@/lib/recaptchaV3';
-import { loadReforgeWidgetScript } from '@/lib/reforgeCaptcha';
 import { useTranslation } from '@/contexts/TranslationContext';
 
 declare global {
@@ -270,84 +269,6 @@ function FriendlyCaptchaInner({
     );
 }
 
-/** Supported reForge widget types (invisible / managed are not supported). */
-const REFORGE_WIDGET_TYPES = new Set(['checkbox', 'image']);
-
-function ReforgeCaptchaInner({
-    siteKey,
-    widgetType,
-    widgetTheme,
-    widgetSize,
-    widgetLang,
-    refreshKey,
-    onVerify,
-    onError,
-}: {
-    siteKey: string;
-    widgetType: string;
-    widgetTheme: string;
-    widgetSize: string;
-    widgetLang: string;
-    refreshKey?: number;
-    onVerify: (token: string) => void;
-    onError?: () => void;
-}) {
-    const hostRef = useRef<HTMLDivElement>(null);
-    const lastTokenRef = useRef('');
-    const callbacksRef = useRef({ onVerify, onError });
-    callbacksRef.current = { onVerify, onError };
-
-    useEffect(() => {
-        let intervalId: ReturnType<typeof setInterval> | undefined;
-        let cancelled = false;
-        lastTokenRef.current = '';
-
-        const poll = () => {
-            const form = hostRef.current?.closest('form') ?? null;
-            const root: Document | HTMLElement = form ?? document;
-            const inp = root.querySelector<HTMLInputElement>('input[name="reforge-captcha-token"]');
-            const v = inp?.value?.trim() ?? '';
-            if (v && v !== lastTokenRef.current) {
-                lastTokenRef.current = v;
-                callbacksRef.current.onVerify(v);
-            }
-        };
-
-        void loadReforgeWidgetScript()
-            .then(() => {
-                if (cancelled) {
-                    return;
-                }
-                intervalId = setInterval(poll, 300);
-                poll();
-            })
-            .catch(() => {
-                callbacksRef.current.onError?.();
-            });
-
-        return () => {
-            cancelled = true;
-            if (intervalId !== undefined) {
-                clearInterval(intervalId);
-            }
-        };
-    }, [siteKey, widgetType, widgetTheme, widgetSize, widgetLang, refreshKey]);
-
-    const langProps = widgetLang !== '' ? { 'data-lang': widgetLang } : {};
-
-    return (
-        <div
-            ref={hostRef}
-            className='reforge-captcha flex justify-center'
-            data-sitekey={siteKey}
-            data-type={widgetType}
-            data-theme={widgetTheme}
-            data-size={widgetSize}
-            {...langProps}
-        />
-    );
-}
-
 export const Captcha: React.FC<CaptchaProps> = ({ onVerify, onExpire, onError, refreshKey, layout = 'default' }) => {
     const { settings } = useSettings();
 
@@ -358,9 +279,7 @@ export const Captcha: React.FC<CaptchaProps> = ({ onVerify, onExpire, onError, r
     if (!captchaEnabled) return null;
 
     const containerStyle =
-        layout === 'auth'
-            ? 'flex w-full min-w-0 justify-center [&_.reforge-captcha]:w-full [&_iframe]:max-w-full'
-            : 'my-4 flex justify-center';
+        layout === 'auth' ? 'flex w-full min-w-0 justify-center [&_iframe]:max-w-full' : 'my-4 flex justify-center';
     const recaptchaV3ContainerStyle =
         layout === 'auth'
             ? 'flex w-full min-w-0 flex-col items-center justify-center gap-2'
@@ -424,32 +343,6 @@ export const Captcha: React.FC<CaptchaProps> = ({ onVerify, onExpire, onError, r
                     />
                 </div>
             );
-        case 'reforge': {
-            if (!settings?.reforge_captcha_site_key?.trim()) return null;
-            const rawType = (settings.reforge_captcha_widget_type || 'checkbox').toLowerCase();
-            const normalizedType = rawType === 'invisible' || rawType === 'managed' ? 'checkbox' : rawType;
-            const wType = REFORGE_WIDGET_TYPES.has(normalizedType) ? normalizedType : 'checkbox';
-            const rawTheme = (settings.reforge_captcha_theme || 'auto').toLowerCase();
-            const wTheme = rawTheme === 'dark' || rawTheme === 'light' || rawTheme === 'auto' ? rawTheme : 'auto';
-            const rawSize = (settings.reforge_captcha_size || 'normal').toLowerCase();
-            const wSize = rawSize === 'compact' ? 'compact' : 'normal';
-            const wLang = (settings.reforge_captcha_lang || '').trim();
-            return (
-                <div className={containerStyle}>
-                    <ReforgeCaptchaInner
-                        key={refreshKey ?? 0}
-                        siteKey={settings.reforge_captcha_site_key.trim()}
-                        widgetType={wType}
-                        widgetTheme={wTheme}
-                        widgetSize={wSize}
-                        widgetLang={wLang}
-                        refreshKey={refreshKey}
-                        onVerify={onVerify}
-                        onError={onError}
-                    />
-                </div>
-            );
-        }
         case 'turnstile':
         default:
             if (!settings?.turnstile_key_pub) return null;

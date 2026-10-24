@@ -132,13 +132,6 @@ class PublicConfig extends ConfigFactory
             ConfigInterface::RECAPTCHA_V3_ACTION => 'submit',
             ConfigInterface::FRIENDLY_CAPTCHA_SITE_KEY => 'XXXX',
 
-            ConfigInterface::REFORGE_CAPTCHA_SITE_KEY => '',
-            ConfigInterface::REFORGE_CAPTCHA_WIDGET_TYPE => 'checkbox',
-            ConfigInterface::REFORGE_CAPTCHA_THEME => 'auto',
-            ConfigInterface::REFORGE_CAPTCHA_SIZE => 'normal',
-            ConfigInterface::REFORGE_CAPTCHA_LANG => '',
-            ConfigInterface::REFORGE_CAPTCHA_MIN_SCORE => '0.5',
-
             // Legal links
             ConfigInterface::LEGAL_TOS => '/tos',
             ConfigInterface::LEGAL_PRIVACY => '/privacy',

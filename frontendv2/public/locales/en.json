@@ -11824,13 +11824,12 @@
                 },
                 "captcha_provider": {
                     "label": "Captcha Provider",
-                    "description": "Choose which captcha service to use: Cloudflare Turnstile, hCaptcha, Google reCAPTCHA, Friendly Captcha, or reForge Captcha.",
+                    "description": "Choose which captcha service to use: Cloudflare Turnstile, hCaptcha, Google reCAPTCHA, or Friendly Captcha.",
                     "options": {
                         "turnstile": "Cloudflare Turnstile",
                         "hcaptcha": "hCaptcha",
                         "recaptcha": "Google reCAPTCHA",
-                        "friendlycaptcha": "Friendly Captcha",
-                        "reforge": "reForge Captcha"
+                        "friendlycaptcha": "Friendly Captcha"
                     }
                 },
                 "turnstile_enabled": {
@@ -11880,34 +11879,6 @@
                 "friendly_captcha_secret_key": {
                     "label": "Friendly Captcha Secret Key",
                     "description": "The private secret key provided by Friendly Captcha."
-                },
-                "reforge_captcha_site_key": {
-                    "label": "reForge Captcha site key",
-                    "description": "Public site key from the reForge Captcha dashboard (Sites → your site)."
-                },
-                "reforge_captcha_secret_key": {
-                    "label": "reForge Captcha secret key",
-                    "description": "Private secret key from the reForge Captcha dashboard. Used only on the server for POST /api/verify never expose it in the browser."
-                },
-                "reforge_captcha_widget_type": {
-                    "label": "reForge Captcha widget type",
-                    "description": "checkbox: classic challenge; image: grid challenge. (Invisible and managed modes are not supported.)"
-                },
-                "reforge_captcha_theme": {
-                    "label": "reForge Captcha widget theme",
-                    "description": "reForge Captcha widget colours: auto follows the visitor OS, or force dark / light."
-                },
-                "reforge_captcha_size": {
-                    "label": "reForge Captcha widget size",
-                    "description": "normal or compact layout for the reForge Captcha widget."
-                },
-                "reforge_captcha_lang": {
-                    "label": "reForge Captcha widget language",
-                    "description": "Optional reForge Captcha UI language code (e.g. en, nl, de). Leave empty for the widget default."
-                },
-                "reforge_captcha_min_score": {
-                    "label": "reForge Captcha minimum verify score",
-                    "description": "After a successful reForge Captcha verify, reject if the returned score is below this (0.0–1.0). Stricter when higher."
                 },
                 "altcha_hmac_key": {
                     "label": "Altcha HMAC Key",
