@@ -137,7 +137,10 @@ export default function VdsSchedulesPage() {
     if (!features) {
         return (
             <div className='space-y-6 pb-12'>
-                <VdsPageHeader title={t('vds.schedules.title')} description={t('vds.schedules.description')} />
+                <VdsPageHeader
+                    title={t('vds.schedules.title')}
+                    description={t('vds.schedules.description', { timezone })}
+                />
                 <EmptyState icon={CalendarClock} title={t('vds.schedules.unavailable')} description={error ?? ''} />
             </div>
         );
