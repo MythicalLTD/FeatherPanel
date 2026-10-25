@@ -67,7 +67,7 @@ pnpm start:stdio
 | Workflow | When | What |
 | -------- | ---- | ---- |
 | `MCP Jobs` (`.github/workflows/mcp.yml`) | `mcp/**` push/PR | typecheck + build (Node 22/24), tool inventory, Docker smoke `/health` |
-| `Docker Build & Publish (Dev)` | `develop` | multi-arch push `ghcr.io/mythicalltd/featherpanel-mcp:dev*` |
+| `Docker Build & Publish (Dev)` | `develop`, `main` | multi-arch push `ghcr.io/mythicalltd/featherpanel-mcp:dev*` |
 | `Docker Build & Publish (Release)` | `v*` tags | multi-arch push version + `latest` |
 
 ## Tools

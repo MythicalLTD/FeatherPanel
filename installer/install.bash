@@ -6640,16 +6640,83 @@ get_registry_base() {
 	esac
 }
 
+# Returns 0 if ghcr.io/<repo>:<tag> is pullable anonymously.
+ghcr_tag_exists() {
+	local repo="$1"
+	local tag="$2"
+	local token code
+	local accept="application/vnd.oci.image.index.v1+json,application/vnd.docker.distribution.manifest.list.v2+json,application/vnd.docker.distribution.manifest.v2+json,application/vnd.oci.image.manifest.v1+json"
+
+	token=$(curl -fsSL "https://ghcr.io/token?service=ghcr.io&scope=repository:${repo}:pull" 2>/dev/null | sed -n 's/.*"token":"\([^"]*\)".*/\1/p')
+	if [ -z "$token" ]; then
+		return 1
+	fi
+
+	code=$(curl -s -o /dev/null -w "%{http_code}" \
+		-H "Authorization: Bearer ${token}" \
+		-H "Accept: ${accept}" \
+		"https://ghcr.io/v2/${repo}/manifests/${tag}" 2>/dev/null || echo "000")
+
+	[ "$code" = "200" ]
+}
+
+# Prefer the requested tag; if missing on GHCR, fall back to floating :dev (then :latest).
+resolve_published_image_tag() {
+	local image_name="$1"
+	local preferred_tag="$2"
+	local repo="mythicalltd/${image_name}"
+
+	# Stable / floating tags — trust as-is
+	case "$preferred_tag" in
+	latest | dev | main) echo "$preferred_tag"; return ;;
+	esac
+
+	# Only probe GHCR; other registries keep the preferred tag
+	if [ "$(get_registry_base)" != "ghcr.io" ]; then
+		echo "$preferred_tag"
+		return
+	fi
+
+	if ghcr_tag_exists "$repo" "$preferred_tag"; then
+		echo "$preferred_tag"
+		return
+	fi
+
+	if ghcr_tag_exists "$repo" "dev"; then
+		log_warn "Image ghcr.io/${repo}:${preferred_tag} not found; falling back to :dev"
+		echo "dev"
+		return
+	fi
+
+	if ghcr_tag_exists "$repo" "latest"; then
+		log_warn "Image ghcr.io/${repo}:${preferred_tag} not found; falling back to :latest"
+		echo "latest"
+		return
+	fi
+
+	log_warn "Could not verify ghcr.io/${repo}:${preferred_tag}; using requested tag anyway"
+	echo "$preferred_tag"
+}
+
 modify_compose_for_dev() {
 	local compose_file="$1"
 	local backend_tag="$2"
 	local frontend_tag="$3"
 	local registry_base
+	local resolved_backend resolved_frontend resolved_frontendv2 resolved_mcp resolved_runner
 	registry_base=$(get_registry_base)
 
+	resolved_backend=$(resolve_published_image_tag "featherpanel-backend" "$backend_tag")
+	resolved_frontend=$(resolve_published_image_tag "featherpanel-frontend" "$frontend_tag")
+	resolved_frontendv2=$(resolve_published_image_tag "featherpanel-frontendv2" "$frontend_tag")
+	resolved_mcp=$(resolve_published_image_tag "featherpanel-mcp" "$frontend_tag")
+	resolved_runner=$(resolve_published_image_tag "featherpanel-async-runner" "$frontend_tag")
+
 	log_info "Modifying docker-compose.yml to use dev images..."
-	log_info "Backend tag: $backend_tag"
-	log_info "Frontend tag: $frontend_tag"
+	log_info "Backend tag: $resolved_backend (requested: $backend_tag)"
+	log_info "Frontend tag: $resolved_frontendv2 (requested: $frontend_tag)"
+	log_info "MCP tag: $resolved_mcp (requested: $frontend_tag)"
+	log_info "Async-runner tag: $resolved_runner (requested: $frontend_tag)"
 	log_info "Registry: $registry_base"
 
 	# Backup original file
@@ -6659,24 +6726,24 @@ modify_compose_for_dev() {
 
 	# Use sed to replace image tags
 	# Replace backend image
-	sed -i "s|image: .*mythicalltd/featherpanel-backend:latest|image: ${registry_base}/mythicalltd/featherpanel-backend:${backend_tag}|g" "$compose_file"
-	sed -i "s|image: .*mythicalltd/featherpanel-backend:.*|image: ${registry_base}/mythicalltd/featherpanel-backend:${backend_tag}|g" "$compose_file"
+	sed -i "s|image: .*mythicalltd/featherpanel-backend:latest|image: ${registry_base}/mythicalltd/featherpanel-backend:${resolved_backend}|g" "$compose_file"
+	sed -i "s|image: .*mythicalltd/featherpanel-backend:.*|image: ${registry_base}/mythicalltd/featherpanel-backend:${resolved_backend}|g" "$compose_file"
 
 	# Replace legacy frontend image (pre-frontendv2 compose files)
-	sed -i "s|image: .*mythicalltd/featherpanel-frontend:latest|image: ${registry_base}/mythicalltd/featherpanel-frontend:${frontend_tag}|g" "$compose_file"
-	sed -i "s|image: .*mythicalltd/featherpanel-frontend:.*|image: ${registry_base}/mythicalltd/featherpanel-frontend:${frontend_tag}|g" "$compose_file"
+	sed -i "s|image: .*mythicalltd/featherpanel-frontend:latest|image: ${registry_base}/mythicalltd/featherpanel-frontend:${resolved_frontend}|g" "$compose_file"
+	sed -i "s|image: .*mythicalltd/featherpanel-frontend:.*|image: ${registry_base}/mythicalltd/featherpanel-frontend:${resolved_frontend}|g" "$compose_file"
 
 	# Replace frontendv2 image (current 1.4+ compose)
-	sed -i "s|image: .*mythicalltd/featherpanel-frontendv2:latest|image: ${registry_base}/mythicalltd/featherpanel-frontendv2:${frontend_tag}|g" "$compose_file"
-	sed -i "s|image: .*mythicalltd/featherpanel-frontendv2:.*|image: ${registry_base}/mythicalltd/featherpanel-frontendv2:${frontend_tag}|g" "$compose_file"
+	sed -i "s|image: .*mythicalltd/featherpanel-frontendv2:latest|image: ${registry_base}/mythicalltd/featherpanel-frontendv2:${resolved_frontendv2}|g" "$compose_file"
+	sed -i "s|image: .*mythicalltd/featherpanel-frontendv2:.*|image: ${registry_base}/mythicalltd/featherpanel-frontendv2:${resolved_frontendv2}|g" "$compose_file"
 
 	# Replace MCP image
-	sed -i "s|image: .*mythicalltd/featherpanel-mcp:latest|image: ${registry_base}/mythicalltd/featherpanel-mcp:${frontend_tag}|g" "$compose_file"
-	sed -i "s|image: .*mythicalltd/featherpanel-mcp:.*|image: ${registry_base}/mythicalltd/featherpanel-mcp:${frontend_tag}|g" "$compose_file"
+	sed -i "s|image: .*mythicalltd/featherpanel-mcp:latest|image: ${registry_base}/mythicalltd/featherpanel-mcp:${resolved_mcp}|g" "$compose_file"
+	sed -i "s|image: .*mythicalltd/featherpanel-mcp:.*|image: ${registry_base}/mythicalltd/featherpanel-mcp:${resolved_mcp}|g" "$compose_file"
 
 	# Replace async-runner image
-	sed -i "s|image: .*mythicalltd/featherpanel-async-runner:latest|image: ${registry_base}/mythicalltd/featherpanel-async-runner:${frontend_tag}|g" "$compose_file"
-	sed -i "s|image: .*mythicalltd/featherpanel-async-runner:.*|image: ${registry_base}/mythicalltd/featherpanel-async-runner:${frontend_tag}|g" "$compose_file"
+	sed -i "s|image: .*mythicalltd/featherpanel-async-runner:latest|image: ${registry_base}/mythicalltd/featherpanel-async-runner:${resolved_runner}|g" "$compose_file"
+	sed -i "s|image: .*mythicalltd/featherpanel-async-runner:.*|image: ${registry_base}/mythicalltd/featherpanel-async-runner:${resolved_runner}|g" "$compose_file"
 
 	log_success "docker-compose.yml modified for dev images"
 }
@@ -6684,22 +6751,18 @@ modify_compose_for_dev() {
 # Function to determine dev image tag based on options
 get_dev_image_tag() {
 	local tag="dev"
+	local branch="${DEV_BRANCH:-develop}"
 
-	if [ -n "$DEV_BRANCH" ]; then
-		# Sanitize branch name (replace / with -)
-		local sanitized_branch
-		sanitized_branch=$(echo "$DEV_BRANCH" | sed 's/\//-/g')
-		tag="dev-${sanitized_branch}"
+	# Sanitize branch name (replace / with -)
+	local sanitized_branch
+	sanitized_branch=$(echo "$branch" | sed 's/\//-/g')
+	tag="dev-${sanitized_branch}"
 
-		if [ -n "$DEV_SHA" ]; then
-			# Use short SHA (first 7 characters)
-			local short_sha
-			short_sha=$(echo "$DEV_SHA" | cut -c1-7)
-			tag="dev-${sanitized_branch}-${short_sha}"
-		fi
-	else
-		# Default to main branch if no branch specified
-		tag="dev-main"
+	if [ -n "$DEV_SHA" ]; then
+		# Use short SHA (first 7 characters)
+		local short_sha
+		short_sha=$(echo "$DEV_SHA" | cut -c1-7)
+		tag="dev-${sanitized_branch}-${short_sha}"
 	fi
 
 	echo "$tag"
@@ -6713,10 +6776,8 @@ get_compose_file_url() {
 	# If dev mode is enabled, use docker-compose.v2.dev.yml
 	if [ "$USE_DEV" = true ]; then
 		compose_file="docker-compose.v2.dev.yml"
-		# Use DEV_BRANCH if set, otherwise default to main
-		if [ -n "$DEV_BRANCH" ]; then
-			branch="$DEV_BRANCH"
-		fi
+		# Dev images are published from develop by default
+		branch="${DEV_BRANCH:-develop}"
 	fi
 
 	echo "https://raw.githubusercontent.com/MythicalLTD/FeatherPanel/refs/heads/${branch}/${compose_file}"
@@ -7662,8 +7723,8 @@ if [ -f /etc/os-release ]; then
 				;;
 			2)
 				USE_DEV=true
-				DEV_BRANCH="main"
-				log_info "Development build from main branch selected"
+				DEV_BRANCH="develop"
+				log_info "Development build from develop branch selected"
 				;;
 			3)
 				USE_DEV=true
@@ -7673,10 +7734,10 @@ if [ -f /etc/os-release ]; then
 				echo -e "${BOLD}${CYAN}Custom Development Build${NC}"
 				draw_hr
 				echo ""
-				echo -e "${BLUE}Enter the branch name (default: main)${NC}"
-				prompt "${BOLD}Branch name${NC} ${BLUE}(e.g., main, develop)${NC}: " DEV_BRANCH
+				echo -e "${BLUE}Enter the branch name (default: develop)${NC}"
+				prompt "${BOLD}Branch name${NC} ${BLUE}(e.g., develop, main)${NC}: " DEV_BRANCH
 				if [ -z "$DEV_BRANCH" ]; then
-					DEV_BRANCH="main"
+					DEV_BRANCH="develop"
 				fi
 
 				echo ""
@@ -7923,7 +7984,7 @@ if [ -f /etc/os-release ]; then
 				if [ -n "$DEV_BRANCH" ]; then
 					echo -e "  ${CYAN}•${NC} Branch: ${BOLD}$DEV_BRANCH${NC}"
 				else
-					echo -e "  ${CYAN}•${NC} Branch: ${BOLD}main${NC} (default)"
+					echo -e "  ${CYAN}•${NC} Branch: ${BOLD}develop${NC} (default)"
 				fi
 				if [ -n "$DEV_SHA" ]; then
 					echo -e "  ${CYAN}•${NC} Commit: ${BOLD}$DEV_SHA${NC}"
