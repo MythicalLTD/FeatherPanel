@@ -27,14 +27,14 @@ namespace App\Cron;
 
 use App\App;
 use App\Chat\Server;
-use App\Chat\Database;
 use App\Chat\VmNode;
+use App\Chat\Database;
 use App\Chat\VmInstance;
 use App\Config\ConfigInterface;
 use App\Services\Vm\VmInstanceUtil;
-use App\Services\Notifications\InboxNotifier;
 use App\Helpers\ModerationReasonHelper;
 use App\Cli\Utils\MinecraftColorCodeSupport;
+use App\Services\Notifications\InboxNotifier;
 
 class ZCheckExpiredServers implements TimeTask
 {

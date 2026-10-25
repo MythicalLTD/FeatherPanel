@@ -548,7 +548,7 @@ class VmUserBackupController
         // The volume must belong to this VM. The Proxmox restore runs with
         // force=1, so an unchecked `volid` lets a customer boot another
         // tenant's backup onto their own machine.
-        if (\App\Chat\VmInstanceBackup::getByInstanceAndVolid((int) $instance['id'], $volid) === null) {
+        if (VmInstanceBackup::getByInstanceAndVolid((int) $instance['id'], $volid) === null) {
             return ApiResponse::error('Backup not found for this instance', 'BACKUP_NOT_FOUND', 404);
         }
 

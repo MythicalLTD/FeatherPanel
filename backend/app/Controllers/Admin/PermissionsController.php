@@ -272,8 +272,10 @@ class PermissionsController
         // Granting a root-level node (for example `admin.root`) to a role is a
         // root-only decision. Without this guard `admin.roles.permissions.create`
         // alone was enough to lift your own role to full administrator.
-        if (\App\Helpers\AdminRank::isRootLevelPermission((string) $data['permission'])
-            && !\App\Helpers\AdminRank::isRoot($request->attributes->get('user'))) {
+        if (
+            \App\Helpers\AdminRank::isRootLevelPermission((string) $data['permission'])
+            && !\App\Helpers\AdminRank::isRoot($request->attributes->get('user'))
+        ) {
             return ApiResponse::error(
                 'Only a full administrator can grant ' . $data['permission'],
                 'ROOT_PERMISSION_GRANT_FORBIDDEN',
@@ -379,9 +381,11 @@ class PermissionsController
             }
         }
 
-        if (isset($data['permission'])
+        if (
+            isset($data['permission'])
             && \App\Helpers\AdminRank::isRootLevelPermission((string) $data['permission'])
-            && !\App\Helpers\AdminRank::isRoot($request->attributes->get('user'))) {
+            && !\App\Helpers\AdminRank::isRoot($request->attributes->get('user'))
+        ) {
             return ApiResponse::error(
                 'Only a full administrator can grant ' . $data['permission'],
                 'ROOT_PERMISSION_GRANT_FORBIDDEN',

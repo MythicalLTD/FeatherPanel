@@ -141,6 +141,23 @@ class FeatherPanelPremiumController
         return ApiResponse::success($this->payload($request), 'FeatherPanel Premium settings saved', 200);
     }
 
+    public function claimFree(Request $request): Response
+    {
+        if (DemoCloudHelper::isBlocked()) {
+            return DemoCloudHelper::denyResponse();
+        }
+
+        $body = json_decode($request->getContent() ?: '[]', true);
+        $method = is_array($body) ? (string) ($body['method'] ?? '') : '';
+        if (!in_array($method, FeatherPanelPremium::FREE_CLAIM_METHODS, true)) {
+            return ApiResponse::error('Choose how you supported FeatherPanel: star or share.', 'INVALID_FREE_CLAIM_METHOD', 400);
+        }
+
+        FeatherPanelPremium::claimFree($method);
+
+        return ApiResponse::success($this->payload($request), 'Free Premium claimed', 200);
+    }
+
     /**
      * @return array<string, mixed>
      */
@@ -173,23 +190,6 @@ class FeatherPanelPremiumController
             ],
             'current_user_mapped' => MythicMemberResolver::resolveFromRequest($request) !== null,
         ];
-    }
-
-    public function claimFree(Request $request): Response
-    {
-        if (DemoCloudHelper::isBlocked()) {
-            return DemoCloudHelper::denyResponse();
-        }
-
-        $body = json_decode($request->getContent() ?: '[]', true);
-        $method = is_array($body) ? (string) ($body['method'] ?? '') : '';
-        if (!in_array($method, FeatherPanelPremium::FREE_CLAIM_METHODS, true)) {
-            return ApiResponse::error('Choose how you supported FeatherPanel: star or share.', 'INVALID_FREE_CLAIM_METHOD', 400);
-        }
-
-        FeatherPanelPremium::claimFree($method);
-
-        return ApiResponse::success($this->payload($request), 'Free Premium claimed', 200);
     }
 
     private function tryRefreshEntitlement(?Request $request = null): void

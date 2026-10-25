@@ -19,8 +19,8 @@ namespace App\Services\Vm;
 
 use App\App;
 use App\Chat\VmInstance;
-use App\Chat\VmInstanceActivity;
 use App\Config\ConfigInterface;
+use App\Chat\VmInstanceActivity;
 use App\Services\Proxmox\Proxmox;
 use App\Helpers\ModerationReasonHelper;
 use App\Services\Notifications\InboxNotifier;
@@ -202,8 +202,10 @@ class Bandwidth
                 self::log($instance, 'vm:bandwidth.unthrottle', ['period' => $last['period']]);
             }
         }
-        if ($last['action_taken'] === 'suspend' && (int) ($instance['suspended'] ?? 0) === 1
-            && str_contains((string) ($instance['suspension_reason'] ?? ''), self::REASON_MARKER)) {
+        if (
+            $last['action_taken'] === 'suspend' && (int) ($instance['suspended'] ?? 0) === 1
+            && str_contains((string) ($instance['suspension_reason'] ?? ''), self::REASON_MARKER)
+        ) {
             VmInstance::update((int) $instance['id'], ModerationReasonHelper::suspensionClearedFields());
             self::log($instance, 'vm:bandwidth.unsuspend', ['period' => $last['period']]);
         }

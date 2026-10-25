@@ -14,6 +14,7 @@
  *
  * See the LICENSE file or <https://www.gnu.org/licenses/>.
  */
+
 use App\App;
 use RateLimit\Rate;
 use Symfony\Component\HttpFoundation\Request;

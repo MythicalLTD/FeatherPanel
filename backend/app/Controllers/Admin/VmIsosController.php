@@ -221,7 +221,7 @@ class VmIsosController
     }
 
     /** @return array<string, mixed>|Response */
-    private function validate(Request $request, bool $creating): array|Response
+    private function validate(Request $request, bool $creating): array | Response
     {
         $body = json_decode($request->getContent(), true);
         if (!is_array($body)) {

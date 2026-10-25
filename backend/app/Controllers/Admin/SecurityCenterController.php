@@ -14,13 +14,14 @@
  *
  * See the LICENSE file or <https://www.gnu.org/licenses/>.
  */
+
 namespace App\Controllers\Admin;
 
 use App\Chat\Activity;
 use App\Helpers\ApiResponse;
 use App\Helpers\IpAddressMatcher;
-use App\CloudFlare\CloudFlareRealIP;
 use App\Middleware\AuthMiddleware;
+use App\CloudFlare\CloudFlareRealIP;
 use App\Services\Security\SecurityPolicy;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;

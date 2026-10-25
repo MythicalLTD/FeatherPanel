@@ -47,6 +47,7 @@ $featherpanelMaxMemory = (string) ($_SERVER['FEATHERPANEL_WORKER_MAX_MEMORY'] ??
 $featherpanelMaxMemoryBytes = (static function (string $value): int {
     $value = strtoupper(trim($value));
     $number = (int) $value;
+
     return match (substr($value, -1)) {
         'G' => $number * 1024 * 1024 * 1024,
         'M' => $number * 1024 * 1024,

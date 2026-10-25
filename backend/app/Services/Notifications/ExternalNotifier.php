@@ -19,8 +19,8 @@ namespace App\Services\Notifications;
 
 use App\App;
 use App\Chat\MailList;
-use App\Chat\MailQueue;
 use GuzzleHttp\Client;
+use App\Chat\MailQueue;
 use App\Chat\UserPreference;
 use App\Chat\UserNotification;
 use App\Config\ConfigInterface;

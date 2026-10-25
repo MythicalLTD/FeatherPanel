@@ -27,9 +27,9 @@ use App\Helpers\ApiResponse;
 use App\Services\Wings\Wings;
 use App\Helpers\WingsUrlHelper;
 use App\Plugins\Events\Events\ServerEvent;
-use App\Services\Servers\TransferPowerRestorer;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use App\Services\Servers\TransferPowerRestorer;
 
 /**
  * Wings Transfer Status Controller.

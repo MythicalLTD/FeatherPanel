@@ -19,9 +19,9 @@ namespace App\Controllers\User\Vds;
 
 use App\Chat\Database;
 use App\Chat\VmSchedule;
-use App\Services\Vm\Bandwidth;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
+use App\Services\Vm\Bandwidth;
 use App\Config\ConfigInterface;
 use App\Services\Proxmox\Proxmox;
 use Symfony\Component\HttpFoundation\Request;
@@ -358,7 +358,7 @@ class VmUserAutomationController extends VmUserExtrasController
 
     // ----------------------------------------------------------------- helpers
 
-    private function firewallContext(Request $request, int $id): array|Response
+    private function firewallContext(Request $request, int $id): array | Response
     {
         if (!self::flag(ConfigInterface::VDS_FIREWALL_ENABLED, 'false')) {
             return ApiResponse::error('The VDS firewall is disabled by the administrator', 'FEATURE_DISABLED', 403);
@@ -367,7 +367,7 @@ class VmUserAutomationController extends VmUserExtrasController
         return $this->context($request, $id, 'firewall');
     }
 
-    private function scheduleContext(Request $request, int $id): array|Response
+    private function scheduleContext(Request $request, int $id): array | Response
     {
         if (!self::flag(ConfigInterface::VDS_SCHEDULES_ENABLED, 'true')) {
             return ApiResponse::error('Scheduled tasks are disabled by the administrator', 'FEATURE_DISABLED', 403);
@@ -436,7 +436,7 @@ class VmUserAutomationController extends VmUserExtrasController
         return $client->setVmConfig($ctx['node'], $ctx['vmid'], $ctx['type'], $changes, [])['ok'] ? null : 'Failed to enable the firewall on the network interfaces';
     }
 
-    private static function validateRule(array $b): array|string
+    private static function validateRule(array $b): array | string
     {
         $type = strtolower((string) ($b['type'] ?? 'in'));
         $action = strtoupper((string) ($b['action'] ?? 'ACCEPT'));
@@ -493,7 +493,7 @@ class VmUserAutomationController extends VmUserExtrasController
         return ctype_digit($mask) && (int) $mask >= 0 && (int) $mask <= $max;
     }
 
-    private static function validateSchedule(array $b, array $features, ?array $row): array|string
+    private static function validateSchedule(array $b, array $features, ?array $row): array | string
     {
         $get = static fn (string $k, $d) => array_key_exists($k, $b) ? $b[$k] : ($row[$k] ?? $d);
         $name = trim(mb_substr((string) $get('name', ''), 0, 80));

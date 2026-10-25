@@ -19,9 +19,9 @@ namespace App\Middleware;
 
 use App\App;
 use App\Chat\VmInstance;
-use App\Config\ConfigInterface;
 use App\Helpers\VmGateway;
 use App\Helpers\ApiResponse;
+use App\Config\ConfigInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 

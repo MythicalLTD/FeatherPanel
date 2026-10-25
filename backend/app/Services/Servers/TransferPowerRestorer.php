@@ -14,6 +14,7 @@
  *
  * See the LICENSE file or <https://www.gnu.org/licenses/>.
  */
+
 namespace App\Services\Servers;
 
 use App\App;
@@ -22,8 +23,8 @@ use App\Chat\Server;
 use App\Chat\Database;
 use App\Chat\ServerActivity;
 use App\Services\Wings\Wings;
-use App\Services\Server\ServerAutoStartService;
 use App\Services\Notifications\InboxNotifier;
+use App\Services\Server\ServerAutoStartService;
 
 /**
  * Remembers whether a server was running when a transfer started and starts it

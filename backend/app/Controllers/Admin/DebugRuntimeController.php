@@ -14,6 +14,7 @@
  *
  * See the LICENSE file or <https://www.gnu.org/licenses/>.
  */
+
 namespace App\Controllers\Admin;
 
 use App\App;
@@ -54,7 +55,8 @@ class DebugRuntimeController
         $env = static fn (string $key): ?string => ($v = getenv($key)) === false || $v === '' ? null : (string) $v;
 
         $flags = [];
-        foreach ([
+        foreach (
+            [
             'app_developer_mode',
             'module_game_enabled',
             'module_web_enabled',
@@ -66,7 +68,8 @@ class DebugRuntimeController
             'maintenance_mode_enabled',
             'turnstile_enabled',
             'smtp_enabled',
-        ] as $key) {
+            ] as $key
+        ) {
             $flags[$key] = $config->getSetting($key, null);
         }
 

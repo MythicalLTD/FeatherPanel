@@ -288,9 +288,7 @@ const LogsTab = () => {
                                         <p className='text-muted-foreground text-xs'>
                                             {t('admin.featherzerotrust.logs.totalServers')}
                                         </p>
-                                        <p className='mt-1 text-sm font-medium'>
-                                            {executionLog.total_servers_scanned}
-                                        </p>
+                                        <p className='mt-1 text-sm font-medium'>{executionLog.total_servers_scanned}</p>
                                     </div>
                                     <div className='fp-surface-solid rounded-xl border px-4 py-3'>
                                         <p className='text-muted-foreground text-xs'>
@@ -319,10 +317,7 @@ const LogsTab = () => {
                                     ) : (
                                         <div className='space-y-2'>
                                             {scanLogs.map((log) => (
-                                                <div
-                                                    key={log.id}
-                                                    className='fp-surface-solid rounded-xl border p-4'
-                                                >
+                                                <div key={log.id} className='fp-surface-solid rounded-xl border p-4'>
                                                     <div className='flex items-start justify-between gap-3'>
                                                         <div className='min-w-0'>
                                                             <div className='truncate text-sm font-medium'>

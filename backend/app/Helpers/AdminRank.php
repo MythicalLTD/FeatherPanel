@@ -14,6 +14,7 @@
  *
  * See the LICENSE file or <https://www.gnu.org/licenses/>.
  */
+
 namespace App\Helpers;
 
 use App\Permissions;
@@ -77,7 +78,7 @@ class AdminRank
     /**
      * Check whether the acting account may modify the target account.
      *
-     * @param array|null $actor  The authenticated staff account (request attribute `user`)
+     * @param array|null $actor The authenticated staff account (request attribute `user`)
      * @param array|null $target The account the request wants to modify
      *
      * @return string|null Null when allowed, otherwise the reason for the rejection

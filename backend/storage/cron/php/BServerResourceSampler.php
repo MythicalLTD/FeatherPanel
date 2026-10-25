@@ -21,8 +21,8 @@ use App\App;
 use App\Chat\Database;
 use App\Chat\ServerResourceSample;
 use App\Helpers\ServerUtilization;
-use App\Services\Notifications\InboxNotifier;
 use App\Cli\Utils\MinecraftColorCodeSupport;
+use App\Services\Notifications\InboxNotifier;
 
 /**
  * BServerResourceSampler - stores a CPU, memory and disk sample for every running server

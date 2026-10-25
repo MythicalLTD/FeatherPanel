@@ -24,9 +24,9 @@ use App\Helpers\VmGateway;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
+use App\Services\Vm\IsoLibrary;
 use App\Chat\VmInstanceActivity;
 use App\Services\Proxmox\Proxmox;
-use App\Services\Vm\IsoLibrary;
 use App\Services\Vm\VmInstanceUtil;
 use App\CloudFlare\CloudFlareRealIP;
 use Symfony\Component\HttpFoundation\Request;
@@ -340,23 +340,6 @@ class VmUserExtrasController
         return ApiResponse::success([], 'ISO deleted', 200);
     }
 
-    private function createUserIso(array $ctx, mixed $name, string $original, array $data): ?int
-    {
-        $name = is_string($name) ? trim(strip_tags($name)) : '';
-
-        return VmIso::create(array_merge([
-            'kind' => 'user',
-            'vm_node_id' => (int) $ctx['instance']['vm_node_id'],
-            'pve_node' => $ctx['node'],
-            'storage' => $ctx['storage'],
-            'name' => mb_substr($name !== '' ? $name : $original, 0, 120),
-            'category' => IsoLibrary::guessCategory($original),
-            'user_id' => (int) $ctx['user']['id'],
-            'vm_instance_id' => (int) $ctx['instance']['id'],
-            'approval' => $ctx['rules']['require_approval'] ? 'pending' : 'approved',
-        ], $data));
-    }
-
     #[OA\Get(
         path: '/api/user/vm-instances/{id}/rescue',
         summary: 'Rescue mode state',
@@ -509,6 +492,7 @@ class VmUserExtrasController
         if (($reauth = \App\Services\Vm\VdsReauth::check($request, 'rollback')) !== null) {
             return $reauth;
         }
+
         return $this->snapshotAction($request, $id, $name, 'rollback');
     }
 
@@ -525,6 +509,126 @@ class VmUserExtrasController
     public function deleteSnapshot(Request $request, int $id, string $name): Response
     {
         return $this->snapshotAction($request, $id, $name, 'delete');
+    }
+
+    public static function snapshotLimit(array $vmInstance): int
+    {
+        $own = $vmInstance['snapshot_limit'] ?? null;
+        if ($own !== null && $own !== '') {
+            return max(0, (int) $own);
+        }
+
+        return max(0, (int) self::setting(ConfigInterface::VDS_SNAPSHOTS_DEFAULT_LIMIT, '3'));
+    }
+
+    /** Resolves user, permission, Proxmox client and node for a VDS request. */
+    protected function context(Request $request, int $id, string $permission): array | Response
+    {
+        $user = $request->attributes->get('user');
+        $vmInstance = $request->attributes->get('vmInstance');
+        if (!$vmInstance) {
+            return ApiResponse::error('VM instance not found', 'VM_INSTANCE_NOT_FOUND', 404);
+        }
+        if (!VmGateway::hasVmPermission($user['uuid'], $id, $permission)) {
+            return ApiResponse::error('You do not have permission for this action', 'PERMISSION_DENIED', 403);
+        }
+        $vmNode = VmNode::getVmNodeById((int) ($vmInstance['vm_node_id'] ?? 0));
+        if (!$vmNode) {
+            return ApiResponse::error('VM node not found', 'VM_NODE_NOT_FOUND', 404);
+        }
+        try {
+            $client = VmInstanceUtil::buildProxmoxClientForNode($vmNode);
+        } catch (\Throwable $e) {
+            return ApiResponse::error('Failed to connect to Proxmox node', 'PROXMOX_ERROR', 500);
+        }
+        $node = (string) ($vmInstance['pve_node'] ?? '');
+        if ($node === '') {
+            $find = $client->findNodeByVmid((int) $vmInstance['vmid']);
+            $node = $find['ok'] ? (string) $find['node'] : '';
+        }
+        if ($node === '') {
+            return ApiResponse::error('Could not determine Proxmox node', 'NODE_UNKNOWN', 500);
+        }
+
+        return [
+            'user' => $user,
+            'instance' => $vmInstance,
+            'client' => $client,
+            'node' => $node,
+            'vmid' => (int) $vmInstance['vmid'],
+            'type' => ($vmInstance['vm_type'] ?? 'qemu') === 'lxc' ? 'lxc' : 'qemu',
+        ];
+    }
+
+    protected function vmPath(array $ctx, string $suffix): string
+    {
+        return sprintf('/api2/json/nodes/%s/%s/%d', rawurlencode($ctx['node']), $ctx['type'], $ctx['vmid']) . $suffix;
+    }
+
+    /** Stop + start so Proxmox applies the new boot order (a guest reboot keeps the old one). */
+    protected function coldRestart(array $ctx): ?string
+    {
+        /** @var Proxmox $client */
+        $client = $ctx['client'];
+        $status = $client->apiGet($this->vmPath($ctx, '/status/current'));
+        $running = is_array($status['data'] ?? null) && ($status['data']['status'] ?? '') === 'running';
+        if ($running) {
+            $stop = $client->apiPost($this->vmPath($ctx, '/status/stop'));
+            if (!$stop['ok']) {
+                return 'The VM could not be stopped';
+            }
+            if (is_string($stop['data'] ?? null) && $stop['data'] !== '') {
+                $client->waitTask($ctx['node'], $stop['data'], 60, 2);
+            } else {
+                sleep(3);
+            }
+        }
+        $start = $client->startVm($ctx['node'], $ctx['vmid'], 'qemu');
+
+        return $start['ok'] ? null : 'The VM could not be started';
+    }
+
+    protected function activity(array $ctx, string $event, array $metadata): void
+    {
+        try {
+            VmInstanceActivity::createActivity([
+                'vm_instance_id' => (int) $ctx['instance']['id'],
+                'vm_node_id' => (int) $ctx['instance']['vm_node_id'],
+                'user_id' => (int) ($ctx['user']['id'] ?? 0),
+                'event' => $event,
+                'metadata' => array_merge(['hostname' => $ctx['instance']['hostname'] ?? null], $metadata),
+                'ip' => CloudFlareRealIP::getRealIP(),
+            ]);
+        } catch (\Throwable $e) {
+            App::getInstance(true)->getLogger()->warning('VDS activity log failed: ' . $e->getMessage());
+        }
+    }
+
+    protected static function flag(string $key, string $default): bool
+    {
+        return self::setting($key, $default) === 'true';
+    }
+
+    protected static function setting(string $key, string $default): string
+    {
+        return (string) App::getInstance(true)->getConfig()->getSetting($key, $default);
+    }
+
+    private function createUserIso(array $ctx, mixed $name, string $original, array $data): ?int
+    {
+        $name = is_string($name) ? trim(strip_tags($name)) : '';
+
+        return VmIso::create(array_merge([
+            'kind' => 'user',
+            'vm_node_id' => (int) $ctx['instance']['vm_node_id'],
+            'pve_node' => $ctx['node'],
+            'storage' => $ctx['storage'],
+            'name' => mb_substr($name !== '' ? $name : $original, 0, 120),
+            'category' => IsoLibrary::guessCategory($original),
+            'user_id' => (int) $ctx['user']['id'],
+            'vm_instance_id' => (int) $ctx['instance']['id'],
+            'approval' => $ctx['rules']['require_approval'] ? 'pending' : 'approved',
+        ], $data));
     }
 
     private function snapshotAction(Request $request, int $id, string $name, string $action): Response
@@ -578,7 +682,7 @@ class VmUserExtrasController
         return $out;
     }
 
-    private function snapshotContext(Request $request, int $id): array|Response
+    private function snapshotContext(Request $request, int $id): array | Response
     {
         if (!self::flag(ConfigInterface::VDS_SNAPSHOTS_ENABLED, 'true')) {
             return ApiResponse::error('Snapshots are disabled', 'FEATURE_DISABLED', 403);
@@ -587,7 +691,7 @@ class VmUserExtrasController
         return $this->context($request, $id, 'snapshot');
     }
 
-    private function isoContext(Request $request, int $id, string $permission = 'settings'): array|Response
+    private function isoContext(Request $request, int $id, string $permission = 'settings'): array | Response
     {
         $vmInstance = $request->attributes->get('vmInstance');
         if (is_array($vmInstance) && IsoLibrary::mode($vmInstance) === 'disabled') {
@@ -602,7 +706,7 @@ class VmUserExtrasController
     }
 
     /** Context for adding user ISOs: mode, storage, quota and the iso.upload permission. */
-    private function userIsoContext(Request $request, int $id, string $source): array|Response
+    private function userIsoContext(Request $request, int $id, string $source): array | Response
     {
         $ctx = $this->isoContext($request, $id, 'iso.upload');
         if ($ctx instanceof Response) {
@@ -661,7 +765,7 @@ class VmUserExtrasController
         return $volids;
     }
 
-    private function rescueContext(Request $request, int $id): array|Response
+    private function rescueContext(Request $request, int $id): array | Response
     {
         if (self::rescueIso() === null) {
             return ApiResponse::error('Rescue mode is disabled', 'FEATURE_DISABLED', 403);
@@ -672,50 +776,6 @@ class VmUserExtrasController
         }
 
         return $ctx;
-    }
-
-    /** Resolves user, permission, Proxmox client and node for a VDS request. */
-    protected function context(Request $request, int $id, string $permission): array|Response
-    {
-        $user = $request->attributes->get('user');
-        $vmInstance = $request->attributes->get('vmInstance');
-        if (!$vmInstance) {
-            return ApiResponse::error('VM instance not found', 'VM_INSTANCE_NOT_FOUND', 404);
-        }
-        if (!VmGateway::hasVmPermission($user['uuid'], $id, $permission)) {
-            return ApiResponse::error('You do not have permission for this action', 'PERMISSION_DENIED', 403);
-        }
-        $vmNode = VmNode::getVmNodeById((int) ($vmInstance['vm_node_id'] ?? 0));
-        if (!$vmNode) {
-            return ApiResponse::error('VM node not found', 'VM_NODE_NOT_FOUND', 404);
-        }
-        try {
-            $client = VmInstanceUtil::buildProxmoxClientForNode($vmNode);
-        } catch (\Throwable $e) {
-            return ApiResponse::error('Failed to connect to Proxmox node', 'PROXMOX_ERROR', 500);
-        }
-        $node = (string) ($vmInstance['pve_node'] ?? '');
-        if ($node === '') {
-            $find = $client->findNodeByVmid((int) $vmInstance['vmid']);
-            $node = $find['ok'] ? (string) $find['node'] : '';
-        }
-        if ($node === '') {
-            return ApiResponse::error('Could not determine Proxmox node', 'NODE_UNKNOWN', 500);
-        }
-
-        return [
-            'user' => $user,
-            'instance' => $vmInstance,
-            'client' => $client,
-            'node' => $node,
-            'vmid' => (int) $vmInstance['vmid'],
-            'type' => ($vmInstance['vm_type'] ?? 'qemu') === 'lxc' ? 'lxc' : 'qemu',
-        ];
-    }
-
-    protected function vmPath(array $ctx, string $suffix): string
-    {
-        return sprintf('/api2/json/nodes/%s/%s/%d', rawurlencode($ctx['node']), $ctx['type'], $ctx['vmid']) . $suffix;
     }
 
     /** Mounts a volid as the only cdrom (ide2) and boots from it first. Returns an error message or null. */
@@ -758,55 +818,6 @@ class VmUserExtrasController
         return $ide2 !== '' && str_starts_with($ide2, (string) self::rescueIso() . ',');
     }
 
-    /** Stop + start so Proxmox applies the new boot order (a guest reboot keeps the old one). */
-    protected function coldRestart(array $ctx): ?string
-    {
-        /** @var Proxmox $client */
-        $client = $ctx['client'];
-        $status = $client->apiGet($this->vmPath($ctx, '/status/current'));
-        $running = is_array($status['data'] ?? null) && ($status['data']['status'] ?? '') === 'running';
-        if ($running) {
-            $stop = $client->apiPost($this->vmPath($ctx, '/status/stop'));
-            if (!$stop['ok']) {
-                return 'The VM could not be stopped';
-            }
-            if (is_string($stop['data'] ?? null) && $stop['data'] !== '') {
-                $client->waitTask($ctx['node'], $stop['data'], 60, 2);
-            } else {
-                sleep(3);
-            }
-        }
-        $start = $client->startVm($ctx['node'], $ctx['vmid'], 'qemu');
-
-        return $start['ok'] ? null : 'The VM could not be started';
-    }
-
-    protected function activity(array $ctx, string $event, array $metadata): void
-    {
-        try {
-            VmInstanceActivity::createActivity([
-                'vm_instance_id' => (int) $ctx['instance']['id'],
-                'vm_node_id' => (int) $ctx['instance']['vm_node_id'],
-                'user_id' => (int) ($ctx['user']['id'] ?? 0),
-                'event' => $event,
-                'metadata' => array_merge(['hostname' => $ctx['instance']['hostname'] ?? null], $metadata),
-                'ip' => CloudFlareRealIP::getRealIP(),
-            ]);
-        } catch (\Throwable $e) {
-            App::getInstance(true)->getLogger()->warning('VDS activity log failed: ' . $e->getMessage());
-        }
-    }
-
-    public static function snapshotLimit(array $vmInstance): int
-    {
-        $own = $vmInstance['snapshot_limit'] ?? null;
-        if ($own !== null && $own !== '') {
-            return max(0, (int) $own);
-        }
-
-        return max(0, (int) self::setting(ConfigInterface::VDS_SNAPSHOTS_DEFAULT_LIMIT, '3'));
-    }
-
     private static function rescueIso(): ?string
     {
         if (!self::flag(ConfigInterface::VDS_RESCUE_ENABLED, 'false')) {
@@ -822,16 +833,6 @@ class VmUserExtrasController
         $max = self::setting(ConfigInterface::VDS_GRAPHS_MAX_TIMEFRAME, 'week');
 
         return in_array($max, self::TIMEFRAMES, true) ? $max : 'week';
-    }
-
-    protected static function flag(string $key, string $default): bool
-    {
-        return self::setting($key, $default) === 'true';
-    }
-
-    protected static function setting(string $key, string $default): string
-    {
-        return (string) App::getInstance(true)->getConfig()->getSetting($key, $default);
     }
 
     /** White-label console logo; only https URLs are passed to the browser. */

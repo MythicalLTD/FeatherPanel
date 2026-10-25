@@ -390,12 +390,7 @@ const HashesTab = () => {
                         )}
                         {t('admin.featherzerotrust.hashes.importMalwareBazaar')}
                     </Button>
-                    <Button
-                        size='sm'
-                        variant='outline'
-                        className='h-11'
-                        onClick={() => setCheckHashesDialogOpen(true)}
-                    >
+                    <Button size='sm' variant='outline' className='h-11' onClick={() => setCheckHashesDialogOpen(true)}>
                         <Search className='mr-2 h-4 w-4' />
                         {t('admin.featherzerotrust.hashes.checkHashes')}
                     </Button>
@@ -440,7 +435,13 @@ const HashesTab = () => {
                 </div>
                 {selectedHashes.size > 0 && (
                     <div className='fp-surface-solid flex flex-wrap items-center gap-2 rounded-xl border px-3 py-2'>
-                        <Button size='sm' variant='outline' className='h-9' onClick={handleBulkConfirm} disabled={bulkConfirming}>
+                        <Button
+                            size='sm'
+                            variant='outline'
+                            className='h-9'
+                            onClick={handleBulkConfirm}
+                            disabled={bulkConfirming}
+                        >
                             {bulkConfirming ? (
                                 <RefreshCw className='h-4 w-4 animate-spin' />
                             ) : (
@@ -676,7 +677,7 @@ const HashesTab = () => {
                             <textarea
                                 value={hashCheckInput}
                                 onChange={(e) => setHashCheckInput(e.target.value)}
-                                className='border-border bg-[hsl(var(--fp-surface-tint)/0.92)] focus:border-primary/60 focus:ring-primary/10 min-h-[150px] w-full rounded-xl border p-3 font-mono text-xs outline-none focus:ring-4'
+                                className='border-border focus:border-primary/60 focus:ring-primary/10 min-h-[150px] w-full rounded-xl border bg-[hsl(var(--fp-surface-tint)/0.92)] p-3 font-mono text-xs outline-none focus:ring-4'
                                 placeholder='...'
                             />
                         </div>

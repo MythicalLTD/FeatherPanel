@@ -14,9 +14,10 @@
  *
  * See the LICENSE file or <https://www.gnu.org/licenses/>.
  */
+
 use App\Chat\Node;
-use App\Helpers\DaemonCapabilities;
 use PHPUnit\Framework\TestCase;
+use App\Helpers\DaemonCapabilities;
 
 class FeatherWingsUpstreamSupportTest extends TestCase
 {

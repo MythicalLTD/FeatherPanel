@@ -14,11 +14,12 @@
  *
  * See the LICENSE file or <https://www.gnu.org/licenses/>.
  */
+
 use App\App;
 use App\Permissions;
+use App\Controllers\Admin\HealthController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RouteCollection;
-use App\Controllers\Admin\HealthController;
 use App\Controllers\Admin\DebugRuntimeController;
 
 return function (RouteCollection $routes): void {

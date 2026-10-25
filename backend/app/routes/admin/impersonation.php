@@ -14,9 +14,10 @@
  *
  * See the LICENSE file or <https://www.gnu.org/licenses/>.
  */
+
 use App\App;
-use App\Permissions;
 use RateLimit\Rate;
+use App\Permissions;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RouteCollection;
 use App\Controllers\Admin\ImpersonationController;

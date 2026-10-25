@@ -22,8 +22,8 @@ use App\Chat\Node;
 use App\Chat\Server;
 use App\Chat\Activity;
 use App\Chat\Database;
-use App\Chat\ServerSchedule;
 use App\Chat\BackupPolicy;
+use App\Chat\ServerSchedule;
 use App\Helpers\ApiResponse;
 use App\Chat\BackupPolicyRun;
 use OpenApi\Attributes as OA;
@@ -63,17 +63,19 @@ class BackupSchedulesController
             if ($plannedFrom >= $to) {
                 break;
             }
-            foreach (ServerSchedule::occurrencesBetween(
-                (string) $policy['cron_day_of_week'],
-                (string) $policy['cron_month'],
-                (string) $policy['cron_day_of_month'],
-                (string) $policy['cron_hour'],
-                (string) $policy['cron_minute'],
-                $plannedFrom,
-                $to,
-                (string) ($policy['timezone'] ?? 'UTC'),
-                62
-            ) as $at) {
+            foreach (
+                ServerSchedule::occurrencesBetween(
+                    (string) $policy['cron_day_of_week'],
+                    (string) $policy['cron_month'],
+                    (string) $policy['cron_day_of_month'],
+                    (string) $policy['cron_hour'],
+                    (string) $policy['cron_minute'],
+                    $plannedFrom,
+                    $to,
+                    (string) ($policy['timezone'] ?? 'UTC'),
+                    62
+                ) as $at
+            ) {
                 $planned[] = ['policy_id' => (int) $policy['id'], 'name' => (string) $policy['name'], 'at' => $at];
             }
         }

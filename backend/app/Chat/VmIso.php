@@ -24,9 +24,9 @@ class VmIso
 {
     public const CATEGORIES = ['linux', 'windows', 'bsd', 'rescue', 'tools', 'other'];
 
-    private static string $table = 'featherpanel_vm_isos';
-
     private const COLUMNS = ['kind', 'vm_node_id', 'pve_node', 'storage', 'volid', 'name', 'description', 'category', 'visible', 'sort_order', 'user_id', 'vm_instance_id', 'source', 'source_url', 'size_bytes', 'status', 'approval', 'upid', 'error'];
+
+    private static string $table = 'featherpanel_vm_isos';
 
     public static function create(array $data): ?int
     {

@@ -14,6 +14,7 @@
  *
  * See the LICENSE file or <https://www.gnu.org/licenses/>.
  */
+
 namespace App\Controllers\Admin;
 
 use App\Chat\User;

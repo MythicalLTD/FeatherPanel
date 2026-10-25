@@ -14,6 +14,7 @@
  *
  * See the LICENSE file or <https://www.gnu.org/licenses/>.
  */
+
 namespace App\Helpers;
 
 use App\App;
@@ -45,8 +46,10 @@ class Impersonation
             return 'You are not allowed to view the panel as other users';
         }
         // Staff accounts can only be viewed by full admins.
-        if (PermissionHelper::hasPermission((string) $target['uuid'], Permissions::ADMIN_DASHBOARD_VIEW)
-            && !PermissionHelper::hasPermission((string) $admin['uuid'], Permissions::ADMIN_ROOT)) {
+        if (
+            PermissionHelper::hasPermission((string) $target['uuid'], Permissions::ADMIN_DASHBOARD_VIEW)
+            && !PermissionHelper::hasPermission((string) $admin['uuid'], Permissions::ADMIN_ROOT)
+        ) {
             return 'Only full admins can view the panel as another staff member';
         }
         // Rank check on top: accounts holding root-level permissions stay off limits.
@@ -109,6 +112,7 @@ class Impersonation
         if (in_array(strtoupper($method), ['GET', 'HEAD', 'OPTIONS'], true)) {
             return false;
         }
+
         // Stopping (and logging out, which stops it too) is always allowed.
         return !in_array($path, ['/api/user/impersonation', '/api/user/auth/logout'], true);
     }

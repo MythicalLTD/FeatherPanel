@@ -723,8 +723,10 @@ class VmInstancesController
             return ApiResponse::error('iso_mode must be inherit, provider, provider_user or disabled', 'INVALID_ISO_MODE', 400);
         }
 
-        if (array_key_exists('bandwidth_limit_gb', $data) && $data['bandwidth_limit_gb'] !== null && $data['bandwidth_limit_gb'] !== ''
-            && (!is_numeric($data['bandwidth_limit_gb']) || (int) $data['bandwidth_limit_gb'] < 0 || (int) $data['bandwidth_limit_gb'] > 10000000)) {
+        if (
+            array_key_exists('bandwidth_limit_gb', $data) && $data['bandwidth_limit_gb'] !== null && $data['bandwidth_limit_gb'] !== ''
+            && (!is_numeric($data['bandwidth_limit_gb']) || (int) $data['bandwidth_limit_gb'] < 0 || (int) $data['bandwidth_limit_gb'] > 10000000)
+        ) {
             return ApiResponse::error('bandwidth_limit_gb must be empty (default), 0 (unlimited) or a positive number of GB', 'INVALID_BANDWIDTH_LIMIT', 400);
         }
 

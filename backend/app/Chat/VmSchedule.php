@@ -25,9 +25,9 @@ class VmSchedule
     public const ACTIONS = ['reboot', 'snapshot'];
     public const FREQUENCIES = ['hourly', 'daily', 'weekly'];
 
-    private static string $table = 'featherpanel_vm_schedules';
-
     private const COLUMNS = ['vm_instance_id', 'name', 'action', 'frequency', 'minute', 'hour', 'weekday', 'keep', 'enabled', 'next_run_at', 'last_run_at', 'last_status', 'last_error', 'created_by'];
+
+    private static string $table = 'featherpanel_vm_schedules';
 
     public static function create(array $data): ?int
     {
