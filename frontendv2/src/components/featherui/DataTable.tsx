@@ -15,7 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import { useRouter } from 'next/navigation';
-import type { ReactNode, ComponentType, MouseEvent } from 'react';
+import type { ReactNode, ComponentType, MouseEvent, KeyboardEvent } from 'react';
 import { MoreHorizontal } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/contexts/TranslationContext';
@@ -59,9 +59,18 @@ export function DataTable<T>({
     onRowClick,
     className,
 }: DataTableProps<T>) {
+    // Clickable rows are reachable with Tab and open with Enter or Space, like a link.
+    const rowKeyDown = (row: T) => (e: KeyboardEvent) => {
+        if (!onRowClick || e.target !== e.currentTarget) return;
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onRowClick(row);
+        }
+    };
+    const focusRing = 'focus-visible:ring-ring/60 outline-none focus-visible:ring-2 focus-visible:ring-inset';
     return (
         <div className={className}>
-            <div className='fp-surface-solid hidden overflow-x-auto rounded-xl border lg:block'>
+            <div className='fp-surface-solid animate-in fade-in hidden overflow-x-auto rounded-xl border duration-300 motion-reduce:animate-none lg:block'>
                 <table className='w-full text-sm'>
                     <thead>
                         <tr className='border-b border-[var(--fp-surface-border)]'>
@@ -92,9 +101,11 @@ export function DataTable<T>({
                             <tr
                                 key={rowKey(row)}
                                 onClick={onRowClick ? () => onRowClick(row) : undefined}
+                                onKeyDown={onRowClick ? rowKeyDown(row) : undefined}
+                                tabIndex={onRowClick ? 0 : undefined}
                                 className={cn(
                                     'hover:bg-primary/[0.04] transition-colors',
-                                    onRowClick && 'cursor-pointer',
+                                    onRowClick && cn('cursor-pointer', focusRing),
                                 )}
                             >
                                 {columns.map((col) => (
@@ -116,11 +127,21 @@ export function DataTable<T>({
                 </table>
             </div>
             <ul className='space-y-2 lg:hidden'>
-                {rows.map((row) => (
+                {rows.map((row, i) => (
                     <li
                         key={rowKey(row)}
-                        className={cn('fp-surface-solid rounded-xl border p-3.5', onRowClick && 'cursor-pointer')}
+                        className={cn(
+                            'fp-surface-solid animate-in fade-in slide-in-from-bottom-1 fill-mode-both rounded-xl border p-3.5 duration-300 motion-reduce:animate-none',
+                            onRowClick &&
+                                cn(
+                                    'hover:border-primary/30 cursor-pointer transition-colors active:scale-[0.99] motion-reduce:active:scale-100',
+                                    focusRing,
+                                ),
+                        )}
+                        style={{ animationDelay: `${Math.min(i, 8) * 30}ms` }}
                         onClick={onRowClick ? () => onRowClick(row) : undefined}
+                        onKeyDown={onRowClick ? rowKeyDown(row) : undefined}
+                        tabIndex={onRowClick ? 0 : undefined}
                     >
                         {mobileCard(row)}
                         {actions ? (
@@ -176,7 +197,7 @@ export function RowActionsMenu({ items }: { items: RowAction[] }) {
                 aria-label={t('common.more_actions')}
                 title={t('common.more_actions')}
                 onClick={(e: MouseEvent) => e.stopPropagation()}
-                className='text-muted-foreground hover:text-foreground hover:bg-primary/10 focus-visible:ring-ring inline-flex h-8 w-8 items-center justify-center rounded-lg transition-colors focus-visible:ring-2 focus-visible:outline-none'
+                className='text-muted-foreground hover:text-foreground hover:bg-primary/10 focus-visible:ring-ring inline-flex h-11 w-11 items-center justify-center rounded-lg transition-colors focus-visible:ring-2 focus-visible:outline-none lg:h-8 lg:w-8'
             >
                 <MoreHorizontal className='h-4 w-4' />
             </DropdownMenuTrigger>
