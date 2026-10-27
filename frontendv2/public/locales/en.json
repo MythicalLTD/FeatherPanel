@@ -5860,7 +5860,9 @@
             "trash": "Trash",
             "more_actions": "More actions",
             "download_selected": "Download selected",
-            "chmod": "Permissions"
+            "chmod": "Permissions",
+            "clear_selection": "Clear selection",
+            "delete_selected": "Delete selected"
         },
         "list": {
             "header_name": "Name",
@@ -6009,7 +6011,10 @@
             "switch_to_monaco": "Use Monaco",
             "switch_to_codemirror": "Use CodeMirror",
             "unsaved": "Unsaved changes",
-            "close_tab": "Close tab"
+            "close_tab": "Close tab",
+            "saved_state": "Saved",
+            "saving_state": "Saving…",
+            "path_label": "File path"
         },
         "search": {
             "files_placeholder": "Filter files in this folder...",

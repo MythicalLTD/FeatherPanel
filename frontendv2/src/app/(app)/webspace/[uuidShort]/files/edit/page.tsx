@@ -19,14 +19,15 @@ import { use, useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { OnMount } from '@monaco-editor/react';
 import { toast } from 'sonner';
-import { FileCode, Loader2, Lock, Monitor, Save, Smartphone } from 'lucide-react';
+import { Loader2, Lock, Monitor, Save, Smartphone } from 'lucide-react';
 import { FileManagerApiProvider, useFileManagerApi } from '@/contexts/FileManagerApiContext';
 import { isFileNotFoundError } from '@/lib/files-api';
 import { webspaceFilesApi } from '@/lib/webspace-files-api';
 import { useWebSpacePermissions } from '@/hooks/useWebSpacePermissions';
 import { WebSpaceSubuserPermissions } from '@/lib/webspace-permissions';
 import { useFileEditorEngine } from '@/hooks/useFileEditorEngine';
-import { useSaveShortcut } from '@/hooks/useSaveShortcut';
+import { getSaveShortcutLabel, useSaveShortcut } from '@/hooks/useSaveShortcut';
+import { EditorFileInfo } from '@/components/server/files/EditorFileInfo';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Button } from '@/components/featherui/Button';
 import { PageHeader } from '@/components/featherui/PageHeader';
@@ -187,21 +188,15 @@ function WebSpaceFileEditorInner({
             />
 
             <div className='fp-surface group hover:border-border/80 relative flex min-h-[70vh] flex-1 flex-col overflow-hidden rounded-xl border p-1 transition-all'>
-                <div className='border-border/10 bg-muted/30 flex shrink-0 items-center justify-between border-b p-3'>
-                    <div className='flex items-center gap-3'>
-                        <div className='bg-primary/10 text-primary border-primary/20 flex h-9 w-9 items-center justify-center rounded-xl border'>
-                            <FileCode className='h-5 w-5' />
-                        </div>
-                        <div className='flex flex-col'>
-                            <span className='text-foreground/80 text-xs font-bold tracking-widest uppercase'>
-                                {fileName}
-                            </span>
-                            <span className='text-muted-foreground text-[10px] font-medium tracking-tighter uppercase'>
-                                {editorEngineLabel}
-                            </span>
-                        </div>
-                    </div>
-                    <div className='flex flex-wrap items-center justify-end gap-2 sm:gap-3'>
+                <div className='border-border/40 bg-muted/30 flex shrink-0 flex-col gap-3 border-b p-3 sm:flex-row sm:items-center sm:justify-between'>
+                    <EditorFileInfo
+                        fileName={fileName}
+                        directory={directory}
+                        engineLabel={editorEngineLabel}
+                        dirty={content !== originalContent}
+                        saving={saving}
+                    />
+                    <div className='flex flex-wrap items-center gap-2 sm:justify-end sm:gap-3'>
                         <Button
                             size='sm'
                             variant='outline'
@@ -251,6 +246,9 @@ function WebSpaceFileEditorInner({
                                 <Save className='mr-2 h-4 w-4' />
                             )}
                             {t('files.editor.save_changes')}
+                            <kbd className='ml-2 hidden rounded border border-current/25 px-1 font-mono text-[10px] leading-4 opacity-75 sm:inline'>
+                                {getSaveShortcutLabel()}
+                            </kbd>
                         </Button>
                     </div>
                 </div>

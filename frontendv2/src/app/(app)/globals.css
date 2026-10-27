@@ -705,6 +705,15 @@ html[data-fp-plugin-fullbleed='1'] body [data-fp-plugin-main-inner] {
     }
 }
 
+/* Hover-reveal top bar handle (shown while the floating bar is tucked away). */
+.fp-navbar-handle {
+    background: hsl(var(--foreground) / 0.28);
+    box-shadow: 0 0 0 1px hsl(var(--foreground) / 0.06);
+}
+[data-fp-dashboard-shell] .fp-chrome-motion:hover > div > .fp-navbar-handle {
+    background: hsl(var(--primary) / 0.75);
+}
+
 /* Custom scrollbar utilities */
 .hide-scrollbar::-webkit-scrollbar {
     display: none;
