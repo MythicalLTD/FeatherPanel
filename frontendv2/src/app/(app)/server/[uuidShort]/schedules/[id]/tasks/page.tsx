@@ -279,13 +279,13 @@ export default function ServerTasksPage() {
                 title={t('serverTasks.title')}
                 description={t('serverTasks.description', { scheduleName: schedule?.name || '' })}
                 actions={
-                    <div className='flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:gap-3'>
+                    <div className='flex w-full flex-wrap gap-2 sm:w-auto sm:flex-nowrap sm:items-center sm:gap-3'>
                         {canUpdate && tasks.length > 0 && (
                             <Button
                                 size='default'
                                 variant='default'
                                 onClick={() => router.push(`/server/${uuidShort}/schedules/${scheduleId}/tasks/new`)}
-                                className='order-1 w-full sm:order-2 sm:w-auto'
+                                className='order-1 min-w-0 flex-1 sm:order-2 sm:flex-none'
                             >
                                 <Plus className='mr-2 h-4 w-4' />
                                 {t('serverTasks.createTask')}

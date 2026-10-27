@@ -324,14 +324,14 @@ export default function ServerAllocationsPage() {
                     </div>
                 }
                 actions={
-                    <div className='flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:gap-3'>
+                    <div className='flex w-full flex-wrap gap-2 sm:w-auto sm:flex-nowrap sm:items-center sm:gap-3'>
                         {showHeaderCreateActions && isEnabled(settings?.server_allow_allocation_select) && (
                             <Button
                                 variant='glass'
                                 size='default'
                                 onClick={handleOpenAssign}
                                 disabled={limitReached || isAutoAllocating || loading || settingsLoading}
-                                className='order-1 w-full sm:order-2 sm:w-auto'
+                                className='order-1 min-w-0 flex-1 sm:order-2 sm:flex-none'
                             >
                                 <Plus className='mr-2 h-5 w-5' />
                                 {t('serverAllocations.assignAllocation')}
@@ -342,7 +342,7 @@ export default function ServerAllocationsPage() {
                                 size='default'
                                 onClick={handleAutoAllocate}
                                 disabled={limitReached || isAutoAllocating || loading}
-                                className='order-1 w-full transition-all active:scale-95 sm:order-2 sm:w-auto'
+                                className='order-1 min-w-0 flex-1 transition-all active:scale-95 sm:order-2 sm:flex-none'
                             >
                                 {isAutoAllocating ? (
                                     <Loader2 className='mr-2 h-5 w-5 animate-spin' />

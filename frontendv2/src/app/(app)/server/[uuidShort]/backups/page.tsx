@@ -446,13 +446,13 @@ export default function ServerBackupsPage() {
                     </div>
                 }
                 actions={
-                    <div className='flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:gap-3'>
+                    <div className='flex w-full flex-wrap gap-2 sm:w-auto sm:flex-nowrap sm:items-center sm:gap-3'>
                         {showHeaderCreateAction && (
                             <Button
                                 size='default'
                                 disabled={loading}
                                 onClick={() => router.push(`/server/${uuidShort}/backups/new`)}
-                                className='order-1 w-full transition-all active:scale-95 sm:order-2 sm:w-auto'
+                                className='order-1 min-w-0 flex-1 transition-all active:scale-95 sm:order-2 sm:flex-none'
                             >
                                 <Plus className='mr-2 h-5 w-5' />
                                 {t('serverBackups.createBackup')}
