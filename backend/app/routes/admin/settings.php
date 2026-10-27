@@ -115,6 +115,25 @@ return function (RouteCollection $routes): void {
     );
     App::getInstance(true)->registerAdminRoute(
         $routes,
+        'admin-settings-backup-storage-test',
+        '/api/admin/settings/backup-storage/test',
+        function (Request $request) {
+            if (!\App\Services\Storage\StorageSettings::globalS3Configured()) {
+                return \App\Helpers\ApiResponse::error('Enable S3 backup storage and fill bucket, access key and secret key first', 'S3_NOT_CONFIGURED', 400);
+            }
+            try {
+                (new \App\Services\Storage\S3ObjectStore(\App\Services\Storage\StorageSettings::globalS3Config()))->test();
+            } catch (\Throwable $e) {
+                return \App\Helpers\ApiResponse::error('S3 test failed: ' . $e->getMessage(), 'S3_TEST_FAILED', 400);
+            }
+
+            return \App\Helpers\ApiResponse::success(null, 'S3 storage works: wrote and deleted a test object');
+        },
+        Permissions::ADMIN_SETTINGS_EDIT,
+        ['POST']
+    );
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
         'admin-settings-docker-update',
         '/api/admin/settings/docker/update',
         function (Request $request) {
