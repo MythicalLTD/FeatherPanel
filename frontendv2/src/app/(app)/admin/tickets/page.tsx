@@ -15,20 +15,20 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { AdminListToolbar } from '@/components/admin/AdminListToolbar';
 import { AdminPageTips } from '@/components/admin/AdminPageTips';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useDateFormatOptions } from '@/contexts/PreferencesContext';
 import { formatDateInTz } from '@/lib/dateUtils';
-import { Ticket, Search, Trash2, Eye, RefreshCw, Filter } from 'lucide-react';
+import { Ticket, Trash2, Eye, RefreshCw, Filter } from 'lucide-react';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { DataTable, ColorPill } from '@/components/featherui/DataTable';
 import { useRouter } from 'next/navigation';
 import { ListEmptyState } from '@/components/featherui/ListEmptyState';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
 import { Button } from '@/components/featherui/Button';
-import { Input } from '@/components/featherui/Input';
 import { toast } from 'sonner';
 import Link from 'next/link';
 import { Select } from '@/components/ui/select-native';
@@ -208,16 +208,11 @@ export default function TicketsPage() {
             <WidgetRenderer widgets={getWidgets('admin-tickets', 'top-of-page')} />
             <PageHeader title={t('admin.tickets.title')} description={t('admin.tickets.viewAndManage')} icon={Ticket} />
 
-            <div className='fp-surface flex flex-col items-center gap-4 rounded-2xl border p-4 sm:flex-row'>
-                <div className='group relative w-full flex-1'>
-                    <Search className='text-muted-foreground group-focus-within:text-primary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transition-colors' />
-                    <Input
-                        placeholder={t('admin.tickets.search_placeholder')}
-                        value={searchQuery}
-                        onChange={(e) => patchFilters({ searchQuery: e.target.value })}
-                        className='h-11 w-full pl-10'
-                    />
-                </div>
+            <AdminListToolbar
+                searchPlaceholder={t('admin.tickets.search_placeholder')}
+                searchValue={searchQuery}
+                onSearchChange={(value) => patchFilters({ searchQuery: value })}
+            >
                 <div className='flex w-full items-center gap-2 overflow-x-auto pb-2 sm:w-auto sm:pb-0'>
                     <div className='flex items-center gap-2'>
                         <Filter className='text-muted-foreground h-4 w-4' />
@@ -251,7 +246,7 @@ export default function TicketsPage() {
                         ))}
                     </Select>
                 </div>
-            </div>
+            </AdminListToolbar>
 
             <WidgetRenderer widgets={getWidgets('admin-tickets', 'after-header')} />
 

@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { AdminListToolbar } from '@/components/admin/AdminListToolbar';
 import { AdminPageTips } from '@/components/admin/AdminPageTips';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
@@ -270,21 +271,16 @@ export default function BlockedIpsPage() {
 
             {beforeListWidgets.length > 0 ? <WidgetRenderer widgets={beforeListWidgets} /> : null}
 
-            <div className='fp-surface flex flex-col items-center gap-4 rounded-2xl border p-4 sm:flex-row'>
-                <div className='group relative w-full flex-1'>
-                    <Search className='text-muted-foreground group-focus-within:text-primary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transition-colors' />
-                    <Input
-                        placeholder={t('admin.blocked_ips.search_placeholder')}
-                        value={searchInput}
-                        onChange={(e) => setSearchInput(e.target.value)}
-                        className='h-11 w-full pl-10'
-                    />
-                </div>
+            <AdminListToolbar
+                searchPlaceholder={t('admin.blocked_ips.search_placeholder')}
+                searchValue={searchInput}
+                onSearchChange={(value) => setSearchInput(value)}
+            >
                 <div className='flex shrink-0 items-center gap-2'>
                     <Switch id='active-only' checked={activeOnly} onCheckedChange={setActiveOnly} />
                     <Label htmlFor='active-only'>{t('admin.blocked_ips.active_only')}</Label>
                 </div>
-            </div>
+            </AdminListToolbar>
 
             {loading ? (
                 <TableSkeleton count={4} />

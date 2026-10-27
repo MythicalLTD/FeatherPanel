@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { AdminListToolbar } from '@/components/admin/AdminListToolbar';
 import { TipCard, TipGrid } from '@/components/featherui/TipCard';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -23,7 +24,6 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { getApiErrorMessage } from '@/lib/api-errors';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
-import { Input } from '@/components/featherui/Input';
 import { PageCard } from '@/components/featherui/PageCard';
 import { ResourceCard, ResourceTable } from '@/components/featherui/ResourceCard';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
@@ -42,7 +42,6 @@ import { toast } from 'sonner';
 import {
     Sparkles,
     Plus,
-    Search,
     Pencil,
     Trash2,
     ChevronLeft,
@@ -446,16 +445,11 @@ export default function SpellsPage() {
             <WidgetRenderer widgets={getWidgets('admin-spells', 'after-header')} />
 
             {!isReorderMode && (
-                <div className='fp-surface flex flex-col items-center gap-4 rounded-2xl border p-4 sm:flex-row'>
-                    <div className='group relative w-full flex-1'>
-                        <Search className='text-muted-foreground group-focus-within:text-primary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transition-colors' />
-                        <Input
-                            placeholder={t('admin.spells.search_placeholder')}
-                            value={searchQuery}
-                            onChange={(e) => patchFilters({ searchQuery: e.target.value })}
-                            className='h-11 w-full pl-10'
-                        />
-                    </div>
+                <AdminListToolbar
+                    searchPlaceholder={t('admin.spells.search_placeholder')}
+                    searchValue={searchQuery}
+                    onSearchChange={(value) => patchFilters({ searchQuery: value })}
+                >
                     <div className='flex gap-2'>
                         <Button onClick={() => router.push('/admin/spells/create')}>
                             <Plus className='mr-2 h-4 w-4' />
@@ -473,7 +467,7 @@ export default function SpellsPage() {
                             onChange={handleImport}
                         />
                     </div>
-                </div>
+                </AdminListToolbar>
             )}
 
             {pagination.totalPages > 1 && !loading && !isReorderMode && (
