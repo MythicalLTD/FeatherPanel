@@ -546,7 +546,10 @@ export default function ServersPage() {
                     <div className='flex items-start justify-between gap-2 sm:items-center'>
                         <div className='flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center'>
                             {canViewAllServers && (
-                                <div role='tablist' className='fp-surface grid grid-cols-2 gap-1 rounded-xl border p-1 sm:flex'>
+                                <div
+                                    role='tablist'
+                                    className='fp-surface grid w-full grid-cols-2 gap-1 rounded-xl border p-1 sm:flex sm:w-auto'
+                                >
                                     <button
                                         type='button'
                                         role='tab'
@@ -580,7 +583,10 @@ export default function ServersPage() {
                             )}
 
                             {serverScope === 'mine' && (
-                                <div role='tablist' className='fp-surface grid grid-cols-2 gap-1 rounded-xl border p-1 sm:flex'>
+                                <div
+                                    role='tablist'
+                                    className='fp-surface grid w-full grid-cols-2 gap-1 rounded-xl border p-1 sm:flex sm:w-auto'
+                                >
                                     <button
                                         type='button'
                                         role='tab'
@@ -618,7 +624,7 @@ export default function ServersPage() {
                                 type='button'
                                 onClick={openCreateFolder}
                                 aria-label={t('servers.createFolder')}
-                                className='focus-visible:ring-ring/60 min-w-11 justify-center outline-none focus-visible:ring-2 bg-primary text-primary-foreground hover:bg-primary/90 flex min-h-11 shrink-0 items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold transition-colors sm:min-h-0'
+                                className='focus-visible:ring-ring/60 bg-primary text-primary-foreground hover:bg-primary/90 flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold transition-colors outline-none focus-visible:ring-2 sm:min-h-0'
                             >
                                 <FolderPlus className='h-4 w-4' />
                                 <span className='hidden sm:inline'>{t('servers.createFolder')}</span>
