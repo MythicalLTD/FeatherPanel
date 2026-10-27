@@ -1810,13 +1810,19 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
             <input type='file' ref={folderInputRef} className='hidden' onChange={handleFileChange} />
 
             {isDragging && (
-                <div className='bg-primary/20 border-primary animate-in fade-in zoom-in pointer-events-none fixed inset-0 z-50 flex items-center justify-center border-4 border-dashed backdrop-blur-md duration-300'>
-                    <div className='bg-background/80 border-primary/20 flex scale-110 flex-col items-center gap-6 rounded-3xl border p-12'>
-                        <div className='bg-primary text-primary-foreground flex h-24 w-24 animate-bounce items-center justify-center rounded-3xl'>
+                <div className='bg-primary/10 animate-in fade-in pointer-events-none fixed inset-0 z-50 flex items-center justify-center p-3 backdrop-blur-md duration-200 sm:p-6'>
+                    <div
+                        aria-hidden
+                        className='border-primary/70 absolute inset-3 rounded-3xl border-2 border-dashed sm:inset-6'
+                    />
+                    <div className='bg-background/85 border-primary/25 animate-in zoom-in-95 relative flex max-w-md flex-col items-center gap-6 rounded-3xl border p-8 shadow-2xl duration-200 sm:p-12'>
+                        <div className='bg-primary text-primary-foreground shadow-primary/40 fp-empty-icon flex h-20 w-20 items-center justify-center rounded-3xl shadow-xl sm:h-24 sm:w-24'>
                             <Upload className='h-12 w-12' />
                         </div>
                         <div className='text-center'>
-                            <h2 className='mb-2 text-3xl font-bold'>{t('files.messages.drop_to_upload')}</h2>
+                            <h2 className='mb-2 text-2xl font-bold sm:text-3xl'>
+                                {t('files.messages.drop_to_upload')}
+                            </h2>
                             <p className='text-muted-foreground'>
                                 {t('files.messages.drop_description')}{' '}
                                 <span className='text-primary font-mono'>{currentDirectory || '/'}</span>

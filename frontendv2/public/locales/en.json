@@ -3042,6 +3042,7 @@
                 "nothing_to_copy": "Select text in the console first",
                 "rules_intro": "Rules run on each log line before it is shown. Replace and highlight rules are useful for demos, streams, and tickets.",
                 "input_hint": "Suggestions appear while you type. Tab cycles matches, Enter accepts, arrows navigate. Ctrl+C with an empty field sends SIGINT.",
+                "history_hint": "↑↓ history · Tab complete",
                 "presets": {
                     "hide_ipv4": {
                         "title": "Hide IPv4 addresses",
