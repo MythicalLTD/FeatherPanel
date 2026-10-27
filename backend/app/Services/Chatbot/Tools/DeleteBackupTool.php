@@ -158,6 +158,9 @@ class DeleteBackupTool implements ToolInterface
                 WingsUrlHelper::isBehindProxy($node)
             );
 
+            if (\App\Services\Storage\BackupStorageService::isRemote($backup)) {
+                \App\Services\Storage\BackupStorageService::deleteObject($backup, $server);
+            }
             $response = $wings->getServer()->deleteBackup($server['uuid'], $backup['uuid'], $this->pbsSnapshotForBackup($backup));
 
             if (!$response->isSuccessful()) {

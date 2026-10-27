@@ -22,6 +22,9 @@ use App\Chat\Backup;
 use App\Chat\Server;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
+use App\App;
+use App\Services\Storage\StorageException;
+use App\Services\Storage\BackupStorageService;
 use App\Plugins\Events\Events\WingsEvent;
 use App\Services\Notifications\InboxNotifier;
 use Symfony\Component\HttpFoundation\Request;
@@ -33,6 +36,7 @@ use Symfony\Component\HttpFoundation\Response;
     properties: [
         new OA\Property(property: 'parts', type: 'array', items: new OA\Items(type: 'string'), description: 'Array of upload URLs for each part'),
         new OA\Property(property: 'part_size', type: 'integer', description: 'Size of each part in bytes'),
+        new OA\Property(property: 'max_concurrent_uploads', type: 'integer', description: 'How many parts Wings may upload in parallel'),
     ]
 )]
 #[OA\Schema(
@@ -129,15 +133,25 @@ class WingsBackupController
             return ApiResponse::error('Invalid size parameter', 'INVALID_SIZE_PARAMETER', 400);
         }
 
-        // For now, return a simple response with mock data
-        // In a real implementation, you would generate presigned URLs for S3
-        $partSize = 5 * 1024 * 1024; // 5MB parts
-        $totalParts = ceil((int) $size / $partSize);
-
-        $parts = [];
-        for ($i = 1; $i <= $totalParts; ++$i) {
-            $parts[] = "https://example.com/upload/part{$i}"; // Mock URLs
+        $size = (int) $size;
+        if ($size < 0) {
+            return ApiResponse::error('Invalid size parameter', 'INVALID_SIZE_PARAMETER', 400);
         }
+        if (!BackupStorageService::isRemote($backup)) {
+            return ApiResponse::error('This backup is not stored on remote object storage', 'BACKUP_NOT_REMOTE', 400);
+        }
+
+        try {
+            $info = BackupStorageService::uploadInfo($backup, $server, $size);
+        } catch (StorageException $e) {
+            return ApiResponse::error($e->getMessage(), $e->errorCode(), $e->status());
+        } catch (\Throwable $e) {
+            App::getInstance(true)->getLogger()->error('Backup upload presign failed for ' . $backupUuid . ': ' . $e->getMessage());
+
+            return ApiResponse::error('Failed to prepare remote backup upload: ' . $e->getMessage(), 'BACKUP_PRESIGN_FAILED', 502);
+        }
+        $parts = $info['parts'];
+        $partSize = $info['part_size'];
 
         // Emit event
         global $eventManager;
@@ -156,10 +170,7 @@ class WingsBackupController
             ]
         );
 
-        return ApiResponse::success([
-            'parts' => $parts,
-            'part_size' => $partSize,
-        ]);
+        return ApiResponse::success($info);
     }
 
     #[OA\Post(
@@ -235,9 +246,15 @@ class WingsBackupController
             return ApiResponse::error('Invalid backup completion payload', 'INVALID_REQUEST_BODY', 400);
         }
 
-        // Add upload_id if provided
-        if (!empty($body['upload_id'])) {
-            $updateData['upload_id'] = $body['upload_id'];
+        // Remote (S3) backups: complete or abort the multipart upload before marking the backup.
+        if (BackupStorageService::isRemote($backup) && empty($backup['completed_at'])) {
+            try {
+                BackupStorageService::finalize($backup, $server, $body);
+            } catch (\Throwable $e) {
+                App::getInstance(true)->getLogger()->error('Finalizing remote backup ' . $backupUuid . ' failed: ' . $e->getMessage());
+                $updateData['is_successful'] = 0;
+                unset($updateData['checksum'], $updateData['bytes']);
+            }
         }
 
         // Update the backup

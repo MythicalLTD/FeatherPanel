@@ -143,6 +143,13 @@ final class BackupFifoEviction
             ];
         }
 
+        if (\App\Services\Storage\BackupStorageService::isRemote($victim)) {
+            try {
+                \App\Services\Storage\BackupStorageService::deleteObject($victim, ['uuid' => $serverUuid]);
+            } catch (\Throwable $e) {
+                return ['message' => 'Failed to delete the oldest backup from remote storage: ' . $e->getMessage(), 'code' => 'REMOTE_DELETE_FAILED', 'status' => 502];
+            }
+        }
         $response = $wings->getServer()->deleteBackup(
             $serverUuid,
             (string) $victim['uuid'],
