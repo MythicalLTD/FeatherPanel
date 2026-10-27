@@ -94,24 +94,39 @@ export function Dialog({
                     <div
                         className={cn(
                             'flex min-h-full text-center',
-                            fullscreen ? 'h-dvh items-stretch justify-stretch p-0' : 'items-center justify-center p-4',
+                            fullscreen
+                                ? 'h-dvh items-stretch justify-stretch p-0'
+                                : 'items-end justify-center p-0 pt-10 sm:items-center sm:p-4',
                         )}
                     >
                         <TransitionChild
                             as={React.Fragment}
                             enter='ease-out duration-300'
-                            enterFrom={fullscreen ? 'opacity-0 translate-y-2' : 'opacity-0 scale-95'}
-                            enterTo={fullscreen ? 'opacity-100 translate-y-0' : 'opacity-100 scale-100'}
+                            enterFrom={
+                                fullscreen
+                                    ? 'opacity-0 translate-y-2'
+                                    : 'opacity-0 translate-y-10 sm:translate-y-0 sm:scale-95'
+                            }
+                            enterTo={
+                                fullscreen ? 'opacity-100 translate-y-0' : 'opacity-100 translate-y-0 sm:scale-100'
+                            }
                             leave='ease-in duration-200'
-                            leaveFrom={fullscreen ? 'opacity-100 translate-y-0' : 'opacity-100 scale-100'}
-                            leaveTo={fullscreen ? 'opacity-0 translate-y-2' : 'opacity-0 scale-95'}
+                            leaveFrom={
+                                fullscreen ? 'opacity-100 translate-y-0' : 'opacity-100 translate-y-0 sm:scale-100'
+                            }
+                            leaveTo={
+                                fullscreen
+                                    ? 'opacity-0 translate-y-2'
+                                    : 'opacity-0 translate-y-10 sm:translate-y-0 sm:scale-95'
+                            }
                         >
                             <DialogPanel
                                 className={cn(
                                     'bg-card border-border/50 w-full transform text-left align-middle shadow-2xl transition-all',
                                     fullscreen
                                         ? 'flex h-dvh max-h-dvh max-w-none flex-col overflow-hidden rounded-none border-0 p-0'
-                                        : 'overflow-hidden rounded-2xl border p-6',
+                                        : // Phones: bottom sheet with a grab handle and home-bar padding. sm+: centred card.
+                                          'before:bg-muted-foreground/30 relative max-h-[calc(100dvh-2.5rem)] overflow-y-auto rounded-t-3xl rounded-b-none border border-b-0 p-6 pt-8 pb-[calc(1.5rem+env(safe-area-inset-bottom))] before:absolute before:top-2.5 before:left-1/2 before:h-1 before:w-10 before:-translate-x-1/2 before:rounded-full motion-reduce:transition-none sm:max-h-none sm:overflow-hidden sm:rounded-2xl sm:border-b sm:p-6 sm:before:hidden',
                                     !fullscreen && !className?.includes('max-w-') && 'max-w-md',
                                     className,
                                 )}

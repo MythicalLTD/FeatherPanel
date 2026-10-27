@@ -39,6 +39,7 @@
 - Server pages read better in light mode and on phones: amber warnings, IP/port chips and other dark-only panels now have proper light-theme colours, page loads show a skeleton of the page instead of a lone spinner, and header actions sit on one row on phones (the main action grows, refresh/import stay square 44px buttons) instead of a stack of full-width icon buttons. by @nayskutzu
 - Sign-in, register and password screens get a slow theme-coloured aurora background with a faint dot grid (Aurora and Glass presets, CSS only, paused with reduced motion) and a soft glow behind the form card.
 - Panel polish: loading skeletons now shimmer instead of blinking, server cards lift with a theme-tinted shadow on hover and press down on tap, the live status dot pulses with a soft ring, status badges are readable in dark mode, resource bars ease smoothly and text selection uses the theme colour. Everything respects reduced motion.
+- Empty states across the panel get a small illustration (theme glow, rings and a gently floating icon) and rise in softly; dialogs open as bottom sheets with a grab handle on phones; the phone navbar gives the server switcher its full width again. Reduced motion is respected.
 
 ### Fixed
 

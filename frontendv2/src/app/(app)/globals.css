@@ -1086,3 +1086,21 @@ html.fp-privacy [data-fp-sensitive]:not(:focus) {
 .fp-num {
     font-variant-numeric: tabular-nums;
 }
+
+/* ---- Design round 4 ---- */
+
+/* Empty states: content rises in, the icon tile floats gently. */
+@media (prefers-reduced-motion: no-preference) {
+    .fp-empty > * {
+        animation: fadeInUp 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+    }
+    .fp-empty > *:nth-child(2) {
+        animation-delay: 60ms;
+    }
+    .fp-empty > *:nth-child(3) {
+        animation-delay: 120ms;
+    }
+    .fp-empty-icon {
+        animation: float 5s ease-in-out infinite;
+    }
+}

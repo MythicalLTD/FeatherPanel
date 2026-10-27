@@ -29,12 +29,18 @@ export function EmptyState({ title, description, icon: Icon, action, className }
     return (
         <div
             className={cn(
-                'fp-surface flex flex-col items-center justify-center gap-4 rounded-xl border border-dashed px-4 py-12 text-center sm:py-16',
+                'fp-surface fp-empty relative flex flex-col items-center justify-center gap-4 overflow-hidden rounded-xl border border-dashed px-4 py-12 text-center sm:py-16',
                 className,
             )}
         >
-            <div className='fp-icon-tile flex h-12 w-12 items-center justify-center rounded-xl'>
-                <Icon className='h-6 w-6' />
+            {/* Small CSS illustration: soft theme glow, two rings and a floating icon tile. */}
+            <div aria-hidden className='fp-empty-art relative flex h-24 w-24 items-center justify-center'>
+                <span className='bg-primary/15 absolute inset-2 rounded-full blur-xl' />
+                <span className='border-primary/15 absolute inset-0 rounded-full border' />
+                <span className='border-primary/25 absolute inset-4 rounded-full border border-dashed' />
+                <span className='fp-icon-tile fp-empty-icon relative flex h-12 w-12 items-center justify-center rounded-2xl shadow-lg'>
+                    <Icon className='h-6 w-6' />
+                </span>
             </div>
             <div className='max-w-md space-y-1.5'>
                 <h2 className='text-lg font-semibold tracking-tight'>{title}</h2>

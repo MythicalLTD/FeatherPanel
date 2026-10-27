@@ -297,7 +297,7 @@ function NavbarMainRow({
             <NavbarCenterSearch variant={variant} compact={Boolean(headerContent)} />
 
             {/* Never shrinks below its content, so the search gives way first. */}
-            <div className='flex flex-[1_0_auto] items-center justify-end'>
+            <div className='ml-auto flex flex-[0_0_auto] items-center justify-end sm:flex-[1_0_auto]'>
                 <NavbarActionsCluster
                     compactSearch={Boolean(headerContent)}
                     variant={variant}
