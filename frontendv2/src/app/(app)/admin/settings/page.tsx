@@ -304,6 +304,7 @@ export default function SettingsPage() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [sendingTestEmail, setSendingTestEmail] = useState(false);
+    const [testingStorage, setTestingStorage] = useState(false);
     const [organizedSettings, setOrganizedSettings] = useState<OrganizedSettings | null>(null);
     const [settings, setSettings] = useState<Record<string, Setting>>({});
     const [initialSettings, setInitialSettings] = useState<Record<string, Setting>>({});
@@ -520,6 +521,22 @@ export default function SettingsPage() {
         });
     };
 
+    const handleTestBackupStorage = async () => {
+        setTestingStorage(true);
+        try {
+            const response = await axios.post('/api/admin/settings/backup-storage/test');
+            if (response.data.success) {
+                toast.success(t('admin.settings.storage_test.success'));
+            } else {
+                toast.error(getApiErrorMessageFromPayload(response.data, t, 'admin.settings.storage_test.failed'));
+            }
+        } catch (error: unknown) {
+            toast.error(getApiErrorMessage(error, t, 'admin.settings.storage_test.failed'));
+        } finally {
+            setTestingStorage(false);
+        }
+    };
+
     const handleSendTestEmail = async () => {
         setSendingTestEmail(true);
         try {
@@ -551,6 +568,7 @@ export default function SettingsPage() {
             case 'security':
                 return Shield;
             case 'database':
+            case 'backup_storage':
                 return Database;
             case 'server':
             case 'servers':
@@ -807,6 +825,35 @@ export default function SettingsPage() {
                                             </div>
                                         ) : (
                                             <div className='space-y-6'>
+                                                {key === 'backup_storage' && (
+                                                    <div className='border-border/50 rounded-2xl border p-6'>
+                                                        <div className='flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center'>
+                                                            <div className='space-y-1'>
+                                                                <h3 className='text-foreground flex items-center gap-2 text-base font-semibold'>
+                                                                    <Database className='text-primary h-5 w-5' />
+                                                                    {t('admin.settings.storage_test.title')}
+                                                                </h3>
+                                                                <p className='text-muted-foreground max-w-xl text-sm'>
+                                                                    {t('admin.settings.storage_test.description')}
+                                                                </p>
+                                                            </div>
+                                                            <Button
+                                                                onClick={handleTestBackupStorage}
+                                                                disabled={testingStorage}
+                                                                className='w-full shrink-0 sm:w-auto'
+                                                            >
+                                                                {testingStorage ? (
+                                                                    <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                                                                ) : (
+                                                                    <Send className='mr-2 h-4 w-4' />
+                                                                )}
+                                                                {testingStorage
+                                                                    ? t('admin.settings.storage_test.testing')
+                                                                    : t('admin.settings.storage_test.button')}
+                                                            </Button>
+                                                        </div>
+                                                    </div>
+                                                )}
                                                 {key === 'email' && (
                                                     <div className='space-y-4'>
                                                         <div className='border-border/50 rounded-2xl border p-6'>

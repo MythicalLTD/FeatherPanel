@@ -590,6 +590,8 @@ class SettingsController
     public function __construct()
     {
         $this->app = App::getInstance(true);
+        $this->settingsCategories[\App\Services\Storage\StorageSettings::CATEGORY] = \App\Services\Storage\StorageSettings::category();
+        $this->sensitiveSettings = array_merge($this->sensitiveSettings, \App\Services\Storage\StorageSettings::SENSITIVE);
         $this->settings = [
             ConfigInterface::MODULE_GAME_ENABLED => [
                 'name' => ConfigInterface::MODULE_GAME_ENABLED,
@@ -4231,6 +4233,7 @@ class SettingsController
                 'category' => 'other',
             ],
         ];
+        $this->settings = array_merge($this->settings, \App\Services\Storage\StorageSettings::definitions(fn (string $k, string $d): string => $this->maskSensitiveSetting($k, $d)));
     }
 
     public function telemetryStatus(Request $request): Response

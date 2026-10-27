@@ -380,6 +380,8 @@
             "BACKUP_LIMIT_REACHED": "Backup limit reached",
             "BACKUP_LOCKED": "Backup is currently locked. Please unlock it first.",
             "BACKUP_NOT_FOUND": "Backup not found",
+            "BACKUP_NOT_REMOTE": "This backup is not stored on remote object storage",
+            "S3_NOT_CONFIGURED": "Enable S3 backup storage and fill in the bucket, access key and secret key first",
             "BACKUP_NOT_SUCCESSFUL": "Backup is not available for download. The backup may have failed or is still in progress.",
             "BACKUP_POLICY_EDIT_DISABLED": "Backup policy changes are disabled by the administrator",
             "BACKUP_RETRIEVE_FAILED": "Failed to retrieve created backup",
@@ -12125,6 +12127,14 @@
                 "values": "Values",
                 "switches": "Switches",
                 "unsaved": "Unsaved changes"
+            },
+            "storage_test": {
+                "title": "Test backup storage",
+                "description": "Save your S3 settings first, then run a test. The panel writes a tiny object to the bucket and deletes it again. Nodes never receive these keys; they only get short-lived presigned URLs.",
+                "button": "Test connection",
+                "testing": "Testing…",
+                "success": "Storage works: the test object was written and deleted.",
+                "failed": "Storage test failed. Check the endpoint, bucket and keys."
             }
         },
         "rate_limits": {
