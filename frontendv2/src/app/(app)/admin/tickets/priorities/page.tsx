@@ -15,12 +15,13 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { AdminListToolbar } from '@/components/admin/AdminListToolbar';
 import { TipCard, TipGrid } from '@/components/featherui/TipCard';
 import { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
-import { Flag, Plus, Pencil, Trash2, Search, Zap, Palette, AlertTriangle, ChevronUp, ChevronDown } from 'lucide-react';
+import { Flag, Plus, Pencil, Trash2, Zap, Palette, AlertTriangle, ChevronUp, ChevronDown } from 'lucide-react';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { ResourceCard, ResourceTable } from '@/components/featherui/ResourceCard';
 import { ListEmptyState } from '@/components/featherui/ListEmptyState';
@@ -268,17 +269,11 @@ export default function TicketPrioritiesPage() {
                     }
                 />
 
-                <div className='fp-surface flex flex-col items-center gap-4 rounded-2xl border p-4 sm:flex-row'>
-                    <div className='group relative w-full flex-1'>
-                        <Search className='text-muted-foreground group-focus-within:text-primary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transition-colors' />
-                        <Input
-                            placeholder={t('admin.tickets.search_placeholder')}
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className='h-11 w-full pl-10'
-                        />
-                    </div>
-                </div>
+                <AdminListToolbar
+                    searchPlaceholder={t('admin.tickets.search_placeholder')}
+                    searchValue={searchQuery}
+                    onSearchChange={(value) => setSearchQuery(value)}
+                />
 
                 {loading ? (
                     <TableSkeleton count={3} />

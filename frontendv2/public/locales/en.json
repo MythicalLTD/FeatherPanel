@@ -14859,6 +14859,11 @@
             "done": "Migration finished, VDS now on {node}.",
             "failed": "Migration failed: {error}",
             "start_failed": "Could not start the migration"
+        },
+        "list_toolbar": {
+            "clear_search": "Clear search",
+            "selected": "selected",
+            "clear_selection": "Clear selection"
         }
     },
     "webSpaces": {

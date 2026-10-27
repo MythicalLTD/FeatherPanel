@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { AdminListToolbar } from '@/components/admin/AdminListToolbar';
 import { AdminPageTips } from '@/components/admin/AdminPageTips';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
@@ -37,7 +38,7 @@ import { toast } from 'sonner';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { usePersistedListFilters } from '@/hooks/usePersistedListFilters';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
-import { HardDrive, Plus, Search, Pencil, Trash2, RefreshCw } from 'lucide-react';
+import { HardDrive, Plus, Pencil, Trash2, RefreshCw } from 'lucide-react';
 import { Sensitive } from '@/components/common/Sensitive';
 import { ListPagination } from '@/components/featherui/ListPagination';
 
@@ -420,17 +421,11 @@ export default function AdminMountsPage() {
 
             <WidgetRenderer widgets={getWidgets('admin-mounts', 'after-header')} />
 
-            <div className='fp-surface flex flex-col items-center gap-4 rounded-2xl border p-4 sm:flex-row'>
-                <div className='group relative w-full flex-1'>
-                    <Search className='text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2' />
-                    <Input
-                        placeholder={t('admin.mounts.search_placeholder')}
-                        value={searchQuery}
-                        onChange={(e) => patchFilters({ searchQuery: e.target.value })}
-                        className='h-11 w-full pl-10'
-                    />
-                </div>
-            </div>
+            <AdminListToolbar
+                searchPlaceholder={t('admin.mounts.search_placeholder')}
+                searchValue={searchQuery}
+                onSearchChange={(value) => patchFilters({ searchQuery: value })}
+            />
 
             {pagination.totalPages > 1 && !loading && (
                 <ListPagination

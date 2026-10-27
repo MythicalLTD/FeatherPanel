@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { AdminListToolbar } from '@/components/admin/AdminListToolbar';
 import { TipCard, TipGrid } from '@/components/featherui/TipCard';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -31,7 +32,7 @@ import { ListEmptyState } from '@/components/featherui/ListEmptyState';
 import { Sheet, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from '@/components/ui/sheet';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { Sparkles, Plus, Search, Pencil, Trash2, ChevronLeft, ChevronRight, FolderTree } from 'lucide-react';
+import { Sparkles, Plus, Pencil, Trash2, ChevronLeft, ChevronRight, FolderTree } from 'lucide-react';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { usePersistedListFilters } from '@/hooks/usePersistedListFilters';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
@@ -216,17 +217,11 @@ export default function RealmsPage() {
 
             <WidgetRenderer widgets={getWidgets('admin-realms', 'after-header')} />
 
-            <div className='fp-surface flex flex-col items-center gap-4 rounded-2xl border p-4 sm:flex-row'>
-                <div className='group relative w-full flex-1'>
-                    <Search className='text-muted-foreground group-focus-within:text-primary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transition-colors' />
-                    <Input
-                        placeholder={t('admin.realms.search_placeholder')}
-                        value={searchQuery}
-                        onChange={(e) => patchFilters({ searchQuery: e.target.value })}
-                        className='h-11 w-full pl-10'
-                    />
-                </div>
-            </div>
+            <AdminListToolbar
+                searchPlaceholder={t('admin.realms.search_placeholder')}
+                searchValue={searchQuery}
+                onSearchChange={(value) => patchFilters({ searchQuery: value })}
+            />
 
             {pagination.totalPages > 1 && !loading && (
                 <ListPagination
