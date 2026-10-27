@@ -27,6 +27,7 @@ import { cn } from '@/lib/utils';
 import ProfileTab from '@/components/account/ProfileTab';
 import SettingsTab from '@/components/account/SettingsTab';
 import SshKeysTab from '@/components/account/SshKeysTab';
+import StorageTab from '@/components/account/StorageTab';
 import ApiKeysTab from '@/components/account/ApiKeysTab';
 import McpTab from '@/components/account/McpTab';
 import ActivityTab from '@/components/account/ActivityTab';
@@ -54,6 +55,7 @@ export default function AccountPage() {
         { id: 'settings', name: t('account.settings'), component: SettingsTab },
         { id: 'notifications', name: t('account.notifications.title'), component: NotificationsTab },
         { id: 'ssh-keys', name: t('account.sshKeys.title'), component: SshKeysTab },
+        { id: 'storage', name: t('account.storage.title'), component: StorageTab },
         { id: 'api-keys', name: t('account.apiKeys.title'), component: ApiKeysTab },
         { id: 'mcp', name: t('account.mcp.title'), component: McpTab },
         { id: 'activity', name: t('account.activity.title'), component: ActivityTab },
