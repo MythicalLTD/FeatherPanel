@@ -122,9 +122,9 @@ export function EditorTabs({
                         role='tab'
                         aria-selected={active}
                         className={cn(
-                            'group flex min-h-9 shrink-0 items-center gap-1.5 rounded-lg pr-1 pl-2.5 text-sm transition-colors',
+                            'group relative flex min-h-10 shrink-0 items-center gap-1.5 rounded-lg pr-1 pl-2.5 text-sm transition-colors sm:min-h-9',
                             active
-                                ? 'bg-primary/15 text-primary'
+                                ? 'bg-primary/12 text-primary ring-primary/25 font-medium ring-1 ring-inset'
                                 : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground',
                         )}
                         title={path}
@@ -146,7 +146,10 @@ export function EditorTabs({
                         <button
                             type='button'
                             onClick={() => close(tab)}
-                            className='hover:bg-muted rounded-md p-1 opacity-60 group-hover:opacity-100'
+                            className={cn(
+                                'hover:bg-muted rounded-md p-1 transition-opacity group-hover:opacity-100 focus-visible:opacity-100',
+                                active ? 'opacity-80' : 'opacity-50',
+                            )}
                             aria-label={t('files.editor.close_tab')}
                         >
                             <X className='h-3 w-3' />
