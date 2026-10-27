@@ -32,6 +32,7 @@
 - Page search bars (server databases, backups, subusers, allocations, webspace and VDS lists, tickets, status) match the card style, and the file manager sort, hidden files, view and Quick access controls now sit inside the toolbar card instead of a floating row. (#369) by @nayskutzu
 - The admin setup wizard was rebuilt: welcome hero with a live branding preview, an animated progress rail, smooth step transitions (honours reduced motion), inline validation for mail and Turnstile, keyboard navigation (Enter, Alt + arrows) and a new "You're all set" screen with next steps (location, node, spells, first server, docs). All settings it saves are unchanged. by @nayskutzu
 - The `##icanhasfeatherpanel` debug console got a fresh look and a new Panel & server section (admin root): connectivity for database, Redis, Mercure, nodes, cron and queue, build and commit, PHP and FrankenPHP worker info, feature flags, Premium state, node daemon capabilities, copy diagnostics, clear caches and force onboarding (both with confirmation). New read-only `GET /api/admin/debug/runtime`. by @nayskutzu
+- Admin home toolbar on phones: Refresh, Customize, Clear and Settings now sit in an even two-column grid with 44px buttons and matching styles instead of a ragged wrap. by @nayskutzu
 
 ### Fixed
 
