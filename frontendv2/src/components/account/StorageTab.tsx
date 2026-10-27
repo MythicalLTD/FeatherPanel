@@ -68,6 +68,7 @@ export default function StorageTab() {
     const [saving, setSaving] = useState(false);
     const [testingId, setTestingId] = useState<number | null>(null);
     const [deleting, setDeleting] = useState<StorageDestination | null>(null);
+    const [removing, setRemoving] = useState(false);
 
     const load = useCallback(async () => {
         setLoading(true);
@@ -151,7 +152,8 @@ export default function StorageTab() {
     };
 
     const remove = async () => {
-        if (!deleting) return;
+        if (!deleting || removing) return;
+        setRemoving(true);
         try {
             await axios.delete(`/api/user/storage-destinations/${deleting.id}`);
             toast.success(t('account.storage.deleted'));
@@ -159,6 +161,8 @@ export default function StorageTab() {
             await load();
         } catch (error) {
             toast.error(getApiErrorMessage(error, t, 'account.storage.deleteFailed'));
+        } finally {
+            setRemoving(false);
         }
     };
 
@@ -218,18 +222,24 @@ export default function StorageTab() {
                     <Cloud className='text-muted-foreground mx-auto mb-3 h-10 w-10' />
                     <p className='text-muted-foreground text-sm'>{t('account.storage.disabled')}</p>
                 </div>
-            ) : destinations.length === 0 ? (
-                <div className='border-border bg-muted/20 rounded-lg border-2 border-dashed p-12 text-center'>
-                    <Cloud className='text-muted-foreground mx-auto mb-4 h-12 w-12' />
-                    <h4 className='text-foreground mb-2 text-sm font-semibold'>{t('account.storage.empty')}</h4>
-                    <p className='text-muted-foreground mb-4 text-sm'>{t('account.storage.emptyHint')}</p>
-                    <Button onClick={openCreate} variant='outline'>
-                        {t('account.storage.add')}
-                    </Button>
-                </div>
+            ) : null}
+
+            {destinations.length === 0 ? (
+                !caps?.byo_enabled ? null : (
+                    <div className='border-border bg-muted/20 rounded-lg border-2 border-dashed p-12 text-center'>
+                        <Cloud className='text-muted-foreground mx-auto mb-4 h-12 w-12' />
+                        <h4 className='text-foreground mb-2 text-sm font-semibold'>{t('account.storage.empty')}</h4>
+                        <p className='text-muted-foreground mb-4 text-sm'>{t('account.storage.emptyHint')}</p>
+                        {canAdd ? (
+                            <Button onClick={openCreate} variant='outline'>
+                                {t('account.storage.add')}
+                            </Button>
+                        ) : null}
+                    </div>
+                )
             ) : (
                 <div className='space-y-3'>
-                    {!canAdd ? (
+                    {caps?.byo_enabled && !canAdd ? (
                         <p className='text-muted-foreground text-xs'>
                             {t('account.storage.limitReached', { max: String(caps?.max_destinations ?? 0) })}
                         </p>
@@ -273,19 +283,25 @@ export default function StorageTab() {
                                 </div>
                             ) : null}
                             <div className='flex flex-wrap gap-2'>
-                                <Button
-                                    variant='outline'
-                                    size='sm'
-                                    onClick={() => test(d)}
-                                    disabled={testingId === d.id}
-                                >
-                                    <PlugZap className='mr-1 h-4 w-4' />
-                                    {testingId === d.id ? t('account.storage.testing') : t('account.storage.test')}
-                                </Button>
-                                <Button variant='outline' size='sm' onClick={() => openEdit(d)}>
-                                    <Pencil className='mr-1 h-4 w-4' />
-                                    {t('account.storage.edit')}
-                                </Button>
+                                {caps?.byo_enabled ? (
+                                    <>
+                                        <Button
+                                            variant='outline'
+                                            size='sm'
+                                            onClick={() => test(d)}
+                                            disabled={testingId === d.id}
+                                        >
+                                            <PlugZap className='mr-1 h-4 w-4' />
+                                            {testingId === d.id
+                                                ? t('account.storage.testing')
+                                                : t('account.storage.test')}
+                                        </Button>
+                                        <Button variant='outline' size='sm' onClick={() => openEdit(d)}>
+                                            <Pencil className='mr-1 h-4 w-4' />
+                                            {t('account.storage.edit')}
+                                        </Button>
+                                    </>
+                                ) : null}
                                 <Button variant='destructive' size='sm' onClick={() => setDeleting(d)}>
                                     <Trash2 className='mr-1 h-4 w-4' />
                                     {t('account.storage.remove')}
@@ -296,7 +312,7 @@ export default function StorageTab() {
                 </div>
             )}
 
-            <Dialog open={formOpen} onClose={() => setFormOpen(false)} className='max-w-2xl'>
+            <Dialog open={formOpen} onClose={() => !saving && setFormOpen(false)} className='max-w-2xl'>
                 <DialogHeader>
                     <DialogTitle>
                         {editing ? t('account.storage.editTitle') : t('account.storage.addTitle')}
@@ -351,13 +367,13 @@ export default function StorageTab() {
                     <Button onClick={save} className='flex-1' disabled={saving || form.name.trim() === ''}>
                         {saving ? t('account.storage.saving') : t('account.storage.saveAndTest')}
                     </Button>
-                    <Button onClick={() => setFormOpen(false)} variant='outline' className='flex-1'>
+                    <Button onClick={() => setFormOpen(false)} variant='outline' className='flex-1' disabled={saving}>
                         {t('common.cancel')}
                     </Button>
                 </DialogFooter>
             </Dialog>
 
-            <Dialog open={deleting !== null} onClose={() => setDeleting(null)}>
+            <Dialog open={deleting !== null} onClose={() => !removing && setDeleting(null)}>
                 <DialogHeader>
                     <DialogTitle>{t('account.storage.removeTitle', { name: deleting?.name ?? '' })}</DialogTitle>
                     <DialogDescription>
@@ -365,10 +381,10 @@ export default function StorageTab() {
                     </DialogDescription>
                 </DialogHeader>
                 <DialogFooter>
-                    <Button onClick={remove} variant='destructive' className='flex-1'>
+                    <Button onClick={remove} variant='destructive' className='flex-1' disabled={removing}>
                         {t('account.storage.remove')}
                     </Button>
-                    <Button onClick={() => setDeleting(null)} variant='outline' className='flex-1'>
+                    <Button onClick={() => setDeleting(null)} variant='outline' className='flex-1' disabled={removing}>
                         {t('common.cancel')}
                     </Button>
                 </DialogFooter>
