@@ -111,7 +111,10 @@ function Meter({ label, value, percent }: { label: string; value: string; percen
             </div>
             <div className='bg-muted mt-1.5 h-1 overflow-hidden rounded-full'>
                 <div
-                    className={cn('h-full rounded-full transition-[width] duration-500', tone)}
+                    className={cn(
+                        'h-full rounded-full transition-[width] duration-700 ease-out motion-reduce:transition-none',
+                        tone,
+                    )}
                     style={{ width: `${percent === null ? 0 : Math.min(100, Math.max(percent, 0))}%` }}
                 />
             </div>
