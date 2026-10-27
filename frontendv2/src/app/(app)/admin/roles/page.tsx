@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { AdminListToolbar } from '@/components/admin/AdminListToolbar';
 import { AdminPageTips } from '@/components/admin/AdminPageTips';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -22,12 +23,11 @@ import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { getApiErrorMessage } from '@/lib/api-errors';
 import { useSession } from '@/contexts/SessionContext';
-import { Shield, Plus, Trash2, Search, KeyRound, Copy, Users, Pencil } from 'lucide-react';
+import { Shield, Plus, Trash2, KeyRound, Copy, Users, Pencil } from 'lucide-react';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { ListEmptyState } from '@/components/featherui/ListEmptyState';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
 import { Button } from '@/components/featherui/Button';
-import { Input } from '@/components/featherui/Input';
 import { DataTable, RowActionsMenu } from '@/components/featherui/DataTable';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
@@ -227,23 +227,18 @@ export default function RolesPage() {
 
             <WidgetRenderer widgets={getWidgets('admin-roles', 'after-header')} />
 
-            <div className='fp-surface flex flex-col items-center gap-4 rounded-2xl border p-4 sm:flex-row'>
-                <div className='group relative w-full flex-1'>
-                    <Search className='text-muted-foreground group-focus-within:text-primary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transition-colors' />
-                    <Input
-                        placeholder={t('admin.roles.search_placeholder')}
-                        value={searchQuery}
-                        onChange={(e) => patchFilters({ searchQuery: e.target.value })}
-                        className='h-11 w-full pl-10'
-                    />
-                </div>
+            <AdminListToolbar
+                searchPlaceholder={t('admin.roles.search_placeholder')}
+                searchValue={searchQuery}
+                onSearchChange={(value) => patchFilters({ searchQuery: value })}
+            >
                 {!loading && (
                     <div className='text-muted-foreground flex items-center gap-2 text-sm whitespace-nowrap'>
                         <Users className='h-4 w-4' />
                         {t('admin.roles.stats.role_count', { count: String(pagination.total) })}
                     </div>
                 )}
-            </div>
+            </AdminListToolbar>
 
             {pagination.totalPages > 1 && !loading && (
                 <ListPagination

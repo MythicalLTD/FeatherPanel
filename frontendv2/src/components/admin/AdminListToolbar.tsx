@@ -34,6 +34,8 @@ interface AdminListToolbarProps {
     selectedCount?: number;
     onClearSelection?: () => void;
     bulkActions?: ReactNode;
+    /** Put the filters on their own full width row under the search, for lists with many filters. */
+    stacked?: boolean;
     className?: string;
 }
 
@@ -47,13 +49,14 @@ export function AdminListToolbar({
     selectedCount = 0,
     onClearSelection,
     bulkActions,
+    stacked = false,
     className,
 }: AdminListToolbarProps) {
     const { t } = useTranslation();
 
     return (
         <div className={cn('fp-surface fp-list-toolbar rounded-2xl border p-3 sm:p-4', className)}>
-            <div className='flex flex-col items-stretch gap-3 sm:flex-row sm:items-center'>
+            <div className={cn('flex flex-col items-stretch gap-3', !stacked && 'sm:flex-row sm:items-center')}>
                 <div className='group relative w-full flex-1'>
                     <Search
                         aria-hidden
@@ -78,7 +81,12 @@ export function AdminListToolbar({
                         </button>
                     )}
                 </div>
-                {children && <div className='flex flex-wrap items-center gap-2 [&>*]:shrink-0'>{children}</div>}
+                {children &&
+                    (stacked ? (
+                        children
+                    ) : (
+                        <div className='flex flex-wrap items-center gap-2 [&>*]:shrink-0'>{children}</div>
+                    ))}
                 {actions && <div className='flex items-center gap-2 sm:ml-auto'>{actions}</div>}
             </div>
             {selectedCount > 0 && (
