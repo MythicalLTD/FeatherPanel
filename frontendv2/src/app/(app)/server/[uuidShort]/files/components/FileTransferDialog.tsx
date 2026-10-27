@@ -226,7 +226,7 @@ export function FileTransferDialog({
                                                 }
                                                 className='hover:bg-primary/10 flex min-h-9 w-full items-center gap-2 rounded-lg px-2 text-left text-sm'
                                             >
-                                                <Folder className='h-4 w-4 shrink-0 text-amber-500' />
+                                                <Folder className='h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400' />
                                                 <span className='truncate'>{name}</span>
                                             </button>
                                         ))

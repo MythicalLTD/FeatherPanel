@@ -341,14 +341,14 @@ export default function ServerSubusersPage() {
                 title={t('serverSubusers.title')}
                 description={t('serverSubusers.description')}
                 actions={
-                    <div className='flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:gap-3'>
+                    <div className='flex w-full flex-wrap gap-2 sm:w-auto sm:flex-nowrap sm:items-center sm:gap-3'>
                         {showHeaderAddAction && (
                             <Button
                                 size='default'
                                 variant='default'
                                 onClick={() => setIsAddOpen(true)}
                                 disabled={loading}
-                                className='order-1 w-full sm:order-2 sm:w-auto'
+                                className='order-1 min-w-0 flex-1 sm:order-2 sm:flex-none'
                             >
                                 <Plus className='mr-2 h-5 w-5' />
                                 {t('serverSubusers.addSubuser')}

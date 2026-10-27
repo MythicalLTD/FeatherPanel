@@ -1000,7 +1000,7 @@ export default function ServerFilesIDEPage({
                                     {currentFileName || t('files.list.empty_title')}
                                 </span>
                                 {hasUnsavedChanges && currentFileName && (
-                                    <span className='text-[10px] font-medium tracking-[0.2em] text-yellow-500 uppercase'>
+                                    <span className='text-[10px] font-medium tracking-[0.2em] text-yellow-600 uppercase dark:text-yellow-400'>
                                         {t('files.editor.unsaved_prompt')}
                                     </span>
                                 )}

@@ -100,11 +100,11 @@ export default function ServerImportPage() {
             default:
                 return {
                     icon: Clock,
-                    color: 'text-yellow-500',
+                    color: 'text-yellow-600 dark:text-yellow-400',
                     bg: 'bg-yellow-500/10',
                     border: 'border-yellow-500/20',
                     label: t('common.pending'),
-                    wrapperClass: 'bg-yellow-500/10 border-yellow-500/20 text-yellow-500',
+                    wrapperClass: 'bg-yellow-500/10 border-yellow-500/20 text-yellow-600 dark:text-yellow-400',
                 };
         }
     };
@@ -144,13 +144,13 @@ export default function ServerImportPage() {
                 title={t('serverImport.title')}
                 description={t('serverImport.description')}
                 actions={
-                    <div className='flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:gap-3'>
+                    <div className='flex w-full flex-wrap gap-2 sm:w-auto sm:flex-nowrap sm:items-center sm:gap-3'>
                         {showHeaderCreateAction && (
                             <Button
                                 size='default'
                                 variant='default'
                                 onClick={() => router.push(`/server/${uuidShort}/import/new`)}
-                                className='order-1 w-full sm:order-2 sm:w-auto'
+                                className='order-1 min-w-0 flex-1 sm:order-2 sm:flex-none'
                             >
                                 <Plus className='mr-2 h-5 w-5' />
                                 {t('serverImport.createImport')}

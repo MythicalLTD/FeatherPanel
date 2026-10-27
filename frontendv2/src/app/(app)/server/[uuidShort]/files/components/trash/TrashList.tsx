@@ -87,7 +87,7 @@ function TrashRow({
                 className={cn(
                     'border-border/40 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border transition-all group-hover:scale-110',
                     entry.is_directory
-                        ? 'bg-amber-500/10 text-amber-500'
+                        ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
                         : 'bg-gray-100 text-gray-500 dark:bg-white/5 dark:text-gray-400',
                 )}
             >

@@ -190,7 +190,7 @@ export default function CreateTaskPage() {
                 title={t('serverTasks.createTask')}
                 description={t('serverTasks.createTaskDescription')}
                 actions={
-                    <div className='flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:gap-3'>
+                    <div className='flex w-full flex-wrap gap-2 sm:w-auto sm:flex-nowrap sm:items-center sm:gap-3'>
                         <Button
                             variant='glass'
                             size='default'
@@ -206,7 +206,7 @@ export default function CreateTaskPage() {
                             onClick={() => handleCreate()}
                             disabled={saving}
                             loading={saving}
-                            className='order-1 w-full sm:order-2 sm:w-auto'
+                            className='order-1 min-w-0 flex-1 sm:order-2 sm:flex-none'
                         >
                             <Plus className='mr-2 h-4 w-4' />
                             {t('serverTasks.create')}

@@ -693,7 +693,7 @@ export default function ServerConsolePage() {
                     icon: AlertTriangle,
                     message: t('servers.console.connection.error'),
                     hint: t('servers.console.connection.error_hint'),
-                    color: 'text-amber-500',
+                    color: 'text-amber-600 dark:text-amber-400',
                     bgColor: 'bg-amber-500/10 border-amber-500/20',
                     iconClass: '',
                 };
@@ -702,7 +702,7 @@ export default function ServerConsolePage() {
                     icon: WifiOff,
                     message: t('servers.console.connection.disconnected'),
                     hint: t('servers.console.connection.disconnected_hint'),
-                    color: 'text-amber-500',
+                    color: 'text-amber-600 dark:text-amber-400',
                     bgColor: 'bg-amber-500/10 border-amber-500/20',
                     iconClass: '',
                 };
@@ -762,10 +762,10 @@ export default function ServerConsolePage() {
                             <CardContent className='p-4'>
                                 <div className='flex items-center gap-4'>
                                     <div className='flex h-12 w-12 items-center justify-center rounded-lg border-yellow-500/20 bg-yellow-500/10'>
-                                        <AlertTriangle className='h-6 w-6 text-yellow-500' />
+                                        <AlertTriangle className='h-6 w-6 text-yellow-600 dark:text-yellow-400' />
                                     </div>
                                     <div className='flex-1'>
-                                        <p className='font-semibold text-yellow-500'>
+                                        <p className='font-semibold text-yellow-600 dark:text-yellow-400'>
                                             {t('serverConsole.subuserNoAccess')}
                                         </p>
                                     </div>
@@ -870,10 +870,10 @@ export default function ServerConsolePage() {
                             <CardContent className='p-4'>
                                 <div className='flex items-center gap-4'>
                                     <div className='flex h-12 w-12 items-center justify-center rounded-lg border-yellow-500/20 bg-yellow-500/10'>
-                                        <AlertTriangle className='h-6 w-6 text-yellow-500' />
+                                        <AlertTriangle className='h-6 w-6 text-yellow-600 dark:text-yellow-400' />
                                     </div>
                                     <div className='flex-1'>
-                                        <p className='font-semibold text-yellow-500'>
+                                        <p className='font-semibold text-yellow-600 dark:text-yellow-400'>
                                             {t('serverConsole.subuserNoAccess')}
                                         </p>
                                     </div>
@@ -889,10 +889,12 @@ export default function ServerConsolePage() {
                             <CardContent className='p-4'>
                                 <div className='flex items-center gap-4'>
                                     <div className='flex h-12 w-12 items-center justify-center rounded-lg border-yellow-500/20 bg-yellow-500/10'>
-                                        <AlertTriangle className='h-6 w-6 text-yellow-500' />
+                                        <AlertTriangle className='h-6 w-6 text-yellow-600 dark:text-yellow-400' />
                                     </div>
                                     <div className='flex-1'>
-                                        <p className='font-semibold text-yellow-500'>{t('servers.status.suspended')}</p>
+                                        <p className='font-semibold text-yellow-600 dark:text-yellow-400'>
+                                            {t('servers.status.suspended')}
+                                        </p>
                                         <p className='text-muted-foreground text-sm'>
                                             {t('servers.console.connection.disconnected')}
                                         </p>
