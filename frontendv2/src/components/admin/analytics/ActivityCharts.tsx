@@ -17,8 +17,8 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import React from 'react';
 import {
-    LineChart,
-    Line,
+    AreaChart,
+    Area,
     BarChart,
     Bar,
     PieChart,
@@ -51,16 +51,33 @@ export function ActivityTrendChart({ data }: ActivityTrendChartProps) {
             </CardHeader>
             <CardContent className='h-75'>
                 <ResponsiveContainer width='100%' height='100%'>
-                    <LineChart data={data || []}>
+                    <AreaChart data={data || []}>
                         <CartesianGrid strokeDasharray='3 3' className='stroke-muted' />
                         <XAxis dataKey='date' className='text-xs' />
                         <YAxis className='text-xs' />
                         <Tooltip
-                            contentStyle={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}
-                            itemStyle={{ color: 'var(--foreground)' }}
+                            contentStyle={{
+                                backgroundColor: 'hsl(var(--card))',
+                                borderColor: 'hsl(var(--border))',
+                                borderRadius: '0.5rem',
+                            }}
+                            itemStyle={{ color: 'hsl(var(--foreground))' }}
                         />
-                        <Line type='monotone' dataKey='count' stroke='#3b82f6' strokeWidth={2} activeDot={{ r: 8 }} />
-                    </LineChart>
+                        <defs>
+                            <linearGradient id='activity-trend' x1='0' y1='0' x2='0' y2='1'>
+                                <stop offset='0%' stopColor='#3b82f6' stopOpacity={0.35} />
+                                <stop offset='100%' stopColor='#3b82f6' stopOpacity={0} />
+                            </linearGradient>
+                        </defs>
+                        <Area
+                            type='monotone'
+                            dataKey='count'
+                            stroke='#3b82f6'
+                            strokeWidth={2}
+                            fill='url(#activity-trend)'
+                            activeDot={{ r: 5 }}
+                        />
+                    </AreaChart>
                 </ResponsiveContainer>
             </CardContent>
         </Card>
@@ -146,8 +163,12 @@ export function HourlyActivityChart({ data }: HourlyActivityChartProps) {
                         <YAxis className='text-xs' />
                         <Tooltip
                             cursor={{ fill: 'var(--muted)', opacity: 0.2 }}
-                            contentStyle={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}
-                            itemStyle={{ color: 'var(--foreground)' }}
+                            contentStyle={{
+                                backgroundColor: 'hsl(var(--card))',
+                                borderColor: 'hsl(var(--border))',
+                                borderRadius: '0.5rem',
+                            }}
+                            itemStyle={{ color: 'hsl(var(--foreground))' }}
                             labelFormatter={(val) => {
                                 const hour = Number(val ?? 0);
                                 return `${hour}:00 - ${hour + 1}:00`;

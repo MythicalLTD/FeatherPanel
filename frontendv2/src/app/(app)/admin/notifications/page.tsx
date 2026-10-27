@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { AdminListToolbar } from '@/components/admin/AdminListToolbar';
 import { TipCard, TipGrid } from '@/components/featherui/TipCard';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
@@ -27,7 +28,6 @@ import {
     Eye,
     Pencil,
     Trash2,
-    Search,
     RefreshCw,
     Info,
     CheckCircle,
@@ -435,17 +435,11 @@ export default function NotificationsPage() {
 
             <WidgetRenderer widgets={getWidgets('admin-notifications', 'after-header')} />
 
-            <div className='fp-surface flex flex-col items-center gap-4 rounded-2xl border p-4 sm:flex-row'>
-                <div className='group relative w-full flex-1'>
-                    <Search className='text-muted-foreground group-focus-within:text-primary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transition-colors' />
-                    <Input
-                        placeholder={t('admin.notifications.search_placeholder')}
-                        value={searchQuery}
-                        onChange={(e) => patchFilters({ searchQuery: e.target.value })}
-                        className='h-11 w-full pl-10'
-                    />
-                </div>
-            </div>
+            <AdminListToolbar
+                searchPlaceholder={t('admin.notifications.search_placeholder')}
+                searchValue={searchQuery}
+                onSearchChange={(value) => patchFilters({ searchQuery: value })}
+            />
 
             {pagination.totalPages > 1 && !loading && (
                 <ListPagination

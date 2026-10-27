@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { AdminListToolbar } from '@/components/admin/AdminListToolbar';
 import { TipCard } from '@/components/featherui/TipCard';
 import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
@@ -33,7 +34,6 @@ import { toast } from 'sonner';
 import {
     Database as DatabaseIcon,
     Plus,
-    Search,
     Eye,
     Pencil,
     Trash2,
@@ -427,17 +427,11 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
 
             <WidgetRenderer widgets={getWidgets(slug, 'after-header')} context={widgetContext} />
 
-            <div className='fp-surface flex flex-col items-center gap-4 rounded-2xl border p-4 sm:flex-row'>
-                <div className='group relative w-full flex-1'>
-                    <Search className='text-muted-foreground group-focus-within:text-primary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transition-colors' />
-                    <Input
-                        placeholder={t('admin.node_databases.search_placeholder')}
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className='h-11 w-full pl-10'
-                    />
-                </div>
-            </div>
+            <AdminListToolbar
+                searchPlaceholder={t('admin.node_databases.search_placeholder')}
+                searchValue={searchQuery}
+                onSearchChange={(value) => setSearchQuery(value)}
+            />
 
             {pagination.totalPages > 1 && !loading && (
                 <ListPagination

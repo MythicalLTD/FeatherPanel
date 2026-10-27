@@ -451,10 +451,15 @@ export default function SettingsPage() {
         }));
     };
 
-    const unsaved = Object.entries(settings).some(([key, setting]) => {
-        const initial = initialSettings[key];
-        return Boolean(initial) && String(initial.value) !== String(setting.value);
-    });
+    const dirtyKeys = new Set(
+        Object.entries(settings)
+            .filter(([key, setting]) => {
+                const initial = initialSettings[key];
+                return Boolean(initial) && String(initial.value) !== String(setting.value);
+            })
+            .map(([key]) => key),
+    );
+    const unsaved = dirtyKeys.size > 0;
 
     const handleDiscard = () => {
         setSettings(JSON.parse(JSON.stringify(initialSettings)));
@@ -689,6 +694,14 @@ export default function SettingsPage() {
                                     >
                                         <Icon className='mr-2 h-4 w-4 shrink-0 opacity-80' />
                                         <span className='min-w-0 flex-1 truncate text-left'>{data.category.name}</span>
+                                        {Object.keys(data.settings).some((k) => dirtyKeys.has(k)) && (
+                                            <span
+                                                className='ml-2 h-2 w-2 shrink-0 rounded-full bg-amber-500'
+                                                title={t('admin.settings.sections.unsaved')}
+                                            >
+                                                <span className='sr-only'>{t('admin.settings.sections.unsaved')}</span>
+                                            </span>
+                                        )}
                                         {showCount ? (
                                             <span
                                                 className={cn(
@@ -850,18 +863,62 @@ export default function SettingsPage() {
                                                         )}
                                                     />
                                                 ) : (
-                                                    filteredEntries.map(([settingKey, setting]) => {
-                                                        const currentSetting = settings[settingKey] || setting;
+                                                    (() => {
+                                                        const renderRow = ([
+                                                            settingKey,
+                                                            setting,
+                                                        ]: (typeof filteredEntries)[number]) => {
+                                                            const currentSetting = settings[settingKey] || setting;
+                                                            return (
+                                                                <div
+                                                                    key={settingKey}
+                                                                    className={cn(
+                                                                        'fp-setting-row',
+                                                                        dirtyKeys.has(settingKey) && 'fp-setting-dirty',
+                                                                    )}
+                                                                >
+                                                                    <SettingFieldRow
+                                                                        settingKey={settingKey}
+                                                                        currentSetting={currentSetting}
+                                                                        onSettingChange={handleSettingChange}
+                                                                        t={t}
+                                                                    />
+                                                                </div>
+                                                            );
+                                                        };
+                                                        const isSwitch = ([
+                                                            settingKey,
+                                                            setting,
+                                                        ]: (typeof filteredEntries)[number]) => {
+                                                            const s = settings[settingKey] || setting;
+                                                            return (
+                                                                settingKey === 'telemetry' ||
+                                                                s.type === 'toggle' ||
+                                                                (s.type as string) === 'boolean'
+                                                            );
+                                                        };
+                                                        const fields = filteredEntries.filter((e) => !isSwitch(e));
+                                                        const switches = filteredEntries.filter(isSwitch);
+                                                        if (!fields.length || !switches.length) {
+                                                            return filteredEntries.map(renderRow);
+                                                        }
                                                         return (
-                                                            <SettingFieldRow
-                                                                key={settingKey}
-                                                                settingKey={settingKey}
-                                                                currentSetting={currentSetting}
-                                                                onSettingChange={handleSettingChange}
-                                                                t={t}
-                                                            />
+                                                            <>
+                                                                <section className='fp-settings-section space-y-4'>
+                                                                    <h3 className='fp-settings-section-title'>
+                                                                        {t('admin.settings.sections.values')}
+                                                                    </h3>
+                                                                    {fields.map(renderRow)}
+                                                                </section>
+                                                                <section className='fp-settings-section space-y-3'>
+                                                                    <h3 className='fp-settings-section-title'>
+                                                                        {t('admin.settings.sections.switches')}
+                                                                    </h3>
+                                                                    {switches.map(renderRow)}
+                                                                </section>
+                                                            </>
                                                         );
-                                                    })
+                                                    })()
                                                 )}
                                             </div>
                                         )}

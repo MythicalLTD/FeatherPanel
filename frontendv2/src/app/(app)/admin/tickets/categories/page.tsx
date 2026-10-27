@@ -15,12 +15,13 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { AdminListToolbar } from '@/components/admin/AdminListToolbar';
 import { TipCard, TipGrid } from '@/components/featherui/TipCard';
 import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import axios from 'axios';
-import { Plus, Search, Pencil, Trash2, Ticket as TicketIcon, Tags, Info, HelpCircle } from 'lucide-react';
+import { Plus, Pencil, Trash2, Ticket as TicketIcon, Tags, Info, HelpCircle } from 'lucide-react';
 import Image from 'next/image';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { ResourceCard, ResourceTable } from '@/components/featherui/ResourceCard';
@@ -229,17 +230,11 @@ export default function TicketCategoriesPage() {
                     }
                 />
 
-                <div className='fp-surface flex flex-col items-center gap-4 rounded-2xl border p-4 sm:flex-row'>
-                    <div className='group relative w-full flex-1'>
-                        <Search className='text-muted-foreground group-focus-within:text-primary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transition-colors' />
-                        <Input
-                            placeholder={t('admin.tickets.categories.search_placeholder')}
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                            className='h-11 w-full pl-10'
-                        />
-                    </div>
-                </div>
+                <AdminListToolbar
+                    searchPlaceholder={t('admin.tickets.categories.search_placeholder')}
+                    searchValue={search}
+                    onSearchChange={(value) => setSearch(value)}
+                />
 
                 {loading ? (
                     <TableSkeleton count={5} />

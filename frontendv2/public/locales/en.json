@@ -7098,6 +7098,15 @@
             "symlink": "This entry is a symbolic link.",
             "checksum": "Compute checksum",
             "description": "File details"
+        },
+        "upload": {
+            "pause": "Pause upload",
+            "resume": "Resume upload",
+            "retry": "Retry upload",
+            "cancel": "Cancel upload",
+            "paused": "Paused",
+            "resumed": "resumed",
+            "eta": "{time} left"
         }
     },
     "admin": {
@@ -12101,6 +12110,11 @@
                     "title": "Other",
                     "description": "Remaining VDS settings."
                 }
+            },
+            "sections": {
+                "values": "Values",
+                "switches": "Switches",
+                "unsaved": "Unsaved changes"
             }
         },
         "rate_limits": {
@@ -14859,6 +14873,11 @@
             "done": "Migration finished, VDS now on {node}.",
             "failed": "Migration failed: {error}",
             "start_failed": "Could not start the migration"
+        },
+        "list_toolbar": {
+            "clear_search": "Clear search",
+            "selected": "selected",
+            "clear_selection": "Clear selection"
         }
     },
     "webSpaces": {
