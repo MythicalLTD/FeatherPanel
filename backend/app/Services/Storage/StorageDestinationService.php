@@ -71,6 +71,23 @@ final class StorageDestinationService
     }
 
     /**
+     * Whether a config change would move where existing objects live (keys may change freely).
+     *
+     * @param array<string, mixed> $a
+     * @param array<string, mixed> $b
+     */
+    public static function locationChanged(array $a, array $b): bool
+    {
+        foreach (['endpoint', 'bucket', 'region', 'prefix'] as $k) {
+            if ((string) ($a[$k] ?? '') !== (string) ($b[$k] ?? '')) {
+                return true;
+            }
+        }
+
+        return (bool) ($a['path_style'] ?? true) !== (bool) ($b['path_style'] ?? true);
+    }
+
+    /**
      * S3 client for a destination; re-checks and pins DNS on every call.
      */
     public static function storeFor(array $destination): S3ObjectStore
@@ -146,13 +163,24 @@ final class StorageDestinationService
 
     /**
      * destination_id from a schedule backup payload (JSON), if any.
+     *
+     * @throws StorageException when destination_id is present but not a positive integer
      */
     public static function destinationIdFromPayload(string $payload): ?int
     {
         $data = json_decode(trim($payload), true);
-        $id = is_array($data) ? (int) ($data['destination_id'] ?? 0) : 0;
+        if (!is_array($data) || !array_key_exists('destination_id', $data) || $data['destination_id'] === null || $data['destination_id'] === '') {
+            return null;
+        }
+        $raw = $data['destination_id'];
+        if (is_int($raw) && $raw > 0) {
+            return $raw;
+        }
+        if (is_string($raw) && preg_match('/^[1-9][0-9]{0,18}$/', $raw)) {
+            return (int) $raw;
+        }
 
-        return $id > 0 ? $id : null;
+        throw new StorageException('Invalid storage destination', 'INVALID_DESTINATION_ID', 422);
     }
 
     /**

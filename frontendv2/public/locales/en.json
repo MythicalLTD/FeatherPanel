@@ -1616,7 +1616,8 @@
             "REGION_INVALID": "Region is invalid",
             "CREDENTIALS_REQUIRED": "Access key and secret key are required",
             "DESTINATION_TEST_FAILED": "Storage test failed",
-            "INVALID_DESTINATION_ID": "Invalid storage destination"
+            "INVALID_DESTINATION_ID": "Invalid storage destination",
+            "DESTINATION_IN_USE": "This storage still holds backups, so its location cannot change. Add a new storage instead."
         },
         "global": {}
     },

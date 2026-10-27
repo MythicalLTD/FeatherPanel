@@ -90,7 +90,20 @@ final class ByoDestinationTest extends TestCase
         $this->assertSame(7, StorageDestinationService::destinationIdFromPayload('{"type":"files","destination_id":7}'));
         $this->assertNull(StorageDestinationService::destinationIdFromPayload('{"type":"files"}'));
         $this->assertNull(StorageDestinationService::destinationIdFromPayload('garbage'));
-        $this->assertNull(StorageDestinationService::destinationIdFromPayload('{"destination_id":-3}'));
+        $this->assertSame(12, StorageDestinationService::destinationIdFromPayload('{"destination_id":"12"}'));
+        $this->assertNull(StorageDestinationService::destinationIdFromPayload('{"destination_id":null}'));
+        foreach (['-3', '"1junk"', '"invalid"', '1.5', 'true', '[1]', '0'] as $bad) {
+            $this->assertSame('INVALID_DESTINATION_ID', $this->code(fn () => StorageDestinationService::destinationIdFromPayload('{"destination_id":' . $bad . '}')), $bad);
+        }
+    }
+
+    public function testLocationChanged(): void
+    {
+        $a = ['endpoint' => 'https://s3.example.com', 'bucket' => 'bk1', 'region' => 'eu-1', 'prefix' => 'fp', 'path_style' => true, 'access_key' => 'A', 'secret_key' => 'S'];
+        $this->assertFalse(StorageDestinationService::locationChanged($a, ['access_key' => 'B', 'secret_key' => 'T'] + $a));
+        $this->assertTrue(StorageDestinationService::locationChanged($a, ['bucket' => 'bk2'] + $a));
+        $this->assertTrue(StorageDestinationService::locationChanged($a, ['prefix' => 'other'] + $a));
+        $this->assertTrue(StorageDestinationService::locationChanged($a, ['path_style' => false] + $a));
     }
 
     private function code(callable $fn): ?string

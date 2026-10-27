@@ -106,7 +106,13 @@ class StorageDestinationController
         }
         if (isset($body['config']) && is_array($body['config'])) {
             try {
-                $update['config'] = StorageDestinationService::normalizeS3Config($body['config'], UserStorageDestination::config($row));
+                $current = UserStorageDestination::config($row);
+                $next = StorageDestinationService::normalizeS3Config($body['config'], $current);
+                // Existing backups are addressed through this config, so their location must not move.
+                if (UserStorageDestination::countBackups($id) > 0 && StorageDestinationService::locationChanged($current, $next)) {
+                    return ApiResponse::error('This storage still holds backups, so its endpoint, bucket, region, folder and URL style cannot change. Add a new storage instead.', 'DESTINATION_IN_USE', 409);
+                }
+                $update['config'] = $next;
             } catch (StorageException $e) {
                 return ApiResponse::error($e->getMessage(), $e->errorCode(), $e->status());
             }
