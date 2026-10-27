@@ -1033,6 +1033,13 @@ html.fp-privacy [data-fp-sensitive]:not(:focus) {
     backdrop-filter: none;
 }
 
+/* Plain (uniform) page background: blurring it is invisible, so in-flow cards skip the backdrop
+   pass. Sticky / fixed surfaces keep it because page content scrolls underneath them. */
+[data-fp-bg='plain'] .fp-surface:not(.sticky, .fixed, .sticky *, .fixed *) {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+}
+
 @media (prefers-reduced-transparency: reduce) {
     :root {
         --fp-surface-alpha: 0.97;
