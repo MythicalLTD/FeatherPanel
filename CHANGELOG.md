@@ -50,6 +50,7 @@
 - Admin lists share one toolbar component (AdminListToolbar) with search, a clear-search button, a filter slot, a right-aligned actions slot and an optional bulk-selection bar; adopted on locations, nodes, mounts, realms, notifications, web nodes, backup schedules, database hosts, translations and ticket categories, priorities and statuses.
 - Admin dashboard stat tiles get a coloured icon, a soft corner glow and numbers that count up (instant under reduced motion); the analytics activity and user trend charts are now gradient area charts with a themed tooltip.
 - AdminListToolbar now also covers users, servers (stacked filter row), roles, spells, tickets and blocked IPs, so every main admin list shares the same search bar and clear button.
+- Server console on phones docks the power buttons in a fixed bar at the bottom of the screen (safe-area aware); live CPU, memory, disk, network and disk I/O values ease between updates (instant under reduced motion); the file context menu shows Enter, F2 and Del shortcut hints and the file toolbar is tinted while files are selected.
 
 ### Fixed
 

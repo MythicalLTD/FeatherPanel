@@ -131,6 +131,7 @@ function RowContextMenu({
     onClose: () => void;
 }) {
     const menuRef = useRef<HTMLDivElement>(null);
+    const { t } = useTranslation();
 
     useEffect(() => {
         const handleOutside = (e: MouseEvent) => {
@@ -197,8 +198,13 @@ function RowContextMenu({
                             a.danger && 'text-red-500 hover:bg-red-500/10 hover:text-red-500 focus:bg-red-500/10',
                         )}
                     >
-                        <a.Icon className='mr-2 h-4 w-4' />
-                        {a.label}
+                        <a.Icon className='mr-2 h-4 w-4 opacity-80 group-hover:opacity-100' />
+                        <span className='flex-1 text-left'>{a.label}</span>
+                        {MENU_KBD[a.key] && (
+                            <kbd className='text-muted-foreground border-border/70 bg-muted/40 ml-4 rounded border px-1.5 py-px font-mono text-[10px] font-medium'>
+                                {t(MENU_KBD[a.key])}
+                            </kbd>
+                        )}
                     </button>
                 </React.Fragment>
             ))}
@@ -206,6 +212,13 @@ function RowContextMenu({
         document.body,
     );
 }
+
+/** Keyboard hints shown next to context menu entries that have a list shortcut. */
+const MENU_KBD: Record<string, string> = {
+    edit: 'files.row.kbd.enter',
+    rename: 'files.row.kbd.f2',
+    delete: 'files.row.kbd.delete',
+};
 
 /** Colour tile per file type so the list scans faster. Purely visual. */
 const FILE_TONES: [RegExp, string][] = [

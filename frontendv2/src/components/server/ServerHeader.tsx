@@ -16,6 +16,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import { Button } from '@/components/featherui/Button';
+import { createPortal } from 'react-dom';
 import {
     Play,
     Square,
@@ -105,6 +106,14 @@ export default function ServerHeader({
     statusLabel,
 }: ServerHeaderProps) {
     const { t } = useTranslation();
+    const [isPhone, setIsPhone] = useState(false);
+    useEffect(() => {
+        const mq = window.matchMedia('(max-width: 639px)');
+        const update = () => setIsPhone(mq.matches);
+        update();
+        mq.addEventListener('change', update);
+        return () => mq.removeEventListener('change', update);
+    }, []);
     const { theme } = useTheme();
     const [actionLoading, setActionLoading] = useState<string | null>(null);
     const [showKillConfirm, setShowKillConfirm] = useState(false);
@@ -220,8 +229,8 @@ export default function ServerHeader({
         </div>
     );
 
-    const powerGrid = (
-        <div className='grid shrink-0 grid-cols-[repeat(3,minmax(0,1fr))_auto] gap-2 sm:flex sm:items-center'>
+    const powerGridInner = (
+        <div className='fp-mobile-actionbar grid shrink-0 grid-cols-[repeat(3,minmax(0,1fr))_auto] gap-2 sm:flex sm:items-center'>
             {canStart && (
                 <Button
                     variant='secondary'
@@ -292,6 +301,11 @@ export default function ServerHeader({
             )}
         </div>
     );
+
+    // On phones the power controls float in a fixed bar at the bottom of the viewport. Portalled to
+    // <body> so a transformed / blurred ancestor card can't become its containing block.
+    const powerGrid =
+        isPhone && typeof document !== 'undefined' ? createPortal(powerGridInner, document.body) : powerGridInner;
 
     const powerButtons = extraActions ? (
         <div className='flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end'>

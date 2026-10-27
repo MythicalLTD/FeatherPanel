@@ -19,6 +19,7 @@ import React, { useId } from 'react';
 import { Cpu, MemoryStick, HardDrive, Network, ArrowDown, ArrowUp, type LucideIcon } from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { cn, formatCpu, formatFileSize, formatMib } from '@/lib/utils';
+import { AnimatedNumber } from '@/components/ui/animated-number';
 import { getUsagePercentage } from '@/lib/server-utils';
 
 type Point = { timestamp: number; value: number };
@@ -208,7 +209,7 @@ export default React.memo(function ServerConsoleStats({
             <StatCard
                 icon={Cpu}
                 label={t('servers.cpu')}
-                value={`${cpuUsage.toFixed(1)}%`}
+                value={<AnimatedNumber value={cpuUsage} duration={450} format={(v) => `${v.toFixed(1)}%`} />}
                 sub={ofLimit(cpuLimit > 0 ? formatCpu(cpuLimit) : unlimited)}
                 percent={cpuLimit > 0 ? getUsagePercentage(cpuUsage, cpuLimit) : null}
                 warn={cpuLimit > 0 && cpuUsage > cpuLimit}
@@ -219,7 +220,7 @@ export default React.memo(function ServerConsoleStats({
             <StatCard
                 icon={MemoryStick}
                 label={t('servers.memory')}
-                value={formatMib(memoryUsage)}
+                value={<AnimatedNumber value={memoryUsage} duration={450} format={formatMib} />}
                 sub={ofLimit(memoryLimit > 0 ? formatMib(memoryLimit) : unlimited)}
                 percent={memoryLimit > 0 ? getUsagePercentage(memoryUsage, memoryLimit) : null}
                 warn={memoryLimit > 0 && memoryUsage > memoryLimit}
@@ -230,7 +231,7 @@ export default React.memo(function ServerConsoleStats({
             <StatCard
                 icon={HardDrive}
                 label={t('servers.disk')}
-                value={formatMib(diskUsage)}
+                value={<AnimatedNumber value={diskUsage} duration={450} format={formatMib} />}
                 sub={ofLimit(diskLimit > 0 ? formatMib(diskLimit) : unlimited)}
                 percent={diskLimit > 0 ? getUsagePercentage(diskUsage, diskLimit) : null}
                 warn={diskLimit > 0 && diskUsage > diskLimit}
@@ -241,7 +242,13 @@ export default React.memo(function ServerConsoleStats({
             <StatCard
                 icon={Network}
                 label={t('servers.console.info_cards.network_title')}
-                value={`${formatFileSize(networkRx + networkTx)}/s`}
+                value={
+                    <AnimatedNumber
+                        value={networkRx + networkTx}
+                        duration={450}
+                        format={(v) => `${formatFileSize(Math.round(v))}/s`}
+                    />
+                }
                 sub={
                     <span className='flex flex-wrap items-center gap-x-2'>
                         <span
@@ -275,7 +282,13 @@ export default React.memo(function ServerConsoleStats({
                     className='col-span-2 xl:col-span-1'
                     icon={HardDrive}
                     label={t('servers.console.info_cards.disk_io_title')}
-                    value={`${formatFileSize(diskIo.read + diskIo.write)}/s`}
+                    value={
+                        <AnimatedNumber
+                            value={diskIo.read + diskIo.write}
+                            duration={450}
+                            format={(v) => `${formatFileSize(Math.round(v))}/s`}
+                        />
+                    }
                     sub={
                         <span className='flex flex-wrap items-center gap-x-2'>
                             <span
