@@ -221,7 +221,7 @@ export default function ServerHeader({
     );
 
     const powerGrid = (
-        <div className='grid shrink-0 grid-cols-[repeat(3,minmax(0,1fr))_auto] gap-2 sm:flex sm:items-center'>
+        <div className='fp-mobile-actionbar grid shrink-0 grid-cols-[repeat(3,minmax(0,1fr))_auto] gap-2 sm:flex sm:items-center'>
             {canStart && (
                 <Button
                     variant='secondary'

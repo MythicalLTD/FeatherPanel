@@ -682,6 +682,29 @@ html[data-fp-plugin-fullbleed='1'] body [data-fp-plugin-main-inner] {
     }
 }
 
+/* Server console on phones: power actions dock to the bottom of the screen, above the safe area. */
+@media (max-width: 639px) {
+    .fp-mobile-actionbar:not(:empty) {
+        position: fixed;
+        inset-inline: 0.75rem;
+        bottom: calc(0.75rem + env(safe-area-inset-bottom));
+        z-index: 30;
+        padding: 0.5rem;
+        border: 1px solid var(--fp-surface-border);
+        border-radius: 1rem;
+        background-color: hsl(var(--popover) / 0.92);
+        box-shadow: var(--fp-shadow-3);
+        -webkit-backdrop-filter: blur(14px);
+        backdrop-filter: blur(14px);
+    }
+    .fp-mobile-actionbar:not(:empty) > * {
+        min-height: 2.75rem;
+    }
+    .fp-shell-main:has(.fp-mobile-actionbar:not(:empty)) {
+        padding-bottom: calc(5.5rem + env(safe-area-inset-bottom));
+    }
+}
+
 /* Custom scrollbar utilities */
 .hide-scrollbar::-webkit-scrollbar {
     display: none;
