@@ -17,8 +17,8 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import React from 'react';
 import {
-    LineChart,
-    Line,
+    AreaChart,
+    Area,
     PieChart,
     Pie,
     Cell,
@@ -98,7 +98,7 @@ export function TrendChart({ title, description, data }: TrendChartProps) {
             </CardHeader>
             <CardContent className='h-[300px]'>
                 <ResponsiveContainer width='100%' height='100%'>
-                    <LineChart data={data}>
+                    <AreaChart data={data}>
                         <CartesianGrid strokeDasharray='3 3' className='stroke-muted' />
                         <XAxis dataKey='date' className='text-xs' />
                         <YAxis className='text-xs' />
@@ -111,8 +111,21 @@ export function TrendChart({ title, description, data }: TrendChartProps) {
                             }}
                             itemStyle={{ color: 'hsl(var(--foreground))' }}
                         />
-                        <Line type='monotone' dataKey='count' stroke='#8b5cf6' strokeWidth={2} activeDot={{ r: 8 }} />
-                    </LineChart>
+                        <defs>
+                            <linearGradient id='user-trend' x1='0' y1='0' x2='0' y2='1'>
+                                <stop offset='0%' stopColor='#8b5cf6' stopOpacity={0.35} />
+                                <stop offset='100%' stopColor='#8b5cf6' stopOpacity={0} />
+                            </linearGradient>
+                        </defs>
+                        <Area
+                            type='monotone'
+                            dataKey='count'
+                            stroke='#8b5cf6'
+                            strokeWidth={2}
+                            fill='url(#user-trend)'
+                            activeDot={{ r: 5 }}
+                        />
+                    </AreaChart>
                 </ResponsiveContainer>
             </CardContent>
         </Card>
