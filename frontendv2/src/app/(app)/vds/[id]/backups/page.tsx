@@ -381,13 +381,13 @@ export default function VdsBackupsPage() {
                 <div className='relative overflow-hidden rounded-xl border border-yellow-500/20 bg-yellow-500/10 p-6'>
                     <div className='relative z-10 flex items-start gap-5'>
                         <div className='flex h-12 w-12 items-center justify-center rounded-2xl border border-yellow-500/30 bg-yellow-500/20'>
-                            <AlertTriangle className='h-6 w-6 text-yellow-500' />
+                            <AlertTriangle className='h-6 w-6 text-yellow-700 dark:text-yellow-400' />
                         </div>
                         <div className='space-y-1'>
-                            <h3 className='text-lg leading-none font-bold text-yellow-500'>
+                            <h3 className='text-lg leading-none font-bold text-yellow-700 dark:text-yellow-400'>
                                 {t('serverBackups.backupLimitReached')}
                             </h3>
-                            <p className='text-sm leading-relaxed font-medium text-yellow-500/80'>
+                            <p className='text-sm leading-relaxed font-medium text-yellow-800 dark:text-yellow-500/80'>
                                 {t('serverBackups.backupLimitReachedDescription', {
                                     limit: String(backupLimit),
                                 })}
@@ -654,7 +654,7 @@ export default function VdsBackupsPage() {
                         <DialogTitle>{t('serverBackups.confirmRestoreTitle')}</DialogTitle>
                         <DialogDescription>
                             <div className='space-y-3'>
-                                <p className='flex items-center gap-2 font-semibold text-yellow-500'>
+                                <p className='flex items-center gap-2 font-semibold text-yellow-700 dark:text-yellow-400'>
                                     <AlertTriangle className='h-4 w-4' />
                                     {t('serverBackups.restoreWarning')}
                                 </p>
