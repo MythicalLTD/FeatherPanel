@@ -37,10 +37,12 @@ export function ServerSubdomainRequirementBanner() {
             <CardContent className='p-4'>
                 <div className='flex flex-col gap-4 sm:flex-row sm:items-start'>
                     <div className='flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-amber-500/20 bg-amber-500/10'>
-                        <Globe className='h-6 w-6 text-amber-500' />
+                        <Globe className='h-6 w-6 text-amber-600 dark:text-amber-400' />
                     </div>
                     <div className='min-w-0 flex-1'>
-                        <p className='font-semibold text-amber-500'>{t('serverSubdomains.requirementTitle')}</p>
+                        <p className='font-semibold text-amber-600 dark:text-amber-400'>
+                            {t('serverSubdomains.requirementTitle')}
+                        </p>
                         <p className='text-muted-foreground mt-1 text-sm'>
                             {t('serverSubdomains.requirementDescription')}
                         </p>

@@ -427,7 +427,7 @@ export default function CreateBackupPage() {
                         </div>
 
                         {filesBlocked && (
-                            <p className='rounded-xl border border-yellow-500/20 bg-yellow-500/10 p-3 text-sm text-yellow-500'>
+                            <p className='rounded-xl border border-yellow-500/20 bg-yellow-500/10 p-3 text-sm text-yellow-600 dark:text-yellow-400'>
                                 {backupsDisabled
                                     ? t('serverBackups.noBackupsNoLimit')
                                     : t('serverBackups.backupLimitReachedDescription', {
@@ -481,7 +481,7 @@ export default function CreateBackupPage() {
                                             <FileX className='h-3 w-3' />
                                             {t('serverBackups.ignoreFilesList')}
                                         </div>
-                                        <div className='flex flex-wrap gap-2 rounded-xl border border-white/5 bg-black/20 p-3'>
+                                        <div className='border-border/60 bg-muted/60 flex flex-wrap gap-2 rounded-xl border p-3 dark:border-white/5 dark:bg-black/20'>
                                             {ignoredFiles.map((pattern) => (
                                                 <span
                                                     key={pattern}

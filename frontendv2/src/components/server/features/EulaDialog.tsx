@@ -80,7 +80,7 @@ export function EulaDialog({ isOpen, onClose, server, onAccepted }: EulaDialogPr
         <Dialog open={isOpen} onClose={onClose}>
             <DialogHeader>
                 <DialogTitle className='flex items-center gap-2'>
-                    <AlertCircle className='h-5 w-5 text-yellow-500' />
+                    <AlertCircle className='h-5 w-5 text-yellow-600 dark:text-yellow-400' />
                     {t('features.eula.title')}
                 </DialogTitle>
                 <DialogDescription>{t('features.eula.description')}</DialogDescription>

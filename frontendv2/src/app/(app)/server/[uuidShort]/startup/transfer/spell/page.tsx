@@ -565,7 +565,7 @@ export default function ServerTransferSpellPage() {
                                         </p>
                                     </div>
 
-                                    <div className='flex items-center gap-4 rounded-2xl border border-white/5 bg-black/20 p-4'>
+                                    <div className='border-border/60 bg-muted/60 flex items-center gap-4 rounded-2xl border p-4 dark:border-white/5 dark:bg-black/20'>
                                         <div
                                             className='group/wipe relative flex cursor-pointer items-center select-none'
                                             onClick={() => setWipeFiles(!wipeFiles)}

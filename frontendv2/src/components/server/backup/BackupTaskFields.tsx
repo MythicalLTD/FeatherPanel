@@ -132,7 +132,7 @@ export function BackupTaskFields({ fields, setFields, databases, disabled = fals
                                     {t('serverTasks.noDatabasesAvailable')}
                                 </p>
                             ) : (
-                                <div className='max-h-64 space-y-1 overflow-y-auto rounded-2xl border border-white/10 bg-black/10 p-3'>
+                                <div className='border-border/60 max-h-64 space-y-1 overflow-y-auto rounded-2xl border bg-black/10 p-3 dark:border-white/10'>
                                     {mysqlDatabases.map((db) => {
                                         const id = String(db.id);
                                         const checked = fields.database_ids.includes(id);
@@ -163,7 +163,7 @@ export function BackupTaskFields({ fields, setFields, databases, disabled = fals
             )}
 
             {showMetadata && (
-                <div className='space-y-3 rounded-2xl border border-white/10 bg-black/10 p-4'>
+                <div className='border-border/60 space-y-3 rounded-2xl border bg-black/10 p-4 dark:border-white/10'>
                     <p className='text-muted-foreground text-[9px] font-black tracking-[0.2em] uppercase'>
                         {t('serverTasks.fullMetadataSection')}
                     </p>

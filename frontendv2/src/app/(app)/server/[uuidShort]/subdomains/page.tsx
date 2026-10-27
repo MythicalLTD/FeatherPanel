@@ -196,10 +196,10 @@ export default function ServerSubdomainsPage() {
                 <div className='animate-in slide-in-from-top relative overflow-hidden rounded-3xl border border-yellow-500/20 bg-yellow-500/10 p-6 backdrop-blur-xl duration-500'>
                     <div className='relative z-10 flex items-start gap-5'>
                         <div className='flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-yellow-500/30 bg-yellow-500/20'>
-                            <AlertTriangle className='h-6 w-6 text-yellow-500' />
+                            <AlertTriangle className='h-6 w-6 text-yellow-600 dark:text-yellow-400' />
                         </div>
                         <div className='space-y-1'>
-                            <h3 className='text-lg leading-none font-bold tracking-tight text-yellow-500 uppercase'>
+                            <h3 className='text-lg leading-none font-bold tracking-tight text-yellow-600 uppercase dark:text-yellow-400'>
                                 {t('serverSubdomains.limitReached')}
                             </h3>
                             <p className='text-sm leading-relaxed font-medium text-yellow-500/80'>

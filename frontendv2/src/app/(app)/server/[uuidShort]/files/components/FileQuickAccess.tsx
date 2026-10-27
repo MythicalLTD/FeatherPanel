@@ -54,7 +54,7 @@ export function FileQuickAccess({
                 <div className='no-scrollbar flex items-center gap-1.5 overflow-x-auto'>
                     {pins.map((p) => (
                         <button key={p} type='button' className={chip} onClick={() => onNavigate(p)} title={p}>
-                            <Folder className='h-3.5 w-3.5 shrink-0 text-amber-500' />
+                            <Folder className='h-3.5 w-3.5 shrink-0 text-amber-600 dark:text-amber-400' />
                             <span className='truncate'>
                                 {p === '/' ? t('files.breadcrumbs.home') : p.split('/').pop()}
                             </span>
@@ -154,7 +154,7 @@ export function FileQuickAccessPanel({
                                     onClick={() => onNavigate(p)}
                                     title={p}
                                 >
-                                    <Folder className='h-4 w-4 shrink-0 text-amber-500' />
+                                    <Folder className='h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400' />
                                     <span className='truncate'>
                                         {p === '/' ? t('files.breadcrumbs.home') : p.split('/').pop()}
                                     </span>

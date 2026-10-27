@@ -228,10 +228,10 @@ export default function CreateSubdomainPage() {
                     {limitReached && (
                         <div className='flex items-start gap-4 rounded-2xl border border-yellow-500/20 bg-yellow-500/5 p-5'>
                             <div className='flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-yellow-500/30 bg-yellow-500/20'>
-                                <Info className='h-5 w-5 text-yellow-500' />
+                                <Info className='h-5 w-5 text-yellow-600 dark:text-yellow-400' />
                             </div>
                             <div className='space-y-1'>
-                                <h4 className='text-sm font-bold tracking-wide text-yellow-500 uppercase'>
+                                <h4 className='text-sm font-bold tracking-wide text-yellow-600 uppercase dark:text-yellow-400'>
                                     {t('serverSubdomains.limitReached')}
                                 </h4>
                                 <p className='text-xs leading-relaxed font-medium text-yellow-500/70'>

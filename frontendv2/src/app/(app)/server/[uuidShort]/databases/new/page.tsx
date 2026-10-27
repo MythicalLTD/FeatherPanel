@@ -199,10 +199,10 @@ export default function CreateDatabasePage() {
                 <div className='rounded-3xl border border-yellow-500/20 bg-yellow-500/10 p-5'>
                     <div className='flex items-start gap-4'>
                         <div className='flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-yellow-500/30 bg-yellow-500/20'>
-                            <AlertTriangle className='h-5 w-5 text-yellow-500' />
+                            <AlertTriangle className='h-5 w-5 text-yellow-600 dark:text-yellow-400' />
                         </div>
                         <div className='space-y-1'>
-                            <h3 className='font-bold text-yellow-500'>
+                            <h3 className='font-bold text-yellow-600 dark:text-yellow-400'>
                                 {databasesDisabled ? t('common.disabled') : t('serverDatabases.databaseLimitReached')}
                             </h3>
                             <p className='text-sm text-yellow-500/85'>
@@ -252,7 +252,7 @@ export default function CreateDatabasePage() {
                             disabled={saving || availableHosts.length === 0 || databasesDisabled || limitReached}
                         />
                         {availableHosts.length === 0 && (
-                            <p className='mt-1 ml-1 flex items-center gap-1.5 text-xs text-yellow-500'>
+                            <p className='mt-1 ml-1 flex items-center gap-1.5 text-xs text-yellow-600 dark:text-yellow-400'>
                                 <AlertTriangle className='h-3.5 w-3.5' />
                                 {t('serverDatabases.noDatabaseHostsDescription')}
                             </p>

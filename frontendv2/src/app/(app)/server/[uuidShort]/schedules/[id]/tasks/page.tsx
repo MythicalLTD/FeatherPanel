@@ -307,8 +307,10 @@ export default function ServerTasksPage() {
 
             {!schedulesEnabled && (
                 <div className='flex items-center gap-3 rounded-xl border border-yellow-500/20 bg-yellow-500/10 p-4'>
-                    <AlertTriangle className='h-5 w-5 text-yellow-500' />
-                    <p className='text-sm font-medium text-yellow-500'>{t('serverSchedules.disabled')}</p>
+                    <AlertTriangle className='h-5 w-5 text-yellow-600 dark:text-yellow-400' />
+                    <p className='text-sm font-medium text-yellow-600 dark:text-yellow-400'>
+                        {t('serverSchedules.disabled')}
+                    </p>
                 </div>
             )}
 
@@ -348,7 +350,7 @@ export default function ServerTasksPage() {
                             title={getActionLabel(task.action)}
                             description={
                                 <div className='flex flex-col gap-1'>
-                                    <span className='text-muted-foreground w-fit rounded-md border border-white/5 bg-black/20 px-2 py-1 font-mono text-xs'>
+                                    <span className='text-muted-foreground border-border/60 bg-muted/60 w-fit rounded-md border px-2 py-1 font-mono text-xs dark:border-white/5 dark:bg-black/20'>
                                         {formatTaskPayloadDisplay(task)}
                                     </span>
                                     {(task.time_offset > 0 || task.continue_on_failure === 1) && (
@@ -374,7 +376,8 @@ export default function ServerTasksPage() {
                                     ? [
                                           {
                                               label: t('serverTasks.queued'),
-                                              className: 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20',
+                                              className:
+                                                  'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 border-yellow-500/20',
                                           },
                                       ]
                                     : []),

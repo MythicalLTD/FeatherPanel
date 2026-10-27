@@ -373,10 +373,10 @@ export default function ServerAllocationsPage() {
                 <div className='animate-in slide-in-from-top relative overflow-hidden rounded-3xl border border-yellow-500/20 bg-yellow-500/10 p-6 backdrop-blur-xl duration-500'>
                     <div className='relative z-10 flex items-start gap-5'>
                         <div className='flex h-12 w-12 items-center justify-center rounded-2xl border border-yellow-500/30 bg-yellow-500/20'>
-                            <AlertTriangle className='h-6 w-6 text-yellow-500' />
+                            <AlertTriangle className='h-6 w-6 text-yellow-600 dark:text-yellow-400' />
                         </div>
                         <div className='space-y-1'>
-                            <h3 className='text-lg leading-none font-bold text-yellow-500'>
+                            <h3 className='text-lg leading-none font-bold text-yellow-600 dark:text-yellow-400'>
                                 {t('serverAllocations.limitReached')}
                             </h3>
                             <p className='text-sm leading-relaxed font-medium text-yellow-500/80'>
@@ -451,7 +451,7 @@ export default function ServerAllocationsPage() {
                                 }
                                 description={
                                     <div className='flex flex-wrap items-center gap-x-6 gap-y-2'>
-                                        <div className='text-muted-foreground flex items-center gap-2 rounded-lg border border-white/5 bg-black/40 p-1 px-2'>
+                                        <div className='text-muted-foreground border-border/60 bg-muted/60 flex items-center gap-2 rounded-lg border p-1 px-2 dark:border-white/5 dark:bg-black/40'>
                                             <span className='text-xs font-bold uppercase opacity-60'>
                                                 {t('ui.server.allocations.iP')}
                                             </span>
@@ -460,7 +460,7 @@ export default function ServerAllocationsPage() {
                                             </span>
                                             <IpVisibilityButton className='-mr-1' />
                                         </div>
-                                        <div className='text-muted-foreground flex items-center gap-2 rounded-lg border border-white/5 bg-black/40 p-1 px-2'>
+                                        <div className='text-muted-foreground border-border/60 bg-muted/60 flex items-center gap-2 rounded-lg border p-1 px-2 dark:border-white/5 dark:bg-black/40'>
                                             <span className='text-xs font-bold uppercase opacity-60'>
                                                 {t('ui.server.allocations.port')}
                                             </span>
@@ -618,7 +618,7 @@ export default function ServerAllocationsPage() {
                             <DialogHeader>
                                 <div className='flex items-center gap-4'>
                                     <div className='flex h-12 w-12 items-center justify-center rounded-xl border border-yellow-500/20 bg-yellow-500/10 shadow-inner'>
-                                        <Star className='h-6 w-6 fill-yellow-500 text-yellow-500' />
+                                        <Star className='h-6 w-6 fill-yellow-500 text-yellow-600 dark:text-yellow-400' />
                                     </div>
                                     <div className='space-y-0.5'>
                                         <DialogTitle className='text-xl leading-none font-bold'>
@@ -701,7 +701,7 @@ export default function ServerAllocationsPage() {
                                                 'flex cursor-pointer items-center justify-between rounded-2xl border p-4 transition-all duration-200',
                                                 selectedAssignId === item.id
                                                     ? 'bg-primary/10 border-primary/50 scale-[1.02]'
-                                                    : 'border-white/5 bg-black/20 hover:border-white/10 hover:bg-black/40',
+                                                    : 'border-border/60 bg-muted/60 hover:border-border hover:bg-muted dark:border-white/5 dark:bg-black/20 dark:hover:border-white/10 dark:hover:bg-black/40',
                                             )}
                                             onClick={() => setSelectedAssignId(item.id)}
                                         >

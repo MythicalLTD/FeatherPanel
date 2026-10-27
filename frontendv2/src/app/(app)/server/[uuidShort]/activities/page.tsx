@@ -459,7 +459,8 @@ export default function ServerActivityPage() {
     function getEventTone(event: string) {
         const e = event.toLowerCase();
         if (['stop', 'kill', 'delete', 'abort', 'wipe'].some((x) => e.includes(x))) return 'text-red-500 bg-red-500/10';
-        if (e.includes('restart') || e.includes('reinstall')) return 'text-amber-500 bg-amber-500/10';
+        if (e.includes('restart') || e.includes('reinstall'))
+            return 'text-amber-600 dark:text-amber-400 bg-amber-500/10';
         if (e.includes('power') || e.includes('start') || e.includes('created') || e.includes('restored'))
             return 'text-emerald-500 bg-emerald-500/10';
         if (e.includes('backup')) return 'text-sky-500 bg-sky-500/10';

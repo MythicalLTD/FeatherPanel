@@ -477,7 +477,7 @@ export function FileRow({
                                     ? 'border-primary/20 bg-primary/10 text-primary'
                                     : file.isFile
                                       ? 'bg-muted text-muted-foreground'
-                                      : 'bg-amber-500/10 text-amber-500',
+                                      : 'bg-amber-500/10 text-amber-600 dark:text-amber-400',
                             )}
                         >
                             {virtualTrash ? (
@@ -505,7 +505,7 @@ export function FileRow({
                             ? 'border-primary/20 bg-primary/10 text-primary'
                             : file.isFile
                               ? 'bg-muted text-muted-foreground'
-                              : 'bg-amber-500/10 text-amber-500',
+                              : 'bg-amber-500/10 text-amber-600 dark:text-amber-400',
                     )}
                 >
                     {virtualTrash ? (

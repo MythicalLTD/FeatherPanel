@@ -153,7 +153,7 @@ function SiblingFolders({
                                     name === current && 'text-primary font-medium',
                                 )}
                             >
-                                <Folder className='h-4 w-4 shrink-0 text-amber-500' />
+                                <Folder className='h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400' />
                                 <span className='truncate'>{name}</span>
                             </button>
                         </MenuItem>

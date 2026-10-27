@@ -100,11 +100,11 @@ export default function ServerImportPage() {
             default:
                 return {
                     icon: Clock,
-                    color: 'text-yellow-500',
+                    color: 'text-yellow-600 dark:text-yellow-400',
                     bg: 'bg-yellow-500/10',
                     border: 'border-yellow-500/20',
                     label: t('common.pending'),
-                    wrapperClass: 'bg-yellow-500/10 border-yellow-500/20 text-yellow-500',
+                    wrapperClass: 'bg-yellow-500/10 border-yellow-500/20 text-yellow-600 dark:text-yellow-400',
                 };
         }
     };

@@ -36,10 +36,10 @@ export function ServerNodeConnectionBanner() {
             <CardContent className='p-4'>
                 <div className='flex items-start gap-4'>
                     <div className='flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-amber-500/20 bg-amber-500/10'>
-                        <Icon className='h-6 w-6 text-amber-500' />
+                        <Icon className='h-6 w-6 text-amber-600 dark:text-amber-400' />
                     </div>
                     <div className='min-w-0 flex-1'>
-                        <p className='font-semibold text-amber-500'>
+                        <p className='font-semibold text-amber-600 dark:text-amber-400'>
                             {isError
                                 ? t('servers.console.connection.error')
                                 : t('servers.console.connection.disconnected')}
