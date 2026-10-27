@@ -49,6 +49,7 @@
 - Admin settings: categories that hold unsaved edits get an amber dot in the sidebar, each changed field gets an amber edge marker until saved, and categories mixing values and switches are split into labelled Values and Switches sections.
 - Admin lists share one toolbar component (AdminListToolbar) with search, a clear-search button, a filter slot, a right-aligned actions slot and an optional bulk-selection bar; adopted on locations, nodes, mounts, realms, notifications, web nodes, backup schedules, database hosts, translations and ticket categories, priorities and statuses.
 - Admin dashboard stat tiles get a coloured icon, a soft corner glow and numbers that count up (instant under reduced motion); the analytics activity and user trend charts are now gradient area charts with a themed tooltip.
+- AdminListToolbar now also covers users, servers (stacked filter row), roles, spells, tickets and blocked IPs, so every main admin list shares the same search bar and clear button.
 
 ### Fixed
 
