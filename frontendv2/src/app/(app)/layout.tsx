@@ -292,6 +292,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                                                         position='top-right'
                                                         offset={{ top: '4.75rem', right: '1.5rem' }}
                                                         mobileOffset={{ top: '4.25rem' }}
+                                                        toastOptions={{ classNames: { toast: 'fp-toast' } }}
                                                     />
                                                 </FeatherPanelHost>
                                             </NotificationProvider>
