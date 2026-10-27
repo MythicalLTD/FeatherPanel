@@ -118,10 +118,24 @@ interface StatCardProps {
     data: Point[];
     max?: number;
     ready: boolean;
+    /** Settled empty state (not loading): show this instead of the pulse skeleton. */
+    unavailable?: React.ReactNode;
     className?: string;
 }
 
-function StatCard({ icon: Icon, label, value, sub, percent, warn, data, max, ready, className }: StatCardProps) {
+function StatCard({
+    icon: Icon,
+    label,
+    value,
+    sub,
+    percent,
+    warn,
+    data,
+    max,
+    ready,
+    unavailable,
+    className,
+}: StatCardProps) {
     return (
         <div className={cn('fp-surface relative flex min-w-0 flex-col overflow-hidden rounded-xl border', className)}>
             <div className='flex items-start justify-between gap-2 p-3 pb-0 sm:p-4 sm:pb-0'>
@@ -143,6 +157,8 @@ function StatCard({ icon: Icon, label, value, sub, percent, warn, data, max, rea
                     >
                         {value}
                     </p>
+                ) : unavailable ? (
+                    <p className='truncate text-lg font-semibold tabular-nums sm:text-xl'>{unavailable}</p>
                 ) : (
                     <span
                         className='bg-muted/40 my-1.5 inline-block h-5 w-16 animate-pulse rounded-md'
@@ -159,6 +175,11 @@ function StatCard({ icon: Icon, label, value, sub, percent, warn, data, max, rea
 export interface ServerConsoleStatsProps {
     statsReady: boolean;
     diskReady?: boolean;
+    /**
+     * When live stats exist but guest filesystem usage is unknown (typical QEMU
+     * without qemu-guest-agent), show allocated size instead of an endless skeleton.
+     */
+    diskUnavailableHint?: string;
     cpuUsage: number;
     memoryUsage: number;
     diskUsage: number;
@@ -182,6 +203,7 @@ export interface ServerConsoleStatsProps {
 export default React.memo(function ServerConsoleStats({
     statsReady,
     diskReady,
+    diskUnavailableHint,
     cpuUsage,
     memoryUsage,
     diskUsage,
@@ -203,6 +225,8 @@ export default React.memo(function ServerConsoleStats({
     const unlimited = t('servers.console.info_cards.unlimited');
     const ofLimit = (limit: string) => t('servers.console.stats.of_limit', { limit });
     const diskShown = diskReady ?? statsReady;
+    const diskSettledUnavailable = Boolean(diskUnavailableHint) && statsReady && !diskShown;
+    const diskLimitLabel = diskLimit > 0 ? formatMib(diskLimit) : unlimited;
 
     return (
         <div className={cn('grid grid-cols-2 gap-3 xl:grid-cols-1 xl:gap-4', className)}>
@@ -232,12 +256,19 @@ export default React.memo(function ServerConsoleStats({
                 icon={HardDrive}
                 label={t('servers.disk')}
                 value={<AnimatedNumber value={diskUsage} duration={450} format={formatMib} />}
-                sub={ofLimit(diskLimit > 0 ? formatMib(diskLimit) : unlimited)}
-                percent={diskLimit > 0 ? getUsagePercentage(diskUsage, diskLimit) : null}
-                warn={diskLimit > 0 && diskUsage > diskLimit}
+                sub={diskSettledUnavailable ? diskUnavailableHint : ofLimit(diskLimitLabel)}
+                percent={
+                    diskSettledUnavailable
+                        ? null
+                        : diskLimit > 0
+                          ? getUsagePercentage(diskUsage, diskLimit)
+                          : null
+                }
+                warn={!diskSettledUnavailable && diskLimit > 0 && diskUsage > diskLimit}
                 data={diskData}
                 max={diskLimit > 0 ? diskLimit : undefined}
                 ready={diskShown}
+                unavailable={diskSettledUnavailable ? diskLimitLabel : undefined}
             />
             <StatCard
                 icon={Network}

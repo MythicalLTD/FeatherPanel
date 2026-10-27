@@ -370,7 +370,7 @@ export default function VdsSettingsPage() {
                         {t('vds.settings.instance_info.title')}
                     </CardTitle>
                 </CardHeader>
-                <CardContent className='grid grid-cols-2 gap-4 md:grid-cols-4'>
+                <CardContent className='grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-5'>
                     {[
                         { label: t('vds.settings.instance_info.hostname'), value: instance.hostname ?? '-' },
                         { label: t('vds.settings.instance_info.vmid'), value: String(instance.vmid) },
@@ -381,6 +381,13 @@ export default function VdsSettingsPage() {
                         {
                             label: t('vds.settings.instance_info.node'),
                             value: instance.node_name ?? instance.pve_node ?? '-',
+                        },
+                        {
+                            label: t('vds.settings.instance_info.disk'),
+                            value:
+                                (instance.plan_disk ?? instance.disk_gb)
+                                    ? `${instance.plan_disk ?? instance.disk_gb} GB`
+                                    : '-',
                         },
                     ].map(({ label, value }) => (
                         <div key={label} className='flex flex-col gap-1'>

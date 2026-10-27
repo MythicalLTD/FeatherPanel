@@ -352,10 +352,13 @@ export default function VdsConsolePage() {
     const networkRxTotal = vmStatus?.netin ?? 0;
     const networkTxTotal = vmStatus?.netout ?? 0;
     const statsReady = vmStatus != null;
+    const diskUnavailableHint =
+        statsReady && !diskReady ? t('vds.console.performance.disk_unavailable') : undefined;
     // ServerConsoleStats uses game-server units: CPU percent where 100 = one core, memory/disk in MiB.
     const cpuScale = cpuCores > 0 ? cpuCores * 100 : 100;
     const statusLabel = t(`vds.console.status.${displayStatus}`, { defaultValue: displayStatus });
 
+    const diskAllocatedGb = instance.plan_disk ?? instance.disk_gb;
     const details: { label: string; value: string; mono?: boolean }[] = [
         { label: t('vds.console.details.hostname'), value: instance.hostname ?? '—' },
         { label: t('vds.console.details.vmid'), value: String(instance.vmid), mono: true },
@@ -364,6 +367,11 @@ export default function VdsConsolePage() {
         { label: t('vds.console.details.node'), value: instance.node_name ?? instance.pve_node ?? '—' },
         { label: t('vds.console.details.plan'), value: instance.plan_name ?? '—' },
         { label: t('vds.console.details.ip'), value: ip ?? '—', mono: true },
+        {
+            label: t('vds.settings.instance_info.disk'),
+            value: diskAllocatedGb ? `${diskAllocatedGb} GB` : '—',
+            mono: true,
+        },
         {
             label: t('vds.console.details.role'),
             value: instance.is_owner ? t('vds.console.details.role_owner') : t('vds.console.details.role_subuser'),
@@ -464,6 +472,7 @@ export default function VdsConsolePage() {
                         className='xl:flex-1 xl:auto-rows-fr'
                         statsReady={statsReady}
                         diskReady={diskReady}
+                        diskUnavailableHint={diskUnavailableHint}
                         cpuUsage={(vmStatus?.cpu ?? 0) * cpuScale}
                         cpuLimit={cpuCores > 0 ? cpuCores * 100 : 0}
                         memoryUsage={(vmStatus?.mem ?? 0) / MiB}

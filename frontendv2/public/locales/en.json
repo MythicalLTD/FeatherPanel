@@ -16195,7 +16195,8 @@
                 "hostname": "Hostname",
                 "vmid": "VMID",
                 "type": "Type",
-                "node": "Node"
+                "node": "Node",
+                "disk": "Disk"
             },
             "reinstall": {
                 "title": "Reinstall Operating System",
