@@ -57,17 +57,17 @@ class DebugRuntimeController
         $flags = [];
         foreach (
             [
-            'app_developer_mode',
-            'module_game_enabled',
-            'module_web_enabled',
-            'module_vds_enabled',
-            'ticket_system_enabled',
-            'knowledgebase_enabled',
-            'status_page_enabled',
-            'registration_enabled',
-            'maintenance_mode_enabled',
-            'turnstile_enabled',
-            'smtp_enabled',
+                'app_developer_mode',
+                'module_game_enabled',
+                'module_web_enabled',
+                'module_vds_enabled',
+                'ticket_system_enabled',
+                'knowledgebase_enabled',
+                'status_page_enabled',
+                'registration_enabled',
+                'maintenance_mode_enabled',
+                'turnstile_enabled',
+                'smtp_enabled',
             ] as $key
         ) {
             $flags[$key] = $config->getSetting($key, null);
