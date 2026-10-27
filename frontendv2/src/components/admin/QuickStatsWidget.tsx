@@ -136,7 +136,7 @@ export function QuickStatsWidget({ stats, loading }: QuickStatsWidgetProps) {
                     <span
                         aria-hidden
                         className={cn(
-                            'pointer-events-none absolute -top-10 -right-10 h-28 w-28 rounded-full bg-radial to-transparent opacity-80 blur-xl transition-opacity group-hover:opacity-100',
+                            'pointer-events-none absolute -top-10 -right-10 h-28 w-28 rounded-full bg-radial to-transparent opacity-80 blur-xl',
                             STAT_TONES[item.tone].glow,
                         )}
                     />

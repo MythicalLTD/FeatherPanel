@@ -462,7 +462,7 @@ export default function PluginPage({ context, serverUuid, vdsId, webspaceUuid }:
                 <div className='absolute right-6 bottom-6 z-30'>
                     <button
                         onClick={retryLoad}
-                        className='bg-primary text-primary-foreground flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium shadow-lg transition-all hover:shadow-xl'
+                        className='bg-primary text-primary-foreground flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium shadow-lg transition-all'
                         title={t('errors.plugin.reload_title')}
                     >
                         <RefreshCw className={cn('h-4 w-4', iframeLoading && 'animate-spin')} />

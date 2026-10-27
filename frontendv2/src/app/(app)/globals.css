@@ -1191,7 +1191,6 @@ html.fp-privacy [data-fp-sensitive]:not(:focus) {
 @media (hover: hover) {
     .fp-lift:hover {
         transform: translateY(-2px);
-        box-shadow: 0 14px 32px -18px hsl(var(--primary) / 0.45);
     }
 }
 .fp-lift:active {

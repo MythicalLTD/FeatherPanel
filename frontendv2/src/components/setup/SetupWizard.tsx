@@ -1189,7 +1189,7 @@ function NextLink({
             target={external ? '_blank' : undefined}
             rel={external ? 'noopener noreferrer' : undefined}
             style={delay ? { animationDelay: `${delay}ms` } : undefined}
-            className='fp-surface-inset group hover:border-primary/30 animate-in fade-in slide-in-from-bottom-2 fill-mode-both flex items-start gap-3 rounded-xl border p-4 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md motion-reduce:animate-none motion-reduce:hover:translate-y-0'
+            className='fp-surface-inset group hover:border-primary/30 animate-in fade-in slide-in-from-bottom-2 fill-mode-both flex items-start gap-3 rounded-xl border p-4 transition-all duration-300 hover:-translate-y-0.5 motion-reduce:animate-none motion-reduce:hover:translate-y-0'
         >
             <div className='fp-icon-tile flex h-9 w-9 shrink-0 items-center justify-center rounded-lg'>
                 <Icon className='h-4 w-4 transition-transform duration-300 group-hover:scale-110' />

@@ -199,7 +199,7 @@ export function ModulesTab({ node }: ModulesTabProps) {
                                 {modules.map((module) => (
                                     <Card
                                         key={module.name}
-                                        className={`group border-border/50 bg-muted/10 hover:bg-muted/20 hover:border-primary/30 relative overflow-hidden rounded-2xl transition-all duration-300 hover:shadow-xl`}
+                                        className={`group border-border/50 bg-muted/10 hover:bg-muted/20 hover:border-primary/30 relative overflow-hidden rounded-2xl transition-all duration-300`}
                                     >
                                         <CardHeader className='pb-4'>
                                             <div className='flex items-start justify-between'>

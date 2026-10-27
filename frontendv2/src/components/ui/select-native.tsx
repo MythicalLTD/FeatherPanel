@@ -32,7 +32,7 @@ const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
                 <div className='relative'>
                     <select
                         className={cn(
-                            'bg-muted/30 placeholder:text-muted-foreground/50 text-foreground h-12 w-full appearance-none rounded-xl border px-4 py-3 text-sm font-semibold shadow-sm transition-all duration-200 hover:shadow-md focus:shadow-lg focus:ring-4 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 [&>option]:bg-zinc-900 [&>option]:text-white',
+                            'bg-muted/30 placeholder:text-muted-foreground/50 text-foreground h-12 w-full appearance-none rounded-xl border px-4 py-3 text-sm font-semibold shadow-sm transition-all duration-200 focus:shadow-lg focus:ring-4 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 [&>option]:bg-zinc-900 [&>option]:text-white',
                             error
                                 ? 'border-destructive focus:border-destructive focus:ring-destructive/20'
                                 : 'border-border/50 focus:border-primary focus:ring-primary/20 hover:border-border',

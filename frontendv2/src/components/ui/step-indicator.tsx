@@ -60,7 +60,7 @@ export function StepIndicator({ steps, currentStep, onStepClick }: StepIndicator
                                     className={cn(
                                         'flex h-10 w-10 items-center justify-center rounded-full border-2 transition-all',
                                         clickable &&
-                                            'hover:ring-primary/30 focus-visible:ring-ring cursor-pointer hover:ring-4 focus-visible:ring-2 focus-visible:outline-none',
+                                            'focus-visible:ring-ring cursor-pointer focus-visible:ring-2 focus-visible:outline-none',
                                         isCompleted && 'border-primary bg-primary text-white',
                                         isActive && 'border-primary bg-background text-primary',
                                         !isActive && !isCompleted && 'border-border bg-muted text-muted-foreground',

@@ -449,7 +449,7 @@ export function SpellPickerSheet({
                         key={spell.id}
                         type='button'
                         onClick={() => onSelectSpell(spell)}
-                        className='fp-surface fp-surface-interactive w-full cursor-pointer rounded-xl border p-4 text-left transition hover:shadow-md'
+                        className='fp-surface fp-surface-interactive w-full cursor-pointer rounded-xl border p-4 text-left transition'
                     >
                         <div className='flex items-start gap-3'>
                             <div className='bg-muted flex h-10 w-10 shrink-0 items-center justify-center rounded-xl'>
