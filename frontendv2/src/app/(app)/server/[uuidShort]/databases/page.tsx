@@ -475,13 +475,13 @@ export default function ServerDatabasesPage() {
                     </div>
                 }
                 actions={
-                    <div className='flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:gap-3'>
+                    <div className='flex w-full flex-wrap gap-2 sm:w-auto sm:flex-nowrap sm:items-center sm:gap-3'>
                         {showHeaderCreateAction && (
                             <Button
                                 size='default'
                                 disabled={limitReached || loading}
                                 onClick={() => router.push(`/server/${uuidShort}/databases/new`)}
-                                className='order-1 w-full transition-all active:scale-95 sm:order-3 sm:w-auto'
+                                className='order-1 min-w-0 flex-1 transition-all active:scale-95 sm:order-3 sm:flex-none'
                             >
                                 <Plus className='mr-2 h-5 w-5' />
                                 {t('serverDatabases.createDatabase')}
@@ -506,10 +506,10 @@ export default function ServerDatabasesPage() {
                 <div className='animate-in slide-in-from-top relative overflow-hidden rounded-3xl border border-yellow-500/20 bg-yellow-500/10 p-6 backdrop-blur-xl duration-500'>
                     <div className='relative z-10 flex items-start gap-5'>
                         <div className='flex h-12 w-12 items-center justify-center rounded-2xl border border-yellow-500/30 bg-yellow-500/20'>
-                            <AlertTriangle className='h-6 w-6 text-yellow-500' />
+                            <AlertTriangle className='h-6 w-6 text-yellow-600 dark:text-yellow-400' />
                         </div>
                         <div className='space-y-1'>
-                            <h3 className='text-lg leading-none font-bold text-yellow-500'>
+                            <h3 className='text-lg leading-none font-bold text-yellow-600 dark:text-yellow-400'>
                                 {t('serverDatabases.databaseLimitReached')}
                             </h3>
                             <p className='text-sm leading-relaxed font-medium text-yellow-500/80'>
@@ -847,9 +847,9 @@ export default function ServerDatabasesPage() {
                 <div className='space-y-6 p-2'>
                     <DialogHeader className='text-center'>
                         <div className='mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-3xl border border-yellow-500/20 bg-yellow-500/10 shadow-inner'>
-                            <ShieldAlert className='h-8 w-8 text-yellow-500' />
+                            <ShieldAlert className='h-8 w-8 text-yellow-600 dark:text-yellow-400' />
                         </div>
-                        <DialogTitle className='text-2xl leading-tight font-semibold text-yellow-500'>
+                        <DialogTitle className='text-2xl leading-tight font-semibold text-yellow-600 dark:text-yellow-400'>
                             {t('serverDatabases.sensitiveInfoWarning')}
                         </DialogTitle>
                         <DialogDescription className='px-4 text-sm leading-relaxed opacity-70'>
@@ -1109,7 +1109,7 @@ export default function ServerDatabasesPage() {
                     <DialogHeader>
                         <div className='flex items-center gap-4'>
                             <div className='flex h-12 w-12 items-center justify-center rounded-xl border border-amber-500/20 bg-amber-500/10'>
-                                <Upload className='h-6 w-6 text-amber-500' />
+                                <Upload className='h-6 w-6 text-amber-600 dark:text-amber-400' />
                             </div>
                             <div className='space-y-0.5'>
                                 <DialogTitle className='text-xl leading-none font-bold'>
@@ -1130,7 +1130,7 @@ export default function ServerDatabasesPage() {
                                 {importResult.success ? (
                                     <CheckCircle2 className='mt-0.5 h-6 w-6 shrink-0 text-emerald-500' />
                                 ) : (
-                                    <XCircle className='mt-0.5 h-6 w-6 shrink-0 text-amber-500' />
+                                    <XCircle className='mt-0.5 h-6 w-6 shrink-0 text-amber-600 dark:text-amber-400' />
                                 )}
                                 <div>
                                     <p className='text-sm font-bold'>
@@ -1322,7 +1322,7 @@ export default function ServerDatabasesPage() {
                                         <CheckCircle2 className='h-3.5 w-3.5 text-emerald-500' />
                                         {t('serverDatabases.rowsReturned', { count: String(queryResult.row_count) })}
                                         {queryResult.truncated && (
-                                            <span className='font-bold text-amber-500'>
+                                            <span className='font-bold text-amber-600 dark:text-amber-400'>
                                                 {t('serverDatabases.truncatedTo', { limit: '500' })}
                                             </span>
                                         )}

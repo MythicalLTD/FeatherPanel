@@ -840,6 +840,14 @@ html[data-ui-scale='xl'] {
         flex: 1 1 auto;
         justify-content: center;
     }
+
+    /* Icon-only buttons (refresh, more) keep their square size next to the stretched ones. */
+    .fp-page-header-actions > :is(button, a)[aria-label]:not(:has(> span:not(.hidden, .sr-only), > p)),
+    .fp-page-header-actions > div > :is(button, a)[aria-label]:not(:has(> span:not(.hidden, .sr-only), > p)) {
+        flex: 0 0 auto;
+        min-width: 2.75rem;
+        min-height: 2.75rem;
+    }
 }
 
 /* Horizontally scrollable strips (tabs, chips): fade the edges so it is obvious there is more. */

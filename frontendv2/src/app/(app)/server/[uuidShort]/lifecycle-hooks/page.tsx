@@ -540,7 +540,7 @@ export default function ServerLifecycleHooksPage() {
                     description={t('lifecycleHooks.description')}
                     className='gap-4'
                     actions={
-                        <div className='flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center sm:gap-3'>
+                        <div className='flex w-full flex-wrap gap-2 sm:w-auto sm:flex-nowrap sm:flex-wrap sm:items-center sm:gap-3'>
                             <Button variant='glass' size='sm' onClick={fetchHooks} disabled={loading}>
                                 <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
                                 {t('common.refresh')}

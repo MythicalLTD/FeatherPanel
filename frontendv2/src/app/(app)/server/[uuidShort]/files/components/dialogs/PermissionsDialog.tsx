@@ -88,7 +88,7 @@ export function PermissionsDialog({ open, onOpenChange, uuid, root, files, onSuc
 
                 <div className='flex flex-col gap-4 py-4'>
                     <div className='flex items-start gap-3 rounded-xl border border-amber-500/10 bg-amber-500/5 p-4'>
-                        <Info className='mt-0.5 h-5 w-5 shrink-0 text-amber-500' />
+                        <Info className='mt-0.5 h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400' />
                         <p className='text-xs leading-relaxed text-amber-100/70'>
                             {t('files.dialogs.permissions.info')}
                         </p>

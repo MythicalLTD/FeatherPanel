@@ -23,37 +23,52 @@ interface TableSkeletonProps {
 }
 
 export function TableSkeleton({ count = 5, className }: TableSkeletonProps) {
+    // Same shape as DataTable: table rows on desktop, compact cards on phones and tablets.
+    const pulse = 'bg-muted animate-pulse motion-reduce:animate-none';
+    const rows = Array.from({ length: count });
     return (
-        <div className={cn('grid grid-cols-1 gap-6', className)}>
-            {Array.from({ length: count }).map((_, i) => (
-                <div
-                    key={i}
-                    className='fp-surface relative flex flex-col gap-4 overflow-hidden rounded-xl border p-4 sm:p-5 md:flex-row md:items-center'
-                >
-                    <div className='bg-secondary/50 h-11 w-11 shrink-0 animate-pulse rounded-lg' />
-
-                    <div className='min-w-0 flex-1 space-y-3'>
-                        <div className='flex flex-wrap items-center gap-3'>
-                            <div className='bg-secondary/50 h-6 w-48 animate-pulse rounded-lg' />
-
-                            <div className='bg-secondary/30 h-5 w-20 animate-pulse rounded-md' />
-                        </div>
-
-                        <div className='bg-secondary/30 h-4 w-32 animate-pulse rounded-lg' />
-
-                        <div className='flex gap-4 pt-1'>
-                            <div className='bg-secondary/20 h-3 w-24 animate-pulse rounded-md' />
-                            <div className='bg-secondary/20 h-3 w-32 animate-pulse rounded-md' />
-                            <div className='bg-secondary/20 h-3 w-20 animate-pulse rounded-md' />
-                        </div>
-                    </div>
-
-                    <div className='flex items-center gap-2 md:self-center'>
-                        <div className='bg-secondary/40 h-9 w-9 animate-pulse rounded-lg' />
-                        <div className='bg-secondary/40 h-9 w-9 animate-pulse rounded-lg' />
-                    </div>
+        <div className={cn('animate-in fade-in duration-300 motion-reduce:animate-none', className)} aria-hidden>
+            <div className='fp-surface-solid hidden overflow-hidden rounded-xl border lg:block'>
+                <div className='flex items-center gap-6 border-b border-[var(--fp-surface-border)] px-4 py-3'>
+                    <div className={cn(pulse, 'h-3 w-24 rounded')} />
+                    <div className={cn(pulse, 'h-3 w-16 rounded')} />
+                    <div className={cn(pulse, 'h-3 w-20 rounded')} />
+                    <div className={cn(pulse, 'ml-auto h-3 w-12 rounded')} />
                 </div>
-            ))}
+                <div className='divide-y divide-[var(--fp-surface-border)]'>
+                    {rows.map((_, i) => (
+                        <div key={i} className='flex items-center gap-6 px-4 py-3'>
+                            <div className='flex min-w-0 flex-1 items-center gap-3'>
+                                <div className={cn(pulse, 'h-9 w-9 shrink-0 rounded-lg')} />
+                                <div className='min-w-0 flex-1 space-y-2'>
+                                    <div className={cn(pulse, 'h-3.5 w-48 max-w-full rounded')} />
+                                    <div className='bg-muted/70 h-3 w-32 max-w-full animate-pulse rounded motion-reduce:animate-none' />
+                                </div>
+                            </div>
+                            <div className={cn(pulse, 'h-3.5 w-24 rounded')} />
+                            <div className={cn(pulse, 'h-5 w-16 rounded-full')} />
+                            <div className={cn(pulse, 'h-8 w-8 rounded-lg')} />
+                        </div>
+                    ))}
+                </div>
+            </div>
+            <div className='space-y-2 lg:hidden'>
+                {rows.map((_, i) => (
+                    <div key={i} className='fp-surface-solid rounded-xl border p-3.5'>
+                        <div className='flex items-center gap-3'>
+                            <div className={cn(pulse, 'h-9 w-9 shrink-0 rounded-lg')} />
+                            <div className='min-w-0 flex-1 space-y-2'>
+                                <div className={cn(pulse, 'h-3.5 w-2/5 rounded')} />
+                                <div className='bg-muted/70 h-3 w-3/5 animate-pulse rounded motion-reduce:animate-none' />
+                            </div>
+                        </div>
+                        <div className='mt-3 flex items-center justify-between border-t border-[var(--fp-surface-border)] pt-2.5'>
+                            <div className={cn(pulse, 'h-5 w-16 rounded-full')} />
+                            <div className={cn(pulse, 'h-8 w-8 rounded-lg')} />
+                        </div>
+                    </div>
+                ))}
+            </div>
         </div>
     );
 }

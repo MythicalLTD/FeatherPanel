@@ -190,7 +190,7 @@ export default function CreateSubdomainPage() {
                 title={t('serverSubdomains.createButton')}
                 description={t('serverSubdomains.newSubdomainDescription')}
                 actions={
-                    <div className='flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:gap-3'>
+                    <div className='flex w-full flex-wrap gap-2 sm:w-auto sm:flex-nowrap sm:items-center sm:gap-3'>
                         <Button
                             variant='ghost'
                             size='default'
@@ -206,7 +206,7 @@ export default function CreateSubdomainPage() {
                             onClick={handleCreate}
                             disabled={saving || limitReached}
                             loading={saving}
-                            className='order-1 w-full sm:order-2 sm:w-auto'
+                            className='order-1 min-w-0 flex-1 sm:order-2 sm:flex-none'
                             data-fp-save-shortcut
                         >
                             {saving ? (
@@ -228,10 +228,10 @@ export default function CreateSubdomainPage() {
                     {limitReached && (
                         <div className='flex items-start gap-4 rounded-2xl border border-yellow-500/20 bg-yellow-500/5 p-5'>
                             <div className='flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-yellow-500/30 bg-yellow-500/20'>
-                                <Info className='h-5 w-5 text-yellow-500' />
+                                <Info className='h-5 w-5 text-yellow-600 dark:text-yellow-400' />
                             </div>
                             <div className='space-y-1'>
-                                <h4 className='text-sm font-bold tracking-wide text-yellow-500 uppercase'>
+                                <h4 className='text-sm font-bold tracking-wide text-yellow-600 uppercase dark:text-yellow-400'>
                                     {t('serverSubdomains.limitReached')}
                                 </h4>
                                 <p className='text-xs leading-relaxed font-medium text-yellow-500/70'>

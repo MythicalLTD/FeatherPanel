@@ -171,7 +171,7 @@ export default function EditSchedulePage() {
                 title={t('serverSchedules.editSchedule')}
                 description={t('serverSchedules.editScheduleDescription')}
                 actions={
-                    <div className='flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:gap-3'>
+                    <div className='flex w-full flex-wrap gap-2 sm:w-auto sm:flex-nowrap sm:items-center sm:gap-3'>
                         <Button
                             variant='glass'
                             size='default'
@@ -187,7 +187,7 @@ export default function EditSchedulePage() {
                             onClick={handleUpdate}
                             disabled={saving}
                             loading={saving}
-                            className='order-1 w-full sm:order-2 sm:w-auto'
+                            className='order-1 min-w-0 flex-1 sm:order-2 sm:flex-none'
                             data-fp-save-shortcut
                         >
                             <Save className='mr-2 h-4 w-4' />

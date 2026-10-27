@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { DataTable } from '@/components/featherui/DataTable';
 import { AdminPageTips } from '@/components/admin/AdminPageTips';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
@@ -630,75 +631,60 @@ export default function BlockedEmailDomainsPage() {
                     }
                 />
             ) : (
-                <div className='fp-surface overflow-hidden rounded-2xl border'>
-                    <div className='overflow-x-auto'>
-                        <table className='w-full min-w-[640px] text-sm'>
-                            <thead>
-                                <tr className='bg-muted/30 border-border/60 border-b'>
-                                    <th
-                                        scope='col'
-                                        className='text-muted-foreground px-4 py-3 text-left align-middle text-[10px] font-bold tracking-wider uppercase'
-                                    >
-                                        {t('admin.blocked_email_domains.col_domain')}
-                                    </th>
-                                    <th
-                                        scope='col'
-                                        className='text-muted-foreground w-[140px] px-4 py-3 text-left align-middle text-[10px] font-bold tracking-wider uppercase'
-                                    >
-                                        {t('admin.blocked_email_domains.col_source')}
-                                    </th>
-                                    <th
-                                        scope='col'
-                                        className='text-muted-foreground w-[180px] px-4 py-3 text-left align-middle text-[10px] font-bold tracking-wider uppercase'
-                                    >
-                                        {t('admin.blocked_email_domains.col_added')}
-                                    </th>
-                                    <th
-                                        scope='col'
-                                        className='text-muted-foreground w-24 px-4 py-3 text-right align-middle text-[10px] font-bold tracking-wider uppercase'
-                                    >
-                                        {t('common.actions')}
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {rows.map((r) => (
-                                    <tr
-                                        key={r.id}
-                                        className='border-border/40 hover:bg-muted/15 border-b transition-colors last:border-0'
-                                    >
-                                        <td className='px-4 py-3 align-middle'>
-                                            <span className='font-mono text-[13px] tracking-tight'>{r.domain}</span>
-                                        </td>
-                                        <td className='text-muted-foreground px-4 py-3 align-middle'>
-                                            <Badge
-                                                variant='outline'
-                                                className={cn('font-medium', sourceBadgeClass(r.source))}
-                                            >
-                                                {sourceLabel(r.source)}
-                                            </Badge>
-                                        </td>
-                                        <td className='text-muted-foreground px-4 py-3 align-middle text-xs'>
-                                            {formatAddedAt(r.created_at)}
-                                        </td>
-                                        <td className='px-4 py-3 text-right align-middle'>
-                                            <Button
-                                                variant='ghost'
-                                                size='sm'
-                                                className='text-destructive hover:bg-destructive/10 hover:text-destructive'
-                                                type='button'
-                                                title={t('common.delete')}
-                                                onClick={() => handleDelete(r.id, r.domain)}
-                                            >
-                                                <Trash2 className='h-4 w-4' />
-                                            </Button>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+                <DataTable
+                    rows={rows}
+                    rowKey={(r) => r.id}
+                    columns={[
+                        {
+                            key: 'domain',
+                            header: t('admin.blocked_email_domains.col_domain'),
+                            cell: (r) => <span className='font-mono text-[13px] tracking-tight'>{r.domain}</span>,
+                        },
+                        {
+                            key: 'source',
+                            header: t('admin.blocked_email_domains.col_source'),
+                            className: 'w-[140px]',
+                            cell: (r) => (
+                                <Badge variant='outline' className={cn('font-medium', sourceBadgeClass(r.source))}>
+                                    {sourceLabel(r.source)}
+                                </Badge>
+                            ),
+                        },
+                        {
+                            key: 'added',
+                            header: t('admin.blocked_email_domains.col_added'),
+                            className: 'text-muted-foreground w-[180px] text-xs',
+                            cell: (r) => formatAddedAt(r.created_at),
+                        },
+                    ]}
+                    actionsHeader={t('common.actions')}
+                    actions={(r) => (
+                        <Button
+                            variant='ghost'
+                            size='sm'
+                            className='text-destructive hover:bg-destructive/10 hover:text-destructive h-11 w-11 p-0 lg:h-8 lg:w-8'
+                            type='button'
+                            title={t('common.delete')}
+                            aria-label={t('common.delete')}
+                            onClick={() => handleDelete(r.id, r.domain)}
+                        >
+                            <Trash2 className='h-4 w-4' />
+                        </Button>
+                    )}
+                    mobileCard={(r) => (
+                        <div className='flex min-w-0 items-start justify-between gap-3'>
+                            <div className='min-w-0 space-y-1'>
+                                <div className='font-mono text-[13px] tracking-tight [overflow-wrap:anywhere]'>
+                                    {r.domain}
+                                </div>
+                                <div className='text-muted-foreground text-xs'>{formatAddedAt(r.created_at)}</div>
+                            </div>
+                            <Badge variant='outline' className={cn('shrink-0 font-medium', sourceBadgeClass(r.source))}>
+                                {sourceLabel(r.source)}
+                            </Badge>
+                        </div>
+                    )}
+                />
             )}
 
             {bottomWidgets.length > 0 ? (

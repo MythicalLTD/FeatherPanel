@@ -53,7 +53,7 @@ function DiscordEmbedLivePreview({ preview }: { preview: DiscordEmbedPayloadPrev
                 'min-h-[120px]',
             )}
         >
-            <div className='flex items-center gap-2 border-b border-white/10 px-3 py-2 text-[11px] font-semibold tracking-wider text-white/45 uppercase'>
+            <div className='border-border/60 flex items-center gap-2 border-b px-3 py-2 text-[11px] font-semibold tracking-wider text-white/45 uppercase dark:border-white/10'>
                 <LayoutTemplate className='h-3.5 w-3.5' />
                 {t('lifecycleHooks.discord.previewTitle')}
             </div>
@@ -127,7 +127,7 @@ function DiscordEmbedLivePreview({ preview }: { preview: DiscordEmbedPayloadPrev
                                                 <div
                                                     key={fi}
                                                     className={cn(
-                                                        'min-w-0 rounded bg-black/20 p-1.5',
+                                                        'bg-muted/60 min-w-0 rounded p-1.5 dark:bg-black/20',
                                                         f.inline && 'sm:col-span-1',
                                                         !f.inline && 'sm:col-span-3',
                                                     )}

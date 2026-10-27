@@ -78,7 +78,7 @@ function BackupStatus({
     const pending = !backup.completed_at && !backup.is_successful;
     const cls = pending
         ? backup.is_stale
-            ? 'border-amber-500/20 bg-amber-500/10 text-amber-500'
+            ? 'border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-400'
             : 'animate-pulse border-blue-500/20 bg-blue-500/10 text-blue-500'
         : backup.is_successful
           ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-500'
@@ -446,13 +446,13 @@ export default function ServerBackupsPage() {
                     </div>
                 }
                 actions={
-                    <div className='flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:gap-3'>
+                    <div className='flex w-full flex-wrap gap-2 sm:w-auto sm:flex-nowrap sm:items-center sm:gap-3'>
                         {showHeaderCreateAction && (
                             <Button
                                 size='default'
                                 disabled={loading}
                                 onClick={() => router.push(`/server/${uuidShort}/backups/new`)}
-                                className='order-1 w-full transition-all active:scale-95 sm:order-2 sm:w-auto'
+                                className='order-1 min-w-0 flex-1 transition-all active:scale-95 sm:order-2 sm:flex-none'
                             >
                                 <Plus className='mr-2 h-5 w-5' />
                                 {t('serverBackups.createBackup')}
@@ -522,10 +522,10 @@ export default function ServerBackupsPage() {
                         <div className='animate-in slide-in-from-top relative overflow-hidden rounded-3xl border border-yellow-500/20 bg-yellow-500/10 p-6 backdrop-blur-xl duration-500'>
                             <div className='relative z-10 flex items-start gap-5'>
                                 <div className='flex h-12 w-12 items-center justify-center rounded-2xl border border-yellow-500/30 bg-yellow-500/20'>
-                                    <AlertTriangle className='h-6 w-6 text-yellow-500' />
+                                    <AlertTriangle className='h-6 w-6 text-yellow-600 dark:text-yellow-400' />
                                 </div>
                                 <div className='space-y-1'>
-                                    <h3 className='text-lg leading-none font-bold text-yellow-500'>
+                                    <h3 className='text-lg leading-none font-bold text-yellow-600 dark:text-yellow-400'>
                                         {t('common.disabled')}
                                     </h3>
                                     <p className='text-sm leading-relaxed font-medium text-yellow-500/80'>
@@ -540,10 +540,10 @@ export default function ServerBackupsPage() {
                         <div className='animate-in slide-in-from-top relative overflow-hidden rounded-3xl border border-yellow-500/20 bg-yellow-500/10 p-6 backdrop-blur-xl duration-500'>
                             <div className='relative z-10 flex items-start gap-5'>
                                 <div className='flex h-12 w-12 items-center justify-center rounded-2xl border border-yellow-500/30 bg-yellow-500/20'>
-                                    <AlertTriangle className='h-6 w-6 text-yellow-500' />
+                                    <AlertTriangle className='h-6 w-6 text-yellow-600 dark:text-yellow-400' />
                                 </div>
                                 <div className='space-y-1'>
-                                    <h3 className='text-lg leading-none font-bold text-yellow-500'>
+                                    <h3 className='text-lg leading-none font-bold text-yellow-600 dark:text-yellow-400'>
                                         {t('serverBackups.backupLimitReached')}
                                     </h3>
                                     <p className='text-sm leading-relaxed font-medium text-yellow-500/80'>
@@ -674,7 +674,7 @@ export default function ServerBackupsPage() {
                                             <div className='min-w-0'>
                                                 <p className='truncate font-medium'>{backup.name}</p>
                                                 {backup.is_locked === 1 && (
-                                                    <p className='flex items-center gap-1 text-xs text-yellow-500'>
+                                                    <p className='flex items-center gap-1 text-xs text-yellow-600 dark:text-yellow-400'>
                                                         <Lock className='h-3 w-3' />
                                                         {t('serverBackups.statusLocked')}
                                                     </p>
