@@ -430,6 +430,7 @@ export function BackupScheduleFormFields({ form, setForm, disabled = false }: Pr
                         }))
                     }
                     databases={[]}
+                    hideDestination
                     disabled={disabled}
                 />
             </PageCard>

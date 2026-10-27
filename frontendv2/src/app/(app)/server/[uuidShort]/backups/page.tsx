@@ -48,6 +48,7 @@ import { useServerPermissions } from '@/hooks/useServerPermissions';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { DatabaseDumpsPanel } from '@/components/server/backup/DatabaseDumpsPanel';
+import { BackupStorageBadge } from '@/components/server/backup/BackupStorageBadge';
 import { cn, formatMib } from '@/lib/utils';
 import { triggerSignedUrlDownload } from '@/lib/trigger-signed-download';
 import { formatBackupLimitLabel, isBackupLimitDisabled } from '@/lib/server-utils';
@@ -66,6 +67,9 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { BackupItem, BackupsResponse, Server } from '@/types/server';
 import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 import { ListPagination } from '@/components/featherui/ListPagination';
+
+/** Backups whose own storage was removed or disconnected cannot be downloaded or restored. */
+const storageGone = (b: BackupItem) => b.destination?.state === 'orphaned' || b.destination?.state === 'revoked';
 
 type BackupTab = 'files' | 'databases';
 
@@ -698,12 +702,7 @@ export default function ServerBackupsPage() {
                                     key: 'disk',
                                     header: t('serverBackups.storage'),
                                     className: 'text-muted-foreground',
-                                    cell: (backup) =>
-                                        backup.disk === 'pbs'
-                                            ? 'PBS'
-                                            : backup.disk === 'wings'
-                                              ? t('ui.server.backups.local')
-                                              : backup.disk,
+                                    cell: (backup) => <BackupStorageBadge backup={backup} />,
                                 },
                                 {
                                     key: 'created',
@@ -726,6 +725,7 @@ export default function ServerBackupsPage() {
                                     <div className='min-w-0 space-y-1.5'>
                                         <p className='truncate font-medium'>{backup.name}</p>
                                         <BackupStatus backup={backup} />
+                                        <BackupStorageBadge backup={backup} />
                                         <p className='text-muted-foreground text-xs'>
                                             {formatMib(backup.bytes / 1024 / 1024)} ·{' '}
                                             {formatDateTimeInTz(backup.created_at, dateOpts)}
@@ -740,7 +740,11 @@ export default function ServerBackupsPage() {
                                             {
                                                 label: t('serverBackups.restore'),
                                                 icon: RotateCcw,
-                                                hidden: !(canRestore && backup.is_successful === 1),
+                                                hidden: !(
+                                                    canRestore &&
+                                                    backup.is_successful === 1 &&
+                                                    !storageGone(backup)
+                                                ),
                                                 disabled: backup.is_locked === 1,
                                                 onClick: () => {
                                                     setBackupToRestore(backup);
@@ -753,7 +757,8 @@ export default function ServerBackupsPage() {
                                                 hidden: !(
                                                     canDownload &&
                                                     backup.is_successful === 1 &&
-                                                    backup.disk !== 'pbs'
+                                                    backup.disk !== 'pbs' &&
+                                                    !storageGone(backup)
                                                 ),
                                                 onClick: () => handleDownloadBackup(backup),
                                             },

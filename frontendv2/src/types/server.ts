@@ -358,6 +358,14 @@ export interface BackupItem {
     created_at: string;
     updated_at: string;
     completed_at?: string;
+    destination_id?: number | null;
+    /** Bring-your-own storage the backup lives on (null = node disk / panel storage). */
+    destination?: {
+        id: number;
+        name: string | null;
+        provider: string | null;
+        state: 'active' | 'error' | 'revoked' | 'orphaned' | null;
+    } | null;
 }
 
 export interface BackupsResponse {
