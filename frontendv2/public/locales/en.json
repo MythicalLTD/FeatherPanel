@@ -12125,6 +12125,14 @@
                 "values": "Values",
                 "switches": "Switches",
                 "unsaved": "Unsaved changes"
+            },
+            "storage_test": {
+                "title": "Test backup storage",
+                "description": "Save your S3 settings first, then run a test. The panel writes a tiny object to the bucket and deletes it again. Nodes never receive these keys; they only get short-lived presigned URLs.",
+                "button": "Test connection",
+                "testing": "Testing…",
+                "success": "Storage works: the test object was written and deleted.",
+                "failed": "Storage test failed. Check the endpoint, bucket and keys."
             }
         },
         "rate_limits": {
