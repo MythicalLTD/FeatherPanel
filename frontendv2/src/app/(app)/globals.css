@@ -1002,6 +1002,14 @@ html.fp-privacy [data-fp-sensitive]:not(:focus) {
     backdrop-filter: none;
 }
 
+/* Auth background: faint dot grid that fades out towards the edges. */
+.fp-auth-grid {
+    background-image: radial-gradient(hsl(var(--foreground) / 0.09) 1px, transparent 1px);
+    background-size: 22px 22px;
+    mask-image: radial-gradient(ellipse 70% 60% at 50% 45%, #000 30%, transparent 75%);
+    -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 45%, #000 30%, transparent 75%);
+}
+
 /* ---- Design round 3: global polish ---- */
 
 /* Text selection tinted with the theme colour. */

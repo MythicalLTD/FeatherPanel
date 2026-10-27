@@ -94,6 +94,16 @@ export default function AuthShell({ children }: { children: ReactNode }) {
             {/* Light scrim so the configured background stays visible but text keeps contrast. */}
             <div aria-hidden className='bg-background/35 pointer-events-none absolute inset-0' />
 
+            {visualPreset === 'aurora' || visualPreset === 'glass' ? (
+                /* Slow theme-coloured aurora + a faint dot grid. CSS only, transform/opacity animations, off with reduced motion. */
+                <div aria-hidden className='pointer-events-none absolute inset-0 overflow-hidden'>
+                    <div className='animate-auth-blob-1 bg-primary/25 dark:bg-primary/20 absolute -top-40 -left-32 h-[30rem] w-[30rem] rounded-full blur-3xl will-change-transform motion-reduce:animate-none' />
+                    <div className='animate-auth-blob-2 bg-primary/15 absolute -right-40 -bottom-48 h-[34rem] w-[34rem] rounded-full blur-3xl will-change-transform motion-reduce:animate-none' />
+                    <div className='animate-auth-blob-3 absolute top-1/2 left-1/2 h-[22rem] w-[22rem] rounded-full bg-sky-400/10 blur-3xl will-change-transform motion-reduce:animate-none dark:bg-sky-400/[0.07]' />
+                    <div className='fp-auth-grid absolute inset-0' />
+                </div>
+            ) : null}
+
             {showThemeCustomizer ? (
                 <div className='pointer-events-auto absolute top-3 right-3 z-50 sm:top-4 sm:right-4'>
                     <ThemeCustomizer />
@@ -155,7 +165,12 @@ export default function AuthShell({ children }: { children: ReactNode }) {
                 >
                     <div className={cn('mb-6 flex shrink-0 justify-center', showAside && 'lg:hidden')}>{brand}</div>
                     <div className='flex flex-1 flex-col justify-start md:justify-center'>
-                        <div className='animate-fade-in-up relative mx-auto w-full max-w-md md:max-w-[46rem]'>
+                        <div className='animate-fade-in-up relative isolate mx-auto w-full max-w-md md:max-w-[46rem]'>
+                            {/* Soft theme glow behind the form card. */}
+                            <div
+                                aria-hidden
+                                className='bg-primary/20 pointer-events-none absolute inset-x-8 top-10 -z-10 h-2/3 rounded-full opacity-70 blur-3xl dark:opacity-60'
+                            />
                             {showSpotlight ? (
                                 <div className='border-primary/20 bg-primary/[0.06] mb-5 rounded-2xl border p-5 sm:p-6'>
                                     <div className='flex items-start gap-3'>
