@@ -47,23 +47,37 @@ export function NavbarHoverDock({ children }: { children: ReactNode }) {
     useEffect(() => () => clearCloseTimer(), [clearCloseTimer]);
 
     return (
-        <div
-            className='fp-chrome-motion relative z-30'
-            onMouseEnter={openDock}
-            onMouseLeave={scheduleClose}
-            onFocusCapture={openDock}
-        >
-            <div className='hidden shrink-0 lg:block lg:h-3' aria-hidden />
+        // Desktop: the bar overlays the page instead of reserving its full height, so revealing it on
+        // hover never pushes content down and hiding it never leaves an empty band. A slim handle marks
+        // the hover target while the bar is tucked away, rather than a sliver of the clipped bar.
+        <div className='fp-chrome-motion relative z-30 lg:h-5 lg:shrink-0 lg:motion-reduce:h-auto'>
             <div
-                className={cn(
-                    'max-lg:relative lg:relative lg:z-20 lg:origin-top lg:transition-transform lg:duration-300 lg:ease-out',
-                    open
-                        ? 'lg:pointer-events-auto lg:translate-y-0'
-                        : 'lg:pointer-events-none lg:-translate-y-[calc(100%-12px)]',
-                    'lg:motion-reduce:pointer-events-auto lg:motion-reduce:translate-y-0 lg:motion-reduce:transition-none',
-                )}
+                className='lg:absolute lg:inset-x-0 lg:top-0 lg:motion-reduce:static'
+                onMouseEnter={openDock}
+                onMouseLeave={scheduleClose}
+                onFocusCapture={openDock}
             >
-                {children}
+                <div
+                    aria-hidden
+                    className={cn(
+                        'fp-navbar-handle hidden lg:mx-auto lg:mt-1.5 lg:block lg:h-1.5 lg:w-24 lg:rounded-full lg:transition-opacity lg:duration-200',
+                        open ? 'lg:opacity-0' : 'lg:opacity-100',
+                        'lg:motion-reduce:hidden',
+                    )}
+                />
+                <div
+                    className={cn(
+                        'max-lg:relative lg:absolute lg:inset-x-0 lg:top-0 lg:z-20 lg:pt-3 lg:transition-[transform,opacity] lg:duration-300 lg:ease-out',
+                        open
+                            ? 'lg:pointer-events-auto lg:translate-y-0 lg:opacity-100'
+                            : 'lg:pointer-events-none lg:-translate-y-full lg:opacity-0',
+                        'lg:motion-reduce:pointer-events-auto lg:motion-reduce:static lg:motion-reduce:translate-y-0 lg:motion-reduce:opacity-100 lg:motion-reduce:transition-none',
+                    )}
+                >
+                    {children}
+                </div>
+                {/* Invisible strip keeps a generous hover target while the bar is hidden. */}
+                <div aria-hidden className={cn('hidden lg:block lg:h-5', open && 'lg:hidden')} />
             </div>
         </div>
     );

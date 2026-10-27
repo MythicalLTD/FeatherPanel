@@ -53,6 +53,8 @@
 - Server console on phones docks the power buttons in a fixed bar at the bottom of the screen (safe-area aware); live CPU, memory, disk, network and disk I/O values ease between updates (instant under reduced motion); the file context menu shows Enter, F2 and Del shortcut hints and the file toolbar is tinted while files are selected.
 - Tickets empty state uses a standard-size create button, the ticket search reserves room for its icon, and the schedule create icon matches other headers.
 - File manager bulk-selection bar (server and webspace): solid count pill with a visible "Selected" label (the old xs: breakpoint never existed), an icon clear-selection button instead of an uppercase Cancel link, and a labelled Delete action with better light-theme contrast.
+- File editor header (server and webspace) now shows the file name, a path breadcrumb, a language badge, a saved/unsaved/saving indicator and the Ctrl+S / ⌘S hint on Save; stacks cleanly on phones. Active editor tabs get a ring and larger touch targets.
+- Floating hover-reveal top bar no longer leaves an empty band or shows a clipped sliver: it overlays the page when revealed (no content jump) and shows a slim handle while tucked away. The Appearance section nav now sticks just below the top instead of 6rem down.
 
 ### Fixed
 
