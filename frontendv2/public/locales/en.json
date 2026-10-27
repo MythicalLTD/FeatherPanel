@@ -7098,6 +7098,15 @@
             "symlink": "This entry is a symbolic link.",
             "checksum": "Compute checksum",
             "description": "File details"
+        },
+        "upload": {
+            "pause": "Pause upload",
+            "resume": "Resume upload",
+            "retry": "Retry upload",
+            "cancel": "Cancel upload",
+            "paused": "Paused",
+            "resumed": "resumed",
+            "eta": "{time} left"
         }
     },
     "admin": {

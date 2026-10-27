@@ -610,6 +610,9 @@ export const webspaceFilesApi = {
         });
     },
 
+    /** Web spaces have no chunked uploads; nothing is staged to discard. */
+    discardUpload: async (): Promise<void> => {},
+
     getUploadUrl: async (uuid: string, directory = '/'): Promise<string> => {
         const signed = await api.get<ApiResponse<{ upload_url: string }>>(`/user/webspaces/${uuid}/files/upload-url`, {
             params: { directory: normalizePath(directory || '/') },
