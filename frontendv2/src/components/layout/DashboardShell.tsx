@@ -178,7 +178,7 @@ export default function DashboardShell({ children }: { children: React.ReactNode
                                             useFullBleedLayout
                                                 ? 'overflow-hidden p-0'
                                                 : cn(
-                                                      'px-3 py-5 sm:px-6 sm:py-6 lg:px-8',
+                                                      'px-3 pt-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:px-6 sm:py-6 lg:px-8',
                                                       navbarSticky
                                                           ? 'custom-scrollbar overflow-x-hidden overflow-y-auto overscroll-y-contain'
                                                           : 'overflow-visible',
