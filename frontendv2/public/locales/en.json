@@ -12110,6 +12110,11 @@
                     "title": "Other",
                     "description": "Remaining VDS settings."
                 }
+            },
+            "sections": {
+                "values": "Values",
+                "switches": "Switches",
+                "unsaved": "Unsaved changes"
             }
         },
         "rate_limits": {
