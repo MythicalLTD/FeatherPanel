@@ -29,6 +29,7 @@ import {
     Copy,
     ShieldCheck,
     MoreVertical,
+    X,
     Boxes,
     ChevronDown,
     Code2,
@@ -116,22 +117,23 @@ export function FileActionToolbar({
                 <div className='flex flex-row items-center justify-between gap-2 sm:gap-4'>
                     {hasSelection ? (
                         <>
-                            <div className='flex items-center gap-3 px-2'>
-                                <div className='bg-primary/10 text-primary animate-in zoom-in-50 flex h-8 w-8 items-center justify-center rounded-lg duration-300'>
-                                    <span className='text-xs font-bold'>{selectedCount}</span>
-                                </div>
-                                <span className='text-muted-foreground xs:inline hidden text-sm font-medium'>
-                                    {t('files.toolbar.selected')}
-                                </span>
-                                <div className='bg-border xs:block mx-1 hidden h-4 w-px' />
+                            <div className='flex shrink-0 items-center gap-2 pl-1'>
                                 <Button
                                     variant='ghost'
-                                    size='sm'
+                                    size='icon'
                                     onClick={onClearSelection}
-                                    className='text-muted-foreground hover:text-foreground h-8 px-3 text-xs font-bold tracking-wider uppercase'
+                                    className='text-muted-foreground hover:text-foreground h-8 w-8'
+                                    title={t('files.toolbar.clear_selection')}
+                                    aria-label={t('files.toolbar.clear_selection')}
                                 >
-                                    {t('files.toolbar.cancel')}
+                                    <X className='h-4 w-4' />
                                 </Button>
+                                <span className='bg-primary text-primary-foreground animate-in zoom-in-50 inline-flex h-6 min-w-6 items-center justify-center rounded-full px-1.5 text-xs font-semibold tabular-nums duration-300 motion-reduce:animate-none'>
+                                    {selectedCount}
+                                </span>
+                                <span className='text-foreground hidden text-sm font-medium sm:inline'>
+                                    {t('files.toolbar.selected')}
+                                </span>
                             </div>
                             <div className='no-scrollbar flex items-center gap-1.5 overflow-x-auto pl-2'>
                                 <Button variant='secondary' size='sm' onClick={onArchiveSelected} className='h-9 px-3'>
@@ -190,9 +192,12 @@ export function FileActionToolbar({
                                     variant='secondary'
                                     size='sm'
                                     onClick={onDeleteSelected}
-                                    className='h-9 bg-red-500/10 px-3 text-red-600 hover:bg-red-500/20 dark:text-red-400'
+                                    className='h-9 bg-red-500/10 px-3 text-red-700 hover:bg-red-500/20 dark:text-red-400'
+                                    title={t('files.toolbar.delete_selected')}
+                                    aria-label={t('files.toolbar.delete_selected')}
                                 >
-                                    <Trash2 className='h-4 w-4' />
+                                    <Trash2 className='h-4 w-4 lg:mr-2' />
+                                    <span className='hidden lg:inline'>{t('common.delete')}</span>
                                 </Button>
 
                                 <DropdownMenu>

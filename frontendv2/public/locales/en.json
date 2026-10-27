@@ -5860,7 +5860,9 @@
             "trash": "Trash",
             "more_actions": "More actions",
             "download_selected": "Download selected",
-            "chmod": "Permissions"
+            "chmod": "Permissions",
+            "clear_selection": "Clear selection",
+            "delete_selected": "Delete selected"
         },
         "list": {
             "header_name": "Name",
