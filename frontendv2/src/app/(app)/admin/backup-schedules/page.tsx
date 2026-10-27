@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { AdminListToolbar } from '@/components/admin/AdminListToolbar';
 import { TipCard, TipGrid } from '@/components/featherui/TipCard';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -23,7 +24,6 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { getApiErrorMessage } from '@/lib/api-errors';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
-import { Input } from '@/components/featherui/Input';
 import { ResourceCard, ResourceTable, type ResourceBadge } from '@/components/featherui/ResourceCard';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
 import { EmptyState } from '@/components/featherui/EmptyState';
@@ -32,7 +32,6 @@ import { toast } from 'sonner';
 import {
     Archive,
     Plus,
-    Search,
     Pencil,
     Trash2,
     Play,
@@ -149,17 +148,11 @@ export default function AdminBackupSchedulesPage() {
 
             <BackupScheduleCalendar onOpen={(id) => router.push(`/admin/backup-schedules/${id}`)} />
 
-            <div className='fp-surface flex flex-col items-center gap-4 rounded-2xl border p-4 sm:flex-row'>
-                <div className='group relative w-full flex-1'>
-                    <Search className='text-muted-foreground group-focus-within:text-primary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transition-colors' />
-                    <Input
-                        placeholder={t('adminBackupSchedules.searchPlaceholder')}
-                        value={filters.searchQuery}
-                        onChange={(e) => patchFilters({ searchQuery: e.target.value, page: 1 })}
-                        className='h-11 w-full pl-10'
-                    />
-                </div>
-            </div>
+            <AdminListToolbar
+                searchPlaceholder={t('adminBackupSchedules.searchPlaceholder')}
+                searchValue={filters.searchQuery}
+                onSearchChange={(value) => patchFilters({ searchQuery: value, page: 1 })}
+            />
 
             {totalPages > 1 && !loading && (
                 <ListPagination
