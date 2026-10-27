@@ -100,7 +100,7 @@ export default function AuthShell({ children }: { children: ReactNode }) {
                 </div>
             ) : null}
 
-            <main className='relative z-10 flex min-h-svh w-full flex-1'>
+            <main className='relative z-10 flex min-h-svh w-full flex-1 pt-[env(safe-area-inset-top)] pr-[env(safe-area-inset-right)] pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)]'>
                 {showAside ? (
                     <aside className='hidden flex-1 flex-col justify-between p-10 lg:flex xl:p-14'>
                         {brand}

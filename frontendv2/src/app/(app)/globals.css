@@ -132,6 +132,29 @@ body:has([data-fp-dashboard-shell]) {
     overflow: hidden;
 }
 
+/* viewport-fit=cover: keep the shell clear of the notch, rounded corners and home bar (all 0 on desktop). */
+[data-fp-dashboard-shell] {
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-left: env(safe-area-inset-left, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
+}
+
+/* Keyboard focus is always visible, even on controls without their own focus style. Mouse clicks are unaffected. */
+@layer base {
+    :where(
+        a[href],
+        button,
+        [role='button'],
+        [role='tab'],
+        [role='menuitem'],
+        summary,
+        [tabindex]:not([tabindex='-1'])
+    ):focus-visible {
+        outline: 2px solid hsl(var(--ring));
+        outline-offset: 2px;
+    }
+}
+
 /* Full-bleed plugin routes: body bg stacks under the fixed theme layer (pattern holes etc.),
    which reads as an extra slab in dark mode. Let BackgroundWrapper own the canvas.
    html[data-fp-plugin-fullbleed] mirrors body.fp-fullwidth-plugin for specificity vs late-loaded plugin-css. */

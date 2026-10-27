@@ -25,6 +25,7 @@
 
 ### Improved
 
+- **Panel – safe areas & keyboard focus**: the viewport now uses `viewport-fit=cover` and the dashboard shell, mobile sidebar drawer and auth screens pad themselves with `env(safe-area-inset-*)`, so nothing sits under a notch or home bar. Every link/button/tab gets a visible focus outline for keyboard users, and the phone navbar title now truncates instead of pushing the notification bell and avatar off screen on server pages.
 - Memory use of the Docker image is bounded. `FRANKENPHP_MAX_THREADS=auto` is now sized from the container memory, pool defaults are lower and workers recycle when their heap grows. New and changed environment variables: `PHP_MEMORY_LIMIT` (512M), `PHP_CLI_MEMORY_LIMIT` (1024M, was unlimited), `FEATHERPANEL_WORKER_MAX_MEMORY` (256M), `FEATHERPANEL_WORKER_MAX_REQUESTS` (500, was 1000), `FEATHERPANEL_WORKERS`, `FEATHERPANEL_WORKER_MAX_THREADS` (3 x CPU, max 32), `FEATHERPANEL_SLOW_WORKERS` (2), `FEATHERPANEL_SLOW_MAX_THREADS` (4, was 16) and `CRON_TIMEOUT` (900s). Under load the backend now stays flat at around 160 to 175 MiB. (#338) by @nayskutzu
 - Hotfix to the memory fix: dropped the FrankenPHP file watcher, which added native threads and CPU and memory use; workers already check the restart stamp between requests. (#341) by @nayskutzu
 - The built in API reference pins Redoc, falls back to the live `/api/openapi.json` and shows load errors instead of a blank page. (#337) by @nayskutzu
