@@ -4,6 +4,7 @@
 
 ### Added
 
+- Resumable chunked file uploads on FeatherWings nodes: files larger than one part (default 50 MB, `server_upload_chunk_size_mb`, 5 to 90 MB) are sent in parts below Cloudflare's 100 MB request limit, retry with backoff, resume after a reload or network drop, and show speed, ETA, pause, resume and cancel. Older nodes fall back to the single request upload. Needs FeatherWings with `/upload/chunk` (FeatherWings #29). by @nayskutzu
 - Email and Discord webhook notifications for server events (crash, backup completed or failed, file transfer finished, resource limit). Opt-out per event and per channel under Account, Notifications, with a test button for the webhook. (#352) by @nayskutzu
 - Calendar view for scheduled backups on Admin, Backup schedules: planned and finished runs per day, failed days highlighted. (#354) by @nayskutzu
 - Maintenance mode (`maintenance_mode_enabled`, `maintenance_mode_message` in Settings, Status Page). Non staff get `503 MAINTENANCE_MODE`, staff keep working with a banner, the status page stays reachable. (#355) by @nayskutzu
@@ -44,6 +45,8 @@
 - Phones get a bottom navigation bar in the user dashboard (Home, Servers, Account, Menu) with 48px targets and safe-area padding, hidden from tablet width up; tabs get a hover tint and a soft raised active state; design scale tokens (radius, shadow, type ramp, easing) are now CSS variables used by menus and tabs.
 - File manager and console: files get colour-coded type tiles (code, config, archives, images, jars, scripts, logs), selected rows show a theme accent bar, the drag-and-drop overlay is calmer with an inset dashed frame and a floating upload tile, and the console input glows on focus, shows a keyboard hint and fills the send button once you type.
 - Admin settings: categories that hold unsaved edits get an amber dot in the sidebar, each changed field gets an amber edge marker until saved, and categories mixing values and switches are split into labelled Values and Switches sections.
+- Admin lists share one toolbar component (AdminListToolbar) with search, a clear-search button, a filter slot, a right-aligned actions slot and an optional bulk-selection bar; adopted on locations, nodes, mounts, realms, notifications, web nodes, backup schedules, database hosts, translations and ticket categories, priorities and statuses.
+- Admin dashboard stat tiles get a coloured icon, a soft corner glow and numbers that count up (instant under reduced motion); the analytics activity and user trend charts are now gradient area charts with a themed tooltip.
 
 ### Fixed
 
