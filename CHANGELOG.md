@@ -54,6 +54,7 @@
 - Tickets empty state uses a standard-size create button, the ticket search reserves room for its icon, and the schedule create icon matches other headers.
 - File editor header (server and webspace) now shows the file name, a path breadcrumb, a language badge, a saved/unsaved/saving indicator and the Ctrl+S / ⌘S hint on Save; stacks cleanly on phones. Active editor tabs get a ring and larger touch targets.
 - Floating hover-reveal top bar no longer leaves an empty band or shows a clipped sliver: it overlays the page when revealed (no content jump) and shows a slim handle while tucked away. The Appearance section nav now sticks just below the top instead of 6rem down.
+- Startup page: the selected Docker image now uses the theme primary colour instead of hard-coded blue, and the empty variables state is no longer shouted in caps. Backup-disabled/limit warnings (server and VDS) now have readable text contrast on the light theme.
 
 ### Fixed
 
