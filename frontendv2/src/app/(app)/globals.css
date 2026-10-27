@@ -640,6 +640,16 @@ html[data-fp-plugin-fullbleed='1'] body [data-fp-plugin-main-inner] {
     box-shadow: 0 18px 50px -28px hsl(var(--foreground) / 0.55);
 }
 
+/* Toasts: rounder, glassy, with a soft elevation that matches the panel cards. */
+[data-sonner-toast].fp-toast {
+    border-radius: 14px;
+    box-shadow:
+        0 1px 0 hsl(var(--foreground) / 0.04) inset,
+        0 18px 40px -20px hsl(var(--foreground) / 0.45);
+    -webkit-backdrop-filter: blur(12px) saturate(1.2);
+    backdrop-filter: blur(12px) saturate(1.2);
+}
+
 /* Custom scrollbar utilities */
 .hide-scrollbar::-webkit-scrollbar {
     display: none;

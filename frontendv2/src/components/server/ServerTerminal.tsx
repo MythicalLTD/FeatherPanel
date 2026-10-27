@@ -1306,14 +1306,14 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
             >
                 <Card
                     className={cn(
-                        'flex h-full min-h-0 w-full min-w-0 flex-col gap-0 overflow-hidden py-0',
+                        'focus-within:border-primary/35 flex h-full min-h-0 w-full min-w-0 flex-col gap-0 overflow-hidden py-0 transition-colors',
                         !fillContainer && !isFullscreen && 'min-h-[22rem] sm:min-h-[26rem]',
                         isGlass && 'border-0 bg-transparent shadow-none ring-0',
                     )}
                 >
                     <CardHeader
                         className={cn(
-                            'border-border/50 shrink-0 gap-0 border-b px-3 py-1.5 sm:px-4',
+                            'border-border/50 from-muted/50 shrink-0 gap-0 border-b bg-linear-to-b to-transparent px-3 py-1.5 sm:px-4',
                             isGlass && 'hidden',
                         )}
                     >
@@ -1323,13 +1323,19 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
                                     className={cn(
                                         'h-2 w-2 shrink-0 rounded-full',
                                         serverStatus === 'running'
-                                            ? 'bg-emerald-500'
+                                            ? 'fp-live-dot bg-emerald-500'
                                             : serverStatus === 'starting' || serverStatus === 'stopping'
                                               ? 'animate-pulse bg-amber-500'
                                               : 'bg-muted-foreground/50',
                                     )}
                                     aria-hidden
                                 />
+                                {/* Window chrome dots (desktop only, decorative). */}
+                                <span aria-hidden className='mr-1 hidden items-center gap-1 lg:flex'>
+                                    <span className='h-2.5 w-2.5 rounded-full bg-rose-400/70' />
+                                    <span className='h-2.5 w-2.5 rounded-full bg-amber-400/70' />
+                                    <span className='h-2.5 w-2.5 rounded-full bg-emerald-400/70' />
+                                </span>
                                 <TerminalIcon
                                     className='text-muted-foreground hidden h-4 w-4 shrink-0 sm:block'
                                     aria-hidden
