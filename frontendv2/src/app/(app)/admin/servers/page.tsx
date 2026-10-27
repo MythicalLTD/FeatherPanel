@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { AdminListToolbar } from '@/components/admin/AdminListToolbar';
 import { AdminPageTips } from '@/components/admin/AdminPageTips';
 import { useState, useEffect, useCallback, type ReactNode, type ElementType } from 'react';
 import Link from 'next/link';
@@ -478,16 +479,12 @@ export default function ServersPage() {
 
             <WidgetRenderer widgets={getWidgets('admin-servers', 'after-header')} />
 
-            <div className='fp-surface flex flex-col items-stretch gap-4 rounded-2xl border p-4'>
-                <div className='group relative w-full flex-1'>
-                    <Search className='text-muted-foreground group-focus-within:text-primary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transition-colors' />
-                    <Input
-                        placeholder={t('admin.servers.search_placeholder')}
-                        value={searchQuery}
-                        onChange={(e) => patchFilters({ searchQuery: e.target.value })}
-                        className='h-11 w-full pl-10'
-                    />
-                </div>
+            <AdminListToolbar
+                stacked
+                searchPlaceholder={t('admin.servers.search_placeholder')}
+                searchValue={searchQuery}
+                onSearchChange={(value) => patchFilters({ searchQuery: value })}
+            >
                 <div className='flex flex-col items-stretch justify-between gap-2 sm:flex-row sm:items-center'>
                     <div className='grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center'>
                         <Button
@@ -646,7 +643,7 @@ export default function ServersPage() {
                         </Button>
                     </div>
                 )}
-            </div>
+            </AdminListToolbar>
 
             <WidgetRenderer widgets={getWidgets('admin-servers', 'before-list')} />
 

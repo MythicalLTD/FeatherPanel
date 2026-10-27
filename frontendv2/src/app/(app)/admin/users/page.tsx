@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { AdminListToolbar } from '@/components/admin/AdminListToolbar';
 import { AdminPageTips } from '@/components/admin/AdminPageTips';
 import { useState, useEffect, useRef } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
@@ -23,7 +24,7 @@ import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-err
 import { useDateFormatOptions } from '@/contexts/PreferencesContext';
 import axios from 'axios';
 import { usePersistedListFilters } from '@/hooks/usePersistedListFilters';
-import { Users as UsersIcon, Search, Pencil, Trash2, UserPlus, CheckCircle2 } from 'lucide-react';
+import { Users as UsersIcon, Pencil, Trash2, UserPlus, CheckCircle2 } from 'lucide-react';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { DataTable, RowActionsMenu, StatusDot, TableIdentity } from '@/components/featherui/DataTable';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
@@ -562,16 +563,12 @@ export default function UsersPage() {
 
             <WidgetRenderer widgets={getWidgets('admin-users', 'after-header')} />
 
-            <div className='fp-surface flex flex-col gap-3 rounded-2xl border p-3 sm:p-4'>
-                <div className='group relative w-full min-w-0 flex-1'>
-                    <Search className='text-muted-foreground group-focus-within:text-primary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transition-colors' />
-                    <Input
-                        placeholder={t('admin.users.search_placeholder')}
-                        className='h-11 pl-10'
-                        value={searchQuery}
-                        onChange={(e) => patchFilters({ searchQuery: e.target.value })}
-                    />
-                </div>
+            <AdminListToolbar
+                stacked
+                searchPlaceholder={t('admin.users.search_placeholder')}
+                searchValue={searchQuery}
+                onSearchChange={(value) => patchFilters({ searchQuery: value })}
+            >
                 <div className='grid w-full grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-5'>
                     <Input
                         placeholder={t('admin.users.filters.ip_placeholder')}
@@ -645,7 +642,7 @@ export default function UsersPage() {
                         </Select>
                     </div>
                 </div>
-            </div>
+            </AdminListToolbar>
 
             <WidgetRenderer widgets={getWidgets('admin-users', 'before-list')} />
 
