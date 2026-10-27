@@ -474,7 +474,7 @@ export default function AppearanceSettingsPanel() {
         <div className='grid gap-6 lg:grid-cols-[minmax(0,220px)_1fr]'>
             <nav
                 ref={navRef}
-                className='fp-surface flex gap-1 self-start overflow-x-auto rounded-2xl border p-2 lg:sticky lg:top-24 lg:flex-col lg:overflow-visible'
+                className='fp-surface flex gap-1 self-start overflow-x-auto rounded-2xl border p-2 lg:sticky lg:top-4 lg:flex-col lg:overflow-visible'
             >
                 {NAV_ITEMS.map((item) => {
                     const Icon = item.icon;
