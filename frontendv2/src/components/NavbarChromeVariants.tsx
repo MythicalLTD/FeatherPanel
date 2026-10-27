@@ -409,14 +409,14 @@ export function NavbarModernChrome(props: NavbarChromeProps) {
     return (
         <header
             className={cn(
-                'z-30 shrink-0 px-3 pt-3 pb-2 sm:px-4 lg:px-6',
+                'z-30 shrink-0 px-3 pt-3 pb-2 sm:px-6 lg:px-8',
                 navbarSticky ? 'sticky top-0' : 'relative',
                 desktopHoverDock && 'lg:static lg:top-auto',
             )}
         >
             <div
                 className={cn(
-                    'fp-chrome-surface mx-auto flex h-12 max-w-450 items-center gap-x-2 rounded-2xl border px-2.5 sm:h-13 sm:gap-x-3 sm:px-3.5',
+                    'fp-chrome-surface mx-auto flex h-12 w-full max-w-(--fp-content-max,80rem) items-center gap-x-2 rounded-2xl border px-2.5 sm:h-13 sm:gap-x-3 sm:px-3.5',
                     navbarGlowClass,
                 )}
             >

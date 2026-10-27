@@ -853,7 +853,7 @@ export default function SettingsTab() {
             <Link
                 href='/dashboard/account/login-device'
                 aria-label={t('account.loginDevice.menuLabel')}
-                className='fp-surface-inset hover:border-primary/45 focus-visible:ring-primary/60 group flex items-center gap-4 rounded-2xl border p-4 transition-[border-color,background-color,box-shadow] hover:bg-white/[0.025] hover:shadow-[0_12px_30px_-20px_hsl(var(--primary)/0.7)] focus-visible:ring-2 focus-visible:outline-none sm:p-5'
+                className='fp-surface-inset hover:border-primary/45 focus-visible:ring-primary/60 group flex items-center gap-4 rounded-2xl border p-4 transition-[border-color,background-color,box-shadow] hover:bg-white/[0.025] focus-visible:ring-2 focus-visible:outline-none sm:p-5'
             >
                 <div className='bg-primary/10 text-primary group-hover:bg-primary/15 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl transition-colors'>
                     <Smartphone className='h-5 w-5' />

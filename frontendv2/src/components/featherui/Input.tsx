@@ -46,9 +46,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
                     type={type}
                     className={cn(
                         'placeholder:text-muted-foreground/50 text-foreground h-12 w-full rounded-xl border py-3 text-sm font-semibold transition-all duration-200 focus:ring-4 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50',
-                        variant === 'surface'
-                            ? 'fp-surface-field'
-                            : 'bg-muted/30 shadow-sm hover:shadow-md focus:shadow-lg',
+                        variant === 'surface' ? 'fp-surface-field' : 'bg-muted/30 shadow-sm focus:shadow-lg',
                         icon ? 'pr-4 pl-10' : 'px-4',
                         hasError
                             ? 'border-destructive focus:border-destructive focus:ring-destructive/20'

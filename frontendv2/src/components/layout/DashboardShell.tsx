@@ -148,6 +148,14 @@ export default function DashboardShell({ children }: { children: React.ReactNode
                             <div
                                 className={cn(
                                     'fp-chrome-motion flex min-h-0 min-w-0 flex-1 flex-col',
+                                    // One width token shared by the page column and the navbar so their edges line up.
+                                    useFullBleedLayout
+                                        ? '[--fp-content-max:none]'
+                                        : isServerOrWebSpacePage
+                                          ? '[--fp-content-max:100rem]'
+                                          : isTicketDetailPage
+                                            ? '[--fp-content-max:112rem]'
+                                            : '[--fp-content-max:80rem]',
                                     !hideAppChrome &&
                                         getShellContentInset({
                                             chromeLayout,
@@ -196,12 +204,7 @@ export default function DashboardShell({ children }: { children: React.ReactNode
                                             className={cn(
                                                 'flex w-full flex-col',
                                                 useFullBleedLayout ? 'h-full min-h-0 flex-1' : 'min-h-full flex-1',
-                                                !useFullBleedLayout &&
-                                                    (isServerOrWebSpacePage
-                                                        ? 'mx-auto max-w-[min(100rem,calc(100vw-1.5rem))] sm:max-w-[min(100rem,calc(100vw-2rem))]'
-                                                        : isTicketDetailPage
-                                                          ? 'mx-auto max-w-[min(112rem,calc(100vw-1.5rem))] sm:max-w-[min(112rem,calc(100vw-2rem))]'
-                                                          : 'mx-auto max-w-7xl'),
+                                                !useFullBleedLayout && 'mx-auto max-w-(--fp-content-max)',
                                             )}
                                         >
                                             <PluginSlot id='shell.page-header' className='contents'>

@@ -5098,10 +5098,6 @@ html:has(.fos-root[data-fos-theme='dark']) {
 }
 .fos-theme-card-hit:hover .fos-theme-card-preview {
     transform: translateY(-2px);
-    box-shadow:
-        inset 0 0 0 0.5px rgb(0 0 0 / 0.2),
-        0 0 0 2px var(--fos-accent-color),
-        0 12px 24px -12px rgb(0 0 0 / 0.6);
 }
 .fos-theme-card-hit:active .fos-theme-card-preview {
     transform: scale(0.97);
