@@ -16,6 +16,13 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import axios from 'axios';
 import api from './api';
 import { getFeatherpanelApiErrorMessage } from './api';
+import {
+    chunkedUpload,
+    discardChunkedUpload,
+    ChunkedUploadUnsupportedError,
+    type ChunkedUploadTarget,
+    type UploadStats,
+} from './chunked-upload';
 import type { FileObject } from '@/types/server';
 import type {
     AdvancedFileSearchFilters,
@@ -207,6 +214,25 @@ const extractContentsString = (payload: unknown): string => {
         return '';
     }
 };
+
+function webspaceChunkTarget(uuid: string): ChunkedUploadTarget {
+    const origin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost';
+    return {
+        url: `${origin}/api/user/webspaces/${encodeURIComponent(uuid)}/files/upload/chunk`,
+        // The panel answers with its own max_chunk_size, which wins.
+        chunkSize: 90 * 1024 * 1024,
+        expiresAt: Number.POSITIVE_INFINITY,
+    };
+}
+
+function chunkErrorMessage(error: unknown): string {
+    if (axios.isAxiosError(error)) {
+        const data = error.response?.data as { error?: unknown } | undefined;
+        if (data && typeof data.error === 'string' && data.error.trim()) return data.error;
+        return getFeatherpanelApiErrorMessage(error) || error.message;
+    }
+    return error instanceof Error ? error.message : '';
+}
 
 export const webspaceFilesApi = {
     getFileCapabilities: async (uuid: string): Promise<WebSpaceFileCapabilitiesMap> => {
@@ -565,7 +591,33 @@ export const webspaceFilesApi = {
         root: string,
         file: File,
         onProgress?: (percent: number) => void,
+        options?: { signal?: AbortSignal; onStats?: (stats: UploadStats) => void },
     ): Promise<void> => {
+        const directory = normalizePath(root || '/');
+        try {
+            // Resumable parts staged on the panel (each part stays under Cloudflare's 100 MB limit).
+            await chunkedUpload({
+                serverUuid: `webspace:${uuid}`,
+                directory,
+                file,
+                getTarget: async () => webspaceChunkTarget(uuid),
+                signal: options?.signal,
+                client: api,
+                onStats: (stats) => {
+                    options?.onStats?.(stats);
+                    onProgress?.(stats.total ? Math.min(100, Math.round((stats.loaded / stats.total) * 100)) : 100);
+                },
+            });
+            return;
+        } catch (error) {
+            if (!(error instanceof ChunkedUploadUnsupportedError)) {
+                if (axios.isAxiosError(error) && !options?.signal?.aborted) {
+                    throw new Error(chunkErrorMessage(error) || 'Upload failed');
+                }
+                throw error;
+            }
+        }
+
         if (webspaceFileManagerCapabilities.signedUploadUrl) {
             const signed = await api.get<ApiResponse<{ upload_url: string; expires_in: number }>>(
                 `/user/webspaces/${uuid}/files/upload-url`,
@@ -610,8 +662,16 @@ export const webspaceFilesApi = {
         });
     },
 
-    /** Web spaces have no chunked uploads; nothing is staged to discard. */
-    discardUpload: async (): Promise<void> => {},
+    /** Drops the panel's staged parts for a cancelled upload. */
+    discardUpload: async (uuid: string, root: string, file: File): Promise<void> => {
+        await discardChunkedUpload(
+            `webspace:${uuid}`,
+            normalizePath(root || '/'),
+            file,
+            async () => webspaceChunkTarget(uuid),
+            api,
+        );
+    },
 
     getUploadUrl: async (uuid: string, directory = '/'): Promise<string> => {
         const signed = await api.get<ApiResponse<{ upload_url: string }>>(`/user/webspaces/${uuid}/files/upload-url`, {

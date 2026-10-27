@@ -1118,6 +1118,30 @@ return function (RouteCollection $routes): void {
 
     App::getInstance(true)->registerAuthRoute(
         $routes,
+        'user-webspaces-files-upload-chunk',
+        '/api/user/webspaces/{uuidShort}/files/upload/chunk',
+        function (Request $request, array $args) {
+            return (new WebSpaceFilesController())->uploadChunk($request, (string) ($args['uuidShort'] ?? ''));
+        },
+        ['GET', 'POST', 'DELETE'],
+        Rate::perMinute(240),
+        'user-webspaces-chunks'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-webspaces-files-upload-chunk-complete',
+        '/api/user/webspaces/{uuidShort}/files/upload/chunk/complete',
+        function (Request $request, array $args) {
+            return (new WebSpaceFilesController())->completeChunkedUpload($request, (string) ($args['uuidShort'] ?? ''));
+        },
+        ['POST'],
+        Rate::perMinute(30),
+        'user-webspaces'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
         'user-webspaces-files-upload-url',
         '/api/user/webspaces/{uuidShort}/files/upload-url',
         function (Request $request, array $args) {

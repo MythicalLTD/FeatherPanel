@@ -23,6 +23,7 @@
 		"analytics:routes": "node scripts/generate-analytics-routes.mjs",
 		"test:analytics": "node scripts/test-analytics-consent.mjs",
 		"test:session": "node --test scripts/test-session.mjs",
+		"test:chunked-upload": "node --test scripts/test-chunked-upload.mjs",
 		"scan:hardcoded-ui": "node scripts/scan-hardcoded-ui-strings.js",
 		"scan:error-codes": "node scripts/scan-error-codes.js",
 		"translations:add": "node scripts/add-translation.js",

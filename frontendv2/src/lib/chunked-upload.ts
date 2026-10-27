@@ -13,7 +13,7 @@ by the Free Software Foundation, either version 3 of the License, or
 See the LICENSE file or <https://www.gnu.org/licenses/>.
 */
 
-import axios, { AxiosError } from 'axios';
+import axios, { AxiosError, type AxiosInstance } from 'axios';
 
 /**
  * Resumable chunked uploads to FeatherWings (`/upload/chunk`).
@@ -108,10 +108,20 @@ export interface ChunkedUploadOptions {
     getTarget: () => Promise<ChunkedUploadTarget>;
     signal?: AbortSignal;
     onStats?: (stats: UploadStats) => void;
+    /** HTTP client; defaults to a credential-less client for node URLs. Pass the panel client for panel-hosted endpoints. */
+    client?: AxiosInstance;
+}
+
+/** `.../upload/chunk?q` -> `.../upload/chunk/complete?q` */
+export function chunkCompleteUrl(url: string): string {
+    const u = new URL(url);
+    u.pathname = u.pathname.replace(/\/upload\/chunk\/?$/, '/upload/chunk/complete');
+    return u.toString();
 }
 
 export async function chunkedUpload(opts: ChunkedUploadOptions): Promise<void> {
     const { file, signal } = opts;
+    const client = opts.client ?? wingsClient;
     const uploadId = chunkedUploadId(opts.serverUuid, opts.directory, file);
     let target = await opts.getTarget();
     const fresh = async (force = false) => {
@@ -123,7 +133,7 @@ export async function chunkedUpload(opts: ChunkedUploadOptions): Promise<void> {
     let offset = 0;
     let maxChunk = Infinity;
     try {
-        const res = await wingsClient.get(withParams((await fresh()).url, { upload_id: uploadId }), { signal });
+        const res = await client.get(withParams((await fresh()).url, { upload_id: uploadId }), { signal });
         const d = res.data as { exists?: boolean; offset?: number; total_size?: number; max_chunk_size?: number };
         if (typeof d?.max_chunk_size !== 'number') throw new ChunkedUploadUnsupportedError('no chunk support');
         maxChunk = d.max_chunk_size > 0 ? d.max_chunk_size : Infinity;
@@ -170,7 +180,7 @@ export async function chunkedUpload(opts: ChunkedUploadOptions): Promise<void> {
         const blob = file.slice(offset, end);
         try {
             const t = await fresh();
-            const res = await wingsClient.post(
+            const res = await client.post(
                 withParams(t.url, {
                     upload_id: uploadId,
                     offset,
@@ -214,8 +224,8 @@ export async function chunkedUpload(opts: ChunkedUploadOptions): Promise<void> {
     // Assemble on the node; retry a couple of times on network errors.
     for (let i = 0; ; i++) {
         try {
-            await wingsClient.post(
-                withParams((await fresh()).url.replace('/upload/chunk?', '/upload/chunk/complete?'), {
+            await client.post(
+                withParams(chunkCompleteUrl((await fresh()).url), {
                     upload_id: uploadId,
                 }),
                 null,
@@ -237,10 +247,11 @@ export async function discardChunkedUpload(
     directory: string,
     file: File,
     getTarget: () => Promise<ChunkedUploadTarget>,
+    client: AxiosInstance = wingsClient,
 ): Promise<void> {
     try {
         const t = await getTarget();
-        await wingsClient.delete(withParams(t.url, { upload_id: chunkedUploadId(serverUuid, directory, file) }));
+        await client.delete(withParams(t.url, { upload_id: chunkedUploadId(serverUuid, directory, file) }));
     } catch {
         // ignore
     }

@@ -18,7 +18,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import { use, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
-import { AlertCircle, CheckCircle2, Download, Loader2, Upload, X } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Download, Loader2, Pause, Play, Upload, X } from 'lucide-react';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
 import { useTranslation } from '@/contexts/TranslationContext';
@@ -73,8 +73,14 @@ type UploadQueueItem = {
     id: string;
     file: File;
     progress: number;
-    status: 'pending' | 'uploading' | 'done' | 'error';
+    status: 'pending' | 'uploading' | 'paused' | 'done' | 'error';
     error?: string;
+    /** Bytes per second while uploading. */
+    speed?: number;
+    /** Seconds remaining while uploading. */
+    eta?: number | null;
+    /** Continued from parts the panel already had. */
+    resumed?: boolean;
     targetDirectory: string;
     batchId?: string;
 };
@@ -148,6 +154,28 @@ async function collectFilesFromDataTransfer(dt: DataTransfer): Promise<FileWithP
 }
 
 let uploadIdCounter = 0;
+
+const formatUploadSpeed = (bytesPerSecond: number): string => {
+    if (!bytesPerSecond || bytesPerSecond < 1) return '0 B/s';
+    const units = ['B/s', 'KB/s', 'MB/s', 'GB/s'];
+    let v = bytesPerSecond;
+    let i = 0;
+    while (v >= 1024 && i < units.length - 1) {
+        v /= 1024;
+        i += 1;
+    }
+    return `${v.toFixed(v >= 100 || i === 0 ? 0 : 1)} ${units[i]}`;
+};
+
+const formatUploadEta = (seconds: number): string => {
+    const s = Math.max(0, Math.round(seconds));
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    const sec = s % 60;
+    if (h > 0) return `${h}h ${m}m`;
+    if (m > 0) return `${m}m ${sec}s`;
+    return `${sec}s`;
+};
 const generateUploadId = (): string => {
     if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
         return crypto.randomUUID();
@@ -235,6 +263,7 @@ function WebSpaceFilesPageInner({ uuidShort }: { uuidShort: string }) {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const folderInputRef = useRef<HTMLInputElement>(null);
     const uploadProcessingRef = useRef(false);
+    const uploadAbortRef = useRef<Map<string, AbortController>>(new Map());
     const createdDirectoriesRef = useRef<Set<string>>(new Set());
     const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const shiftPivotRef = useRef<string | null>(null);
@@ -537,19 +566,53 @@ function WebSpaceFilesPageInner({ uuidShort }: { uuidShort: string }) {
             );
             try {
                 await ensureDirectoryExists(next.targetDirectory);
-                await filesApi.uploadFile(uuidShort, next.targetDirectory, next.file, (percent) => {
-                    setUploadQueue((p) => p.map((u) => (u.id === next.id ? { ...u, progress: percent } : u)));
-                });
+                const controller = new AbortController();
+                uploadAbortRef.current.set(next.id, controller);
+                await filesApi.uploadFile(
+                    uuidShort,
+                    next.targetDirectory,
+                    next.file,
+                    (percent) => {
+                        setUploadQueue((p) => p.map((u) => (u.id === next.id ? { ...u, progress: percent } : u)));
+                    },
+                    {
+                        signal: controller.signal,
+                        onStats: (st) => {
+                            setUploadQueue((p) =>
+                                p.map((u) =>
+                                    u.id === next.id
+                                        ? { ...u, speed: st.speed, eta: st.eta, resumed: st.resumed || u.resumed }
+                                        : u,
+                                ),
+                            );
+                        },
+                    },
+                );
                 setUploadQueue((prev) =>
                     prev.map((u) => (u.id === next.id ? { ...u, status: 'done' as const, progress: 100 } : u)),
                 );
                 void refresh();
             } catch (error) {
+                const reason = uploadAbortRef.current.get(next.id)?.signal.reason;
+                if (reason === 'pause') {
+                    setUploadQueue((prev) =>
+                        prev.map((u) =>
+                            u.id === next.id ? { ...u, status: 'paused' as const, speed: 0, eta: null } : u,
+                        ),
+                    );
+                    return;
+                }
+                if (reason === 'cancel') {
+                    void filesApi.discardUpload(uuidShort, next.targetDirectory, next.file);
+                    setUploadQueue((prev) => prev.filter((u) => u.id !== next.id));
+                    return;
+                }
                 const message = getApiErrorMessage(error, t, 'files.messages.upload_failed');
                 setUploadQueue((prev) =>
                     prev.map((u) => (u.id === next.id ? { ...u, status: 'error' as const, error: message } : u)),
                 );
             } finally {
+                uploadAbortRef.current.delete(next.id);
                 uploadProcessingRef.current = false;
                 setTimeout(() => {
                     setUploadQueue((prev) => {
@@ -562,6 +625,41 @@ function WebSpaceFilesPageInner({ uuidShort }: { uuidShort: string }) {
             }
         },
         [ensureDirectoryExists, filesApi, uuidShort, refresh, t],
+    );
+
+    const removeUploadFromQueue = useCallback(
+        (id: string) => {
+            const running = uploadAbortRef.current.get(id);
+            setUploadQueue((prev) => {
+                const item = prev.find((u) => u.id === id);
+                if (item && !running && (item.status === 'paused' || item.status === 'error')) {
+                    // Drop the parts the panel kept for resuming.
+                    void filesApi.discardUpload(uuidShort, item.targetDirectory, item.file);
+                }
+                return prev.filter((u) => u.id !== id);
+            });
+            if (running) running.abort('cancel');
+        },
+        [filesApi, uuidShort],
+    );
+
+    const pauseUpload = useCallback((id: string) => {
+        uploadAbortRef.current.get(id)?.abort('pause');
+    }, []);
+
+    const resumeUpload = useCallback(
+        (id: string) => {
+            setUploadQueue((prev) => {
+                const next = prev.map((u) =>
+                    u.id === id && (u.status === 'paused' || u.status === 'error')
+                        ? { ...u, status: 'pending' as const, error: undefined }
+                        : u,
+                );
+                setTimeout(() => void processUploadQueue(next), 0);
+                return next;
+            });
+        },
+        [processUploadQueue],
     );
 
     const addToUploadQueue = useCallback(
@@ -999,25 +1097,68 @@ function WebSpaceFilesPageInner({ uuidShort }: { uuidShort: string }) {
                                             {item.status === 'pending' && (
                                                 <Upload className='text-muted-foreground h-4 w-4' />
                                             )}
+                                            {item.status === 'paused' && (
+                                                <Pause className='text-muted-foreground h-4 w-4' />
+                                            )}
                                             <span className='truncate text-sm font-medium' title={item.file.name}>
                                                 {item.file.name}
                                             </span>
                                         </div>
-                                        <Button
-                                            variant='ghost'
-                                            size='icon'
-                                            onClick={() =>
-                                                setUploadQueue((prev) => prev.filter((u) => u.id !== item.id))
-                                            }
-                                            className='text-muted-foreground h-7 w-7 shrink-0 hover:text-red-500'
-                                        >
-                                            <X className='h-4 w-4' />
-                                        </Button>
+                                        <div className='flex shrink-0 items-center gap-1'>
+                                            {item.status === 'uploading' && (
+                                                <Button
+                                                    variant='ghost'
+                                                    size='icon'
+                                                    onClick={() => pauseUpload(item.id)}
+                                                    title={t('files.upload.pause')}
+                                                    aria-label={t('files.upload.pause')}
+                                                    className='text-muted-foreground hover:text-foreground h-7 w-7'
+                                                >
+                                                    <Pause className='h-4 w-4' />
+                                                </Button>
+                                            )}
+                                            {(item.status === 'paused' || item.status === 'error') && (
+                                                <Button
+                                                    variant='ghost'
+                                                    size='icon'
+                                                    onClick={() => resumeUpload(item.id)}
+                                                    title={
+                                                        item.status === 'paused'
+                                                            ? t('files.upload.resume')
+                                                            : t('files.upload.retry')
+                                                    }
+                                                    aria-label={
+                                                        item.status === 'paused'
+                                                            ? t('files.upload.resume')
+                                                            : t('files.upload.retry')
+                                                    }
+                                                    className='text-muted-foreground hover:text-foreground h-7 w-7'
+                                                >
+                                                    <Play className='h-4 w-4' />
+                                                </Button>
+                                            )}
+                                            <Button
+                                                variant='ghost'
+                                                size='icon'
+                                                onClick={() => removeUploadFromQueue(item.id)}
+                                                title={t('files.upload.cancel')}
+                                                aria-label={t('files.upload.cancel')}
+                                                className='text-muted-foreground h-7 w-7 hover:text-red-500'
+                                            >
+                                                <X className='h-4 w-4' />
+                                            </Button>
+                                        </div>
                                     </div>
-                                    {(item.status === 'uploading' || item.status === 'pending') && (
+                                    {(item.status === 'uploading' ||
+                                        item.status === 'pending' ||
+                                        item.status === 'paused') && (
                                         <div className='space-y-1.5'>
                                             <div className='text-muted-foreground flex justify-between text-[10px] font-bold tracking-tighter uppercase'>
-                                                <span>{t('files.toolbar.upload')}</span>
+                                                <span>
+                                                    {item.status === 'paused'
+                                                        ? t('files.upload.paused')
+                                                        : t('files.toolbar.upload')}
+                                                </span>
                                                 <span className='text-primary'>{item.progress}%</span>
                                             </div>
                                             <div className='border-border/50 bg-muted/40 h-1.5 w-full overflow-hidden rounded-full border'>
@@ -1026,6 +1167,19 @@ function WebSpaceFilesPageInner({ uuidShort }: { uuidShort: string }) {
                                                     style={{ width: `${item.progress}%` }}
                                                 />
                                             </div>
+                                            {item.status === 'uploading' && (item.speed ?? 0) > 0 && (
+                                                <div className='text-muted-foreground flex justify-between text-[10px] tabular-nums'>
+                                                    <span>
+                                                        {formatUploadSpeed(item.speed ?? 0)}
+                                                        {item.resumed ? ` · ${t('files.upload.resumed')}` : ''}
+                                                    </span>
+                                                    {item.eta != null && (
+                                                        <span>
+                                                            {t('files.upload.eta', { time: formatUploadEta(item.eta) })}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            )}
                                         </div>
                                     )}
                                     {item.status === 'done' && (
