@@ -99,7 +99,7 @@ export default function PlayerStatusWidget({ uuidShort, pollingInterval = 30000 
     const getDotColor = () => {
         if (data.player_count === 0) return 'text-muted-foreground';
         if (fillPercent >= 90) return 'text-red-500';
-        if (fillPercent >= 70) return 'text-yellow-500';
+        if (fillPercent >= 70) return 'text-yellow-600 dark:text-yellow-400';
         return 'text-emerald-500';
     };
 
@@ -114,7 +114,7 @@ export default function PlayerStatusWidget({ uuidShort, pollingInterval = 30000 
                 <div className='flex items-center gap-2'>
                     {data.is_stale && (
                         <div className='group relative'>
-                            <AlertTriangle className='h-3.5 w-3.5 text-yellow-500' />
+                            <AlertTriangle className='h-3.5 w-3.5 text-yellow-600 dark:text-yellow-400' />
                             <div className='bg-popover text-popover-foreground pointer-events-none absolute top-full right-0 z-50 mt-1 rounded border px-2 py-1 text-xs whitespace-nowrap opacity-0 shadow-md transition-opacity group-hover:opacity-100'>
                                 {t('servers.console.players.stale')}
                             </div>

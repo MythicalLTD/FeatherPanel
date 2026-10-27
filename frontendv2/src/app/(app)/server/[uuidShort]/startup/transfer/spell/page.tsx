@@ -365,7 +365,7 @@ export default function ServerTransferSpellPage() {
                 title={t('navigation.items.transferSpell')}
                 description={t('serverStartup.spellSelectionHelp')}
                 actions={
-                    <div className='flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:gap-3'>
+                    <div className='flex w-full flex-wrap gap-2 sm:w-auto sm:flex-nowrap sm:items-center sm:gap-3'>
                         <Button
                             variant='plain'
                             size='default'
@@ -382,7 +382,7 @@ export default function ServerTransferSpellPage() {
                             disabled={currentStep !== 3 || saving || Object.keys(variableErrors).length > 0}
                             data-fp-save-shortcut
                             loading={saving}
-                            className='order-1 w-full sm:order-2 sm:w-auto'
+                            className='order-1 min-w-0 flex-1 sm:order-2 sm:flex-none'
                         >
                             {saving ? (
                                 t('common.saving')
@@ -565,7 +565,7 @@ export default function ServerTransferSpellPage() {
                                         </p>
                                     </div>
 
-                                    <div className='flex items-center gap-4 rounded-2xl border border-white/5 bg-black/20 p-4'>
+                                    <div className='border-border/60 bg-muted/60 flex items-center gap-4 rounded-2xl border p-4 dark:border-white/5 dark:bg-black/20'>
                                         <div
                                             className='group/wipe relative flex cursor-pointer items-center select-none'
                                             onClick={() => setWipeFiles(!wipeFiles)}

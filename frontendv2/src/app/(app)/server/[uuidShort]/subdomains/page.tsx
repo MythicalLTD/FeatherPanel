@@ -163,14 +163,14 @@ export default function ServerSubdomainsPage() {
                 title={t('serverSubdomains.title')}
                 description={t('serverSubdomains.description')}
                 actions={
-                    <div className='flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:gap-3'>
+                    <div className='flex w-full flex-wrap gap-2 sm:w-auto sm:flex-nowrap sm:items-center sm:gap-3'>
                         {showHeaderCreateAction && (
                             <Button
                                 size='default'
                                 variant='default'
                                 onClick={() => router.push(`/server/${uuidShort}/subdomains/new`)}
                                 disabled={loading}
-                                className='order-1 w-full sm:order-2 sm:w-auto'
+                                className='order-1 min-w-0 flex-1 sm:order-2 sm:flex-none'
                             >
                                 <Plus className='mr-2 h-5 w-5' />
                                 {t('serverSubdomains.createButton')}
@@ -196,10 +196,10 @@ export default function ServerSubdomainsPage() {
                 <div className='animate-in slide-in-from-top relative overflow-hidden rounded-3xl border border-yellow-500/20 bg-yellow-500/10 p-6 backdrop-blur-xl duration-500'>
                     <div className='relative z-10 flex items-start gap-5'>
                         <div className='flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-yellow-500/30 bg-yellow-500/20'>
-                            <AlertTriangle className='h-6 w-6 text-yellow-500' />
+                            <AlertTriangle className='h-6 w-6 text-yellow-600 dark:text-yellow-400' />
                         </div>
                         <div className='space-y-1'>
-                            <h3 className='text-lg leading-none font-bold tracking-tight text-yellow-500 uppercase'>
+                            <h3 className='text-lg leading-none font-bold tracking-tight text-yellow-600 uppercase dark:text-yellow-400'>
                                 {t('serverSubdomains.limitReached')}
                             </h3>
                             <p className='text-sm leading-relaxed font-medium text-yellow-500/80'>

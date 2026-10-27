@@ -120,7 +120,7 @@ export function AllocationNote({ uuidShort, allocationId, note, canEdit, onSaved
                 <p
                     className={cn(
                         'text-muted-foreground text-xs',
-                        draft.length >= ALLOCATION_NOTE_MAX_LENGTH && 'text-amber-500',
+                        draft.length >= ALLOCATION_NOTE_MAX_LENGTH && 'text-amber-600 dark:text-amber-400',
                     )}
                 >
                     {t('serverAllocations.notes.counter', {
