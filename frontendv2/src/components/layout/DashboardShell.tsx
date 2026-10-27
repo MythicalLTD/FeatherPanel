@@ -43,6 +43,7 @@ import { readSidebarCollapsed, subscribeSidebarCollapsed } from '@/lib/sidebarCh
 import { useSidebarPreferences } from '@/hooks/useSidebarPreferences';
 import { getShellContentInset } from '@/lib/sidebarLayout';
 import { useNavbarSticky } from '@/hooks/useNavbarSticky';
+import { MobileBottomNav } from '@/components/layout/MobileBottomNav';
 
 export default function DashboardShell({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
@@ -113,6 +114,8 @@ export default function DashboardShell({ children }: { children: React.ReactNode
     const { sidebarPosition, dockDisplay, dockSize } = useSidebarPreferences();
     const { navbarSticky } = useNavbarSticky();
     const navbarHoverDockActive = navbarHoverReveal && chromeLayout === 'modern';
+    // Phone bottom bar only in the user dashboard area (not server/admin/plugin pages).
+    const showBottomNav = !hideAppChrome && !useFullBleedLayout && pathSegments[0] === 'dashboard';
 
     return (
         <GlobalSearchProvider>
@@ -127,6 +130,7 @@ export default function DashboardShell({ children }: { children: React.ReactNode
                         />
                     </PluginSlot>
                 )}
+                {showBottomNav && <MobileBottomNav pathname={pathname} onMenuClick={() => setMobileOpen(true)} />}
                 <PluginSlot id='shell.background' className='contents' collapseWhenHidden={false}>
                     <BackgroundWrapper fillViewport>
                         <GlobalSearchDialog />
@@ -178,7 +182,10 @@ export default function DashboardShell({ children }: { children: React.ReactNode
                                             useFullBleedLayout
                                                 ? 'overflow-hidden p-0'
                                                 : cn(
-                                                      'px-3 pt-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:px-6 sm:py-6 lg:px-8',
+                                                      'px-3 pt-5 sm:px-6 sm:py-6 lg:px-8',
+                                                      showBottomNav
+                                                          ? 'pb-[calc(5.5rem+env(safe-area-inset-bottom))]'
+                                                          : 'pb-[max(1.25rem,env(safe-area-inset-bottom))]',
                                                       navbarSticky
                                                           ? 'custom-scrollbar overflow-x-hidden overflow-y-auto overscroll-y-contain'
                                                           : 'overflow-visible',
