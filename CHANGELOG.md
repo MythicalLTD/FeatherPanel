@@ -34,6 +34,7 @@
 - The `##icanhasfeatherpanel` debug console got a fresh look and a new Panel & server section (admin root): connectivity for database, Redis, Mercure, nodes, cron and queue, build and commit, PHP and FrankenPHP worker info, feature flags, Premium state, node daemon capabilities, copy diagnostics, clear caches and force onboarding (both with confirmation). New read-only `GET /api/admin/debug/runtime`. by @nayskutzu
 - Server list polish for phones and desktop: the My/All servers and All/By folder switches are proper tabs with full width, 44px tap targets and focus rings, the folder view shows an empty state instead of a blank page, the empty card got a cleaner look with a gentle fade (off with reduced motion), pagination buttons have labels, and the dashboard shell keeps content clear of the phone home bar. by @nayskutzu
 - Admin home toolbar on phones: Refresh, Customize, Clear and Settings now sit in an even two-column grid with 44px buttons and matching styles instead of a ragged wrap. by @nayskutzu
+- Server pages read better in light mode and on phones: amber warnings, IP/port chips and other dark-only panels now have proper light-theme colours, page loads show a skeleton of the page instead of a lone spinner, and header actions sit on one row on phones (the main action grows, refresh/import stay square 44px buttons) instead of a stack of full-width icon buttons. by @nayskutzu
 
 ### Fixed
 
