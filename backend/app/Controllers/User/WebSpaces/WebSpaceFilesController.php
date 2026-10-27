@@ -24,6 +24,7 @@ use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
 use App\Helpers\WebSpaceGateway;
 use App\Helpers\WebSpaceFileShare;
+use App\Helpers\ChunkedUploadStore;
 use App\WebSpaceSubuserPermissions;
 use App\Helpers\FeatherQuilldClient;
 use App\Helpers\WebSpacePluginEvents;
@@ -32,6 +33,7 @@ use App\Helpers\CheckWebSpacePermission;
 use App\Plugins\Events\Events\WebSpaceEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\JsonResponse;
 
 /**
  * User WebSpace file browser (proxied to FeatherQuilld).
@@ -752,6 +754,107 @@ class WebSpaceFilesController
         ]);
     }
 
+    /**
+     * Resumable chunked upload (status / append / cancel). Speaks the same
+     * protocol as FeatherWings' /upload/chunk so the frontend reuses
+     * lib/chunked-upload.ts. Parts are staged on the panel and the finished
+     * file is forwarded to FeatherQuilld, which keeps every upload under
+     * Cloudflare's 100 MB request limit.
+     */
+    public function uploadChunk(Request $request, string $uuidShort): Response
+    {
+        $resolved = $this->resolve($request, $uuidShort, WebSpaceSubuserPermissions::FILE_CREATE);
+        if ($resolved instanceof Response) {
+            return $resolved;
+        }
+        $uploadId = (string) $request->query->get('upload_id', '');
+        if (!ChunkedUploadStore::isValidId($uploadId)) {
+            return new JsonResponse(['error' => 'Invalid upload_id.'], 400);
+        }
+        $store = new ChunkedUploadStore(ChunkedUploadStore::defaultBaseDir());
+        if (random_int(1, 20) === 1) {
+            $store->cleanupStale();
+        }
+        $dir = $store->dirFor((string) $resolved['uuid'], (string) ($resolved['user']['uuid'] ?? ''), $uploadId);
+        $maxChunk = self::chunkSizeBytes();
+
+        if ($request->isMethod('GET')) {
+            [$status, $body] = $store->status($dir, $maxChunk);
+
+            return new JsonResponse($body, $status);
+        }
+        if ($request->isMethod('DELETE')) {
+            [$status] = $store->cancel($dir);
+
+            return new Response('', $status);
+        }
+
+        $directory = (string) $request->query->get('directory', '/');
+        if ($directory === '') {
+            $directory = '/';
+        }
+        if (WebSpacePathValidator::reject($directory, 'directory') !== null) {
+            return new JsonResponse(['error' => 'Invalid directory.'], 400);
+        }
+        $fileName = (string) $request->query->get('file_name', '');
+        if (!WebSpacePathValidator::isSafeFilename($fileName)) {
+            return new JsonResponse(['error' => 'Invalid file_name.'], 400);
+        }
+        $len = $request->headers->get('Content-Length');
+        $diskMb = (int) ($resolved['space']['disk'] ?? 0);
+        $body = $request->getContent(true);
+        [$status, $out] = $store->append(
+            $dir,
+            (string) ($resolved['user']['uuid'] ?? ''),
+            $fileName,
+            $directory,
+            (int) $request->query->get('total_size', '-1'),
+            (int) $request->query->get('offset', '-1'),
+            $body,
+            $len !== null && is_numeric($len) ? (int) $len : null,
+            $maxChunk,
+            $diskMb > 0 ? $diskMb * 1024 * 1024 : null,
+        );
+
+        return new JsonResponse($out, $status);
+    }
+
+    public function completeChunkedUpload(Request $request, string $uuidShort): Response
+    {
+        $resolved = $this->resolve($request, $uuidShort, WebSpaceSubuserPermissions::FILE_CREATE);
+        if ($resolved instanceof Response) {
+            return $resolved;
+        }
+        $uploadId = (string) $request->query->get('upload_id', '');
+        if (!ChunkedUploadStore::isValidId($uploadId)) {
+            return new JsonResponse(['error' => 'Invalid upload_id.'], 400);
+        }
+        $sha = $request->query->get('sha256');
+        if ($sha !== null && $sha !== '' && preg_match('/^[a-fA-F0-9]{64}$/', (string) $sha) !== 1) {
+            return new JsonResponse(['error' => 'Invalid sha256.'], 400);
+        }
+        $store = new ChunkedUploadStore(ChunkedUploadStore::defaultBaseDir());
+        $dir = $store->dirFor((string) $resolved['uuid'], (string) ($resolved['user']['uuid'] ?? ''), $uploadId);
+
+        [$status, $out] = $store->complete($dir, $sha !== null ? (string) $sha : null, function (string $path, array $meta) use ($resolved): array {
+            $directory = (string) $meta['directory'];
+            if (WebSpacePathValidator::reject($directory, 'directory') !== null || !WebSpacePathValidator::isSafeFilename((string) $meta['file_name'])) {
+                return [400, ['error' => 'Invalid destination.']];
+            }
+            $daemon = FeatherQuilldClient::uploadWebSpaceFile($resolved['webNode'], $resolved['uuid'], $directory, (string) $meta['file_name'], $path, 'application/octet-stream');
+            if (!$daemon['ok']) {
+                $code = (int) $daemon['status'];
+
+                return [$code >= 400 && $code < 600 ? $code : 502, ['error' => (string) ($daemon['error'] ?? 'Daemon upload failed')]];
+            }
+            $this->logFileActivity($resolved, 'webspace.file.uploaded', ['directory' => $directory, 'file' => $meta['file_name'], 'chunked' => true]);
+
+            return [200, []];
+        });
+
+        return new JsonResponse($out, $status);
+    }
+
     public function listTrash(Request $request, string $uuidShort): Response
     {
         $resolved = $this->resolve($request, $uuidShort, WebSpaceSubuserPermissions::FILE_READ);
@@ -1130,6 +1233,13 @@ class WebSpaceFilesController
         $daemon = FeatherQuilldClient::cancelWebSpacePullJob($resolved['webNode'], $resolved['uuid'], $identifier);
 
         return $this->daemonResponse($daemon, 'DAEMON_PULL_CANCEL_FAILED', $resolved, 'webspace.file.pull_cancelled');
+    }
+
+    private static function chunkSizeBytes(): int
+    {
+        return ChunkedUploadStore::chunkSizeBytes(
+            App::getInstance(true)->getConfig()->getSetting(ConfigInterface::SERVER_UPLOAD_CHUNK_SIZE_MB, '50')
+        );
     }
 
     private function isFileTrashEnabled(): bool
