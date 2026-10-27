@@ -546,12 +546,17 @@ export default function ServersPage() {
                     <div className='flex items-start justify-between gap-2 sm:items-center'>
                         <div className='flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center'>
                             {canViewAllServers && (
-                                <div className='fp-surface grid grid-cols-2 gap-1 rounded-xl border p-1 sm:flex'>
+                                <div
+                                    role='tablist'
+                                    className='fp-surface grid w-full grid-cols-2 gap-1 rounded-xl border p-1 sm:flex sm:w-auto'
+                                >
                                     <button
                                         type='button'
+                                        role='tab'
+                                        aria-selected={serverScope === 'mine'}
                                         onClick={() => setServerScope('mine')}
                                         className={cn(
-                                            'truncate rounded-lg px-3 py-2 text-sm font-semibold transition-all sm:px-4',
+                                            'focus-visible:ring-ring/60 min-h-11 truncate rounded-lg px-3 py-2 text-sm font-semibold transition-all duration-200 outline-none focus-visible:ring-2 active:scale-[0.98] motion-reduce:transition-none motion-reduce:active:scale-100 sm:min-h-9 sm:px-4',
                                             serverScope === 'mine'
                                                 ? 'bg-primary text-primary-foreground'
                                                 : 'text-muted-foreground hover:text-foreground hover:bg-muted',
@@ -561,27 +566,34 @@ export default function ServersPage() {
                                     </button>
                                     <button
                                         type='button'
+                                        role='tab'
+                                        aria-selected={serverScope === 'all'}
                                         onClick={() => setServerScope('all')}
                                         className={cn(
-                                            'truncate rounded-lg px-3 py-2 text-sm font-semibold transition-all sm:px-4',
+                                            'focus-visible:ring-ring/60 min-h-11 truncate rounded-lg px-3 py-2 text-sm font-semibold transition-all duration-200 outline-none focus-visible:ring-2 active:scale-[0.98] motion-reduce:transition-none motion-reduce:active:scale-100 sm:min-h-9 sm:px-4',
                                             serverScope === 'all'
                                                 ? 'bg-primary text-primary-foreground'
                                                 : 'text-muted-foreground hover:text-foreground hover:bg-muted',
                                         )}
                                     >
-                                        {t('servers.allServersAdmin')} (
-                                        {serverScope === 'all' ? pagination.total_records : '…'})
+                                        {t('servers.allServersAdmin')}
+                                        {serverScope === 'all' ? ` (${pagination.total_records})` : ''}
                                     </button>
                                 </div>
                             )}
 
                             {serverScope === 'mine' && (
-                                <div className='fp-surface grid grid-cols-2 gap-1 rounded-xl border p-1 sm:flex'>
+                                <div
+                                    role='tablist'
+                                    className='fp-surface grid w-full grid-cols-2 gap-1 rounded-xl border p-1 sm:flex sm:w-auto'
+                                >
                                     <button
                                         type='button'
+                                        role='tab'
+                                        aria-selected={viewMode === 'all'}
                                         onClick={() => setViewMode('all')}
                                         className={cn(
-                                            'truncate rounded-lg px-3 py-2 text-sm font-semibold transition-all sm:px-4',
+                                            'focus-visible:ring-ring/60 min-h-11 truncate rounded-lg px-3 py-2 text-sm font-semibold transition-all duration-200 outline-none focus-visible:ring-2 active:scale-[0.98] motion-reduce:transition-none motion-reduce:active:scale-100 sm:min-h-9 sm:px-4',
                                             viewMode === 'all'
                                                 ? 'bg-primary text-primary-foreground'
                                                 : 'text-muted-foreground hover:text-foreground hover:bg-muted',
@@ -591,9 +603,11 @@ export default function ServersPage() {
                                     </button>
                                     <button
                                         type='button'
+                                        role='tab'
+                                        aria-selected={viewMode === 'folders'}
                                         onClick={() => setViewMode('folders')}
                                         className={cn(
-                                            'truncate rounded-lg px-3 py-2 text-sm font-semibold transition-all sm:px-4',
+                                            'focus-visible:ring-ring/60 min-h-11 truncate rounded-lg px-3 py-2 text-sm font-semibold transition-all duration-200 outline-none focus-visible:ring-2 active:scale-[0.98] motion-reduce:transition-none motion-reduce:active:scale-100 sm:min-h-9 sm:px-4',
                                             viewMode === 'folders'
                                                 ? 'bg-primary text-primary-foreground'
                                                 : 'text-muted-foreground hover:text-foreground hover:bg-muted',
@@ -607,8 +621,10 @@ export default function ServersPage() {
 
                         {serverScope === 'mine' && viewMode === 'folders' && (
                             <button
+                                type='button'
                                 onClick={openCreateFolder}
-                                className='bg-primary text-primary-foreground hover:bg-primary/90 flex min-h-11 shrink-0 items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold transition-colors sm:min-h-0'
+                                aria-label={t('servers.createFolder')}
+                                className='focus-visible:ring-ring/60 bg-primary text-primary-foreground hover:bg-primary/90 flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold transition-colors outline-none focus-visible:ring-2 sm:min-h-0'
                             >
                                 <FolderPlus className='h-4 w-4' />
                                 <span className='hidden sm:inline'>{t('servers.createFolder')}</span>
@@ -623,7 +639,7 @@ export default function ServersPage() {
                                     <button
                                         onClick={() => changePage(pagination.current_page - 1)}
                                         disabled={!pagination.has_prev || loading}
-                                        className='border-border hover:bg-muted inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50'
+                                        className='border-border hover:bg-muted focus-visible:ring-ring/60 inline-flex min-h-11 items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-medium transition-colors outline-none focus-visible:ring-2 disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-9'
                                     >
                                         <ChevronLeft className='h-5 w-5' />
                                         {t('common.previous')}
@@ -637,7 +653,7 @@ export default function ServersPage() {
                                     <button
                                         onClick={() => changePage(pagination.current_page + 1)}
                                         disabled={!pagination.has_next || loading}
-                                        className='border-border hover:bg-muted inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50'
+                                        className='border-border hover:bg-muted focus-visible:ring-ring/60 inline-flex min-h-11 items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-medium transition-colors outline-none focus-visible:ring-2 disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-9'
                                     >
                                         {t('common.next')}
                                         <ChevronRight className='h-5 w-5' />
@@ -677,7 +693,7 @@ export default function ServersPage() {
                                         ))}
                                     </div>
                                     {pagination.total_pages > 1 && (
-                                        <div className='border-border mt-6 flex items-center justify-between border-t px-4 py-6'>
+                                        <div className='border-border mt-6 flex flex-col items-center justify-between gap-3 border-t px-1 py-6 sm:flex-row sm:px-4'>
                                             <p className='text-muted-foreground text-sm'>
                                                 {t('servers.pagination.showing', {
                                                     from: String(pagination.from),
@@ -689,7 +705,8 @@ export default function ServersPage() {
                                                 <button
                                                     onClick={() => changePage(pagination.current_page - 1)}
                                                     disabled={!pagination.has_prev || loading}
-                                                    className='border-border hover:bg-muted rounded-lg border p-2 transition-colors disabled:cursor-not-allowed disabled:opacity-50'
+                                                    aria-label={t('common.previous')}
+                                                    className='border-border hover:bg-muted focus-visible:ring-ring/60 inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg border p-2 transition-colors outline-none focus-visible:ring-2 disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-9 sm:min-w-9'
                                                 >
                                                     <ChevronLeft className='h-5 w-5' />
                                                 </button>
@@ -702,7 +719,8 @@ export default function ServersPage() {
                                                 <button
                                                     onClick={() => changePage(pagination.current_page + 1)}
                                                     disabled={!pagination.has_next || loading}
-                                                    className='border-border hover:bg-muted rounded-lg border p-2 transition-colors disabled:cursor-not-allowed disabled:opacity-50'
+                                                    aria-label={t('common.next')}
+                                                    className='border-border hover:bg-muted focus-visible:ring-ring/60 inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg border p-2 transition-colors outline-none focus-visible:ring-2 disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-9 sm:min-w-9'
                                                 >
                                                     <ChevronRight className='h-5 w-5' />
                                                 </button>
@@ -724,7 +742,7 @@ export default function ServersPage() {
                                             <button
                                                 onClick={() => changePage(pagination.current_page - 1)}
                                                 disabled={!pagination.has_prev || loading}
-                                                className='border-border hover:bg-muted inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50'
+                                                className='border-border hover:bg-muted focus-visible:ring-ring/60 inline-flex min-h-11 items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-medium transition-colors outline-none focus-visible:ring-2 disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-9'
                                             >
                                                 <ChevronLeft className='h-4 w-4' />
                                                 {t('common.previous')}
@@ -738,7 +756,7 @@ export default function ServersPage() {
                                             <button
                                                 onClick={() => changePage(pagination.current_page + 1)}
                                                 disabled={!pagination.has_next || loading}
-                                                className='border-border hover:bg-muted inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50'
+                                                className='border-border hover:bg-muted focus-visible:ring-ring/60 inline-flex min-h-11 items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-medium transition-colors outline-none focus-visible:ring-2 disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-9'
                                             >
                                                 {t('common.next')}
                                                 <ChevronRight className='h-4 w-4' />
@@ -781,7 +799,7 @@ export default function ServersPage() {
                                     )}
 
                                     {pagination.total_pages > 1 && (
-                                        <div className='border-border mt-6 flex items-center justify-between border-t px-4 py-6'>
+                                        <div className='border-border mt-6 flex flex-col items-center justify-between gap-3 border-t px-1 py-6 sm:flex-row sm:px-4'>
                                             <p className='text-muted-foreground text-sm'>
                                                 {t('servers.pagination.showing', {
                                                     from: String(pagination.from),
@@ -793,7 +811,8 @@ export default function ServersPage() {
                                                 <button
                                                     onClick={() => changePage(pagination.current_page - 1)}
                                                     disabled={!pagination.has_prev || loading}
-                                                    className='border-border hover:bg-muted rounded-lg border p-2 transition-colors disabled:cursor-not-allowed disabled:opacity-50'
+                                                    aria-label={t('common.previous')}
+                                                    className='border-border hover:bg-muted focus-visible:ring-ring/60 inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg border p-2 transition-colors outline-none focus-visible:ring-2 disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-9 sm:min-w-9'
                                                 >
                                                     <ChevronLeft className='h-5 w-5' />
                                                 </button>
@@ -806,7 +825,8 @@ export default function ServersPage() {
                                                 <button
                                                     onClick={() => changePage(pagination.current_page + 1)}
                                                     disabled={!pagination.has_next || loading}
-                                                    className='border-border hover:bg-muted rounded-lg border p-2 transition-colors disabled:cursor-not-allowed disabled:opacity-50'
+                                                    aria-label={t('common.next')}
+                                                    className='border-border hover:bg-muted focus-visible:ring-ring/60 inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg border p-2 transition-colors outline-none focus-visible:ring-2 disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-9 sm:min-w-9'
                                                 >
                                                     <ChevronRight className='h-5 w-5' />
                                                 </button>
@@ -896,6 +916,10 @@ export default function ServersPage() {
                                                 )}
                                             </div>
                                         ))}
+
+                                        {folders.length === 0 && unassignedServers.length === 0 && (
+                                            <EmptyState searchQuery={searchQuery} t={t} />
+                                        )}
 
                                         {unassignedServers.length > 0 && (
                                             <div className='space-y-4'>

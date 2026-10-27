@@ -22,10 +22,12 @@ interface EmptyStateProps {
 
 export function EmptyState({ searchQuery, t }: EmptyStateProps) {
     return (
-        <div className='flex flex-col items-center justify-center py-24 text-center'>
-            <Server className='text-muted-foreground/30 mb-6 h-20 w-20' />
-            <h3 className='mb-2 text-2xl font-bold'>{t('servers.noServersFound')}</h3>
-            <p className='text-muted-foreground max-w-md'>
+        <div className='border-border/60 bg-card/40 animate-in fade-in slide-in-from-bottom-2 flex flex-col items-center justify-center rounded-2xl border border-dashed px-6 py-14 text-center duration-500 motion-reduce:animate-none sm:py-20'>
+            <div className='border-primary/20 bg-primary/10 mb-5 flex h-16 w-16 items-center justify-center rounded-2xl border'>
+                <Server className='text-primary h-8 w-8' />
+            </div>
+            <h3 className='mb-2 text-xl font-bold sm:text-2xl'>{t('servers.noServersFound')}</h3>
+            <p className='text-muted-foreground max-w-md text-sm sm:text-base'>
                 {searchQuery ? t('servers.adjustFilters') : t('servers.getStarted')}
             </p>
         </div>
