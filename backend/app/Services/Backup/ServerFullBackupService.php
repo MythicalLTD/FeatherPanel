@@ -20,6 +20,7 @@ namespace App\Services\Backup;
 use App\Chat\Backup;
 use App\Services\Wings\Wings;
 use App\Helpers\BackupIgnoreHelper;
+use App\Services\Storage\BackupStorageService;
 use App\Services\Database\ServerDatabaseFilesystemBackupService;
 
 /**
@@ -99,7 +100,7 @@ class ServerFullBackupService
      *
      * Caller must already enforce backup_limit / FIFO.
      *
-     * @param array{name?: string, uuid?: string} $options
+     * @param array{name?: string, uuid?: string, destination_id?: int|null} $options destination_id must already be authorized
      *
      * @return array{id: int, uuid: string, name: string, adapter: string}
      */
@@ -112,13 +113,15 @@ class ServerFullBackupService
             $backupName = 'Full backup at ' . date('Y-m-d H:i:s');
         }
 
-        $adapter = BackupAdapterResolver::resolveDefault($wings);
+        $destinationId = isset($options['destination_id']) && (int) $options['destination_id'] > 0 ? (int) $options['destination_id'] : null;
+        $adapter = BackupStorageService::chooseAdapter($wings, $destinationId);
         $backupId = Backup::createBackup([
             'server_id' => (int) $server['id'],
             'uuid' => $backupUuid,
             'name' => $backupName,
             'ignored_files' => $ignoredFiles,
             'disk' => $adapter,
+            'destination_id' => $destinationId,
             'is_successful' => 0,
             'is_locked' => 1,
         ]);

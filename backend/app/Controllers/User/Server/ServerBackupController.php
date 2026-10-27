@@ -17,9 +17,6 @@
 
 namespace App\Controllers\User\Server;
 
-use App\Services\Storage\StorageSettings;
-use App\Services\Storage\StorageException;
-use App\Services\Storage\BackupStorageService;
 use App\App;
 use App\Chat\Node;
 use App\Chat\Backup;
@@ -34,14 +31,18 @@ use App\Services\Wings\Wings;
 use OpenApi\Attributes as OA;
 use App\Helpers\WingsUrlHelper;
 use App\Helpers\BackupIgnoreHelper;
+use App\Chat\UserStorageDestination;
 use App\Plugins\Events\Events\ServerEvent;
+use App\Services\Storage\StorageException;
 use App\Services\Backup\BackupFifoEviction;
 use Symfony\Component\HttpFoundation\Request;
 use App\Services\Backup\BackupAdapterResolver;
 use App\Services\Backup\StalledBackupRecovery;
+use App\Services\Storage\BackupStorageService;
 use Symfony\Component\HttpFoundation\Response;
 use App\Plugins\Events\Events\ServerBackupEvent;
 use App\Services\Backup\ServerFullBackupService;
+use App\Services\Storage\StorageDestinationService;
 use App\Services\Database\ServerDatabaseDumpService;
 
 #[OA\Schema(
@@ -243,8 +244,21 @@ class ServerBackupController
         $total = count($backups);
         $offset = ($page - 1) * $perPage;
         $paginatedBackups = array_slice($backups, $offset, $perPage);
+        $destinations = [];
         foreach ($paginatedBackups as &$backup) {
             $backup['is_stale'] = StalledBackupRecovery::isStale($backup);
+            $backup['destination'] = null;
+            if (!empty($backup['destination_id'])) {
+                $destId = (int) $backup['destination_id'];
+                $destinations[$destId] ??= UserStorageDestination::getById($destId, true);
+                $dest = $destinations[$destId];
+                $backup['destination'] = [
+                    'id' => $destId,
+                    'name' => $dest['name'] ?? null,
+                    'provider' => $dest['provider'] ?? null,
+                    'state' => BackupStorageService::destinationState($backup),
+                ];
+            }
         }
         unset($backup);
         $paginatedBackups = TimeHelper::normaliseRows($paginatedBackups, ['completed_at', 'deleted_at']);
@@ -399,6 +413,16 @@ class ServerBackupController
         }
 
         $backupType = strtolower(trim((string) ($body['type'] ?? 'files')));
+
+        // Bring-your-own storage: only destinations owned by the requesting user.
+        $requestUser = $request->attributes->get('user');
+        try {
+            $destination = StorageDestinationService::resolveForBackup($body['destination_id'] ?? null, (int) ($requestUser['id'] ?? 0));
+        } catch (StorageException $e) {
+            return ApiResponse::error($e->getMessage(), $e->errorCode(), $e->status());
+        }
+        $body['destination_id'] = $destination !== null ? (int) $destination['id'] : null;
+
         if ($backupType === 'full') {
             return $this->createFullBackup($request, $server, $body);
         }
@@ -478,9 +502,7 @@ class ServerBackupController
 
             // Panel-managed S3 (presigned uploads) wins when the admin enabled it as default;
             // otherwise the node-admin configured adapter is used.
-            $adapter = (StorageSettings::bool(StorageSettings::S3_USE_BY_DEFAULT) && StorageSettings::globalS3Configured())
-                ? BackupAdapterResolver::ADAPTER_S3
-                : BackupAdapterResolver::resolveDefault($wings);
+            $adapter = BackupStorageService::chooseAdapter($wings, $body['destination_id']);
 
             // Create backup record in database
             $backupData = [
@@ -489,6 +511,7 @@ class ServerBackupController
                 'name' => $backupName,
                 'ignored_files' => $ignoredFiles,
                 'disk' => $adapter,
+                'destination_id' => $body['destination_id'],
                 'is_successful' => 0,
                 'is_locked' => 1, // Lock while backup is in progress
             ];
@@ -533,6 +556,7 @@ class ServerBackupController
         $this->logActivity($server, $node, 'backup_created', [
             'backup_uuid' => $backupUuid,
             'adapter' => $adapter,
+            'destination_id' => $body['destination_id'],
             'backup_name' => $backupName,
         ], $user);
 
@@ -554,6 +578,7 @@ class ServerBackupController
             'uuid' => $backupUuid,
             'name' => $backupName,
             'adapter' => $adapter,
+            'destination_id' => $body['destination_id'],
         ], 'Backup initiated successfully', 202);
     }
 
@@ -1787,6 +1812,7 @@ class ServerBackupController
             $result = ServerFullBackupService::run($wings, $server, $parsed, [
                 'name' => $backupName,
                 'uuid' => $body['uuid'] ?? null,
+                'destination_id' => $body['destination_id'] ?? null,
             ]);
 
             $this->logActivity($server, $node, 'full_backup_created', [
