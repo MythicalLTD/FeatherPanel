@@ -135,8 +135,9 @@ function SiblingFolders({
                 <ChevronRight className='h-4 w-4' />
             </MenuButton>
             <MenuItems
+                transition
                 anchor='bottom start'
-                className='fp-menu-surface z-50 mt-1 max-h-72 w-56 overflow-y-auto rounded-xl border p-1 shadow-xl focus:outline-none'
+                className='fp-menu-surface fp-menu-anim z-50 mt-1 max-h-72 w-56 overflow-y-auto rounded-xl border p-1 shadow-xl focus:outline-none'
             >
                 {folders === null ? (
                     <div className='text-muted-foreground px-3 py-2 text-xs'>{t('common.loading')}</div>
@@ -201,7 +202,7 @@ export function FileBreadcrumbs({
                     className={cn(
                         'h-8 shrink-0 gap-1.5 px-2 transition-colors',
                         normalizedCurrent === '/'
-                            ? 'text-foreground bg-muted/60 font-semibold'
+                            ? 'bg-primary/10 text-primary ring-primary/20 font-semibold ring-1'
                             : 'text-muted-foreground hover:text-foreground',
                     )}
                     onClick={() => onNavigate('/')}
@@ -233,7 +234,7 @@ export function FileBreadcrumbs({
                                 className={cn(
                                     'h-8 px-2 whitespace-nowrap transition-colors',
                                     isCurrent
-                                        ? 'text-foreground bg-muted/60 cursor-default font-bold'
+                                        ? 'bg-primary/10 text-primary ring-primary/20 cursor-default font-semibold ring-1'
                                         : 'text-muted-foreground hover:text-foreground hover:bg-muted/50',
                                 )}
                                 onClick={() => onNavigate(path)}

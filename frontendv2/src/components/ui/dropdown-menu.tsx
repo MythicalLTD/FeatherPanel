@@ -16,7 +16,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import * as React from 'react';
-import { Menu, MenuButton, MenuItem, MenuItems, Transition } from '@headlessui/react';
+import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react';
 import { cn } from '@/lib/utils';
 
 export const DropdownMenu = Menu;
@@ -32,25 +32,16 @@ export function DropdownMenuContent({
     className?: string;
 }) {
     return (
-        <Transition
-            as={React.Fragment}
-            enter='transition ease-out duration-100'
-            enterFrom='transform opacity-0 scale-95'
-            enterTo='transform opacity-100 scale-100'
-            leave='transition ease-in duration-75'
-            leaveFrom='transform opacity-100 scale-100'
-            leaveTo='transform opacity-0 scale-95'
+        <MenuItems
+            transition
+            anchor={align === 'end' ? 'bottom end' : 'bottom start'}
+            className={cn(
+                'fp-menu-surface fp-menu-anim z-50 min-w-32 overflow-hidden rounded-xl border p-1 focus:outline-none',
+                className,
+            )}
         >
-            <MenuItems
-                anchor={align === 'end' ? 'bottom end' : 'bottom start'}
-                className={cn(
-                    'fp-menu-surface z-50 min-w-32 overflow-hidden rounded-xl border p-1 focus:outline-none',
-                    className,
-                )}
-            >
-                {children}
-            </MenuItems>
-        </Transition>
+            {children}
+        </MenuItems>
     );
 }
 
