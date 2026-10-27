@@ -203,7 +203,7 @@ export async function chunkedUpload(opts: ChunkedUploadOptions): Promise<void> {
                 maxChunk = Math.floor(Math.min(maxChunk, size) / 2);
                 continue;
             }
-            if (status === 400 || status === 422 || status === 507) throw e;
+            if (status === 400 || status === 422 || status === 429 || status === 507) throw e;
             attempt += 1;
             if (attempt >= MAX_ATTEMPTS) throw e;
             if (status === 401 || status === 403 || status === 404) await fresh(true);
