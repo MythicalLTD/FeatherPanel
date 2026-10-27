@@ -342,7 +342,7 @@ export default function ServerSchedulesPage() {
                                 disabled={loading}
                                 className='order-1 min-w-0 flex-1 sm:order-3 sm:flex-none'
                             >
-                                <Plus className='mr-2 h-5 w-5' />
+                                <Plus className='mr-2 h-4 w-4' />
                                 {t('serverSchedules.createSchedule')}
                             </Button>
                         )}
