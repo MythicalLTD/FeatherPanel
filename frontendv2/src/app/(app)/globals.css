@@ -1007,9 +1007,41 @@ html.fp-privacy [data-fp-sensitive]:not(:focus) {
     border-color: var(--fp-surface-border);
     box-shadow:
         inset 0 1px 0 0 hsl(var(--fp-surface-highlight)),
-        0 16px 40px -12px rgb(0 0 0 / 0.55);
+        var(--fp-shadow-3);
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
+}
+
+/* Design scale tokens: one place for radii, elevation and the type ramp. */
+:root {
+    --fp-radius-sm: 0.5rem;
+    --fp-radius-md: 0.75rem;
+    --fp-radius-lg: 1rem;
+    --fp-radius-xl: 1.5rem;
+    --fp-shadow-1: 0 1px 2px hsl(var(--foreground) / 0.06), 0 1px 1px hsl(var(--foreground) / 0.04);
+    --fp-shadow-2: 0 8px 24px -12px hsl(var(--foreground) / 0.28);
+    --fp-shadow-3: 0 16px 40px -12px rgb(0 0 0 / 0.55);
+    --fp-text-xs: 0.75rem;
+    --fp-text-sm: 0.875rem;
+    --fp-text-base: 1rem;
+    --fp-text-lg: 1.125rem;
+    --fp-text-xl: 1.25rem;
+    --fp-text-2xl: 1.5rem;
+    --fp-ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* Menu items: a quick tinted hover so options feel responsive. */
+.fp-menu-surface [role='menuitem'] {
+    transition:
+        background-color 120ms ease,
+        color 120ms ease;
+}
+
+/* Bottom nav: slides up once on load. */
+@media (prefers-reduced-motion: no-preference) {
+    .fp-bottom-nav {
+        animation: fadeInUp 0.35s var(--fp-ease-out) both;
+    }
 }
 
 /* Auth background: faint dot grid that fades out towards the edges. */

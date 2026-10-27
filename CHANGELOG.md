@@ -41,6 +41,7 @@
 - Panel polish: loading skeletons now shimmer instead of blinking, server cards lift with a theme-tinted shadow on hover and press down on tap, the live status dot pulses with a soft ring, status badges are readable in dark mode, resource bars ease smoothly and text selection uses the theme colour. Everything respects reduced motion.
 - Console and toasts: the terminal header gets a soft gradient, desktop window dots and a pulsing live dot while running, the console card highlights when focused, and toasts are rounder and glassy with a softer shadow.
 - Empty states across the panel get a small illustration (theme glow, rings and a gently floating icon) and rise in softly; dialogs open as bottom sheets with a grab handle on phones; the phone navbar gives the server switcher its full width again. Reduced motion is respected.
+- Phones get a bottom navigation bar in the user dashboard (Home, Servers, Account, Menu) with 48px targets and safe-area padding, hidden from tablet width up; tabs get a hover tint and a soft raised active state; design scale tokens (radius, shadow, type ramp, easing) are now CSS variables used by menus and tabs.
 - File manager and console: files get colour-coded type tiles (code, config, archives, images, jars, scripts, logs), selected rows show a theme accent bar, the drag-and-drop overlay is calmer with an inset dashed frame and a floating upload tile, and the console input glows on focus, shows a keyboard hint and fills the send button once you type.
 
 ### Fixed

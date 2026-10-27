@@ -4083,6 +4083,13 @@
         }
     },
     "navbar": {
+        "bottom_nav": {
+            "label": "Main navigation",
+            "home": "Home",
+            "servers": "Servers",
+            "account": "Account",
+            "menu": "Menu"
+        },
         "server_switcher": {
             "title": "Switch server",
             "switch": "Switch server",
