@@ -6810,7 +6810,12 @@
             "permissions": "Permissions",
             "delete": "Delete",
             "duplicate": "Duplicate",
-            "info": "Details"
+            "info": "Details",
+            "kbd": {
+                "enter": "Enter",
+                "f2": "F2",
+                "delete": "Del"
+            }
         },
         "dialogs": {
             "archive_browse": {
