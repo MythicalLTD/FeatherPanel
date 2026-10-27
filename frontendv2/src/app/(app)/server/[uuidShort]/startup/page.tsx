@@ -485,8 +485,8 @@ export default function ServerStartupPage() {
                     >
                         {viewableVariables.length === 0 && customVariables.length === 0 ? (
                             <div className='flex flex-col items-center justify-center space-y-4 py-16 text-center'>
-                                <Settings className='text-muted-foreground/10 h-16 w-16' />
-                                <p className='text-muted-foreground leading-none font-black uppercase'>
+                                <Settings className='text-muted-foreground/30 h-12 w-12' />
+                                <p className='text-muted-foreground text-sm font-medium'>
                                     {t('serverStartup.noVariablesConfigured')}
                                 </p>
                             </div>
@@ -730,7 +730,7 @@ export default function ServerStartupPage() {
                                                         ? 'cursor-pointer'
                                                         : 'cursor-default opacity-80',
                                                     form.image === image.value
-                                                        ? 'border-blue-500/40 bg-blue-500/10'
+                                                        ? 'border-primary/40 bg-primary/10 ring-primary/20 ring-1 ring-inset'
                                                         : 'bg-card/50 border-border/5 hover:border-border/20',
                                                 )}
                                             >
@@ -740,7 +740,7 @@ export default function ServerStartupPage() {
                                                             className={cn(
                                                                 'truncate text-sm font-medium transition-colors',
                                                                 form.image === image.value
-                                                                    ? 'text-blue-500'
+                                                                    ? 'text-primary'
                                                                     : 'text-foreground group-hover/img:text-foreground',
                                                             )}
                                                         >
@@ -756,7 +756,7 @@ export default function ServerStartupPage() {
                                                         </p>
                                                     </div>
                                                     {form.image === image.value && (
-                                                        <div className='h-1.5 w-1.5 shrink-0 rounded-full bg-blue-500' />
+                                                        <div className='bg-primary h-1.5 w-1.5 shrink-0 rounded-full' />
                                                     )}
                                                 </div>
                                             </div>

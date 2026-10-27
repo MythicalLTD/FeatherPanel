@@ -522,13 +522,13 @@ export default function ServerBackupsPage() {
                         <div className='animate-in slide-in-from-top relative overflow-hidden rounded-3xl border border-yellow-500/20 bg-yellow-500/10 p-6 backdrop-blur-xl duration-500'>
                             <div className='relative z-10 flex items-start gap-5'>
                                 <div className='flex h-12 w-12 items-center justify-center rounded-2xl border border-yellow-500/30 bg-yellow-500/20'>
-                                    <AlertTriangle className='h-6 w-6 text-yellow-600 dark:text-yellow-400' />
+                                    <AlertTriangle className='h-6 w-6 text-yellow-700 dark:text-yellow-400' />
                                 </div>
                                 <div className='space-y-1'>
-                                    <h3 className='text-lg leading-none font-bold text-yellow-600 dark:text-yellow-400'>
+                                    <h3 className='text-lg leading-none font-bold text-yellow-700 dark:text-yellow-400'>
                                         {t('common.disabled')}
                                     </h3>
-                                    <p className='text-sm leading-relaxed font-medium text-yellow-500/80'>
+                                    <p className='text-sm leading-relaxed font-medium text-yellow-800 dark:text-yellow-500/80'>
                                         {t('serverBackups.noBackupsNoLimit')}
                                     </p>
                                 </div>
@@ -540,13 +540,13 @@ export default function ServerBackupsPage() {
                         <div className='animate-in slide-in-from-top relative overflow-hidden rounded-3xl border border-yellow-500/20 bg-yellow-500/10 p-6 backdrop-blur-xl duration-500'>
                             <div className='relative z-10 flex items-start gap-5'>
                                 <div className='flex h-12 w-12 items-center justify-center rounded-2xl border border-yellow-500/30 bg-yellow-500/20'>
-                                    <AlertTriangle className='h-6 w-6 text-yellow-600 dark:text-yellow-400' />
+                                    <AlertTriangle className='h-6 w-6 text-yellow-700 dark:text-yellow-400' />
                                 </div>
                                 <div className='space-y-1'>
-                                    <h3 className='text-lg leading-none font-bold text-yellow-600 dark:text-yellow-400'>
+                                    <h3 className='text-lg leading-none font-bold text-yellow-700 dark:text-yellow-400'>
                                         {t('serverBackups.backupLimitReached')}
                                     </h3>
-                                    <p className='text-sm leading-relaxed font-medium text-yellow-500/80'>
+                                    <p className='text-sm leading-relaxed font-medium text-yellow-800 dark:text-yellow-500/80'>
                                         {t('serverBackups.backupLimitReachedDescription', {
                                             limit: String(server?.backup_limit || 0),
                                         })}
@@ -674,7 +674,7 @@ export default function ServerBackupsPage() {
                                             <div className='min-w-0'>
                                                 <p className='truncate font-medium'>{backup.name}</p>
                                                 {backup.is_locked === 1 && (
-                                                    <p className='flex items-center gap-1 text-xs text-yellow-600 dark:text-yellow-400'>
+                                                    <p className='flex items-center gap-1 text-xs text-yellow-700 dark:text-yellow-400'>
                                                         <Lock className='h-3 w-3' />
                                                         {t('serverBackups.statusLocked')}
                                                     </p>
