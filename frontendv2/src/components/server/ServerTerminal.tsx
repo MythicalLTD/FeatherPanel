@@ -1715,7 +1715,7 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
                                     )}
                                     <div
                                         className={cn(
-                                            'border-border/50 bg-muted/20 focus-within:border-primary/40 focus-within:ring-primary/15 flex h-9 w-full items-center gap-2 rounded-lg border px-2.5 transition-all focus-within:ring-2',
+                                            'border-border/50 bg-muted/20 focus-within:border-primary/50 focus-within:bg-background/60 focus-within:ring-primary/15 focus-within:shadow-primary/10 flex h-9 w-full items-center gap-2 rounded-lg border px-2.5 transition-all focus-within:shadow-lg focus-within:ring-2',
                                             !canSend && 'opacity-60',
                                             suggestionMenu &&
                                                 suggestionMenu.suggestions.length > 0 &&
@@ -1871,14 +1871,25 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
                                                 spellCheck={false}
                                             />
                                         </div>
+                                        {!isGlass && canSend && !commandInput && (
+                                            <kbd
+                                                aria-hidden
+                                                className='border-border/60 bg-background/60 text-muted-foreground hidden shrink-0 rounded-md border px-1.5 py-0.5 font-mono text-[10px] select-none md:inline-block'
+                                            >
+                                                {t('servers.console.terminal.history_hint')}
+                                            </kbd>
+                                        )}
                                     </div>
                                 </div>
                                 <Button
                                     type='button'
-                                    variant='outline'
+                                    variant={commandInput.trim() ? 'default' : 'outline'}
                                     size='icon'
                                     className={cn(
-                                        'text-primary hover:bg-primary/10 hover:text-primary border-primary/35 focus:ring-primary/15 h-9 w-9 shrink-0 rounded-lg focus:ring-2',
+                                        'focus:ring-primary/15 h-9 w-9 shrink-0 rounded-lg transition-all focus:ring-2',
+                                        commandInput.trim()
+                                            ? 'shadow-primary/30 shadow-md'
+                                            : 'text-primary hover:bg-primary/10 hover:text-primary border-primary/35',
                                         isGlass && 'hidden',
                                     )}
                                     onClick={sendCommand}
