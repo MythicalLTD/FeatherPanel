@@ -21,6 +21,8 @@ use App\Chat\Backup;
 use App\Chat\ServerActivity;
 use App\Services\Wings\Wings;
 use App\Helpers\BackupIgnoreHelper;
+use App\Services\Storage\StorageException;
+use App\Services\Storage\StorageDestinationService;
 use App\Services\Database\ServerDatabaseDumpService;
 use App\Services\Database\ServerDatabaseFilesystemBackupService;
 
@@ -44,11 +46,12 @@ class ServerBackupTaskService
     public const SKIP_LIMIT = 'backup_limit_reached';
     public const SKIP_FIFO = 'fifo_rotation_failed';
     public const SKIP_NO_DATABASES = 'no_databases';
+    public const SKIP_DESTINATION = 'destination_unavailable';
 
     /**
      * @param array<string, mixed> $server
      * @param string $payload schedule-style backup payload (JSON or legacy ignore patterns)
-     * @param array{context?: string, name_prefix?: string} $options context = activity prefix ("schedule", "lifecycle")
+     * @param array{context?: string, name_prefix?: string, destination_id?: int|null} $options context = activity prefix ("schedule", "lifecycle")
      *
      * @throws \InvalidArgumentException on an invalid payload
      * @throws \Exception when the backup could not be started
@@ -58,19 +61,24 @@ class ServerBackupTaskService
     public function run(Wings $wings, array $server, string $payload, array $options = []): array
     {
         $parsed = ServerDatabaseDumpService::parseBackupPayload($payload);
+        if (!array_key_exists('destination_id', $options)) {
+            $options['destination_id'] = StorageDestinationService::destinationIdFromPayload($payload);
+        }
 
         if ($parsed['type'] === 'database') {
             return $this->runDatabaseBackup($wings, $server, $parsed, $options);
         }
 
         if ($parsed['type'] === 'full') {
-            $skip = $this->acquireBackupSlot($wings, $server, 'full', $options);
+            $destinationId = null;
+            $skip = $this->checkDestination($server, $options, 'full', $destinationId)
+                ?? $this->acquireBackupSlot($wings, $server, 'full', $options);
             if ($skip !== null) {
                 return $skip;
             }
 
             $name = $this->backupName($options, 'full backup');
-            $result = $this->startFullBackup($wings, $server, $parsed, $name);
+            $result = $this->startFullBackup($wings, $server, $parsed, $name, $destinationId);
             $wingsBackup = $result['wings_backup'];
             $this->recordActivity($server, $options, 'full_backup_started', [
                 'backup_uuid' => $wingsBackup['uuid'],
@@ -92,7 +100,7 @@ class ServerBackupTaskService
      * Server files backup (the schedule `backup` task with type "files").
      *
      * @param array<string, mixed> $server
-     * @param array{context?: string, name_prefix?: string} $options
+     * @param array{context?: string, name_prefix?: string, destination_id?: int|null} $options
      *
      * @return array{type: string, status: string, reason: string|null, backup_uuid: string|null, backup_id: int|null, name: string|null, details: array<string, mixed>}
      */
@@ -100,12 +108,14 @@ class ServerBackupTaskService
     {
         $ignoredFiles = BackupIgnoreHelper::normalizeForStorage($ignoredFiles);
 
-        $skip = $this->acquireBackupSlot($wings, $server, 'files', $options);
+        $destinationId = null;
+        $skip = $this->checkDestination($server, $options, 'files', $destinationId)
+            ?? $this->acquireBackupSlot($wings, $server, 'files', $options);
         if ($skip !== null) {
             return $skip;
         }
 
-        $backup = $this->startWingsBackup($wings, $server, $ignoredFiles, $this->backupName($options, 'backup'));
+        $backup = $this->startWingsBackup($wings, $server, $ignoredFiles, $this->backupName($options, 'backup'), $destinationId);
         $this->recordActivity($server, $options, 'backup_started', [
             'backup_uuid' => $backup['uuid'],
             'backup_id' => $backup['id'],
@@ -137,14 +147,19 @@ class ServerBackupTaskService
     /**
      * @return array{id: int, uuid: string, name: string, adapter: string}
      */
-    protected function startWingsBackup(Wings $wings, array $server, string $ignoredFiles, string $name): array
+    protected function startWingsBackup(Wings $wings, array $server, string $ignoredFiles, string $name, ?int $destinationId = null): array
     {
-        return ServerFullBackupService::createWingsBackup($wings, $server, $ignoredFiles, ['name' => $name]);
+        return ServerFullBackupService::createWingsBackup($wings, $server, $ignoredFiles, ['name' => $name, 'destination_id' => $destinationId]);
     }
 
-    protected function startFullBackup(Wings $wings, array $server, array $parsed, string $name): array
+    protected function startFullBackup(Wings $wings, array $server, array $parsed, string $name, ?int $destinationId = null): array
     {
-        return ServerFullBackupService::run($wings, $server, $parsed, ['name' => $name]);
+        return ServerFullBackupService::run($wings, $server, $parsed, ['name' => $name, 'destination_id' => $destinationId]);
+    }
+
+    protected function resolveDestination(?int $destinationId, array $server): ?int
+    {
+        return StorageDestinationService::resolveForServer($destinationId, $server);
     }
 
     protected function dumpDatabases(Wings $wings, array $server, array $parsed): array
@@ -158,9 +173,32 @@ class ServerBackupTaskService
     }
 
     /**
+     * Skip (instead of silently falling back to node storage) when the chosen destination is unusable.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function checkDestination(array $server, array $options, string $type, ?int &$destinationId): ?array
+    {
+        $wanted = isset($options['destination_id']) && (int) $options['destination_id'] > 0 ? (int) $options['destination_id'] : null;
+        try {
+            $destinationId = $this->resolveDestination($wanted, $server);
+        } catch (StorageException $e) {
+            $this->recordActivity($server, $options, 'backup_skipped_destination', [
+                'destination_id' => $wanted,
+                'error' => $e->getMessage(),
+                'code' => $e->errorCode(),
+            ]);
+
+            return $this->result($type, self::STATUS_SKIPPED, self::SKIP_DESTINATION, null, null, null, ['error' => $e->getMessage()]);
+        }
+
+        return null;
+    }
+
+    /**
      * @param array<string, mixed> $server
      * @param array<string, mixed> $parsed
-     * @param array{context?: string, name_prefix?: string} $options
+     * @param array{context?: string, name_prefix?: string, destination_id?: int|null} $options
      */
     private function runDatabaseBackup(Wings $wings, array $server, array $parsed, array $options): array
     {
@@ -192,7 +230,7 @@ class ServerBackupTaskService
      * Enforce backup_limit and FIFO rotation (same rules as scheduled backups).
      *
      * @param array<string, mixed> $server
-     * @param array{context?: string, name_prefix?: string} $options
+     * @param array{context?: string, name_prefix?: string, destination_id?: int|null} $options
      *
      * @return array<string, mixed>|null a "skipped" result when no backup may be created, null to proceed
      */
@@ -240,7 +278,7 @@ class ServerBackupTaskService
     }
 
     /**
-     * @param array{context?: string, name_prefix?: string} $options
+     * @param array{context?: string, name_prefix?: string, destination_id?: int|null} $options
      */
     private function backupName(array $options, string $suffix): string
     {
@@ -251,7 +289,7 @@ class ServerBackupTaskService
 
     /**
      * @param array<string, mixed> $server
-     * @param array{context?: string, name_prefix?: string} $options
+     * @param array{context?: string, name_prefix?: string, destination_id?: int|null} $options
      * @param array<string, mixed> $metadata
      */
     private function recordActivity(array $server, array $options, string $event, array $metadata): void

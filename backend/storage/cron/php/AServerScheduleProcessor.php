@@ -453,7 +453,7 @@ class AServerScheduleProcessor implements TimeTask
      * Limit / FIFO handling and backup creation are shared with lifecycle hooks via
      * {@see ServerBackupTaskService}.
      */
-    private function executeBackupServer(array $server, string $ignoredFiles = '[]')
+    private function executeBackupServer(array $server, string $ignoredFiles = '[]', ?int $destinationId = null)
     {
         $app = App::getInstance(false, true);
         MinecraftColorCodeSupport::sendOutputWithNewLine('&aBacking up server: ' . $server['name']);
@@ -463,6 +463,7 @@ class AServerScheduleProcessor implements TimeTask
             $result = (new ServerBackupTaskService())->runFilesBackup($wings, $server, $ignoredFiles, [
                 'context' => 'schedule',
                 'name_prefix' => 'Scheduled',
+                'destination_id' => $destinationId,
             ]);
 
             if ($result['status'] === ServerBackupTaskService::STATUS_SKIPPED) {
@@ -499,18 +500,19 @@ class AServerScheduleProcessor implements TimeTask
         }
 
         $parsed = ServerDatabaseDumpService::parseBackupPayload($payload);
+        $destinationId = \App\Services\Storage\StorageDestinationService::destinationIdFromPayload($payload);
         if ($parsed['type'] === 'database') {
             $this->executeDatabaseBackup($server, $parsed);
 
             return;
         }
         if ($parsed['type'] === 'full') {
-            $this->executeFullBackup($server, $parsed);
+            $this->executeFullBackup($server, $parsed, $destinationId);
 
             return;
         }
 
-        $this->executeBackupServer($server, $parsed['ignored_files'] !== '' ? $parsed['ignored_files'] : '[]');
+        $this->executeBackupServer($server, $parsed['ignored_files'] !== '' ? $parsed['ignored_files'] : '[]', $destinationId);
     }
 
     /**
@@ -518,7 +520,7 @@ class AServerScheduleProcessor implements TimeTask
      *
      * @param array{type: string, ignored_files: string, databases: 'all'|list<int>, directory: string, include_metadata: bool, include_encrypted: bool, include_activities: bool} $parsed
      */
-    private function executeFullBackup(array $server, array $parsed)
+    private function executeFullBackup(array $server, array $parsed, ?int $destinationId = null)
     {
         $app = App::getInstance(false, true);
         MinecraftColorCodeSupport::sendOutputWithNewLine('&aStarting full backup for server: ' . $server['name']);
@@ -552,8 +554,11 @@ class AServerScheduleProcessor implements TimeTask
                 }
             }
 
+            // Only the server owner's own destinations are allowed for unattended backups.
+            $destinationId = \App\Services\Storage\StorageDestinationService::resolveForServer($destinationId, $server);
             $result = \App\Services\Backup\ServerFullBackupService::run($wings, $server, $parsed, [
                 'name' => 'Scheduled full backup at ' . date('Y-m-d H:i:s'),
+                'destination_id' => $destinationId,
             ]);
 
             foreach ($result['backed_up'] as $item) {

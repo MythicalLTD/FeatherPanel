@@ -399,8 +399,14 @@ class TaskController
                     return ApiResponse::error('Missing required field: payload', 'MISSING_REQUIRED_FIELD', 400);
                 }
                 \App\Services\Database\ServerDatabaseDumpService::parseBackupPayload($payload);
+                \App\Services\Storage\StorageDestinationService::resolveForServer(
+                    \App\Services\Storage\StorageDestinationService::destinationIdFromPayload($payload),
+                    $server
+                );
             } catch (\InvalidArgumentException $e) {
                 return ApiResponse::error($e->getMessage(), 'INVALID_PAYLOAD', 400);
+            } catch (\App\Services\Storage\StorageException $e) {
+                return ApiResponse::error($e->getMessage(), $e->errorCode(), $e->status());
             }
         }
 
@@ -599,8 +605,14 @@ class TaskController
                     return ApiResponse::error('Missing required field: payload', 'MISSING_REQUIRED_FIELD', 400);
                 }
                 \App\Services\Database\ServerDatabaseDumpService::parseBackupPayload((string) $effectivePayload);
+                \App\Services\Storage\StorageDestinationService::resolveForServer(
+                    \App\Services\Storage\StorageDestinationService::destinationIdFromPayload((string) $effectivePayload),
+                    $server
+                );
             } catch (\InvalidArgumentException $e) {
                 return ApiResponse::error($e->getMessage(), 'INVALID_PAYLOAD', 400);
+            } catch (\App\Services\Storage\StorageException $e) {
+                return ApiResponse::error($e->getMessage(), $e->errorCode(), $e->status());
             }
         }
 
