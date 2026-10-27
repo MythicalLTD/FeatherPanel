@@ -43,6 +43,7 @@
 - Empty states across the panel get a small illustration (theme glow, rings and a gently floating icon) and rise in softly; dialogs open as bottom sheets with a grab handle on phones; the phone navbar gives the server switcher its full width again. Reduced motion is respected.
 - Phones get a bottom navigation bar in the user dashboard (Home, Servers, Account, Menu) with 48px targets and safe-area padding, hidden from tablet width up; tabs get a hover tint and a soft raised active state; design scale tokens (radius, shadow, type ramp, easing) are now CSS variables used by menus and tabs.
 - File manager and console: files get colour-coded type tiles (code, config, archives, images, jars, scripts, logs), selected rows show a theme accent bar, the drag-and-drop overlay is calmer with an inset dashed frame and a floating upload tile, and the console input glows on focus, shows a keyboard hint and fills the send button once you type.
+- Dropdown menus fade and scale in and out from their anchor, pages fade in lightly on navigation (opacity only, off under reduced motion), and the file manager breadcrumb highlights the current folder with the primary tint.
 
 ### Fixed
 

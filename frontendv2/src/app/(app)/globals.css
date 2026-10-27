@@ -650,6 +650,38 @@ html[data-fp-plugin-fullbleed='1'] body [data-fp-plugin-main-inner] {
     backdrop-filter: blur(12px) saturate(1.2);
 }
 
+/* Menus: fade and scale from the anchor; Headless UI sets data-closed/enter/leave while animating. */
+.fp-menu-anim {
+    transform-origin: top;
+    transition:
+        opacity 140ms var(--fp-ease-out, ease-out),
+        scale 140ms var(--fp-ease-out, ease-out);
+}
+.fp-menu-anim[data-closed] {
+    opacity: 0;
+    scale: 0.96;
+}
+.fp-menu-anim[data-leave] {
+    transition-duration: 90ms;
+}
+
+/* Light page transition: pages fade in on navigation. Opacity only, so fixed children keep the viewport. */
+@media (prefers-reduced-motion: no-preference) {
+    .fp-shell-main > :first-child {
+        animation: fp-page-in 180ms ease-out both;
+    }
+}
+@keyframes fp-page-in {
+    from {
+        opacity: 0;
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .fp-menu-anim {
+        transition: none;
+    }
+}
+
 /* Custom scrollbar utilities */
 .hide-scrollbar::-webkit-scrollbar {
     display: none;
