@@ -542,6 +542,21 @@ class AServerScheduleProcessor implements TimeTask
             return;
         }
 
+        // Resolve the destination before FIFO eviction so an unusable destination never removes a backup.
+        try {
+            $destinationId = \App\Services\Storage\StorageDestinationService::resolveForServer($destinationId, $server);
+        } catch (\App\Services\Storage\StorageException $e) {
+            MinecraftColorCodeSupport::sendOutputWithNewLine('&eSkipping full backup (destination_unavailable) for server: ' . $server['name']);
+            ServerActivity::createActivity([
+                'server_id' => $server['id'],
+                'node_id' => $server['node_id'],
+                'event' => 'backup_skipped_destination',
+                'metadata' => json_encode(['context' => 'schedule', 'type' => 'full', 'destination_id' => $destinationId, 'reason' => $e->errorCode()]),
+            ]);
+
+            return;
+        }
+
         try {
             $wings = $this->getWingsConnection($server, 120);
 
@@ -554,8 +569,6 @@ class AServerScheduleProcessor implements TimeTask
                 }
             }
 
-            // Only the server owner's own destinations are allowed for unattended backups.
-            $destinationId = \App\Services\Storage\StorageDestinationService::resolveForServer($destinationId, $server);
             $result = \App\Services\Backup\ServerFullBackupService::run($wings, $server, $parsed, [
                 'name' => 'Scheduled full backup at ' . date('Y-m-d H:i:s'),
                 'destination_id' => $destinationId,
