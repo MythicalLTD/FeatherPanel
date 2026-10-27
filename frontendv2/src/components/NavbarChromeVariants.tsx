@@ -267,8 +267,9 @@ function NavbarMainRow({
 
     return (
         <div className='relative flex min-w-0 flex-1 items-center gap-x-2 self-stretch sm:gap-x-3'>
-            {/* Title / header content keeps its width (up to 40%); the search shrinks first. */}
-            <div className='flex max-w-[calc(100%-6.5rem)] min-w-0 flex-[1_0_auto] items-center gap-2 sm:max-w-[45%] md:max-w-[40%]'>
+            {/* Title / header content keeps its width (up to 40%); the search shrinks first. On phones it
+                shrinks (and truncates) so the bell and avatar are never pushed off screen. */}
+            <div className='flex max-w-[calc(100%-6.5rem)] min-w-0 flex-[1_1_0%] items-center gap-2 sm:max-w-[45%] sm:flex-[1_0_auto] md:max-w-[40%]'>
                 <div className='min-w-0 flex-1'>
                     {headerContent ?? (
                         <h1

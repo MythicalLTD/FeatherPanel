@@ -50,6 +50,10 @@ export async function generateViewport(): Promise<Viewport> {
     const themeColor = boot.settings?.app_pwa_theme_color || '#000000';
 
     return {
+        width: 'device-width',
+        initialScale: 1,
+        // Lets the page draw under the notch / home bar; the shell pads itself with env(safe-area-inset-*).
+        viewportFit: 'cover',
         themeColor: [
             { media: '(prefers-color-scheme: light)', color: themeColor },
             { media: '(prefers-color-scheme: dark)', color: themeColor },

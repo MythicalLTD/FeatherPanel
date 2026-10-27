@@ -973,7 +973,12 @@ export default function Sidebar({ mobileOpen, setMobileOpen, pluginFullBleed = f
                         <div className='bg-background/80 fixed inset-0 backdrop-blur-sm' />
                     </Transition.Child>
 
-                    <div className={cn('fixed inset-0 flex', mobileFromRight && 'justify-end')}>
+                    <div
+                        className={cn(
+                            'fixed inset-0 flex pt-[env(safe-area-inset-top)] pr-[env(safe-area-inset-right)] pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)]',
+                            mobileFromRight && 'justify-end',
+                        )}
+                    >
                         <Transition.Child
                             as={Fragment}
                             enter='transition ease-in-out duration-300 transform'
