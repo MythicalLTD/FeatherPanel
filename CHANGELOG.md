@@ -38,6 +38,7 @@
 - **Panel – safe areas & keyboard focus**: the viewport now uses `viewport-fit=cover` and the dashboard shell, mobile sidebar drawer and auth screens pad themselves with `env(safe-area-inset-*)`, so nothing sits under a notch or home bar. Every link/button/tab gets a visible focus outline for keyboard users, and the phone navbar title now truncates instead of pushing the notification bell and avatar off screen on server pages.
 - Server pages read better in light mode and on phones: amber warnings, IP/port chips and other dark-only panels now have proper light-theme colours, page loads show a skeleton of the page instead of a lone spinner, and header actions sit on one row on phones (the main action grows, refresh/import stay square 44px buttons) instead of a stack of full-width icon buttons. by @nayskutzu
 - Sign-in, register and password screens get a slow theme-coloured aurora background with a faint dot grid (Aurora and Glass presets, CSS only, paused with reduced motion) and a soft glow behind the form card.
+- Panel polish: loading skeletons now shimmer instead of blinking, server cards lift with a theme-tinted shadow on hover and press down on tap, the live status dot pulses with a soft ring, status badges are readable in dark mode, resource bars ease smoothly and text selection uses the theme colour. Everything respects reduced motion.
 
 ### Fixed
 

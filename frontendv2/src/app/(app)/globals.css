@@ -1009,3 +1009,80 @@ html.fp-privacy [data-fp-sensitive]:not(:focus) {
     mask-image: radial-gradient(ellipse 70% 60% at 50% 45%, #000 30%, transparent 75%);
     -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 45%, #000 30%, transparent 75%);
 }
+
+/* ---- Design round 3: global polish ---- */
+
+/* Text selection tinted with the theme colour. */
+::selection {
+    background: hsl(var(--primary) / 0.28);
+}
+
+/* Skeleton shimmer: every muted pulse block gets a soft light sweep instead of a flat blink. */
+@keyframes fp-shimmer {
+    0% {
+        background-position: -150% 0;
+    }
+    100% {
+        background-position: 250% 0;
+    }
+}
+@media (prefers-reduced-motion: no-preference) {
+    .bg-muted.animate-pulse,
+    .bg-muted\/70.animate-pulse,
+    .bg-muted\/60.animate-pulse,
+    .bg-muted\/50.animate-pulse {
+        background-image: linear-gradient(100deg, transparent 20%, hsl(var(--foreground) / 0.06) 50%, transparent 80%);
+        background-size: 60% 100%;
+        background-repeat: no-repeat;
+        animation: fp-shimmer 1.6s ease-in-out infinite;
+    }
+}
+
+/* Interactive cards: gentle lift and theme-tinted shadow on hover, press feedback on tap. */
+.fp-lift {
+    transition:
+        transform 200ms cubic-bezier(0.2, 0.8, 0.2, 1),
+        box-shadow 200ms ease,
+        border-color 200ms ease;
+}
+@media (hover: hover) {
+    .fp-lift:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 14px 32px -18px hsl(var(--primary) / 0.45);
+    }
+}
+.fp-lift:active {
+    transform: translateY(0) scale(0.995);
+}
+@media (prefers-reduced-motion: reduce) {
+    .fp-lift,
+    .fp-lift:hover,
+    .fp-lift:active {
+        transform: none;
+    }
+}
+
+/* Live status dot: a soft expanding ring instead of a blink. */
+@keyframes fp-ping-soft {
+    0% {
+        box-shadow: 0 0 0 0 currentColor;
+        opacity: 1;
+    }
+    70%,
+    100% {
+        box-shadow: 0 0 0 5px transparent;
+    }
+}
+.fp-live-dot {
+    color: rgb(34 197 94 / 0.55);
+}
+@media (prefers-reduced-motion: no-preference) {
+    .fp-live-dot {
+        animation: fp-ping-soft 1.8s ease-out infinite;
+    }
+}
+
+/* Numbers that update live (stats, timers) don't jitter as digits change. */
+.fp-num {
+    font-variant-numeric: tabular-nums;
+}
