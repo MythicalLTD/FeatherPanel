@@ -700,7 +700,7 @@ html[data-fp-plugin-fullbleed='1'] body [data-fp-plugin-main-inner] {
     .fp-mobile-actionbar:not(:empty) > * {
         min-height: 2.75rem;
     }
-    .fp-shell-main:has(.fp-mobile-actionbar:not(:empty)) {
+    body:has(.fp-mobile-actionbar:not(:empty)) .fp-shell-main {
         padding-bottom: calc(5.5rem + env(safe-area-inset-bottom));
     }
 }
