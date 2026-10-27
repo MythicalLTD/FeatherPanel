@@ -118,6 +118,68 @@ class SafeUrlFetcher
     }
 
     /**
+     * Resolve a hostname (or IP literal) to a list of IP addresses.
+     *
+     * @return list<string>
+     */
+    public static function resolveHost(string $host): array
+    {
+        $host = trim($host, '[]');
+        if ($host === '') {
+            return [];
+        }
+
+        if (filter_var($host, FILTER_VALIDATE_IP) !== false) {
+            return [$host];
+        }
+
+        $ips = [];
+        $ipv4 = @gethostbynamel($host);
+        if (is_array($ipv4)) {
+            $ips = array_merge($ips, $ipv4);
+        }
+
+        $aaaaRecords = @dns_get_record($host, DNS_AAAA);
+        if (is_array($aaaaRecords)) {
+            foreach ($aaaaRecords as $record) {
+                if (!empty($record['ipv6'])) {
+                    $ips[] = (string) $record['ipv6'];
+                }
+            }
+        }
+
+        return array_values(array_unique($ips));
+    }
+
+    /**
+     * Reject loopback, private, link-local, CGNAT and other reserved ranges.
+     * IPv4-mapped / IPv4-compatible IPv6 forms are unwrapped and checked as IPv4.
+     */
+    public static function isPublicIp(string $ip): bool
+    {
+        $ip = trim($ip, '[]');
+        if (filter_var($ip, FILTER_VALIDATE_IP) === false) {
+            return false;
+        }
+
+        $embedded = self::unwrapIpv4MappedOrCompatible($ip);
+        if ($embedded !== null) {
+            return self::isPublicIpv4($embedded);
+        }
+
+        // Public/global only: excludes private + reserved ranges (IPv4 and IPv6).
+        if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false) {
+            return false;
+        }
+
+        if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) !== false) {
+            return self::isPublicIpv4($ip);
+        }
+
+        return true;
+    }
+
+    /**
      * Validate the URL and return a connection target pinned to a validated IP.
      *
      * @return array{url: string, host_header: string, tls_peer_name: string}|null
@@ -180,68 +242,6 @@ class SafeUrlFetcher
             'host_header' => $hostHeader,
             'tls_peer_name' => trim($host, '[]'),
         ];
-    }
-
-    /**
-     * Resolve a hostname (or IP literal) to a list of IP addresses.
-     *
-     * @return list<string>
-     */
-    private static function resolveHost(string $host): array
-    {
-        $host = trim($host, '[]');
-        if ($host === '') {
-            return [];
-        }
-
-        if (filter_var($host, FILTER_VALIDATE_IP) !== false) {
-            return [$host];
-        }
-
-        $ips = [];
-        $ipv4 = @gethostbynamel($host);
-        if (is_array($ipv4)) {
-            $ips = array_merge($ips, $ipv4);
-        }
-
-        $aaaaRecords = @dns_get_record($host, DNS_AAAA);
-        if (is_array($aaaaRecords)) {
-            foreach ($aaaaRecords as $record) {
-                if (!empty($record['ipv6'])) {
-                    $ips[] = (string) $record['ipv6'];
-                }
-            }
-        }
-
-        return array_values(array_unique($ips));
-    }
-
-    /**
-     * Reject loopback, private, link-local, CGNAT and other reserved ranges.
-     * IPv4-mapped / IPv4-compatible IPv6 forms are unwrapped and checked as IPv4.
-     */
-    private static function isPublicIp(string $ip): bool
-    {
-        $ip = trim($ip, '[]');
-        if (filter_var($ip, FILTER_VALIDATE_IP) === false) {
-            return false;
-        }
-
-        $embedded = self::unwrapIpv4MappedOrCompatible($ip);
-        if ($embedded !== null) {
-            return self::isPublicIpv4($embedded);
-        }
-
-        // Public/global only: excludes private + reserved ranges (IPv4 and IPv6).
-        if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false) {
-            return false;
-        }
-
-        if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) !== false) {
-            return self::isPublicIpv4($ip);
-        }
-
-        return true;
     }
 
     private static function isPublicIpv4(string $ip): bool
