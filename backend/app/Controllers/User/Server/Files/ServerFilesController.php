@@ -2535,6 +2535,18 @@ class ServerFilesController
         }
     }
 
+    /**
+     * Chunk size in bytes for chunked uploads, clamped to 5-90 MB so a part
+     * (plus request overhead) always stays under Cloudflare's 100 MB limit.
+     */
+    public static function uploadChunkSizeBytes(mixed $settingMb): int
+    {
+        $mb = is_numeric($settingMb) ? (int) $settingMb : 50;
+        $mb = max(5, min(90, $mb));
+
+        return $mb * 1024 * 1024;
+    }
+
     #[OA\Get(
         path: '/api/user/servers/{uuidShort}/upload-file',
         summary: 'Get file upload URL',
@@ -2557,6 +2569,9 @@ class ServerFilesController
                     properties: [
                         new OA\Property(property: 'upload_url', type: 'string', description: 'Signed Wings file upload URL'),
                         new OA\Property(property: 'expires_in', type: 'integer', description: 'Token lifetime in seconds', example: 900),
+                        new OA\Property(property: 'chunked', type: 'boolean', description: 'Node supports resumable chunked uploads'),
+                        new OA\Property(property: 'chunk_upload_url', type: 'string', nullable: true, description: 'Signed Wings chunked upload base URL (/upload/chunk)'),
+                        new OA\Property(property: 'chunk_size', type: 'integer', nullable: true, description: 'Part size in bytes'),
                     ]
                 )
             ),
@@ -2595,10 +2610,22 @@ class ServerFilesController
             $jwtToken = $jwtService->generateFileUploadToken($server['uuid'], $user['uuid'], '', $ignoredFiles);
             $uploadUrl = rtrim($wingsBaseUrl, '/') . '/upload/file?token=' . $jwtToken;
 
-            return ApiResponse::success([
+            $data = [
                 'upload_url' => $uploadUrl,
                 'expires_in' => $expiresIn,
-            ]);
+                'chunked' => false,
+            ];
+            // Resumable chunked uploads (FeatherWings): the browser sends big files in
+            // parts below the proxy's request limit (Cloudflare: 100 MB).
+            if (DaemonCapabilities::fromNode($node)->supports(DaemonCapabilities::FEATURE_CHUNKED_UPLOAD)) {
+                $data['chunked'] = true;
+                $data['chunk_upload_url'] = rtrim($wingsBaseUrl, '/') . '/upload/chunk?token=' . $jwtToken;
+                $data['chunk_size'] = self::uploadChunkSizeBytes(
+                    App::getInstance(true)->getConfig()->getSetting(ConfigInterface::SERVER_UPLOAD_CHUNK_SIZE_MB, '50')
+                );
+            }
+
+            return ApiResponse::success($data);
         } catch (\Exception $e) {
             return $this->handleWingsError($e, 'get upload url');
         }

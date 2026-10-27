@@ -496,6 +496,7 @@ class SettingsController
                 ConfigInterface::SERVER_ALLOW_USER_MADE_FIREWALL,
                 ConfigInterface::SERVER_ALLOW_USER_MADE_PROXY,
                 ConfigInterface::SERVER_PROXY_MAX_PER_SERVER,
+                ConfigInterface::SERVER_UPLOAD_CHUNK_SIZE_MB,
                 ConfigInterface::SERVER_ALLOW_CROSS_REALM_SPELL_CHANGE,
                 ConfigInterface::SERVER_ALLOW_USER_SERVER_DELETION,
                 ConfigInterface::SERVER_ALLOW_USER_MADE_IMPORT,
@@ -3225,6 +3226,22 @@ class SettingsController
                 'required' => true,
                 'placeholder' => '5',
                 'validation' => 'required|integer|min:1|max:10',
+                'options' => [],
+                'category' => 'servers',
+            ],
+            ConfigInterface::SERVER_UPLOAD_CHUNK_SIZE_MB => [
+                'name' => ConfigInterface::SERVER_UPLOAD_CHUNK_SIZE_MB,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::SERVER_UPLOAD_CHUNK_SIZE_MB,
+                        '50',
+                    ),
+                'description' => 'Part size in MB for chunked file uploads to FeatherWings nodes. Keep it below your proxy\'s request limit (Cloudflare allows 100 MB). Files larger than this are sent in parts and can resume after a reload.',
+                'type' => 'number',
+                'required' => true,
+                'placeholder' => '50',
+                'validation' => 'required|integer|min:5|max:90',
                 'options' => [],
                 'category' => 'servers',
             ],

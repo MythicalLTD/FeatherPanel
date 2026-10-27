@@ -17,6 +17,29 @@ import api, { getFeatherpanelApiErrorMessage } from './api';
 import axios from 'axios';
 import { filterFeatherTrashFiles } from '@/lib/feather-trash';
 import { FileObject, FilesResponse } from '@/types/server';
+import {
+    chunkedUpload,
+    ChunkedUploadUnsupportedError,
+    discardChunkedUpload,
+    type ChunkedUploadTarget,
+    type UploadStats,
+} from '@/lib/chunked-upload';
+
+export type { UploadStats } from '@/lib/chunked-upload';
+
+interface UploadUrlResponse {
+    upload_url: string;
+    expires_in: number;
+    chunked?: boolean;
+    chunk_upload_url?: string;
+    chunk_size?: number;
+}
+
+export interface UploadFileOptions {
+    /** Abort to pause (staged parts are kept) or cancel. */
+    signal?: AbortSignal;
+    onStats?: (stats: UploadStats) => void;
+}
 
 /** Bare client for signed Wings URLs - no panel cookies / X-FP-UI-* headers (CORS). */
 const wingsUploadClient = axios.create({
@@ -549,34 +572,83 @@ export const filesApi = {
         root: string,
         file: File,
         onProgress?: (percent: number) => void,
+        options: UploadFileOptions = {},
     ): Promise<void> => {
         // Same pattern as downloads: signed Wings URL, then upload direct to the node.
         // Avoids buffering the whole file through PHP (memory, post_max_size, 30s Guzzle timeout).
-        const signed = await api.get<ApiResponse<{ upload_url: string; expires_in: number }>>(
-            `/user/servers/${uuid}/upload-file`,
-        );
-        const uploadUrl = signed.data.data?.upload_url;
-        if (!uploadUrl) {
-            const payloadMessage = (typeof signed.data.message === 'string' && signed.data.message.trim()) || '';
-            throw new Error(payloadMessage || 'Failed to get upload URL');
-        }
-
-        const formData = new FormData();
-        formData.append('files', file);
+        const fetchSigned = async (): Promise<UploadUrlResponse> => {
+            const signed = await api.get<ApiResponse<UploadUrlResponse>>(`/user/servers/${uuid}/upload-file`);
+            const data = signed.data.data;
+            if (!data?.upload_url) {
+                const payloadMessage = (typeof signed.data.message === 'string' && signed.data.message.trim()) || '';
+                throw new Error(payloadMessage || 'Failed to get upload URL');
+            }
+            return data;
+        };
+        const signed = await fetchSigned();
+        const directory = root || '/';
 
         try {
+            // Files bigger than one part go through the resumable chunked endpoint so they
+            // pass proxies with a request size limit (Cloudflare: 100 MB) and survive reloads.
+            if (signed.chunked && signed.chunk_upload_url && signed.chunk_size && file.size > signed.chunk_size) {
+                let first: UploadUrlResponse | null = signed;
+                const getTarget = async (): Promise<ChunkedUploadTarget> => {
+                    const s = first ?? (await fetchSigned());
+                    first = null;
+                    return {
+                        url: s.chunk_upload_url as string,
+                        chunkSize: s.chunk_size as number,
+                        expiresAt: Date.now() + (s.expires_in || 900) * 1000,
+                    };
+                };
+                try {
+                    await chunkedUpload({
+                        serverUuid: uuid,
+                        directory,
+                        file,
+                        getTarget,
+                        signal: options.signal,
+                        onStats: (st) => {
+                            options.onStats?.(st);
+                            onProgress?.(st.total ? Math.min(100, Math.floor((st.loaded / st.total) * 100)) : 0);
+                        },
+                    });
+                    return;
+                } catch (e) {
+                    if (!(e instanceof ChunkedUploadUnsupportedError)) throw e;
+                    // Older node: fall back to a single request below.
+                }
+            }
+
+            const uploadUrl = signed.upload_url;
+            const formData = new FormData();
+            formData.append('files', file);
+            const startedAt = Date.now();
             await wingsUploadClient.post(uploadUrl, formData, {
+                signal: options.signal,
                 params: {
-                    directory: root || '/',
+                    directory,
                 },
-                onUploadProgress:
-                    onProgress &&
-                    ((e) => {
-                        const percent = e.total ? Math.round((e.loaded / e.total) * 100) : 0;
-                        onProgress(Math.min(percent, 100));
-                    }),
+                onUploadProgress: (e) => {
+                    const percent = e.total ? Math.round((e.loaded / e.total) * 100) : 0;
+                    onProgress?.(Math.min(percent, 100));
+                    if (options.onStats) {
+                        const elapsed = (Date.now() - startedAt) / 1000;
+                        const speed = elapsed > 0 ? e.loaded / elapsed : 0;
+                        const total = e.total ?? file.size;
+                        options.onStats({
+                            loaded: e.loaded,
+                            total,
+                            speed,
+                            eta: speed > 0 ? (total - e.loaded) / speed : null,
+                            resumed: false,
+                        });
+                    }
+                },
             });
         } catch (error) {
+            if (options.signal?.aborted) throw error;
             if (axios.isAxiosError(error)) {
                 const wingsError =
                     typeof error.response?.data?.error === 'string' ? error.response.data.error.trim() : '';
@@ -596,6 +668,16 @@ export const filesApi = {
             }
             throw error;
         }
+    },
+
+    /** Drops the node's staged parts of a paused / failed chunked upload. */
+    discardUpload: async (uuid: string, root: string, file: File): Promise<void> => {
+        await discardChunkedUpload(uuid, root || '/', file, async () => {
+            const res = await api.get<ApiResponse<UploadUrlResponse>>(`/user/servers/${uuid}/upload-file`);
+            const d = res.data.data;
+            if (!d?.chunked || !d.chunk_upload_url) throw new Error('unsupported');
+            return { url: d.chunk_upload_url, chunkSize: d.chunk_size ?? 0, expiresAt: Date.now() + 60_000 };
+        });
     },
 
     getUploadUrl: async (uuid: string): Promise<string> => {

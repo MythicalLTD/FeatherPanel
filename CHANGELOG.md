@@ -4,6 +4,7 @@
 
 ### Added
 
+- Resumable chunked file uploads on FeatherWings nodes: files larger than one part (default 50 MB, `server_upload_chunk_size_mb`, 5 to 90 MB) are sent in parts below Cloudflare's 100 MB request limit, retry with backoff, resume after a reload or network drop, and show speed, ETA, pause, resume and cancel. Older nodes fall back to the single request upload. Needs FeatherWings with `/upload/chunk` (FeatherWings #29). by @nayskutzu
 - Email and Discord webhook notifications for server events (crash, backup completed or failed, file transfer finished, resource limit). Opt-out per event and per channel under Account, Notifications, with a test button for the webhook. (#352) by @nayskutzu
 - Calendar view for scheduled backups on Admin, Backup schedules: planned and finished runs per day, failed days highlighted. (#354) by @nayskutzu
 - Maintenance mode (`maintenance_mode_enabled`, `maintenance_mode_message` in Settings, Status Page). Non staff get `503 MAINTENANCE_MODE`, staff keep working with a banner, the status page stays reachable. (#355) by @nayskutzu
