@@ -52,6 +52,7 @@
 - AdminListToolbar now also covers users, servers (stacked filter row), roles, spells, tickets and blocked IPs, so every main admin list shares the same search bar and clear button.
 - Server console on phones docks the power buttons in a fixed bar at the bottom of the screen (safe-area aware); live CPU, memory, disk, network and disk I/O values ease between updates (instant under reduced motion); the file context menu shows Enter, F2 and Del shortcut hints and the file toolbar is tinted while files are selected.
 - Tickets empty state uses a standard-size create button, the ticket search reserves room for its icon, and the schedule create icon matches other headers.
+- File manager bulk-selection bar (server and webspace): solid count pill with a visible "Selected" label (the old xs: breakpoint never existed), an icon clear-selection button instead of an uppercase Cancel link, and a labelled Delete action with better light-theme contrast.
 
 ### Fixed
 
