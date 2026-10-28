@@ -35,6 +35,7 @@ import { cn } from '@/lib/utils';
 import { formatBackupLimitLabel, isBackupLimitDisabled } from '@/lib/server-utils';
 import type { Database as ServerDatabase, Server } from '@/types/server';
 import { BackupTaskFields } from '@/components/server/backup/BackupTaskFields';
+import { BackupDestinationPicker } from '@/components/server/backup/BackupDestinationPicker';
 import { PageLoading } from '@/components/featherui/PageLoading';
 import {
     buildBackupPayload,
@@ -61,6 +62,7 @@ export default function CreateBackupPage() {
     const initialKind: BackupKind = kindParam === 'database' ? 'database' : kindParam === 'full' ? 'full' : 'files';
     const [kind, setKind] = React.useState<BackupKind>(initialKind);
     const [backupName, setBackupName] = React.useState('');
+    const [destinationId, setDestinationId] = React.useState<number | null>(null);
     const [ignoredFiles, setIgnoredFiles] = React.useState<string[]>([]);
     const [newIgnorePattern, setNewIgnorePattern] = React.useState('');
     const [advancedFields, setAdvancedFields] = React.useState<BackupFields>(() => ({
@@ -149,6 +151,7 @@ export default function CreateBackupPage() {
                 const { data } = await axios.post(`/api/user/servers/${uuidShort}/backups`, {
                     name: backupName.trim(),
                     ignore: JSON.stringify(patterns),
+                    destination_id: destinationId,
                 });
                 if (data?.success) {
                     toast.success(t('serverBackups.createSuccess'));
@@ -191,6 +194,7 @@ export default function CreateBackupPage() {
                     include_metadata: parsed.include_metadata,
                     include_encrypted: parsed.include_encrypted,
                     include_activities: parsed.include_activities,
+                    destination_id: destinationId,
                 });
                 if (data?.success) {
                     toast.success(t('serverBackups.fullBackupSuccess'));
@@ -449,6 +453,12 @@ export default function CreateBackupPage() {
                             />
                         </div>
 
+                        <BackupDestinationPicker
+                            value={destinationId}
+                            onChange={setDestinationId}
+                            disabled={saving || filesBlocked}
+                        />
+
                         {kind === 'files' && (
                             <div className='space-y-3'>
                                 <Label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>
@@ -528,6 +538,7 @@ export default function CreateBackupPage() {
                             databases={databases}
                             disabled={saving || (kind === 'full' && filesBlocked)}
                             lockKind={kind === 'full' ? 'full' : 'database'}
+                            hideDestination
                         />
                     </FormSection>
                 )}

@@ -18,6 +18,7 @@
 namespace App\Services\Storage;
 
 use App\Chat\Backup;
+use App\Chat\UserStorageDestination;
 use App\Services\Backup\BackupAdapterResolver;
 
 /**
@@ -29,7 +30,7 @@ use App\Services\Backup\BackupAdapterResolver;
 class BackupStorageService
 {
     /** @var (callable(array<string, mixed>): ?S3ObjectStore)|null test seam */
-    public static $storeFactory = null;
+    public static $storeFactory;
 
     public static function isRemote(array $backup): bool
     {
@@ -44,11 +45,38 @@ class BackupStorageService
         if (self::$storeFactory !== null) {
             return (self::$storeFactory)($backup);
         }
+        if (!empty($backup['destination_id'])) {
+            $destination = UserStorageDestination::getById((int) $backup['destination_id'], true);
+            if ($destination === null || $destination['deleted_at'] !== null) {
+                throw new StorageException('The storage destination of this backup was removed; the backup is orphaned', 'DESTINATION_ORPHANED', 409);
+            }
+            if ((string) $destination['status'] === UserStorageDestination::STATUS_REVOKED) {
+                throw new StorageException('The storage destination of this backup was disconnected; reconnect it to use this backup', 'DESTINATION_REVOKED', 409);
+            }
+
+            return StorageDestinationService::storeFor($destination);
+        }
         if (!StorageSettings::globalS3Configured()) {
             return null;
         }
 
         return new S3ObjectStore(StorageSettings::globalS3Config());
+    }
+
+    /**
+     * Adapter for a new backup: a user destination or the admin "use S3 by default"
+     * switch means presigned S3; otherwise the node's own adapter.
+     */
+    public static function chooseAdapter(\App\Services\Wings\Wings $wings, ?int $destinationId): string
+    {
+        if ($destinationId !== null && $destinationId > 0) {
+            return BackupAdapterResolver::ADAPTER_S3;
+        }
+        if (StorageSettings::bool(StorageSettings::S3_USE_BY_DEFAULT) && StorageSettings::globalS3Configured()) {
+            return BackupAdapterResolver::ADAPTER_S3;
+        }
+
+        return BackupAdapterResolver::resolveDefault($wings);
     }
 
     public static function objectKey(S3ObjectStore $store, array $server, array $backup): string
@@ -145,8 +173,28 @@ class BackupStorageService
         return $store->presignGet(self::objectKey($store, $server, $backup), StorageSettings::presignTtlSeconds(), $name);
     }
 
+    /**
+     * Destination state for the UI: null (node / admin storage), 'active', 'error', 'revoked' or 'orphaned'.
+     */
+    public static function destinationState(array $backup): ?string
+    {
+        if (empty($backup['destination_id'])) {
+            return null;
+        }
+        $destination = UserStorageDestination::getById((int) $backup['destination_id'], true);
+        if ($destination === null || $destination['deleted_at'] !== null) {
+            return 'orphaned';
+        }
+
+        return (string) $destination['status'];
+    }
+
     public static function deleteObject(array $backup, array $server): void
     {
+        if (in_array(self::destinationState($backup), ['orphaned', 'revoked'], true)) {
+            // The panel can no longer reach that storage; only the record is removed.
+            return;
+        }
         $store = self::storeFor($backup);
         if ($store === null) {
             return;

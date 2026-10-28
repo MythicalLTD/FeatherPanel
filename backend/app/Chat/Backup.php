@@ -115,7 +115,7 @@ class Backup
         }
 
         // Add optional fields if provided
-        $optionalFields = ['upload_id', 'checksum', 'completed_at'];
+        $optionalFields = ['upload_id', 'checksum', 'completed_at', 'destination_id'];
         foreach ($optionalFields as $field) {
             if (isset($data[$field])) {
                 $insert[$field] = $data[$field];

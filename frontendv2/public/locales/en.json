@@ -1602,7 +1602,22 @@
             "TARGET_OUTRANKS_ACTOR": "Only a full administrator can modify this account.",
             "REAUTH_FAILED": "The password or code you entered is incorrect.",
             "INVALID_BANDWIDTH_LIMIT": "Bandwidth limit must be between 0 and 10,000,000 GB.",
-            "MIGRATION_FAILED": "Proxmox refused the migration."
+            "MIGRATION_FAILED": "Proxmox refused the migration.",
+            "DESTINATION_ORPHANED": "The storage of this backup was removed; the backup is orphaned",
+            "DESTINATION_REVOKED": "The storage of this backup was disconnected; reconnect it first",
+            "BYO_STORAGE_DISABLED": "Bring-your-own backup storage is disabled on this panel",
+            "PROVIDER_NOT_ALLOWED": "This storage provider is not allowed on this panel",
+            "DESTINATION_LIMIT_REACHED": "You reached the maximum number of storage destinations",
+            "ENDPOINT_INVALID": "The storage endpoint is not a valid URL",
+            "ENDPOINT_NOT_HTTPS": "The storage endpoint must use https",
+            "ENDPOINT_PRIVATE_ADDRESS": "The storage endpoint points to a private or reserved address",
+            "ENDPOINT_UNRESOLVABLE": "The storage endpoint host does not resolve",
+            "BUCKET_INVALID": "Bucket name is missing or invalid",
+            "REGION_INVALID": "Region is invalid",
+            "CREDENTIALS_REQUIRED": "Access key and secret key are required",
+            "DESTINATION_TEST_FAILED": "Storage test failed",
+            "INVALID_DESTINATION_ID": "Invalid storage destination",
+            "DESTINATION_IN_USE": "This storage still holds backups, so its location cannot change. Add a new storage instead."
         },
         "global": {}
     },
@@ -2819,6 +2834,58 @@
             "loadFailed": "Failed to load notification settings",
             "testSent": "Test message sent to Discord",
             "testFailed": "Discord did not accept the test message"
+        },
+        "storage": {
+            "title": "Backup storage",
+            "description": "Your own S3 compatible buckets for server backups. Credentials stay encrypted on the panel; nodes only get short-lived upload and download links.",
+            "loading": "Loading storage…",
+            "refresh": "Refresh",
+            "add": "Add storage",
+            "addTitle": "Add S3 storage",
+            "editTitle": "Edit storage",
+            "formDescription": "Any S3 compatible service works: AWS S3, Cloudflare R2, Backblaze B2, Wasabi, MinIO and more.",
+            "empty": "No storage yet",
+            "emptyHint": "Add a bucket to keep server backups in your own cloud storage.",
+            "disabled": "Bring-your-own backup storage is not enabled on this panel. Ask an administrator to turn it on.",
+            "limitReached": "You can add up to {max} storage destinations.",
+            "meta": "{provider} · {count} backups · key {key}",
+            "test": "Test",
+            "testing": "Testing…",
+            "edit": "Edit",
+            "remove": "Remove",
+            "removeTitle": "Remove {name}?",
+            "removeWarning": "{count} backups use this storage. They stay in your bucket but the panel can no longer download, restore or delete them (they show as orphaned).",
+            "saveAndTest": "Save and test",
+            "saving": "Saving…",
+            "created": "Storage added and tested",
+            "updated": "Storage updated",
+            "deleted": "Storage removed",
+            "savedButTestFailed": "Saved, but the test failed: {error}",
+            "testOk": "{name} works",
+            "testFailed": "Storage test failed",
+            "loadFailed": "Could not load your storage",
+            "saveFailed": "Could not save the storage",
+            "deleteFailed": "Could not remove the storage",
+            "securityNote": "The endpoint must use https and a public address. Give the key access to this bucket only.",
+            "status": {
+                "active": "Working",
+                "error": "Error",
+                "revoked": "Disconnected"
+            },
+            "fields": {
+                "name": "Name",
+                "namePlaceholder": "My R2 bucket",
+                "endpoint": "Endpoint",
+                "endpointHint": "Leave empty for AWS S3 in the selected region.",
+                "bucket": "Bucket",
+                "region": "Region",
+                "prefix": "Folder (prefix)",
+                "pathStyle": "Path-style URLs",
+                "pathStyleHint": "Needed for MinIO and some self-hosted S3.",
+                "accessKey": "Access key ID",
+                "secretKey": "Secret access key",
+                "keepCurrent": "Leave empty to keep the current one"
+            }
         }
     },
     "servers": {
@@ -4748,7 +4815,24 @@
         "recheckFailed": "Could not recheck backup status",
         "size": "Size",
         "storage": "Storage",
-        "created": "Created"
+        "created": "Created",
+        "storageTarget": {
+            "label": "Storage",
+            "default": "Default storage",
+            "help": "Where this backup is stored. Backups on your own storage still count toward the server backup limit.",
+            "scheduleHint": "Scheduled backups can only use storage added by the server owner.",
+            "none": "Want backups in your own bucket?",
+            "addLink": "Add storage",
+            "unhealthy": "The last test of this storage failed: {error}",
+            "panelS3": "Panel S3",
+            "unknown": "Removed storage",
+            "state": {
+                "active": "Working",
+                "error": "Storage error",
+                "revoked": "Disconnected",
+                "orphaned": "Orphaned"
+            }
+        }
     },
     "serverImport": {
         "title": "Server Import",

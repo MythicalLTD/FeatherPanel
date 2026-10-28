@@ -27,6 +27,8 @@ export type BackupFields = {
     include_metadata: boolean;
     include_encrypted: boolean;
     include_activities: boolean;
+    /** Bring-your-own storage destination (files and full backups); null = default storage. */
+    destination_id: number | null;
 };
 
 export const DEFAULT_DB_DIRECTORY = '/.featherpanel-database-backups';
@@ -40,6 +42,7 @@ export const emptyBackupFields = (): BackupFields => ({
     include_metadata: true,
     include_encrypted: false,
     include_activities: false,
+    destination_id: null,
 });
 
 export function isMysqlLike(db: Database): boolean {
@@ -74,7 +77,10 @@ export function parseBackupFields(action: string, payload: string): BackupFields
             include_metadata?: boolean;
             include_encrypted?: boolean;
             include_activities?: boolean;
+            destination_id?: number | string | null;
         };
+        const destinationId = Number(data.destination_id ?? 0);
+        base.destination_id = destinationId > 0 ? destinationId : null;
 
         if (data.type === 'full') {
             base.kind = 'full';
@@ -139,6 +145,7 @@ export function buildBackupPayload(fields: BackupFields): string | null {
         return JSON.stringify({
             type: 'files',
             ignored_files: fields.ignored_files.trim(),
+            ...(fields.destination_id ? { destination_id: fields.destination_id } : {}),
         });
     }
 
@@ -157,6 +164,7 @@ export function buildBackupPayload(fields: BackupFields): string | null {
             include_metadata: fields.include_metadata,
             include_encrypted: fields.include_encrypted,
             include_activities: fields.include_activities,
+            ...(fields.destination_id ? { destination_id: fields.destination_id } : {}),
         });
     }
 

@@ -39,6 +39,12 @@ final class StorageSettings
     public const PART_SIZE_MB = 'backup_upload_part_size_mb';
     public const MAX_CONCURRENT_UPLOADS = 'backup_max_concurrent_uploads';
     public const PRESIGN_TTL_MINUTES = 'backup_presign_ttl_minutes';
+    public const BYO_ENABLED = 'backup_byo_enabled';
+    public const BYO_PROVIDERS = 'backup_byo_providers';
+    public const BYO_MAX_PER_USER = 'backup_byo_max_per_user';
+
+    /** Providers users may connect, in display order. */
+    public const PROVIDERS = ['s3'];
 
     /** @var list<string> */
     public const SENSITIVE = [self::S3_SECRET_KEY];
@@ -65,6 +71,9 @@ final class StorageSettings
             [self::PART_SIZE_MB, '100', 'number', 'Multipart upload part size in MiB (minimum 5). Larger parts mean fewer requests; it is raised automatically for very large backups.', [], 'required|integer|min:5|max:5120', '100'],
             [self::MAX_CONCURRENT_UPLOADS, '4', 'number', 'How many parts Wings may upload in parallel (sent to Wings as max_concurrent_uploads).', [], 'required|integer|min:1|max:32', '4'],
             [self::PRESIGN_TTL_MINUTES, '60', 'number', 'How long presigned upload/download URLs stay valid, in minutes.', [], 'required|integer|min:5|max:10080', '60'],
+            [self::BYO_ENABLED, 'false', 'select', 'Let users add their own backup storage (Account, Storage) and pick it when creating a backup or schedule. Their backups still count toward the server backup limit. Custom S3 endpoints must use https and a public address.', $bool, 'required|string|in:true,false', 'false'],
+            [self::BYO_PROVIDERS, 's3', 'text', 'Comma separated providers users may connect. Available: s3', [], 'nullable|string|max:255', 's3'],
+            [self::BYO_MAX_PER_USER, '3', 'number', 'Maximum storage destinations per user.', [], 'required|integer|min:1|max:50', '3'],
         ];
     }
 
@@ -130,6 +139,26 @@ final class StorageSettings
     public static function int(string $key, int $min, int $max): int
     {
         return max($min, min($max, (int) self::get($key)));
+    }
+
+    public static function byoEnabled(): bool
+    {
+        return self::bool(self::BYO_ENABLED);
+    }
+
+    /**
+     * @return list<string>
+     */
+    public static function allowedProviders(): array
+    {
+        $wanted = array_map(static fn (string $p): string => strtolower(trim($p)), explode(',', self::get(self::BYO_PROVIDERS)));
+
+        return array_values(array_filter(self::PROVIDERS, static fn (string $p): bool => in_array($p, $wanted, true)));
+    }
+
+    public static function maxDestinationsPerUser(): int
+    {
+        return self::int(self::BYO_MAX_PER_USER, 1, 50);
     }
 
     public static function partSizeBytes(): int

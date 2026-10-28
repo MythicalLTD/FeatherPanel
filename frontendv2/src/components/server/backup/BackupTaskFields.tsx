@@ -22,6 +22,7 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { HeadlessSelect } from '@/components/ui/headless-select';
 import type { Database } from '@/types/server';
+import { BackupDestinationPicker } from './BackupDestinationPicker';
 import { type BackupFields, type BackupKind, type DatabaseScope, isMysqlLike } from './backup-payload';
 
 type Props = {
@@ -31,9 +32,18 @@ type Props = {
     disabled?: boolean;
     /** When set, hides the backup-type selector and keeps this kind. */
     lockKind?: BackupKind;
+    /** Hide the storage destination picker (when the page renders its own). */
+    hideDestination?: boolean;
 };
 
-export function BackupTaskFields({ fields, setFields, databases, disabled = false, lockKind }: Props) {
+export function BackupTaskFields({
+    fields,
+    setFields,
+    databases,
+    disabled = false,
+    lockKind,
+    hideDestination = false,
+}: Props) {
     const { t } = useTranslation();
     const mysqlDatabases = React.useMemo(() => databases.filter(isMysqlLike), [databases]);
     const effectiveKind = lockKind ?? fields.kind;
@@ -97,6 +107,15 @@ export function BackupTaskFields({ fields, setFields, databases, disabled = fals
                     />
                     <p className='text-muted-foreground ml-1 text-xs'>{t('serverTasks.backupIgnoredFilesHelp')}</p>
                 </div>
+            )}
+
+            {showIgnore && !hideDestination && (
+                <BackupDestinationPicker
+                    value={fields.destination_id}
+                    onChange={(destination_id) => setFields((prev) => ({ ...prev, destination_id }))}
+                    disabled={disabled}
+                    hint={t('serverBackups.storageTarget.scheduleHint')}
+                />
             )}
 
             {showDatabasePicker && (
