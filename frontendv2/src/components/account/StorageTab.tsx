@@ -15,12 +15,10 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-'use client';
-
 import { useCallback, useEffect, useState } from 'react';
 import axios from 'axios';
 import { toast } from 'sonner';
-import { Cloud, Plus, RefreshCw, Trash2, Pencil, PlugZap, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { Cloud, Plus, RefreshCw, Trash2, Pencil, PlugZap, AlertTriangle, CheckCircle2, Link2 } from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { Dialog, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/featherui/Button';
@@ -28,9 +26,11 @@ import { Input } from '@/components/featherui/Input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
-import { getApiErrorMessage } from '@/lib/api-errors';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
+import { formatBytes } from '@/lib/format';
 import {
     fetchStorageDestinations,
+    startStorageOAuth,
     type StorageCapabilities,
     type StorageDestination,
 } from '@/lib/storage-destinations';
@@ -57,6 +57,9 @@ const emptyForm: FormState = {
     path_style: false,
 };
 
+/** Provider keys the panel can connect through OAuth, in display order. */
+const OAUTH_PROVIDERS = ['gdrive'] as const;
+
 export default function StorageTab() {
     const { t } = useTranslation();
     const [destinations, setDestinations] = useState<StorageDestination[]>([]);
@@ -69,6 +72,10 @@ export default function StorageTab() {
     const [testingId, setTestingId] = useState<number | null>(null);
     const [deleting, setDeleting] = useState<StorageDestination | null>(null);
     const [removing, setRemoving] = useState(false);
+    const [connectProvider, setConnectProvider] = useState<string | null>(null);
+    const [connectName, setConnectName] = useState('');
+    const [connecting, setConnecting] = useState(false);
+    const [reconnectingId, setReconnectingId] = useState<number | null>(null);
 
     const load = useCallback(async () => {
         setLoading(true);
@@ -87,6 +94,23 @@ export default function StorageTab() {
         load();
     }, [load]);
 
+    // Back from the provider's consent screen: report the result once, then drop the query params.
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const connected = params.get('storage_connected');
+        const failed = params.get('storage_error');
+        if (!connected && !failed) return;
+        if (connected) {
+            toast.success(t('account.storage.connected'));
+        } else if (failed) {
+            toast.error(getApiErrorMessageFromPayload({ error_code: failed }, t, 'account.storage.connectFailed'));
+        }
+        params.delete('storage_connected');
+        params.delete('storage_error');
+        const qs = params.toString();
+        window.history.replaceState(null, '', `${window.location.pathname}${qs ? `?${qs}` : ''}`);
+    }, [t]);
+
     const openCreate = () => {
         setEditing(null);
         setForm(emptyForm);
@@ -96,21 +120,53 @@ export default function StorageTab() {
     const openEdit = (d: StorageDestination) => {
         setEditing(d);
         setForm({
+            ...emptyForm,
             name: d.name,
-            endpoint: d.config.endpoint,
-            region: d.config.region,
-            bucket: d.config.bucket,
-            prefix: d.config.prefix,
-            access_key: '',
-            secret_key: '',
-            path_style: d.config.path_style,
+            endpoint: d.config?.endpoint ?? '',
+            region: d.config?.region ?? '',
+            bucket: d.config?.bucket ?? '',
+            prefix: d.config?.prefix ?? '',
+            path_style: d.config?.path_style ?? false,
         });
         setFormOpen(true);
+    };
+
+    const openConnect = (provider: string) => {
+        setConnectName(t(`account.storage.providers.${provider}`));
+        setConnectProvider(provider);
+    };
+
+    const connect = async () => {
+        if (!connectProvider) return;
+        setConnecting(true);
+        try {
+            await startStorageOAuth(connectProvider, { name: connectName.trim() });
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'account.storage.connectFailed'));
+            setConnecting(false);
+        }
+    };
+
+    const reconnect = async (d: StorageDestination) => {
+        setReconnectingId(d.id);
+        try {
+            await startStorageOAuth(d.provider, { reconnect_id: d.id });
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'account.storage.connectFailed'));
+            setReconnectingId(null);
+        }
     };
 
     const save = async () => {
         setSaving(true);
         try {
+            if (editing?.oauth) {
+                await axios.patch(`/api/user/storage-destinations/${editing.id}`, { name: form.name });
+                toast.success(t('account.storage.updated'));
+                setFormOpen(false);
+                await load();
+                return;
+            }
             const config: Record<string, unknown> = {
                 endpoint: form.endpoint.trim(),
                 region: form.region.trim(),
@@ -177,7 +233,19 @@ export default function StorageTab() {
         );
     }
 
-    const canAdd = !!caps?.byo_s3 && destinations.length < (caps?.max_destinations ?? 0);
+    const oauthProviders = OAUTH_PROVIDERS.filter((p) => caps?.oauth_providers?.includes(p));
+    const underLimit = destinations.length < (caps?.max_destinations ?? 0);
+    const canAdd = !!caps?.byo_s3 && underLimit;
+    const canConnect = oauthProviders.length > 0 && underLimit;
+    const quotaLine = (d: StorageDestination) =>
+        d.quota
+            ? d.quota.total
+                ? t('account.storage.quota', {
+                      used: formatBytes(d.quota.used, 1),
+                      total: formatBytes(d.quota.total, 1),
+                  })
+                : t('account.storage.quotaUnlimited', { used: formatBytes(d.quota.used, 1) })
+            : t('account.storage.quotaUnknown');
     const field = (key: keyof FormState, label: string, placeholder: string, type = 'text', hint?: string) => (
         <div>
             <Label htmlFor={`storage-${key}`} className='text-foreground'>
@@ -214,6 +282,18 @@ export default function StorageTab() {
                             {t('account.storage.add')}
                         </Button>
                     ) : null}
+                    {oauthProviders.map((p) => (
+                        <Button
+                            key={p}
+                            onClick={() => openConnect(p)}
+                            size='sm'
+                            variant='outline'
+                            disabled={!canConnect}
+                        >
+                            <Link2 className='mr-2 h-4 w-4' />
+                            {t('account.storage.connect', { provider: t(`account.storage.providers.${p}`) })}
+                        </Button>
+                    ))}
                 </div>
             </div>
 
@@ -230,16 +310,27 @@ export default function StorageTab() {
                         <Cloud className='text-muted-foreground mx-auto mb-4 h-12 w-12' />
                         <h4 className='text-foreground mb-2 text-sm font-semibold'>{t('account.storage.empty')}</h4>
                         <p className='text-muted-foreground mb-4 text-sm'>{t('account.storage.emptyHint')}</p>
-                        {canAdd ? (
-                            <Button onClick={openCreate} variant='outline'>
-                                {t('account.storage.add')}
-                            </Button>
-                        ) : null}
+                        <div className='flex flex-wrap justify-center gap-2'>
+                            {canAdd ? (
+                                <Button onClick={openCreate} variant='outline'>
+                                    {t('account.storage.add')}
+                                </Button>
+                            ) : null}
+                            {canConnect
+                                ? oauthProviders.map((p) => (
+                                      <Button key={p} onClick={() => openConnect(p)} variant='outline'>
+                                          {t('account.storage.connect', {
+                                              provider: t(`account.storage.providers.${p}`),
+                                          })}
+                                      </Button>
+                                  ))
+                                : null}
+                        </div>
                     </div>
                 )
             ) : (
                 <div className='space-y-3'>
-                    {caps?.byo_enabled && !canAdd ? (
+                    {caps?.byo_enabled && !underLimit ? (
                         <p className='text-muted-foreground text-xs'>
                             {t('account.storage.limitReached', { max: String(caps?.max_destinations ?? 0) })}
                         </p>
@@ -249,17 +340,34 @@ export default function StorageTab() {
                             <div className='mb-3 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between'>
                                 <div className='min-w-0 flex-1'>
                                     <h4 className='text-foreground text-sm font-semibold'>{d.name}</h4>
-                                    <p className='text-muted-foreground mt-1 truncate font-mono text-xs'>
-                                        {d.config.endpoint} / {d.config.bucket}
-                                        {d.config.prefix ? `/${d.config.prefix}` : ''}
-                                    </p>
-                                    <p className='text-muted-foreground mt-1 text-xs'>
-                                        {t('account.storage.meta', {
-                                            provider: d.provider.toUpperCase(),
-                                            count: String(d.backups_count),
-                                            key: d.config.access_key_hint || '-',
-                                        })}
-                                    </p>
+                                    {d.oauth || !d.config ? (
+                                        <>
+                                            <p className='text-muted-foreground mt-1 truncate text-xs'>
+                                                {d.account ?? t('account.storage.accountUnknown')}
+                                            </p>
+                                            <p className='text-muted-foreground mt-1 text-xs'>
+                                                {t('account.storage.metaOauth', {
+                                                    provider: t(`account.storage.providers.${d.provider}`),
+                                                    count: String(d.backups_count),
+                                                    quota: quotaLine(d),
+                                                })}
+                                            </p>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <p className='text-muted-foreground mt-1 truncate font-mono text-xs'>
+                                                {d.config.endpoint} / {d.config.bucket}
+                                                {d.config.prefix ? `/${d.config.prefix}` : ''}
+                                            </p>
+                                            <p className='text-muted-foreground mt-1 text-xs'>
+                                                {t('account.storage.meta', {
+                                                    provider: d.provider.toUpperCase(),
+                                                    count: String(d.backups_count),
+                                                    key: d.config.access_key_hint || '-',
+                                                })}
+                                            </p>
+                                        </>
+                                    )}
                                 </div>
                                 <span
                                     className={cn(
@@ -283,6 +391,12 @@ export default function StorageTab() {
                                 </div>
                             ) : null}
                             <div className='flex flex-wrap gap-2'>
+                                {caps?.byo_enabled && d.oauth && d.status !== 'active' ? (
+                                    <Button size='sm' onClick={() => reconnect(d)} disabled={reconnectingId === d.id}>
+                                        <Link2 className='mr-1 h-4 w-4' />
+                                        {t('account.storage.reconnect')}
+                                    </Button>
+                                ) : null}
                                 {caps?.byo_enabled ? (
                                     <>
                                         <Button
@@ -298,7 +412,7 @@ export default function StorageTab() {
                                         </Button>
                                         <Button variant='outline' size='sm' onClick={() => openEdit(d)}>
                                             <Pencil className='mr-1 h-4 w-4' />
-                                            {t('account.storage.edit')}
+                                            {d.oauth ? t('account.storage.rename') : t('account.storage.edit')}
                                         </Button>
                                     </>
                                 ) : null}
@@ -315,59 +429,118 @@ export default function StorageTab() {
             <Dialog open={formOpen} onClose={() => !saving && setFormOpen(false)} className='max-w-2xl'>
                 <DialogHeader>
                     <DialogTitle>
-                        {editing ? t('account.storage.editTitle') : t('account.storage.addTitle')}
+                        {editing?.oauth
+                            ? t('account.storage.renameTitle')
+                            : editing
+                              ? t('account.storage.editTitle')
+                              : t('account.storage.addTitle')}
                     </DialogTitle>
-                    <DialogDescription>{t('account.storage.formDescription')}</DialogDescription>
+                    <DialogDescription>
+                        {editing?.oauth ? t('account.storage.renameDescription') : t('account.storage.formDescription')}
+                    </DialogDescription>
                 </DialogHeader>
-                <div className='grid gap-4 sm:grid-cols-2'>
-                    <div className='sm:col-span-2'>
-                        {field('name', t('account.storage.fields.name'), t('account.storage.fields.namePlaceholder'))}
-                    </div>
-                    <div className='sm:col-span-2'>
+                {editing?.oauth ? (
+                    field('name', t('account.storage.fields.name'), t('account.storage.fields.namePlaceholder'))
+                ) : (
+                    <div className='grid gap-4 sm:grid-cols-2'>
+                        <div className='sm:col-span-2'>
+                            {field(
+                                'name',
+                                t('account.storage.fields.name'),
+                                t('account.storage.fields.namePlaceholder'),
+                            )}
+                        </div>
+                        <div className='sm:col-span-2'>
+                            {field(
+                                'endpoint',
+                                t('account.storage.fields.endpoint'),
+                                'https://s3.eu-central-1.amazonaws.com',
+                                'url',
+                                t('account.storage.fields.endpointHint'),
+                            )}
+                        </div>
+                        {field('bucket', t('account.storage.fields.bucket'), 'my-backups')}
+                        {field('region', t('account.storage.fields.region'), 'us-east-1')}
+                        {field('prefix', t('account.storage.fields.prefix'), 'featherpanel')}
+                        <div className='flex items-end justify-between gap-3 pb-1'>
+                            <div>
+                                <Label htmlFor='storage-path-style' className='text-foreground'>
+                                    {t('account.storage.fields.pathStyle')}
+                                </Label>
+                                <p className='text-muted-foreground mt-1 text-xs'>
+                                    {t('account.storage.fields.pathStyleHint')}
+                                </p>
+                            </div>
+                            <Switch
+                                id='storage-path-style'
+                                checked={form.path_style}
+                                onCheckedChange={(v) => setForm((f) => ({ ...f, path_style: v }))}
+                            />
+                        </div>
                         {field(
-                            'endpoint',
-                            t('account.storage.fields.endpoint'),
-                            'https://s3.eu-central-1.amazonaws.com',
-                            'url',
-                            t('account.storage.fields.endpointHint'),
+                            'access_key',
+                            t('account.storage.fields.accessKey'),
+                            editing ? t('account.storage.fields.keepCurrent') : 'AKIA...',
+                        )}
+                        {field(
+                            'secret_key',
+                            t('account.storage.fields.secretKey'),
+                            editing ? t('account.storage.fields.keepCurrent') : '••••••••',
+                            'password',
                         )}
                     </div>
-                    {field('bucket', t('account.storage.fields.bucket'), 'my-backups')}
-                    {field('region', t('account.storage.fields.region'), 'us-east-1')}
-                    {field('prefix', t('account.storage.fields.prefix'), 'featherpanel')}
-                    <div className='flex items-end justify-between gap-3 pb-1'>
-                        <div>
-                            <Label htmlFor='storage-path-style' className='text-foreground'>
-                                {t('account.storage.fields.pathStyle')}
-                            </Label>
-                            <p className='text-muted-foreground mt-1 text-xs'>
-                                {t('account.storage.fields.pathStyleHint')}
-                            </p>
-                        </div>
-                        <Switch
-                            id='storage-path-style'
-                            checked={form.path_style}
-                            onCheckedChange={(v) => setForm((f) => ({ ...f, path_style: v }))}
-                        />
-                    </div>
-                    {field(
-                        'access_key',
-                        t('account.storage.fields.accessKey'),
-                        editing ? t('account.storage.fields.keepCurrent') : 'AKIA...',
-                    )}
-                    {field(
-                        'secret_key',
-                        t('account.storage.fields.secretKey'),
-                        editing ? t('account.storage.fields.keepCurrent') : '••••••••',
-                        'password',
-                    )}
-                </div>
-                <p className='text-muted-foreground mt-3 text-xs'>{t('account.storage.securityNote')}</p>
+                )}
+                {editing?.oauth ? null : (
+                    <p className='text-muted-foreground mt-3 text-xs'>{t('account.storage.securityNote')}</p>
+                )}
                 <DialogFooter>
                     <Button onClick={save} className='flex-1' disabled={saving || form.name.trim() === ''}>
-                        {saving ? t('account.storage.saving') : t('account.storage.saveAndTest')}
+                        {saving
+                            ? t('account.storage.saving')
+                            : editing?.oauth
+                              ? t('account.storage.save')
+                              : t('account.storage.saveAndTest')}
                     </Button>
                     <Button onClick={() => setFormOpen(false)} variant='outline' className='flex-1' disabled={saving}>
+                        {t('common.cancel')}
+                    </Button>
+                </DialogFooter>
+            </Dialog>
+
+            <Dialog open={connectProvider !== null} onClose={() => !connecting && setConnectProvider(null)}>
+                <DialogHeader>
+                    <DialogTitle>
+                        {t('account.storage.connectTitle', {
+                            provider: connectProvider ? t(`account.storage.providers.${connectProvider}`) : '',
+                        })}
+                    </DialogTitle>
+                    <DialogDescription>
+                        {connectProvider ? t(`account.storage.connectDescription.${connectProvider}`) : ''}
+                    </DialogDescription>
+                </DialogHeader>
+                <div>
+                    <Label htmlFor='storage-connect-name' className='text-foreground'>
+                        {t('account.storage.fields.name')}
+                    </Label>
+                    <Input
+                        id='storage-connect-name'
+                        value={connectName}
+                        onChange={(e) => setConnectName(e.target.value)}
+                        autoComplete='off'
+                        className='mt-2'
+                    />
+                </div>
+                <p className='text-muted-foreground mt-3 text-xs'>{t('account.storage.connectNote')}</p>
+                <DialogFooter>
+                    <Button onClick={connect} className='flex-1' disabled={connecting || connectName.trim() === ''}>
+                        {connecting ? t('account.storage.redirecting') : t('account.storage.continue')}
+                    </Button>
+                    <Button
+                        onClick={() => setConnectProvider(null)}
+                        variant='outline'
+                        className='flex-1'
+                        disabled={connecting}
+                    >
                         {t('common.cancel')}
                     </Button>
                 </DialogFooter>
@@ -377,7 +550,9 @@ export default function StorageTab() {
                 <DialogHeader>
                     <DialogTitle>{t('account.storage.removeTitle', { name: deleting?.name ?? '' })}</DialogTitle>
                     <DialogDescription>
-                        {t('account.storage.removeWarning', { count: String(deleting?.backups_count ?? 0) })}
+                        {t(deleting?.oauth ? 'account.storage.removeWarningOauth' : 'account.storage.removeWarning', {
+                            count: String(deleting?.backups_count ?? 0),
+                        })}
                     </DialogDescription>
                 </DialogHeader>
                 <DialogFooter>
