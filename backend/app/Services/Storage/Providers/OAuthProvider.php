@@ -135,6 +135,13 @@ abstract class OAuthProvider implements StorageProviderInterface
         InboxNotifier::storageDisconnected($dest, UserStorageDestination::countBackups((int) $dest['id']));
     }
 
+    public static function fileName(array $server, array $backup): string
+    {
+        $name = preg_replace('/[^A-Za-z0-9._-]+/', '_', (string) ($backup['name'] ?? 'backup')) ?: 'backup';
+
+        return mb_substr($name, 0, 80) . '-' . substr((string) $backup['uuid'], 0, 8) . '.tar.gz';
+    }
+
     abstract protected function authorizeEndpoint(): string;
 
     abstract protected function tokenEndpoint(): string;
@@ -209,12 +216,5 @@ abstract class OAuthProvider implements StorageProviderInterface
     protected function fail(string $what, ResponseInterface $res, string $code = 'PROVIDER_ERROR'): StorageException
     {
         return new StorageException($what . ' failed: ' . ProviderHttp::describe($res), $code, $res->getStatusCode() === 401 || $res->getStatusCode() === 403 ? 409 : 502);
-    }
-
-    protected static function fileName(array $server, array $backup): string
-    {
-        $name = preg_replace('/[^A-Za-z0-9._-]+/', '_', (string) ($backup['name'] ?? 'backup')) ?: 'backup';
-
-        return mb_substr($name, 0, 80) . '-' . substr((string) $backup['uuid'], 0, 8) . '.tar.gz';
     }
 }

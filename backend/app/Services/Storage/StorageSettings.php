@@ -45,12 +45,20 @@ final class StorageSettings
     public const BYO_COUNT_TOWARD_LIMIT = 'backup_byo_count_toward_limit';
     public const GOOGLE_CLIENT_ID = 'backup_byo_google_client_id';
     public const GOOGLE_CLIENT_SECRET = 'backup_byo_google_client_secret';
+    public const DROPBOX_APP_KEY = 'backup_byo_dropbox_app_key';
+    public const DROPBOX_APP_SECRET = 'backup_byo_dropbox_app_secret';
+    public const ONEDRIVE_CLIENT_ID = 'backup_byo_onedrive_client_id';
+    public const ONEDRIVE_CLIENT_SECRET = 'backup_byo_onedrive_client_secret';
+    public const RELAY_ENABLED = 'backup_byo_relay_enabled';
 
     /** Providers users may connect, in display order. */
-    public const PROVIDERS = ['s3', 'gdrive'];
+    public const PROVIDERS = ['s3', 'gdrive', 'dropbox', 'onedrive', 'sftp', 'webdav'];
+
+    /** Providers whose data passes through the panel (Wings cannot speak their protocol). */
+    public const RELAY_PROVIDERS = ['sftp', 'webdav'];
 
     /** @var list<string> */
-    public const SENSITIVE = [self::S3_SECRET_KEY, self::GOOGLE_CLIENT_SECRET];
+    public const SENSITIVE = [self::S3_SECRET_KEY, self::GOOGLE_CLIENT_SECRET, self::DROPBOX_APP_SECRET, self::ONEDRIVE_CLIENT_SECRET];
 
     /**
      * Ordered list of [key, default, type, description, options, validation, placeholder].
@@ -75,11 +83,16 @@ final class StorageSettings
             [self::MAX_CONCURRENT_UPLOADS, '4', 'number', 'How many parts Wings may upload in parallel (sent to Wings as max_concurrent_uploads).', [], 'required|integer|min:1|max:32', '4'],
             [self::PRESIGN_TTL_MINUTES, '60', 'number', 'How long presigned upload/download URLs stay valid, in minutes.', [], 'required|integer|min:5|max:10080', '60'],
             [self::BYO_ENABLED, 'false', 'select', 'Let users add their own backup storage (Account, Storage) and pick it when creating a backup or schedule. Backups on their own storage do not count toward the server backup limit unless you enable the option below. Custom S3 endpoints must use https and a public address.', $bool, 'required|string|in:true,false', 'false'],
-            [self::BYO_PROVIDERS, 's3', 'text', 'Comma separated providers users may connect. Available: s3, gdrive (Google Drive). OAuth providers also need their client ID and secret below. Cloud providers need FeatherWings with resumable backup uploads on the node.', [], 'nullable|string|max:255', 's3'],
+            [self::BYO_PROVIDERS, 's3', 'text', 'Comma separated providers users may connect. Available: s3, gdrive (Google Drive), dropbox, onedrive, sftp, webdav. OAuth providers also need their client ID and secret below; sftp and webdav also need the relay switch below. Everything except s3 needs FeatherWings with resumable backup uploads on the node.', [], 'nullable|string|max:255', 's3'],
             [self::BYO_MAX_PER_USER, '3', 'number', 'Maximum storage destinations per user.', [], 'required|integer|min:1|max:50', '3'],
             [self::BYO_COUNT_TOWARD_LIMIT, 'false', 'select', 'Count backups stored on a user\'s own storage toward the server backup limit. Off by default: they use no host disk or bucket space. Rotation never removes a backup from a different storage than the new one.', $bool, 'required|string|in:true,false', 'false'],
             [self::GOOGLE_CLIENT_ID, '', 'text', 'Google Drive: OAuth client ID (Google Cloud console, OAuth client of type "Web application", Drive API enabled). Authorized redirect URI: <panel URL>/api/user/storage-destinations/oauth/gdrive/callback. Only the drive.file scope is requested, so the panel sees just the files it created.', [], 'nullable|string|max:255', '1234-abc.apps.googleusercontent.com'],
             [self::GOOGLE_CLIENT_SECRET, '', 'password', 'Google Drive: OAuth client secret (stored encrypted).', [], 'nullable|string|max:255', 'Enter secret to change'],
+            [self::DROPBOX_APP_KEY, '', 'text', 'Dropbox: app key (Dropbox App Console, "Scoped access", "App folder" access, scopes files.content.write, files.content.read, account_info.read). Redirect URI: <panel URL>/api/user/storage-destinations/oauth/dropbox/callback.', [], 'nullable|string|max:255', 'abc123xyz'],
+            [self::DROPBOX_APP_SECRET, '', 'password', 'Dropbox: app secret (stored encrypted).', [], 'nullable|string|max:255', 'Enter secret to change'],
+            [self::ONEDRIVE_CLIENT_ID, '', 'text', 'OneDrive: application (client) ID of a Microsoft Entra app registration (accounts in any organization and personal Microsoft accounts, delegated Files.ReadWrite.AppFolder, User.Read and offline_access). Redirect URI (Web): <panel URL>/api/user/storage-destinations/oauth/onedrive/callback.', [], 'nullable|string|max:255', '00000000-0000-0000-0000-000000000000'],
+            [self::ONEDRIVE_CLIENT_SECRET, '', 'password', 'OneDrive: client secret value (stored encrypted).', [], 'nullable|string|max:255', 'Enter secret to change'],
+            [self::RELAY_ENABLED, 'false', 'select', 'WARNING: allow SFTP and WebDAV storage. Wings cannot talk to these servers, so every backup, download and restore is relayed through this panel: it uses the panel\'s bandwidth and CPU, WebDAV uploads are staged on the panel disk (as large as the backup), and the panel makes outbound connections to user-given servers (public addresses only). Leave off unless the panel host can carry that traffic. Also add sftp and/or webdav to the providers list.', $bool, 'required|string|in:true,false', 'false'],
         ];
     }
 
@@ -167,8 +180,16 @@ final class StorageSettings
     {
         return match ($provider) {
             'gdrive' => [trim(self::get(self::GOOGLE_CLIENT_ID)), trim(self::get(self::GOOGLE_CLIENT_SECRET))],
+            'dropbox' => [trim(self::get(self::DROPBOX_APP_KEY)), trim(self::get(self::DROPBOX_APP_SECRET))],
+            'onedrive' => [trim(self::get(self::ONEDRIVE_CLIENT_ID)), trim(self::get(self::ONEDRIVE_CLIENT_SECRET))],
             default => ['', ''],
         };
+    }
+
+    /** SFTP / WebDAV relay through the panel (off by default). */
+    public static function relayEnabled(): bool
+    {
+        return self::bool(self::RELAY_ENABLED);
     }
 
     public static function maxDestinationsPerUser(): int
