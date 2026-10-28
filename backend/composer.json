@@ -48,7 +48,8 @@
 		"ifsnop/mysqldump-php": "^2.12",
 		"softcreatr/gameq": "^5.0.1",
 		"web-auth/webauthn-lib": "^5.2",
-		"sentry/sdk": "^4.0"
+		"sentry/sdk": "^4.0",
+		"phpseclib/phpseclib": "^3.0"
 	},
 	"require-dev": {
 		"phpunit/phpunit": "^11.1",
