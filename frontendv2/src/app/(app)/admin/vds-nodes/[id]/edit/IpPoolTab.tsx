@@ -144,8 +144,7 @@ export function IpPoolTab({ nodeId, nodeName }: IpPoolTabProps) {
               const matchesScope = filterScope === 'all' || scope === filterScope;
               const matchesMode = filterMode === 'all' || mode === filterMode;
               const matchesPve =
-                  !filterPve ||
-                  (filterPve === '__any__' ? !ip.pve_node : (ip.pve_node ?? '') === filterPve);
+                  !filterPve || (filterPve === '__any__' ? !ip.pve_node : (ip.pve_node ?? '') === filterPve);
               return matchesSearch && matchesScope && matchesMode && matchesPve;
           })
         : [];
