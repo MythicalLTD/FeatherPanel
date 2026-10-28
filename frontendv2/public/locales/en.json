@@ -4819,7 +4819,7 @@
         "storageTarget": {
             "label": "Storage",
             "default": "Default storage",
-            "help": "Where this backup is stored. Backups on your own storage still count toward the server backup limit.",
+            "help": "Where this backup is stored. Backups on your own storage do not use this server's backup limit or the host's disk.",
             "scheduleHint": "Scheduled backups can only use storage added by the server owner.",
             "none": "Want backups in your own bucket?",
             "addLink": "Add storage",
@@ -4831,7 +4831,11 @@
                 "error": "Storage error",
                 "revoked": "Disconnected",
                 "orphaned": "Orphaned"
-            }
+            },
+            "helpCounted": "Where this backup is stored. On this panel, backups on your own storage also count toward the server backup limit.",
+            "uncounted": "+{count} on your storage",
+            "limitHint": "Backups on your own storage do not count toward this limit, so you can still pick one of your storages.",
+            "limitOwnStorageOk": "This server reached its backup limit ({limit}) on the host's storage. You can still back up to your own storage, which does not count toward the limit."
         }
     },
     "serverImport": {

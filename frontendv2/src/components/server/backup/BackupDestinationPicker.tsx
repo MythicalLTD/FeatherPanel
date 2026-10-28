@@ -15,8 +15,6 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-'use client';
-
 import * as React from 'react';
 import Link from 'next/link';
 import { useTranslation } from '@/contexts/TranslationContext';
@@ -30,13 +28,15 @@ type Props = {
     disabled?: boolean;
     /** Extra help line under the picker (e.g. schedules use the server owner's storage). */
     hint?: string;
+    /** The admin made backups on users' own storage count toward the server backup limit. */
+    countsTowardLimit?: boolean;
 };
 
 /**
  * Where a backup is stored: the panel default or one of the user's own storage destinations.
  * Renders nothing when bring-your-own storage is disabled.
  */
-export function BackupDestinationPicker({ value, onChange, disabled = false, hint }: Props) {
+export function BackupDestinationPicker({ value, onChange, disabled = false, hint, countsTowardLimit = false }: Props) {
     const { t } = useTranslation();
     const [enabled, setEnabled] = React.useState(false);
     const [destinations, setDestinations] = React.useState<StorageDestination[]>([]);
@@ -95,7 +95,12 @@ export function BackupDestinationPicker({ value, onChange, disabled = false, hin
                         </Link>
                     </>
                 ) : (
-                    (hint ?? t('serverBackups.storageTarget.help'))
+                    (hint ??
+                    t(
+                        countsTowardLimit
+                            ? 'serverBackups.storageTarget.helpCounted'
+                            : 'serverBackups.storageTarget.help',
+                    ))
                 )}
             </p>
         </div>

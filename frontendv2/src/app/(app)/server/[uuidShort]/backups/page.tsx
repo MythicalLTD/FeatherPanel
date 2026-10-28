@@ -64,7 +64,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogTitle, DialogDescription, DialogHeader, DialogFooter } from '@/components/ui/dialog';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
-import { BackupItem, BackupsResponse, Server } from '@/types/server';
+import { BackupItem, BackupsResponse, BackupLimitUsage, Server } from '@/types/server';
 import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 import { ListPagination } from '@/components/featherui/ListPagination';
 
@@ -159,6 +159,7 @@ export default function ServerBackupsPage() {
     } | null>(null);
 
     const [selectedUuids, setSelectedUuids] = useState<string[]>([]);
+    const [limitUsage, setLimitUsage] = useState<BackupLimitUsage | null>(null);
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -189,6 +190,7 @@ export default function ServerBackupsPage() {
                 if (backupsRes.data.success) {
                     setBackups(backupsRes.data.data.data);
                     if (!quiet) setSelectedUuids([]);
+                    setLimitUsage(backupsRes.data.data.limit_usage ?? null);
                     const p = backupsRes.data.data.pagination;
                     setPagination({
                         current_page: p.current_page,
@@ -419,7 +421,10 @@ export default function ServerBackupsPage() {
         }
     };
 
-    const backupCountTotal = pagination.total;
+    // Only backups on the host's storage use the limit; the rest live on the user's own storage.
+    const backupCountTotal = limitUsage ? limitUsage.used : pagination.total;
+    const uncountedBackups = limitUsage ? Math.max(0, limitUsage.total - limitUsage.used) : 0;
+    const ownStorageAvailable = Boolean(limitUsage?.byo_enabled && !limitUsage.byo_counts_toward_limit);
     const fifoRolling = Boolean(server?.fifo_rolling_enabled);
     const backupsDisabled = server ? isBackupLimitDisabled(server.backup_limit) : false;
     const atBackupCapacity =
@@ -445,6 +450,9 @@ export default function ServerBackupsPage() {
                             <span className='bg-primary/5 text-primary border-primary/20 rounded-full border px-3 py-1 text-[10px] font-semibold whitespace-nowrap'>
                                 {backupCountTotal} / {formatBackupLimitLabel(server.backup_limit, t('common.disabled'))}
                                 {fifoRolling ? ' · FIFO' : ''}
+                                {uncountedBackups > 0
+                                    ? ` · ${t('serverBackups.storageTarget.uncounted', { count: String(uncountedBackups) })}`
+                                    : ''}
                             </span>
                         )}
                     </div>
@@ -554,6 +562,7 @@ export default function ServerBackupsPage() {
                                         {t('serverBackups.backupLimitReachedDescription', {
                                             limit: String(server?.backup_limit || 0),
                                         })}
+                                        {ownStorageAvailable ? ` ${t('serverBackups.storageTarget.limitHint')}` : ''}
                                     </p>
                                 </div>
                             </div>

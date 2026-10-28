@@ -33,7 +33,7 @@ import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { safeBack } from '@/lib/safe-back';
 import { cn } from '@/lib/utils';
 import { formatBackupLimitLabel, isBackupLimitDisabled } from '@/lib/server-utils';
-import type { Database as ServerDatabase, Server } from '@/types/server';
+import type { BackupLimitUsage, Database as ServerDatabase, Server } from '@/types/server';
 import { BackupTaskFields } from '@/components/server/backup/BackupTaskFields';
 import { BackupDestinationPicker } from '@/components/server/backup/BackupDestinationPicker';
 import { PageLoading } from '@/components/featherui/PageLoading';
@@ -57,6 +57,7 @@ export default function CreateBackupPage() {
     const [saving, setSaving] = React.useState(false);
     const [server, setServer] = React.useState<Server | null>(null);
     const [backupCountTotal, setBackupCountTotal] = React.useState(0);
+    const [byoCounts, setByoCounts] = React.useState(false);
     const [databases, setDatabases] = React.useState<ServerDatabase[]>([]);
     const kindParam = searchParams.get('kind');
     const initialKind: BackupKind = kindParam === 'database' ? 'database' : kindParam === 'full' ? 'full' : 'files';
@@ -76,7 +77,10 @@ export default function CreateBackupPage() {
     const fifoRolling = Boolean(server?.fifo_rolling_enabled);
     const atFileLimit =
         !!server && !backupsDisabled && server.backup_limit > 0 && backupCountTotal >= server.backup_limit;
-    const filesBlocked = backupsDisabled || (atFileLimit && !fifoRolling);
+    // Backups on the user's own storage do not use the host's backup limit (unless the admin counts them).
+    const usesHostQuota = destinationId === null || byoCounts;
+    const filesBlocked = backupsDisabled || (atFileLimit && !fifoRolling && usesHostQuota);
+    const limitOnlyForHost = atFileLimit && !fifoRolling && !byoCounts && !backupsDisabled;
 
     React.useEffect(() => {
         fetchWidgets();
@@ -91,10 +95,10 @@ export default function CreateBackupPage() {
                         `/api/user/servers/${uuidShort}/databases`,
                         { params: { page: 1, per_page: 100 } },
                     ),
-                    axios.get<{ success: boolean; data: { pagination?: { total?: number } } }>(
-                        `/api/user/servers/${uuidShort}/backups`,
-                        { params: { page: 1, per_page: 1 } },
-                    ),
+                    axios.get<{
+                        success: boolean;
+                        data: { pagination?: { total?: number }; limit_usage?: BackupLimitUsage };
+                    }>(`/api/user/servers/${uuidShort}/backups`, { params: { page: 1, per_page: 1 } }),
                 ]);
                 if (serverRes.data?.success) {
                     setServer(serverRes.data.data);
@@ -102,10 +106,12 @@ export default function CreateBackupPage() {
                 if (databasesRes.data?.success) {
                     setDatabases(databasesRes.data.data.data || []);
                 }
-                const total = backupsRes.data?.data?.pagination?.total;
+                const usage = backupsRes.data?.data?.limit_usage;
+                const total = usage ? usage.used : backupsRes.data?.data?.pagination?.total;
                 if (typeof total === 'number') {
                     setBackupCountTotal(total);
                 }
+                setByoCounts(Boolean(usage?.byo_counts_toward_limit));
             } catch (error) {
                 console.error('Failed to load backup create context:', error);
             }
@@ -430,13 +436,20 @@ export default function CreateBackupPage() {
                             </div>
                         </div>
 
-                        {filesBlocked && (
+                        {(filesBlocked || limitOnlyForHost) && (
                             <p className='rounded-xl border border-yellow-500/20 bg-yellow-500/10 p-3 text-sm text-yellow-600 dark:text-yellow-400'>
                                 {backupsDisabled
                                     ? t('serverBackups.noBackupsNoLimit')
-                                    : t('serverBackups.backupLimitReachedDescription', {
-                                          limit: String(server?.backup_limit ?? 0),
-                                      })}
+                                    : filesBlocked
+                                      ? t('serverBackups.backupLimitReachedDescription', {
+                                            limit: String(server?.backup_limit ?? 0),
+                                        })
+                                      : t('serverBackups.storageTarget.limitOwnStorageOk', {
+                                            limit: String(server?.backup_limit ?? 0),
+                                        })}
+                                {filesBlocked && !backupsDisabled && !byoCounts
+                                    ? ` ${t('serverBackups.storageTarget.limitHint')}`
+                                    : ''}
                             </p>
                         )}
 
@@ -456,7 +469,8 @@ export default function CreateBackupPage() {
                         <BackupDestinationPicker
                             value={destinationId}
                             onChange={setDestinationId}
-                            disabled={saving || filesBlocked}
+                            disabled={saving || backupsDisabled}
+                            countsTowardLimit={byoCounts}
                         />
 
                         {kind === 'files' && (
