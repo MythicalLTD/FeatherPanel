@@ -525,19 +525,11 @@ class AServerScheduleProcessor implements TimeTask
         $app = App::getInstance(false, true);
         MinecraftColorCodeSupport::sendOutputWithNewLine('&aStarting full backup for server: ' . $server['name']);
 
-        $currentBackups = count(Backup::getBackupsByServerId((int) $server['id']));
         $backupLimit = (int) ($server['backup_limit'] ?? 0);
 
         if ($backupLimit === 0) {
             MinecraftColorCodeSupport::sendOutputWithNewLine('&eSkipping full backup: backups disabled for server: ' . $server['name']);
             $app->getLogger()->info('Skipped scheduled full backup for server ' . ($server['name'] ?? 'unknown') . ': backups disabled');
-
-            return;
-        }
-
-        $atBackupLimit = $currentBackups >= $backupLimit;
-        if ($atBackupLimit && !BackupFifoEviction::isFifoRollingForServer($server)) {
-            MinecraftColorCodeSupport::sendOutputWithNewLine('&eSkipping full backup: limit reached for server: ' . $server['name']);
 
             return;
         }
@@ -557,11 +549,19 @@ class AServerScheduleProcessor implements TimeTask
             return;
         }
 
+        // Only backups on host storage use the limit (BackupQuota); rotation stays in the same storage pool.
+        $atBackupLimit = \App\Services\Backup\BackupQuota::atLimit($server, $destinationId);
+        if ($atBackupLimit && !BackupFifoEviction::isFifoRollingForServer($server)) {
+            MinecraftColorCodeSupport::sendOutputWithNewLine('&eSkipping full backup: limit reached for server: ' . $server['name']);
+
+            return;
+        }
+
         try {
             $wings = $this->getWingsConnection($server, 120);
 
             if ($atBackupLimit) {
-                $evict = BackupFifoEviction::evictOldestWingsBackup((int) $server['id'], (string) $server['uuid'], $wings);
+                $evict = BackupFifoEviction::evictOldestWingsBackup((int) $server['id'], (string) $server['uuid'], $wings, $destinationId);
                 if ($evict !== null) {
                     MinecraftColorCodeSupport::sendOutputWithNewLine('&eSkipping full backup: FIFO rotation failed for server: ' . $server['name']);
 

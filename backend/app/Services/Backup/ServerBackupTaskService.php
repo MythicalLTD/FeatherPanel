@@ -72,7 +72,7 @@ class ServerBackupTaskService
         if ($parsed['type'] === 'full') {
             $destinationId = null;
             $skip = $this->checkDestination($server, $options, 'full', $destinationId)
-                ?? $this->acquireBackupSlot($wings, $server, 'full', $options);
+                ?? $this->acquireBackupSlot($wings, $server, 'full', $options, $destinationId);
             if ($skip !== null) {
                 return $skip;
             }
@@ -110,7 +110,7 @@ class ServerBackupTaskService
 
         $destinationId = null;
         $skip = $this->checkDestination($server, $options, 'files', $destinationId)
-            ?? $this->acquireBackupSlot($wings, $server, 'files', $options);
+            ?? $this->acquireBackupSlot($wings, $server, 'files', $options, $destinationId);
         if ($skip !== null) {
             return $skip;
         }
@@ -126,9 +126,15 @@ class ServerBackupTaskService
 
     // Seams (database / daemon access), overridden in unit tests
 
+    /** Backups that use up the server's backup_limit (see BackupQuota). */
     protected function countBackups(int $serverId): int
     {
-        return count(Backup::getBackupsByServerId($serverId));
+        return BackupQuota::usedSlots($serverId);
+    }
+
+    protected function countsTowardLimit(?int $destinationId): bool
+    {
+        return BackupQuota::countsTowardLimit($destinationId);
     }
 
     protected function isFifoRolling(array $server): bool
@@ -139,9 +145,9 @@ class ServerBackupTaskService
     /**
      * @return array{message: string, code: string, status: int}|null null on success
      */
-    protected function evictOldestBackup(Wings $wings, array $server): ?array
+    protected function evictOldestBackup(Wings $wings, array $server, ?int $destinationId = null): ?array
     {
-        return BackupFifoEviction::evictOldestWingsBackup((int) $server['id'], (string) $server['uuid'], $wings);
+        return BackupFifoEviction::evictOldestWingsBackup((int) $server['id'], (string) $server['uuid'], $wings, $destinationId);
     }
 
     /**
@@ -227,20 +233,26 @@ class ServerBackupTaskService
     }
 
     /**
-     * Enforce backup_limit and FIFO rotation (same rules as scheduled backups).
+     * Enforce backup_limit and FIFO rotation (same rules as scheduled backups). Only backups that
+     * count toward the limit are checked, and rotation stays inside the new backup's storage pool.
      *
      * @param array<string, mixed> $server
      * @param array{context?: string, name_prefix?: string, destination_id?: int|null} $options
      *
      * @return array<string, mixed>|null a "skipped" result when no backup may be created, null to proceed
      */
-    private function acquireBackupSlot(Wings $wings, array $server, string $type, array $options): ?array
+    private function acquireBackupSlot(Wings $wings, array $server, string $type, array $options, ?int $destinationId = null): ?array
     {
         $limit = (int) ($server['backup_limit'] ?? 0);
         if ($limit === 0) {
             $this->recordActivity($server, $options, 'backup_skipped_disabled', ['backup_limit' => 0]);
 
             return $this->result($type, self::STATUS_SKIPPED, self::SKIP_DISABLED);
+        }
+
+        // Backups on the user's own storage do not use the host's quota (unless the admin says so).
+        if (!$this->countsTowardLimit($destinationId)) {
+            return null;
         }
 
         $current = $this->countBackups((int) $server['id']);
@@ -260,7 +272,7 @@ class ServerBackupTaskService
             ]);
         }
 
-        $evict = $this->evictOldestBackup($wings, $server);
+        $evict = $this->evictOldestBackup($wings, $server, $destinationId);
         if ($evict !== null) {
             $this->recordActivity($server, $options, 'backup_skipped_fifo', [
                 'current_backups' => $current,
