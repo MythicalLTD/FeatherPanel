@@ -106,7 +106,8 @@ class CreateBackupTool implements ToolInterface
             ];
         }
 
-        $currentBackups = count(Backup::getBackupsByServerId((int) $server['id']));
+        // The assistant creates host-storage backups only; BYO backups do not use this limit.
+        $currentBackups = \App\Services\Backup\BackupQuota::usedSlots((int) $server['id']);
         $backupLimit = (int) ($server['backup_limit'] ?? 0);
 
         if ($backupLimit === 0) {

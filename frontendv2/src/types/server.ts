@@ -384,8 +384,18 @@ export interface BackupsResponse {
         backup_retention_mode_override?: string | null;
         effective_backup_retention_mode?: string;
         fifo_rolling_enabled?: boolean;
+        limit_usage?: BackupLimitUsage;
     };
     message?: string;
+}
+
+/** Backups that use the server backup limit. Backups on the user's own storage are not counted unless the admin says so. */
+export interface BackupLimitUsage {
+    used: number;
+    limit: number;
+    total: number;
+    byo_counts_toward_limit: boolean;
+    byo_enabled: boolean;
 }
 export interface ImportItem {
     id: number;

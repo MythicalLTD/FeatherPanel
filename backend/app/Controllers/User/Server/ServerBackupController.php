@@ -32,6 +32,7 @@ use OpenApi\Attributes as OA;
 use App\Helpers\WingsUrlHelper;
 use App\Helpers\BackupIgnoreHelper;
 use App\Chat\UserStorageDestination;
+use App\Services\Backup\BackupQuota;
 use App\Plugins\Events\Events\ServerEvent;
 use App\Services\Storage\StorageException;
 use App\Services\Backup\BackupFifoEviction;
@@ -279,6 +280,8 @@ class ServerBackupController
             'backup_retention_mode_override' => $retention['backup_retention_mode_override'],
             'effective_backup_retention_mode' => $retention['effective_backup_retention_mode'],
             'fifo_rolling_enabled' => $retention['fifo_rolling_enabled'],
+            // Backups that use the server's backup_limit; BYO storage is excluded unless the admin counts it.
+            'limit_usage' => BackupQuota::usage($server),
         ]);
     }
 
@@ -427,15 +430,15 @@ class ServerBackupController
             return $this->createFullBackup($request, $server, $body);
         }
 
-        // Check backup limit (0 = disabled; optional FIFO rotation per panel setting)
-        $currentBackups = count(Backup::getBackupsByServerId((int) $server['id']));
+        // Check backup limit (0 = disabled; optional FIFO rotation per panel setting).
+        // Backups on the user's own storage do not use the host quota (BackupQuota).
         $backupLimit = (int) ($server['backup_limit'] ?? 0);
 
         if ($backupLimit === 0) {
             return ApiResponse::error('Backups are disabled for this server', 'BACKUPS_DISABLED', 403);
         }
 
-        if ($currentBackups >= $backupLimit) {
+        if (BackupQuota::atLimit($server, $body['destination_id'])) {
             if (!BackupFifoEviction::isFifoRollingForServer($server)) {
                 return ApiResponse::error('Backup limit reached', 'BACKUP_LIMIT_REACHED', 400);
             }
@@ -457,7 +460,7 @@ class ServerBackupController
 
                 return ApiResponse::error('Failed to connect to node for backup rotation', 'FIFO_EVICTION_FAILED', 500);
             }
-            $evictErr = BackupFifoEviction::evictOldestWingsBackup((int) $server['id'], $serverUuid, $wingsEvict);
+            $evictErr = BackupFifoEviction::evictOldestWingsBackup((int) $server['id'], $serverUuid, $wingsEvict, $body['destination_id']);
             if ($evictErr !== null) {
                 return ApiResponse::error($evictErr['message'], $evictErr['code'], $evictErr['status']);
             }
@@ -1760,12 +1763,12 @@ class ServerBackupController
             );
         }
 
-        $currentBackups = count(Backup::getBackupsByServerId((int) $server['id']));
         $backupLimit = (int) ($server['backup_limit'] ?? 0);
 
         if ($backupLimit === 0) {
             return ApiResponse::error('Backups are disabled for this server', 'BACKUPS_DISABLED', 403);
         }
+        $fullDestinationId = isset($body['destination_id']) && (int) $body['destination_id'] > 0 ? (int) $body['destination_id'] : null;
 
         $node = Node::getNodeById($server['node_id']);
         if (!$node) {
@@ -1778,11 +1781,11 @@ class ServerBackupController
             return ApiResponse::error('Failed to connect to node: ' . $e->getMessage(), 'WINGS_CONNECTION_FAILED', 500);
         }
 
-        if ($currentBackups >= $backupLimit) {
+        if (BackupQuota::atLimit($server, $fullDestinationId)) {
             if (!BackupFifoEviction::isFifoRollingForServer($server)) {
                 return ApiResponse::error('Backup limit reached', 'BACKUP_LIMIT_REACHED', 400);
             }
-            $evictErr = BackupFifoEviction::evictOldestWingsBackup((int) $server['id'], (string) $server['uuid'], $wings);
+            $evictErr = BackupFifoEviction::evictOldestWingsBackup((int) $server['id'], (string) $server['uuid'], $wings, $fullDestinationId);
             if ($evictErr !== null) {
                 return ApiResponse::error($evictErr['message'], $evictErr['code'], $evictErr['status']);
             }

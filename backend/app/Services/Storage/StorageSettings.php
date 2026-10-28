@@ -42,6 +42,7 @@ final class StorageSettings
     public const BYO_ENABLED = 'backup_byo_enabled';
     public const BYO_PROVIDERS = 'backup_byo_providers';
     public const BYO_MAX_PER_USER = 'backup_byo_max_per_user';
+    public const BYO_COUNT_TOWARD_LIMIT = 'backup_byo_count_toward_limit';
 
     /** Providers users may connect, in display order. */
     public const PROVIDERS = ['s3'];
@@ -71,9 +72,10 @@ final class StorageSettings
             [self::PART_SIZE_MB, '100', 'number', 'Multipart upload part size in MiB (minimum 5). Larger parts mean fewer requests; it is raised automatically for very large backups.', [], 'required|integer|min:5|max:5120', '100'],
             [self::MAX_CONCURRENT_UPLOADS, '4', 'number', 'How many parts Wings may upload in parallel (sent to Wings as max_concurrent_uploads).', [], 'required|integer|min:1|max:32', '4'],
             [self::PRESIGN_TTL_MINUTES, '60', 'number', 'How long presigned upload/download URLs stay valid, in minutes.', [], 'required|integer|min:5|max:10080', '60'],
-            [self::BYO_ENABLED, 'false', 'select', 'Let users add their own backup storage (Account, Storage) and pick it when creating a backup or schedule. Their backups still count toward the server backup limit. Custom S3 endpoints must use https and a public address.', $bool, 'required|string|in:true,false', 'false'],
+            [self::BYO_ENABLED, 'false', 'select', 'Let users add their own backup storage (Account, Storage) and pick it when creating a backup or schedule. Backups on their own storage do not count toward the server backup limit unless you enable the option below. Custom S3 endpoints must use https and a public address.', $bool, 'required|string|in:true,false', 'false'],
             [self::BYO_PROVIDERS, 's3', 'text', 'Comma separated providers users may connect. Available: s3', [], 'nullable|string|max:255', 's3'],
             [self::BYO_MAX_PER_USER, '3', 'number', 'Maximum storage destinations per user.', [], 'required|integer|min:1|max:50', '3'],
+            [self::BYO_COUNT_TOWARD_LIMIT, 'false', 'select', 'Count backups stored on a user\'s own storage toward the server backup limit. Off by default: they use no host disk or bucket space. Rotation never removes a backup from a different storage than the new one.', $bool, 'required|string|in:true,false', 'false'],
         ];
     }
 

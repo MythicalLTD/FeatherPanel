@@ -211,16 +211,44 @@ class Backup
      *
      * @return array<string, mixed>|null
      */
-    public static function getOldestUnlockedBackupForServer(int $serverId): ?array
+    /**
+     * Count a server's (not deleted) backups; with $hostOnly, only those on the host's storage
+     * (no bring-your-own destination).
+     */
+    public static function countForServer(int $serverId, bool $hostOnly): int
+    {
+        if ($serverId <= 0) {
+            return 0;
+        }
+        $stmt = Database::getPdoConnection()->prepare(
+            'SELECT COUNT(*) FROM ' . self::$table . ' WHERE server_id = :server_id AND deleted_at IS NULL' . ($hostOnly ? ' AND destination_id IS NULL' : '')
+        );
+        $stmt->execute(['server_id' => $serverId]);
+
+        return (int) $stmt->fetchColumn();
+    }
+
+    public static function getOldestUnlockedBackupForServer(int $serverId, bool $samePool = false, ?int $destinationId = null): ?array
     {
         if ($serverId <= 0) {
             return null;
         }
         $pdo = Database::getPdoConnection();
+        $params = ['server_id' => $serverId];
+        $pool = '';
+        if ($samePool) {
+            // Rotation stays inside one storage pool: host storage (NULL) or one user destination.
+            if ($destinationId !== null && $destinationId > 0) {
+                $pool = ' AND destination_id = :destination_id';
+                $params['destination_id'] = $destinationId;
+            } else {
+                $pool = ' AND destination_id IS NULL';
+            }
+        }
         $stmt = $pdo->prepare(
-            'SELECT * FROM ' . self::$table . ' WHERE server_id = :server_id AND deleted_at IS NULL AND is_locked = 0 ORDER BY created_at ASC, id ASC LIMIT 1'
+            'SELECT * FROM ' . self::$table . ' WHERE server_id = :server_id AND deleted_at IS NULL AND is_locked = 0' . $pool . ' ORDER BY created_at ASC, id ASC LIMIT 1'
         );
-        $stmt->execute(['server_id' => $serverId]);
+        $stmt->execute($params);
         $row = $stmt->fetch(\PDO::FETCH_ASSOC);
 
         return $row ?: null;

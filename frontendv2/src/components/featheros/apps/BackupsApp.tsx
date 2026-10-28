@@ -45,6 +45,7 @@ export default function BackupsApp({ win }: OsAppProps) {
     const uuid = win.serverUuid as string;
     const server = getServer(uuid);
     const [backups, setBackups] = useState<BackupItem[]>([]);
+    const [countedBackups, setCountedBackups] = useState<number | null>(null);
     const [loading, setLoading] = useState(true);
     const [busy, setBusy] = useState<string | null>(null);
 
@@ -56,6 +57,10 @@ export default function BackupsApp({ win }: OsAppProps) {
                     params: { page: 1, per_page: 100 },
                 });
                 setBackups(data?.data?.data ?? []);
+                // Backups on the user's own storage do not use the server limit.
+                setCountedBackups(
+                    typeof data?.data?.limit_usage?.used === 'number' ? data.data.limit_usage.used : null,
+                );
             } catch (e) {
                 if (!quiet) toast.error(errorMessage(e));
             } finally {
@@ -147,7 +152,7 @@ export default function BackupsApp({ win }: OsAppProps) {
             <div className='flex h-10 shrink-0 items-center gap-2 border-b px-3'>
                 <span className='text-muted-foreground text-[12px]'>
                     {t('featheros.backups.count', {
-                        count: String(backups.length),
+                        count: String(countedBackups ?? backups.length),
                         limit: String(server?.backup_limit ?? 0),
                     })}
                 </span>
