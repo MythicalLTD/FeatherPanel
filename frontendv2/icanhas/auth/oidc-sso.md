@@ -26,7 +26,7 @@ Providers are rows in the database (Admin → OIDC providers). Legacy single-pro
 
 Login method order/hide settings: `login_methods_order`, `login_hidden_methods`, `login_default_method` (include or hide `oidc`). See [../settings/guide.md](../settings/guide.md).
 
-Buttons appear when the public list returns at least one enabled provider — not only when `oidc_enabled` is set.
+Buttons appear when the public list returns at least one enabled provider - not only when `oidc_enabled` is set.
 
 ## Flow
 

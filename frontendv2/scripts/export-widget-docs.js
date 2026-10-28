@@ -304,7 +304,7 @@ function widgetsIndexMarkdown(widgets) {
     const rows = widgets
         .map(
             (w) =>
-                `| \`${w.slug}\` | ${w.injection_points.map((ip) => `\`${ip}\``).join(', ') || '—'} | [md](./${w.file_slug}.md) · [json](./${w.file_slug}.json) |`,
+                `| \`${w.slug}\` | ${w.injection_points.map((ip) => `\`${ip}\``).join(', ') || '-'} | [md](./${w.file_slug}.md) · [json](./${w.file_slug}.json) |`,
         )
         .join('\n');
 

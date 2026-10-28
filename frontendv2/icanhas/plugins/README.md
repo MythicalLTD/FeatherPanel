@@ -40,8 +40,8 @@ Index tip: crawl the raw `.md` files plus [`../catalog.json`](../catalog.json) /
 
 A directory under `backend/storage/addons/{identifier}/` with:
 
-1. `conf.yml` — manifest
-2. `{EntryClass}.php` — implements `App\Plugins\AppPlugin`
+1. `conf.yml` - manifest
+2. `{EntryClass}.php` - implements `App\Plugins\AppPlugin`
 3. Optional backend + frontend pieces documented below
 
 PSR-4: `App\Addons\` → `backend/storage/addons/`.

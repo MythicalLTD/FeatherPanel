@@ -22,12 +22,12 @@ Thumbs.db
 Dockerfile
 .dockerignore
 
-# Hand-authored docs sources — already compiled into public/icanhasfeatherpanel/ on the host
+# Hand-authored docs sources - already compiled into public/icanhasfeatherpanel/ on the host
 /icanhas/
 /docsrc/
 /README.md
 
-# Do NOT ignore public/**/*.md — RAG and view.html need those files in the image.
+# Do NOT ignore public/**/*.md - RAG and view.html need those files in the image.
 
 # Dev / build noise
 tsconfig.tsbuildinfo

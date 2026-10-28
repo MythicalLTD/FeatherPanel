@@ -223,7 +223,7 @@ function buildRagPage(catalog) {
             const view =
                 doc.format === 'markdown'
                     ? `<a href="${DOCS_BASE}/view.html?doc=${encodeURIComponent(doc.id)}">view</a>`
-                    : '—';
+                    : '-';
             return `<tr data-fp-search-item data-fp-search-text="${escapeHtml(`${doc.id} ${doc.section} ${doc.format}`)}">
   <td><code>${escapeHtml(doc.id)}</code></td>
   <td>${escapeHtml(doc.section)}</td>
@@ -300,7 +300,7 @@ function writeGlobalMarkdownViewer() {
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Markdown viewer — FeatherPanel Docs</title>
+  <title>Markdown viewer - FeatherPanel Docs</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="${DOCS_BASE}/assets/docs.css" />
 </head>
@@ -344,7 +344,7 @@ function writeGlobalMarkdownViewer() {
       }
       document.getElementById('doc-badge').textContent = doc;
       document.getElementById('raw-link').href = './' + doc;
-      document.title = doc + ' — FeatherPanel Docs';
+      document.title = doc + ' - FeatherPanel Docs';
       fetch('./' + doc, { credentials: 'same-origin' })
         .then(function (res) {
           if (!res.ok) throw new Error('HTTP ' + res.status);
@@ -389,7 +389,7 @@ for (const candidate of openapiCandidates) {
     }
 }
 
-// First pass without catalog/llms themselves dominating — write placeholders then rebuild
+// First pass without catalog/llms themselves dominating - write placeholders then rebuild
 const catalog = buildCatalog();
 writeJson(path.join(PUBLIC_DOCS_DIR, 'catalog.json'), catalog);
 writeMarkdown(path.join(PUBLIC_DOCS_DIR, 'llms.txt'), buildLlmsTxt(catalog));

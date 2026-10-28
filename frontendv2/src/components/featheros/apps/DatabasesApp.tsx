@@ -178,7 +178,7 @@ export default function DatabasesApp({ win }: OsAppProps) {
         <div className='flex items-center gap-2 py-0.5 text-[12px]'>
             <span className='text-muted-foreground w-24 shrink-0'>{label}</span>
             <span className='min-w-0 flex-1 truncate font-mono text-[11px]'>
-                {secret && !showPassword ? '••••••••••' : (value ?? '—')}
+                {secret && !showPassword ? '••••••••••' : (value ?? '-')}
             </span>
             {secret && value && (
                 <button

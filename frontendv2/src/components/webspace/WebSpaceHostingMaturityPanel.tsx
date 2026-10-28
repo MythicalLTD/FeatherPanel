@@ -212,7 +212,7 @@ export function WebSpaceHostingMaturityPanel({
                                     ({data.roadmap.length} {t('webSpaces.hosting.roadmapCount')})
                                 </span>
                             </span>
-                            <span className='text-muted-foreground text-xs'>{showRoadmap ? '−' : '+'}</span>
+                            <span className='text-muted-foreground text-xs'>{showRoadmap ? '-' : '+'}</span>
                         </button>
                         {showRoadmap && (
                             <div className='mt-3 space-y-2'>

@@ -212,7 +212,7 @@ export default function ServerPerformance({
     const networkCurrent = getCurrentValue(networkData);
     const diskIoCurrent = getCurrentValue(diskIoData);
 
-    // Unlimited CPU: keep a 0–100% scale so tiny noise does not amplify into a jagged chart.
+    // Unlimited CPU: keep a 0-100% scale so tiny noise does not amplify into a jagged chart.
     const cpuDomainMax = useStableDomainMax(cpuData, cpuLimit > 0 ? cpuLimit : 100, 100);
     const memoryDomainMax = useStableDomainMax(memoryData, memoryLimit > 0 ? memoryLimit : undefined, 64);
     const diskDomainMax = useStableDomainMax(diskData, diskLimit > 0 ? diskLimit : undefined, 64);

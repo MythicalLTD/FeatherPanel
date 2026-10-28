@@ -38,7 +38,7 @@ interface VncConsoleProps {
     /** WebSocket URL, e.g. wss://panel/vnc-proxy/{token} or direct Proxmox wss_url */
     url: string;
     /**
-     * Proxmox `vncproxy` ticket — used as the RFB/VNC password after the
+     * Proxmox `vncproxy` ticket - used as the RFB/VNC password after the
      * websocket is up (pveproxy challenges with VNC Auth).
      */
     password?: string;
@@ -86,7 +86,7 @@ const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve,
  * Proxy tokens are single-use and short-lived, so the session must only be
  * (re)opened when `url` changes, never on a plain parent re-render.
  *
- * `@novnc/novnc` touches `window` at module load — import it only in the
+ * `@novnc/novnc` touches `window` at module load - import it only in the
  * browser via dynamic import, never at the top level (SSR).
  *
  * Connection is deferred a tick so React Strict Mode's mount→unmount→remount

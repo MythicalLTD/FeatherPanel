@@ -33,8 +33,8 @@ use OpenApi\Attributes as OA;
 use App\Chat\VmInstanceBackup;
 use App\Config\ConfigInterface;
 use App\Chat\VmInstanceActivity;
-use App\Mail\templates\VmSuspended;
 use App\Helpers\FeatherTailClient;
+use App\Mail\templates\VmSuspended;
 use App\Services\Vm\VmInstanceUtil;
 use App\CloudFlare\CloudFlareRealIP;
 use App\Mail\templates\VmUnsuspended;
@@ -2538,7 +2538,7 @@ class VmInstancesController
             required: true,
             content: new OA\JsonContent(
                 properties: [
-                    new OA\Property(property: 'limit', type: 'integer', description: 'Maximum number of backups (0–100)'),
+                    new OA\Property(property: 'limit', type: 'integer', description: 'Maximum number of backups (0-100)'),
                 ]
             )
         ),

@@ -18,7 +18,7 @@ OAuth implements DCR + PKCE (`/authorize`, `/token`, `/register`) so Claude’s 
 # once
 pnpm --dir mcp install
 
-# from frontendv2 — starts Next (:3000) + MCP (:3001); /mcp + OAuth proxied like prod
+# from frontendv2 - starts Next (:3000) + MCP (:3001); /mcp + OAuth proxied like prod
 cd frontendv2 && pnpm dev
 ```
 
@@ -35,7 +35,7 @@ MCP calls the PHP API at `http://127.0.0.1:8721` by default (same as Next `/api`
 
 ## Modes
 
-### Remote (Docker Compose — recommended)
+### Remote (Docker Compose - recommended)
 
 Proxied at `https://<your-panel>/mcp`. Claude uses OAuth; other clients can send a Bearer API key.
 
@@ -54,7 +54,7 @@ pnpm start:stdio
 | Variable                                    | Default                                                                      | Description                                                 |
 | ------------------------------------------- | ---------------------------------------------------------------------------- | ----------------------------------------------------------- |
 | `FEATHERPANEL_URL`                          | `http://backend:80` (Docker) / `http://127.0.0.1:8721` (frontend `pnpm dev`) | Panel API base URL                                          |
-| `FEATHERPANEL_API_KEY`                      | —                                                                            | Required for stdio; remote can use OAuth or per-request key |
+| `FEATHERPANEL_API_KEY`                      | -                                                                            | Required for stdio; remote can use OAuth or per-request key |
 | `MCP_HOST`                                  | `0.0.0.0` (Docker) / `127.0.0.1` (frontend `pnpm dev`)                       | HTTP bind address                                           |
 | `MCP_PORT`                                  | `3001`                                                                       | HTTP listen port                                            |
 | `MCP_DEV_URL`                               | `http://127.0.0.1:3001`                                                      | Next rewrite target for `/mcp` in local dev                 |

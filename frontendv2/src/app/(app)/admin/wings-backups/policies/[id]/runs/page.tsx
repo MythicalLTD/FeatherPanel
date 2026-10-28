@@ -153,7 +153,7 @@ export default function WingsBackupPolicyRunsPage() {
                                             skipped: String(run.nodes_skipped),
                                         })}
                                     </div>
-                                    <div className='text-muted-foreground mt-1 text-xs'>{run.started_at ?? '—'}</div>
+                                    <div className='text-muted-foreground mt-1 text-xs'>{run.started_at ?? '-'}</div>
                                 </PageCard>
                             </button>
                         ))}

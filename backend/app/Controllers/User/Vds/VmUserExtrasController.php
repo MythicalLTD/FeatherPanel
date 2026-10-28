@@ -812,7 +812,7 @@ class VmUserExtrasController
                 }
             }
         }
-        // Legacy c|d|n|a flags with no order= — fall back to disks then nets.
+        // Legacy c|d|n|a flags with no order= - fall back to disks then nets.
         if ($order === [] && is_string($cfg['boot'] ?? null) && !str_contains((string) $cfg['boot'], 'order=')) {
             foreach ($devices as $d) {
                 if ($d['type'] === 'disk') {
@@ -904,7 +904,7 @@ class VmUserExtrasController
         $vmNode = IsoLibrary::nodeForInstance($vmInstance);
         $storageConfigured = IsoLibrary::userStorage($vmNode) !== '';
         $userIsos = $isQemu && $mode === 'provider_user' && $storageConfigured;
-        // Why custom ISOs are off — so the UI can show a precise guide instead of a generic message.
+        // Why custom ISOs are off - so the UI can show a precise guide instead of a generic message.
         $userIsosBlocker = null;
         if ($isQemu && !$userIsos) {
             if ($mode !== 'provider_user') {

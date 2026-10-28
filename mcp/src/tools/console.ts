@@ -58,7 +58,7 @@ export function registerConsoleTools(server: McpServer): void {
     {
       title: "Get server logs",
       description:
-        "Fetch recent console/log output. If the container already exited, expect a clear offline/crash message — then inspect install logs or fix the jar; do not blame the node.",
+        "Fetch recent console/log output. If the container already exited, expect a clear offline/crash message - then inspect install logs or fix the jar; do not blame the node.",
       inputSchema: {
         server_id: serverId,
       },

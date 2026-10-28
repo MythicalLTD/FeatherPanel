@@ -61,7 +61,7 @@ export interface AppSettings {
     recaptcha_site_key: string;
     /** Google reCAPTCHA: v2 (checkbox) or v3 (score). */
     recaptcha_version?: string;
-    /** Minimum acceptable v3 score (0–1); server-enforced. */
+    /** Minimum acceptable v3 score (0-1); server-enforced. */
     recaptcha_v3_min_score?: string;
     /** v3 action name; must match server setting. */
     recaptcha_v3_action?: string;
@@ -183,11 +183,11 @@ export interface AppSettings {
     app_background_type_default?: string;
     /** When 'true', force the configured background type for all users. */
     app_background_type_lock?: string;
-    /** Optional default backdrop blur in pixels (0–24). */
+    /** Optional default backdrop blur in pixels (0-24). */
     app_backdrop_blur_default?: string;
     /** When 'true', force the configured backdrop blur for all users. */
     app_backdrop_blur_lock?: string;
-    /** Optional default backdrop darken in percent (0–100). */
+    /** Optional default backdrop darken in percent (0-100). */
     app_backdrop_darken_default?: string;
     /** When 'true', force the configured backdrop darken for all users. */
     app_backdrop_darken_lock?: string;

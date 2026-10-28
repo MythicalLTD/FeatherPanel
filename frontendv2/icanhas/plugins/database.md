@@ -54,7 +54,7 @@ namespace App\Addons\{identifier}\Chat;
 
 Pattern mirrors core `App\Chat\*` models: static methods, PDO via `App\Chat\Database::getPdoConnection()`, private `$table` string.
 
-### Real example — featherimages `Chat/Upload.php`
+### Real example - featherimages `Chat/Upload.php`
 
 ```php
 namespace App\Addons\featherimages\Chat;
@@ -86,7 +86,7 @@ Also study: `billinglinks/Chat/Link.php`.
 
 ### Guidelines
 
-1. Never concatenate user input into SQL — use bound parameters  
+1. Never concatenate user input into SQL - use bound parameters  
 2. Soft-delete flags often use string `'true'` / `'false'` to match panel conventions  
 3. Keep business logic in Controllers/Services; Chat classes = persistence  
 4. Log failures; return `null` / empty arrays rather than throwing through HTTP layers unchecked  
@@ -106,6 +106,6 @@ Do **not** put large binaries in git; write into `Storage/` at runtime.
 
 ## Related
 
-- [examples.md](./examples.md) — featherimages, billinglinks  
-- [backend.md](./backend.md) — controllers calling Chat models  
-- [packaging.md](./packaging.md) — Storage preservation on update  
+- [examples.md](./examples.md) - featherimages, billinglinks  
+- [backend.md](./backend.md) - controllers calling Chat models  
+- [packaging.md](./packaging.md) - Storage preservation on update  

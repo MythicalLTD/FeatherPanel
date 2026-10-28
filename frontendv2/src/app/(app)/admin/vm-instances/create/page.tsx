@@ -1416,7 +1416,7 @@ export default function VmInstancesCreatePage() {
                                                         className='mt-1 truncate text-sm font-semibold'
                                                         title={item.value || undefined}
                                                     >
-                                                        {item.value || '—'}
+                                                        {item.value || '-'}
                                                     </dd>
                                                 </div>
                                             ))}

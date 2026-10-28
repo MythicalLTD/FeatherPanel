@@ -372,7 +372,7 @@ export function DesktopWidgets() {
                 return (
                     <WidgetShell key={w.id} {...shell} onClick={() => openApp('monitor')}>
                         <div className='fos-widget-kicker'>{label('uptime')}</div>
-                        <div className='fos-widget-stat'>{bestUptime ? formatUptime(bestUptime) : '—'}</div>
+                        <div className='fos-widget-stat'>{bestUptime ? formatUptime(bestUptime) : '-'}</div>
                         <div className='fos-widget-sub'>
                             {t('featheros.widgets.uptime_hint', { defaultValue: 'Longest live uptime' })}
                         </div>
@@ -452,7 +452,7 @@ export function DesktopWidgets() {
                         </button>
                         <p className='fos-widget-edit-hint px-1 text-center text-[11px]'>
                             {t('featheros.widgets.edit_hint', {
-                                defaultValue: 'Drag to rearrange. Use − to remove.',
+                                defaultValue: 'Drag to rearrange. Use - to remove.',
                             })}
                         </p>
                     </>

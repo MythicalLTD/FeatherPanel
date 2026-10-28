@@ -16,7 +16,7 @@ mod vnc_proxy;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    // Initialize logging – file layer (no rotation) + stdout layer
+    // Initialize logging - file layer (no rotation) + stdout layer
     // LOG_DIR can be overridden via env var. Docker Compose mounts the backend log volume at
     // `/var/www/html/storage/logs` so the panel log viewer reads `runner.fplog`; bare-metal
     // dev falls back to paths next to this crate.

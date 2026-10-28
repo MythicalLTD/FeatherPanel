@@ -126,7 +126,7 @@ class MailHostsController
         $id = MailHost::ensureNodeMailHost($webNodeId, $webNode);
         if ($id === null) {
             return ApiResponse::error(
-                'Could not create mail host — set the web node FQDN first',
+                'Could not create mail host - set the web node FQDN first',
                 'ENSURE_FAILED',
                 422,
             );

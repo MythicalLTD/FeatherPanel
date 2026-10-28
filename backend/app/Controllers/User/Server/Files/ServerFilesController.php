@@ -680,7 +680,7 @@ class ServerFilesController
 
             $path = $this->getPathFromQuery();
 
-            // Reject JSON bodies – file saves must be raw text/binary
+            // Reject JSON bodies - file saves must be raw text/binary
             $contentType = $request->headers->get('Content-Type', '');
             if (stripos($contentType, 'application/json') !== false) {
                 return ApiResponse::error('JSON body not allowed for file writes. Send raw text/binary.', 'INVALID_CONTENT_TYPE', 415);
@@ -1970,9 +1970,9 @@ class ServerFilesController
                 $requestId = is_array($response->getData()) ? ($response->getData()['request_id'] ?? null) : null;
                 $status = $response->getStatusCode() ?: 500;
                 $errorLower = strtolower((string) $error);
-                $hint = 'Use a direct binary download URL (with Content-Length), not an HTML page. Prefer CDN/object URLs. For Paper jars use fill.papermc.io/v3 (api.papermc.io/v2 is sunset). download.getbukkit.org often fails DNS — use cdn.getbukkit.org or Paper fill-data URLs.';
+                $hint = 'Use a direct binary download URL (with Content-Length), not an HTML page. Prefer CDN/object URLs. For Paper jars use fill.papermc.io/v3 (api.papermc.io/v2 is sunset). download.getbukkit.org often fails DNS - use cdn.getbukkit.org or Paper fill-data URLs.';
                 if (str_contains($errorLower, 'dns') || str_contains($errorLower, 'no such host') || str_contains($errorLower, 'network/dns')) {
-                    $hint = 'DNS/network failure reaching that hostname from Wings — almost always a dead/bad download URL, not a panel outage. Retry pull_file with another direct CDN URL.';
+                    $hint = 'DNS/network failure reaching that hostname from Wings - almost always a dead/bad download URL, not a panel outage. Retry pull_file with another direct CDN URL.';
                 } elseif (str_contains($errorLower, 'html page') || str_contains($errorLower, 'content-length')) {
                     $hint = 'That URL is not a direct file download. Use a final object/CDN URL that returns the binary with Content-Length.';
                 } elseif (str_contains($errorLower, 'tls') || str_contains($errorLower, 'certificate')) {
@@ -2500,7 +2500,7 @@ class ServerFilesController
             // Get the file path from query parameters
             $path = $this->getPathFromQuery();
 
-            // Reject JSON bodies – file uploads must be raw text/binary
+            // Reject JSON bodies - file uploads must be raw text/binary
             $contentType = $request->headers->get('Content-Type', '');
             if (stripos($contentType, 'application/json') !== false) {
                 return ApiResponse::error('JSON body not allowed for file uploads. Send raw text/binary.', 'INVALID_CONTENT_TYPE', 415);

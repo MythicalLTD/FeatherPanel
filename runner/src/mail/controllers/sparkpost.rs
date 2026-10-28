@@ -26,7 +26,7 @@ impl MailController for SparkPostController {
         subject: &str,
         body: &str,
     ) -> Result<()> {
-        // crates.io `sparkpost` last published 2020 — keep a thin HTTP client instead.
+        // crates.io `sparkpost` last published 2020 - keep a thin HTTP client instead.
         require_api_key(config, self.name())?;
         let region = config.api_region.to_ascii_lowercase();
         let base = if region == "eu" {

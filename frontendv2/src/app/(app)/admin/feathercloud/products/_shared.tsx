@@ -362,7 +362,7 @@ export function MarkdownBody({ content, className }: { content: string; classNam
     );
 }
 
-/** Display-only star row (1–5). */
+/** Display-only star row (1-5). */
 export function StarDisplay({
     rating,
     size = 'sm',

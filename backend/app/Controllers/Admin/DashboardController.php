@@ -848,7 +848,7 @@ class DashboardController
         $max = $max !== null && $max !== '' ? $max : null;
 
         if ($min !== null && $max !== null) {
-            return $min === $max ? $min : $min . '–' . $max;
+            return $min === $max ? $min : $min . '-' . $max;
         }
 
         return $min ?? $max;

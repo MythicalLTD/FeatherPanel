@@ -1,7 +1,7 @@
 /**
  * Turn panel/Wings failures into actionable guidance for AI clients.
  * Operational failures (bad URL, corrupt jar, offline container) must not
- * look like "the panel/node is broken" — that causes Claude to give up.
+ * look like "the panel/node is broken" - that causes Claude to give up.
  */
 
 export type ToolErrorContext = {
@@ -90,7 +90,7 @@ function guidanceForMessage(
     m.includes("dns lookup failed")
   ) {
     const steps = [
-      "The Wings node could not resolve or reach the hostname in the URL — this is almost always a bad/dead download host, not a FeatherPanel outage.",
+      "The Wings node could not resolve or reach the hostname in the URL - this is almost always a bad/dead download host, not a FeatherPanel outage.",
       "Retry pull_file with a different direct file URL (CDN object URL, fill-data.papermc.io object URL, GitHub release asset, etc.).",
     ];
     if (url.includes("download.getbukkit.org")) {
@@ -132,7 +132,7 @@ function guidanceForMessage(
   if (m.includes("html page") || m.includes("content-length")) {
     return {
       diagnosis:
-        "URL returned an HTML page or omitted Content-Length — not a direct binary download.",
+        "URL returned an HTML page or omitted Content-Length - not a direct binary download.",
       next_steps: [
         "Use a final CDN/object URL that serves the real file type with Content-Length.",
         "Avoid browser landing pages and /download buttons that only work in a browser.",
@@ -149,7 +149,7 @@ function guidanceForMessage(
       diagnosis:
         "The remote host responded with an HTTP error for this URL (dead link / wrong path / API sunset).",
       next_steps: [
-        "Pick a different direct URL. For Paper, api.papermc.io/v2 is sunset — use fill.papermc.io v3 and pull the downloads['server:default'].url.",
+        "Pick a different direct URL. For Paper, api.papermc.io/v2 is sunset - use fill.papermc.io v3 and pull the downloads['server:default'].url.",
         "If you already pulled a tiny server.jar, delete it and pull again; a JSON error body saved as .jar will crash the server.",
       ],
     };
@@ -166,7 +166,7 @@ function guidanceForMessage(
       next_steps: [
         "Call get_server_logs / get_install_logs to see why the process exited (e.g. Invalid or corrupt jarfile).",
         "If server.jar is tiny JSON/HTML, delete it and pull a real jar, then start again.",
-        "Power start can succeed then crash — check logs before assuming Wings is broken.",
+        "Power start can succeed then crash - check logs before assuming Wings is broken.",
       ],
     };
   }
@@ -181,7 +181,7 @@ function guidanceForMessage(
         "Minecraft jar is missing or corrupt (often a failed install saved an API error JSON as server.jar).",
       next_steps: [
         "Delete the bad server.jar, pull a real jar from a working mirror, then start.",
-        "Paper egg installs that still call api.papermc.io/v2 will fail (API sunset) — pull via fill.papermc.io instead of relying on reinstall alone.",
+        "Paper egg installs that still call api.papermc.io/v2 will fail (API sunset) - pull via fill.papermc.io instead of relying on reinstall alone.",
       ],
     };
   }
@@ -227,7 +227,7 @@ function guidanceForMessage(
       next_steps: [
         "Call get_server_startup and only use allowed_docker_images for image / Java version changes.",
         "Only change editable_variables; name/startup/image need the matching subuser permissions.",
-        "If error is INVALID_DOCKER_IMAGE or STARTUP_CHANGE_DISABLED, pick an allowed image or skip startup edits — do not invent custom tags.",
+        "If error is INVALID_DOCKER_IMAGE or STARTUP_CHANGE_DISABLED, pick an allowed image or skip startup edits - do not invent custom tags.",
       ],
     };
   }
@@ -268,7 +268,7 @@ export function formatToolError(
   ctx: ToolErrorContext = {},
 ): string {
   const lines: string[] = [];
-  lines.push("TOOL_ERROR (operational — read diagnosis and keep going)");
+  lines.push("TOOL_ERROR (operational - read diagnosis and keep going)");
   lines.push(
     "Do NOT tell the user FeatherPanel/Wings is broken unless the error explicitly says the node/daemon is unreachable or unauthorized.",
   );

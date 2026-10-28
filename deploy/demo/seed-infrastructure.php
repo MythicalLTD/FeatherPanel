@@ -10,7 +10,7 @@ declare(strict_types=1);
  * - VPS location + fake Proxmox node + fake VMs
  * - database host pointing at the compose MariaDB service
  *
- * Idempotent — safe to run on every bootstrap/reset cycle.
+ * Idempotent - safe to run on every bootstrap/reset cycle.
  */
 
 define('APP_PUBLIC', '/var/www/html');
@@ -325,7 +325,7 @@ function ensure_game_servers(array $node, array $realm, array $spell): void
     ]));
 
     if ($owners === []) {
-        demo_log('WARNING: no users found — skipping game servers');
+        demo_log('WARNING: no users found - skipping game servers');
 
         return;
     }
@@ -514,7 +514,7 @@ function ensure_webspaces(array $webNode): void
 
     $plateList = WebPlate::listAll(1, 50);
     if ($plateList === []) {
-        demo_log('WARNING: no webplates available — skipping webspaces');
+        demo_log('WARNING: no webplates available - skipping webspaces');
 
         return;
     }
@@ -776,7 +776,7 @@ function apply_demo_settings(): void
     // Developer mode unlocks admin tooling (DB snapshots, debug surfaces).
     $config->setSetting(ConfigInterface::APP_DEVELOPER_MODE, 'true');
     $config->setSetting(ConfigInterface::APP_SERVER_SPELL_BANNER_ENABLED, 'true');
-    // Stock default is style/background "off" — turn the visual banners on.
+    // Stock default is style/background "off" - turn the visual banners on.
     $config->setSetting(ConfigInterface::APP_SERVER_SPELL_BANNER_STYLE, 'hero');
     $config->setSetting(ConfigInterface::APP_SERVER_SPELL_BANNER_BACKGROUND, 'blend');
     $config->setSetting(ConfigInterface::APP_PWA_ENABLED, 'true');
@@ -809,7 +809,7 @@ function apply_demo_settings(): void
     $config->setSetting(ConfigInterface::REGISTRATION_REQUIRE_EMAIL_VERIFICATION, 'false');
     $config->setSetting(ConfigInterface::REGISTRATION_DEVICE_LIMIT_ENABLED, 'true');
     $config->setSetting(ConfigInterface::REGISTRATION_DEVICE_MAX_ACCOUNTS, '3');
-    // Email-code login chip on the auth page (send will fail without real SMTP — intentional).
+    // Email-code login chip on the auth page (send will fail without real SMTP - intentional).
     $config->setSetting(ConfigInterface::EMAIL_LOGIN_ENABLED, 'true');
     $config->setSetting(ConfigInterface::SMTP_ENABLED, 'false');
     $config->setSetting(ConfigInterface::TELEMETRY, 'false');
@@ -952,7 +952,7 @@ function ensure_knowledgebase(): void
     $admin = User::getUserByUsername(env_str('DEMO_ADMIN_USERNAME', 'admin'))
         ?? User::getUserByUsername(env_str('DEMO_USER_USERNAME', 'demo'));
     if ($admin === null) {
-        demo_log('WARNING: no admin user for knowledgebase author — skipping articles');
+        demo_log('WARNING: no admin user for knowledgebase author - skipping articles');
 
         return;
     }
@@ -973,7 +973,7 @@ This is a **public FeatherPanel demo**. It periodically wipes, and some features
 - Tickets & knowledgebase
 - Status page
 - Webspaces & fake VDS inventory
-- Built-in demo AI chatbot (basic provider — no external API key)
+- Built-in demo AI chatbot (basic provider - no external API key)
 
 ## Not for production
 Cloud linking, SMTP, OAuth secrets, plugin uploads, developer console, and DB snapshots are disabled here.

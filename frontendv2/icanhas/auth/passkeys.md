@@ -20,7 +20,7 @@ Implementation: `backend/app/routes/user/passkeys.php`, `App\Helpers\WebAuthnHel
 
 Show on the login screen via `login_methods_order` / `login_hidden_methods` / `login_default_method` (id `passkey`). Category `auth_page` in [../settings/guide.md](../settings/guide.md).
 
-RP ID comes from the panel URL — `app_url` must match the browser hostname (HTTPS). Mismatched domains break registration and assertion.
+RP ID comes from the panel URL - `app_url` must match the browser hostname (HTTPS). Mismatched domains break registration and assertion.
 
 ## Related
 

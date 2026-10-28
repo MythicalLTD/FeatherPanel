@@ -1,7 +1,7 @@
 plugin:
   name: DemoTools
   identifier: demotools
-  description: 'Free example utility plugin for the FeatherPanel demo — safe no-op tools stub.'
+  description: 'Free example utility plugin for the FeatherPanel demo - safe no-op tools stub.'
   flags:
     - hasEvents
   version: 1.0.1

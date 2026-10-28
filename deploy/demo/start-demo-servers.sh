@@ -83,7 +83,7 @@ log "Waiting for installs to complete..."
 sleep 15
 
 # Seed sample files so the file manager / trash bin have something to explore.
-# Install may recreate the volume root — write after install settles.
+# Install may recreate the volume root - write after install settles.
 for uuid in "${SERVERS[@]}"; do
 	vol="${ROOT}/volumes/${uuid}"
 	mkdir -p "${vol}/config" "${vol}/plugins" "${vol}/logs" "${vol}/.trash-demo"
@@ -92,7 +92,7 @@ FeatherPanel Demo Server
 ========================
 This volume is part of the public FeatherPanel demo.
 It wipes periodically. Feel free to browse files, edit configs,
-and try the trash bin — nothing here is production data.
+and try the trash bin - nothing here is production data.
 EOF
 	cat >"${vol}/server.properties" <<'EOF'
 # Demo sample config (not a real Minecraft server)
@@ -114,7 +114,7 @@ features:
   - subusers
 note: Spoofed / limited on the public demo. Not for production.
 EOF
-	printf 'Demo plugin placeholder — safe to delete into trash.\n' >"${vol}/plugins/DemoPlugin.jar.txt"
+	printf 'Demo plugin placeholder - safe to delete into trash.\n' >"${vol}/plugins/DemoPlugin.jar.txt"
 	printf '[%s] Demo server started\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" >>"${vol}/logs/latest.log"
 	mkdir -p "${vol}/backups" "${vol}/imports" "${vol}/world/region" "${vol}/mods"
 	cat >"${vol}/eula.txt" <<'EOF'
@@ -128,7 +128,7 @@ EOF
 [{"uuid":"00000000-0000-4000-8000-000000000002","name":"DemoPlayer"}]
 EOF
 	printf 'placeholder region file for file-manager demos\n' >"${vol}/world/region/r.0.0.mca.txt"
-	printf 'DemoMod v1.0 — safe to delete into trash\n' >"${vol}/mods/DemoMod.jar.txt"
+	printf 'DemoMod v1.0 - safe to delete into trash\n' >"${vol}/mods/DemoMod.jar.txt"
 	cat >"${vol}/imports/README.txt" <<'EOF'
 Import staging folder for the FeatherPanel demo.
 Panel import history is seeded in MySQL; these files are for the file manager.
@@ -136,7 +136,7 @@ EOF
 	# Sample files that look good in FeatherIDE (Monaco editor)
 	mkdir -p "${vol}/scripts"
 	cat >"${vol}/scripts/hello.js" <<'EOF'
-// FeatherIDE demo script — safe to edit
+// FeatherIDE demo script - safe to edit
 console.log('Hello from FeatherPanel Demo');
 function greet(name) {
   return `Welcome, ${name}!`;
@@ -145,7 +145,7 @@ greet('Demo');
 EOF
 	cat >"${vol}/scripts/backup.sh" <<'EOF'
 #!/bin/sh
-# Demo backup helper — not executed by the panel automatically
+# Demo backup helper - not executed by the panel automatically
 echo "Demo backup stub at $(date -u +%Y-%m-%dT%H:%M:%SZ)"
 EOF
 	cat >"${vol}/config/featheride-notes.md" <<'EOF'
@@ -181,7 +181,7 @@ for uuid in "${SERVERS[@]}"; do
 		if [ "$code" = "202" ] || [ "$code" = "204" ]; then
 			break
 		fi
-		# Suspended / install_failed junk servers are intentional — don't spin.
+		# Suspended / install_failed junk servers are intentional - don't spin.
 		if printf '%s' "$body" | grep -Eqi 'suspended|not installed|install_failed'; then
 			log "Skipping ${uuid} (not startable)."
 			break
@@ -191,6 +191,6 @@ for uuid in "${SERVERS[@]}"; do
 done
 
 # Panel status can lag on "starting"; if containers are up, mark running in DB via Wings status pushes
-# (best-effort — Wings already posts container/status; give it a moment).
+# (best-effort - Wings already posts container/status; give it a moment).
 sleep 3
 log "Done."

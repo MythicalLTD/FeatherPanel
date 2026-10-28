@@ -144,7 +144,7 @@ run_as_www_data() {
 
 run_frontend_with_nvm() {
     local cmd="$1"
-    # NVM lives under /root — frontend build must run as root.
+    # NVM lives under /root - frontend build must run as root.
     bash -lc "export NVM_DIR=\"/root/.nvm\" && [ -s \"\$NVM_DIR/nvm.sh\" ] && . \"\$NVM_DIR/nvm.sh\" && ${cmd}"
 }
 

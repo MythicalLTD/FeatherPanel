@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * FeatherPanel MCP — Streamable HTTP entry (Docker Compose default).
+ * FeatherPanel MCP - Streamable HTTP entry (Docker Compose default).
  *
  * Auth:
  * - OAuth 2.1 (DCR + PKCE) for Claude.ai custom connectors
@@ -168,7 +168,7 @@ const mcpPostHandler = async (
     let transport: StreamableHTTPServerTransport;
 
     if (sessionId && sessions[sessionId]) {
-      // Claude sends Authorization on every tools/call — keep session API key fresh
+      // Claude sends Authorization on every tools/call - keep session API key fresh
       // (covers token refresh and MCP restarts that restored OAuth store but not sessions).
       const apiKey = await resolveApiKeyFromRequest(req);
       if (apiKey) {
@@ -178,7 +178,7 @@ const mcpPostHandler = async (
     } else if (isInitializeRequest(req.body)) {
       // Allow initialize with no session OR a stale session id (tsx watch / pnpm
       // dev restarts wipe in-memory sessions; Claude often retries initialize
-      // still carrying the old mcp-session-id — rejecting that left tools empty).
+      // still carrying the old mcp-session-id - rejecting that left tools empty).
       const apiKey = await resolveApiKeyFromRequest(req);
       if (!apiKey) {
         sendUnauthorized(
@@ -193,7 +193,7 @@ const mcpPostHandler = async (
       return;
     } else if (sessionId && !sessions[sessionId]) {
       // Stale session after MCP restart (pnpm/tsx wipe in-memory map).
-      // Use HTTP 404 per Streamable HTTP — NOT 401. Claude treats 401 as
+      // Use HTTP 404 per Streamable HTTP - NOT 401. Claude treats 401 as
       // "auth broken / no tools"; 404 triggers re-initialize and tools/list.
       res.status(404).json({
         jsonrpc: "2.0",

@@ -208,7 +208,7 @@ function indexMarkdown(categories, grouped, permissions) {
         .map((category) => {
             const sanitized = sanitizeCategory(category);
             const count = grouped[category]?.length || 0;
-            return `- [${category}](./${sanitized}.md) (${count}) — also [\`${sanitized}.json\`](./${sanitized}.json)`;
+            return `- [${category}](./${sanitized}.md) (${count}) - also [\`${sanitized}.json\`](./${sanitized}.json)`;
         })
         .join('\n');
 
@@ -218,8 +218,8 @@ Total: **${permissions.length}** permissions across **${categories.length}** cat
 
 Machine-readable dumps:
 
-- [index.json](./index.json) — catalog of categories
-- [all.json](./all.json) — flat list of every permission
+- [index.json](./index.json) - catalog of categories
+- [all.json](./all.json) - flat list of every permission
 
 ## Categories
 

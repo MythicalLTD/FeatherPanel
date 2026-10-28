@@ -424,7 +424,7 @@ export default function AdminVdsIsosPage() {
                                     {iso.kind === 'provider'
                                         ? [iso.description, iso.volid].filter(Boolean).join(' · ')
                                         : [
-                                              iso.owner?.username ?? '—',
+                                              iso.owner?.username ?? '-',
                                               iso.vm_hostname,
                                               iso.source === 'url' ? iso.source_url : t('vds.iso.source_upload'),
                                               formatIsoSize(iso.size),

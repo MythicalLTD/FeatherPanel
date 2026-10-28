@@ -287,7 +287,7 @@ function GraphCard({
                         <span key={s.key} className='flex items-center gap-1.5'>
                             <span className='h-2 w-2 rounded-full' style={{ backgroundColor: s.color }} />
                             {series.length > 1 && <span className='text-muted-foreground'>{s.label}</span>}
-                            <span className='font-medium'>{latest ? format(latest[s.key] ?? 0) : '–'}</span>
+                            <span className='font-medium'>{latest ? format(latest[s.key] ?? 0) : '-'}</span>
                         </span>
                     ))}
                 </div>

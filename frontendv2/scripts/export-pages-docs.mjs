@@ -169,7 +169,7 @@ function resolveExpr(expr, dict) {
     if (tMatch) return tLookup(dict, tMatch[1]) || null;
     const strMatch = trimmed.match(/^['"`]([^'"`]+)['"`]$/);
     if (strMatch) return strMatch[1];
-    // template literals like `Hello ${x}` — keep raw without interpolation
+    // template literals like `Hello ${x}` - keep raw without interpolation
     const tmpl = trimmed.match(/^`([^`$]+)`$/);
     if (tmpl) return tmpl[1];
     return null;
@@ -375,7 +375,7 @@ function parseNavigation(navSource, dict) {
         if (!body) continue;
 
         // Only read first-level-ish fields from this object body (ignore nested items arrays
-        // by cutting at the first `items:` block if present after our fields — usually items
+        // by cutting at the first `items:` block if present after our fields - usually items
         // come after url on parents; for leaves there is no items).
         const leafBody = body.split(/\bitems\s*:/)[0];
 
@@ -477,7 +477,7 @@ function enrichDescription(page, headerDescription) {
         return 'Developer tools: view and stream panel application logs.';
     }
     if (page.route === '/admin/feathercloud/plugins') {
-        return 'Mythic / FeatherCloud plugin catalog — browse and install store plugins.';
+        return 'Mythic / FeatherCloud plugin catalog - browse and install store plugins.';
     }
     if (page.route.startsWith('/admin/feathercloud/products/')) {
         return 'FeatherCloud product detail page for a store listing (slug param).';
@@ -693,7 +693,7 @@ Every Next.js UI route with **title**, **description**, audience, permissions, a
 
 Total: **${pages.length}** routes.
 
-- [all.json](./all.json) — full machine-readable dump (preferred for RAG)
+- [all.json](./all.json) - full machine-readable dump (preferred for RAG)
 - [index.json](./index.json)
 - Widget injection slugs: [../widgets/index.md](../widgets/index.md)
 
@@ -727,7 +727,7 @@ function pageMarkdown(page) {
 | Route | \`${page.route}\` |
 | Area | ${page.area} |
 | Audience | ${page.audience} |
-| Component | \`${page.component || '—'}\` |
+| Component | \`${page.component || '-'}\` |
 | Source | \`${page.source}\` |
 | Dynamic | ${page.dynamic ? 'yes' : 'no'} |
 ${page.params.length ? `| Params | ${page.params.map((p) => `\`${p}\``).join(', ')} |` : ''}

@@ -205,7 +205,7 @@ class PhpMyAdmin
         }
 
         $logger = App::getInstance(true)->getLogger();
-        $logger->info('phpMyAdmin marker present but files missing — reinstalling');
+        $logger->info('phpMyAdmin marker present but files missing - reinstalling');
         self::downloadPhpMyAdmin();
     }
 

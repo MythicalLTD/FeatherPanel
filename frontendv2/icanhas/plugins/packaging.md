@@ -41,7 +41,7 @@ Approximate order:
 9. Call `pluginUpdate` or `pluginInstall`  
 10. Record installed plugin metadata  
 
-**Never wipe `Storage/`** in your uninstall/update logic unless intentional — the panel preserves it across marketplace updates (e.g. billing file store uploads).
+**Never wipe `Storage/`** in your uninstall/update logic unless intentional - the panel preserves it across marketplace updates (e.g. billing file store uploads).
 
 ## Manual / git installs
 

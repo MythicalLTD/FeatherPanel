@@ -9,7 +9,7 @@ use App\Plugins\PluginEvents;
 
 /**
  * Free example plugin for the public FeatherPanel demo.
- * Intentionally minimal — shows up in the plugins list after bootstrap.
+ * Intentionally minimal - shows up in the plugins list after bootstrap.
  */
 class DemoWelcome implements AppPlugin
 {

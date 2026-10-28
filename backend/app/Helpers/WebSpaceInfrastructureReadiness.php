@@ -167,7 +167,7 @@ class WebSpaceInfrastructureReadiness
                             'panel_acme_email',
                             'warn',
                             'Traefik uses the web node ACME email',
-                            'Set a fallback acmeEmail on the web node — Traefik cannot use per-site owner emails',
+                            'Set a fallback acmeEmail on the web node - Traefik cannot use per-site owner emails',
                             ['label' => 'Network settings', 'href' => WebNodeAdminUrl::edit($webNodeId, 'network')],
                         );
                     } elseif ($nodeEmail !== '') {
@@ -384,7 +384,7 @@ class WebSpaceInfrastructureReadiness
     {
         return match (strtolower($provider)) {
             'nginx' => 'Install nginx on the web node: apt install nginx (Debian/Ubuntu) or dnf install nginx (RHEL).',
-            'traefik' => 'Traefik watches the dynamic config file — ensure the traefik service is running.',
+            'traefik' => 'Traefik watches the dynamic config file - ensure the traefik service is running.',
             default => 'Install Caddy: apt install caddy or see caddyserver.com/docs/install.',
         };
     }

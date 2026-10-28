@@ -70,7 +70,7 @@ Store setting values as strings via `PluginSettings`.
 
 ## Security notes
 
-- Public pages are reachable without a panel session — never embed secrets in HTML  
+- Public pages are reachable without a panel session - never embed secrets in HTML  
 - Call only intentionally public APIs from these pages  
 - Validate all inputs server-side  
 - Prefer feature flags (`enabled` setting) so operators can disable exposure  
@@ -78,5 +78,5 @@ Store setting values as strings via `PluginSettings`.
 ## Related
 
 - [frontend.md](./frontend.md)  
-- [examples.md](./examples.md) — billingplans  
+- [examples.md](./examples.md) - billingplans  
 - Catch-all frontend routes for public plugin paths live under the Next.js app (`[...publicPluginPath]`)

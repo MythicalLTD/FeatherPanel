@@ -605,7 +605,7 @@ class ServerFastDlController
      *
      * Uses the node FQDN and FastDL bind port (default 80), NOT the Wings API port.
      * FastDL nginx is a separate plain-HTTP listener from the Wings API, so the node's
-     * "behind reverse proxy" flag must not strip this port — that flag only applies to
+     * "behind reverse proxy" flag must not strip this port - that flag only applies to
      * the Wings API URL. Omitting it sent players to the panel (or API proxy) and made
      * `/<uuid>/fastdl` look like a missing panel route (404).
      */

@@ -170,7 +170,7 @@ function consentPageHtml(opts: {
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="color-scheme" content="dark" />
-  <title>AI Connector — Authorize</title>
+  <title>AI Connector - Authorize</title>
   <style>${classicShellCss()}</style>
 </head>
 <body>
@@ -181,7 +181,7 @@ function consentPageHtml(opts: {
       <p class="muted">Allow this app to manage your servers. Pick one option below.</p>
 
       <div class="block">
-        <p class="block-title">1 — Sign in (recommended)</p>
+        <p class="block-title">1 - Sign in (recommended)</p>
         <p class="muted">Log in to your panel account and approve access.</p>
         <div class="actions">
           <a class="btn btn-primary" href="${panelUrl}">Continue</a>
@@ -189,7 +189,7 @@ function consentPageHtml(opts: {
       </div>
 
       <div class="block">
-        <p class="block-title">2 — Paste an API key</p>
+        <p class="block-title">2 - Paste an API key</p>
         <form method="post" action="/oauth/consent/complete">
           <input type="hidden" name="txn" value="${txn}" />
           <label class="field" for="api_key">API key</label>
@@ -214,7 +214,7 @@ function panelCallbackHtml(txn: string): string {
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="color-scheme" content="dark" />
-  <title>AI Connector — Completing</title>
+  <title>AI Connector - Completing</title>
   <style>${classicShellCss()}</style>
 </head>
 <body>

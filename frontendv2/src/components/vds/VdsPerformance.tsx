@@ -27,13 +27,13 @@ interface PerformanceDataPoint {
 }
 
 interface VdsPerformanceProps {
-    /** CPU usage series in percent (0–100). */
+    /** CPU usage series in percent (0-100). */
     cpuData: PerformanceDataPoint[];
     /** Memory usage series in bytes. */
     memoryData: PerformanceDataPoint[];
     networkRxData: PerformanceDataPoint[];
     networkTxData: PerformanceDataPoint[];
-    /** Allocated vCPUs (for subtitle only; chart scale is always 0–100%). */
+    /** Allocated vCPUs (for subtitle only; chart scale is always 0-100%). */
     cpuCores: number;
     memoryLimit: number;
     networkRxTotal?: number;
@@ -212,7 +212,7 @@ export default function VdsPerformance({
             ? t('vds.console.performance.cpu_cores', { cores: String(cpuCores) })
             : t('servers.console.info_cards.unlimited');
 
-    // One chart stroke for the page — rainbow per-metric colors read as vibecode.
+    // One chart stroke for the page - rainbow per-metric colors read as vibecode.
     const chartColor = 'hsl(var(--primary))';
 
     const charts: PerformanceChartCardProps[] = [

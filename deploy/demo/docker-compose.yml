@@ -211,7 +211,7 @@ services:
     networks:
       - featherpanel_demo_network
 
-  # Real FeatherWings daemon — browser talks to published host ports;
+  # Real FeatherWings daemon - browser talks to published host ports;
   # Wings talks to the panel API at http://backend:80 on the compose network.
   wings:
     image: ghcr.io/mythicalltd/featherwings:latest
@@ -243,7 +243,7 @@ services:
     networks:
       - featherpanel_demo_network
 
-  # Real FeatherQuilld — web hosting daemon (GHCR :main track).
+  # Real FeatherQuilld - web hosting daemon (GHCR :main track).
   quilld:
     image: ghcr.io/mythicalltd/featherquilld:main
     container_name: featherpanel_demo_quilld

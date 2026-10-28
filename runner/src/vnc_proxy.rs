@@ -261,7 +261,7 @@ async fn bridge(client: WebSocket, ticket: VncTicket) {
 
     // pveproxy authenticates the websocket with the node API token. The vncticket
     // query param alone is not enough (returns 401). PVEVNC tickets are not valid
-    // PVEAuthCookies — those come from /access/ticket.
+    // PVEAuthCookies - those come from /access/ticket.
     if let Some(ref auth) = ticket.pve_api_token {
         match HeaderValue::from_str(auth) {
             Ok(value) => {
@@ -278,7 +278,7 @@ async fn bridge(client: WebSocket, ticket: VncTicket) {
     }
 
     // Same extra headers the PHP Proxmox client uses (Cloudflare Access service tokens, etc.).
-    // Skip them when using a direct/non-CF upstream override — Access tokens confuse raw pveproxy.
+    // Skip them when using a direct/non-CF upstream override - Access tokens confuse raw pveproxy.
     let use_extra_headers = ticket.upstream_host.is_none();
     if use_extra_headers {
         for (k, v) in &ticket.extra_headers {

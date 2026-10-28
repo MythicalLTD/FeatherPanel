@@ -70,7 +70,7 @@ export function registerStartupTools(server: McpServer): void {
                 features: spell.features,
               }
             : null,
-          /** Allowed Docker/Java images for update_server.image — API rejects others unless admin enabled custom images. */
+          /** Allowed Docker/Java images for update_server.image - API rejects others unless admin enabled custom images. */
           allowed_docker_images: dockerImages,
           variables,
           editable_variables: variables.filter(
@@ -96,7 +96,7 @@ export function registerStartupTools(server: McpServer): void {
     {
       title: "Update server settings",
       description:
-        "Update server name, description, startup command, Docker image (Java runtime), spell, and/or spell variables. image MUST be from get_server_startup.allowed_docker_images unless the panel allows custom images (API enforces this). Only editable variables may be changed. Subuser permissions and admin flags (startup change / custom docker image) apply — failures return clear API errors, not silent ignores.",
+        "Update server name, description, startup command, Docker image (Java runtime), spell, and/or spell variables. image MUST be from get_server_startup.allowed_docker_images unless the panel allows custom images (API enforces this). Only editable variables may be changed. Subuser permissions and admin flags (startup change / custom docker image) apply - failures return clear API errors, not silent ignores.",
       inputSchema: {
         server_id: serverId,
         name: z.string().optional().describe("Display name of the server"),
@@ -111,7 +111,7 @@ export function registerStartupTools(server: McpServer): void {
           .string()
           .optional()
           .describe(
-            "Docker image / Java yolk, e.g. ghcr.io/pterodactyl/yolks:java_21 — must be in allowed_docker_images",
+            "Docker image / Java yolk, e.g. ghcr.io/pterodactyl/yolks:java_21 - must be in allowed_docker_images",
           ),
         spell_id: z.union([z.string(), z.number()]).optional(),
         wipe_files: z

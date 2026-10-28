@@ -18,7 +18,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import { useCallback, useEffect, useState } from 'react';
 import axios, { isAxiosError } from 'axios';
 import { toast } from 'sonner';
-import { Copy, RefreshCw, Terminal, Trash2, Wifi, WifiOff, Zap } from 'lucide-react';
+import { AlertTriangle, Copy, RefreshCw, Terminal, Trash2, Wifi, WifiOff, Zap } from 'lucide-react';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
@@ -51,6 +51,8 @@ interface DhcpAgentTabProps {
 interface SetupCommandData {
     install_command: string;
     setup_command: string;
+    install_command_display?: string;
+    setup_command_display?: string;
     config_path_hint?: string;
     notes?: string[];
     daemon_display_name?: string;
@@ -59,29 +61,32 @@ interface SetupCommandData {
 }
 
 interface CommandBlockProps {
-    command: string;
+    /** Masked / safe-to-show text (token redacted). */
+    displayCommand: string;
+    /** Full command including token - only used for clipboard. */
+    copyCommand: string;
     copyLabel: string;
-    onCopy: () => void;
+    tokenHiddenHint: string;
 }
 
-function CommandBlock({ command, copyLabel, onCopy }: CommandBlockProps) {
+function CommandBlock({ displayCommand, copyCommand, copyLabel, tokenHiddenHint }: CommandBlockProps) {
+    const { t } = useTranslation();
     return (
         <div className='overflow-hidden rounded-xl border border-[var(--fp-surface-border)] bg-zinc-950'>
-            <div className='flex justify-end border-b border-[var(--fp-surface-border)] bg-zinc-900 px-3 py-2'>
+            <div className='flex flex-wrap items-center justify-between gap-2 border-b border-[var(--fp-surface-border)] bg-zinc-900 px-3 py-2'>
+                <p className='text-[11px] text-zinc-400'>{tokenHiddenHint}</p>
                 <Button
                     type='button'
                     variant='plain'
                     size='sm'
                     className='border border-[var(--fp-surface-border)] bg-zinc-800 text-zinc-100 hover:border-[var(--fp-surface-border)] hover:bg-zinc-700 hover:text-white'
-                    onClick={onCopy}
+                    onClick={() => copyToClipboard(copyCommand, t)}
                 >
                     <Copy className='mr-2 h-4 w-4 shrink-0' />
                     <span className='truncate'>{copyLabel}</span>
                 </Button>
             </div>
-            <pre className='overflow-x-auto p-4 font-mono text-xs break-all whitespace-pre-wrap text-zinc-300'>
-                <Sensitive>{command}</Sensitive>
-            </pre>
+            <pre className='overflow-x-auto p-4 font-mono text-xs whitespace-pre text-zinc-300'>{displayCommand}</pre>
         </div>
     );
 }
@@ -196,6 +201,17 @@ export function DhcpAgentTab({ nodeId, form, setForm, configRefreshKey = 0 }: Dh
             <PageCard title={t('admin.vdsNodes.feathertail.setup_title')} icon={Terminal}>
                 <div className='space-y-4'>
                     <p className='text-muted-foreground text-sm'>{t('admin.vdsNodes.feathertail.setup_help')}</p>
+
+                    <div className='flex gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-950 dark:text-amber-100'>
+                        <AlertTriangle className='mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400' />
+                        <div className='space-y-1'>
+                            <p className='font-semibold'>{t('admin.vdsNodes.feathertail.exposure_title')}</p>
+                            <p className='text-xs leading-relaxed opacity-90'>
+                                {t('admin.vdsNodes.feathertail.exposure_body')}
+                            </p>
+                        </div>
+                    </div>
+
                     <ol className='text-muted-foreground list-decimal space-y-1 pl-5 text-xs'>
                         <li>{t('admin.vdsNodes.feathertail.checklist_install')}</li>
                         <li>{t('admin.vdsNodes.feathertail.checklist_firewall')}</li>
@@ -220,9 +236,12 @@ export function DhcpAgentTab({ nodeId, form, setForm, configRefreshKey = 0 }: Dh
                                     {t('admin.vdsNodes.feathertail.setup_step_1')}
                                 </p>
                                 <CommandBlock
-                                    command={setupData.install_command}
+                                    displayCommand={
+                                        setupData.install_command_display || setupData.install_command
+                                    }
+                                    copyCommand={setupData.install_command}
                                     copyLabel={t('admin.vdsNodes.feathertail.copy_install')}
-                                    onCopy={() => copyToClipboard(setupData.install_command, t)}
+                                    tokenHiddenHint={t('admin.vdsNodes.feathertail.token_hidden_hint')}
                                 />
                             </div>
                             {setupData.setup_command ? (
@@ -231,9 +250,12 @@ export function DhcpAgentTab({ nodeId, form, setForm, configRefreshKey = 0 }: Dh
                                         {t('admin.vdsNodes.feathertail.setup_step_2')}
                                     </p>
                                     <CommandBlock
-                                        command={setupData.setup_command}
+                                        displayCommand={
+                                            setupData.setup_command_display || setupData.setup_command
+                                        }
+                                        copyCommand={setupData.setup_command}
                                         copyLabel={t('admin.vdsNodes.feathertail.copy_setup')}
-                                        onCopy={() => copyToClipboard(setupData.setup_command, t)}
+                                        tokenHiddenHint={t('admin.vdsNodes.feathertail.token_hidden_hint')}
                                     />
                                 </div>
                             ) : null}
@@ -278,6 +300,7 @@ export function DhcpAgentTab({ nodeId, form, setForm, configRefreshKey = 0 }: Dh
                             onChange={(e) => setForm((prev) => ({ ...prev, feathertail_url: e.target.value }))}
                         />
                         <p className='text-muted-foreground text-xs'>{t('admin.vdsNodes.feathertail.url_help')}</p>
+                        <p className='text-muted-foreground text-xs'>{t('admin.vdsNodes.feathertail.url_privacy_hint')}</p>
                     </div>
 
                     <div className='flex items-center justify-between gap-4'>
@@ -371,14 +394,14 @@ export function DhcpAgentTab({ nodeId, form, setForm, configRefreshKey = 0 }: Dh
                                         const vmid = typeof lease.vmid === 'number' ? lease.vmid : null;
                                         return (
                                             <tr key={`${lease.mac ?? ''}-${lease.ip ?? ''}-${vmid ?? ''}`}>
-                                                <td className='px-4 py-3 font-mono text-xs'>{vmid ?? '—'}</td>
+                                                <td className='px-4 py-3 font-mono text-xs'>{vmid ?? '-'}</td>
                                                 <td className='px-4 py-3 font-mono text-xs'>
-                                                    <Sensitive>{lease.ip ?? '—'}</Sensitive>
+                                                    <Sensitive>{lease.ip ?? '-'}</Sensitive>
                                                 </td>
                                                 <td className='text-muted-foreground px-4 py-3 font-mono text-xs'>
-                                                    {lease.mac ?? '—'}
+                                                    {lease.mac ?? '-'}
                                                 </td>
-                                                <td className='px-4 py-3 text-xs'>{lease.state ?? '—'}</td>
+                                                <td className='px-4 py-3 text-xs'>{lease.state ?? '-'}</td>
                                                 <td className='px-4 py-3 text-right'>
                                                     {vmid != null ? (
                                                         <Button

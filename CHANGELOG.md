@@ -8,7 +8,7 @@
 - VDS Boot page (`/vds/{id}/boot`, sidebar for QEMU VMs): boot order editor (disks, CD-ROMs, NICs via `GET/PUT /api/user/vm-instances/{id}/boot-order`), host library ISO mount/unmount, and My ISOs (upload, URL fetch, quota, mount) moved off the old Settings ISO block. by @nayskutzu
 - Per-node VDS ISO and rescue settings on Admin → VDS nodes → Storage: user ISO storage, allowed ISO storages, and rescue ISO volid. New columns on `featherpanel_vm_nodes` are seeded from the former global `vds_iso_*` / `vds_rescue_iso` settings; `GET /api/admin/vm-nodes/{id}/iso-storage` lists storages and ISO files from Proxmox. by @nayskutzu
 - Admin Proxmox host firewall on the VDS node edit Firewall tab: enable/disable, inbound/outbound policy, rule list, add/delete rules, optional PVE node selector, cluster firewall status, and audit-logged APIs under `/api/admin/vm-nodes/{id}/firewall*`. by @nayskutzu
-- VNC extra keys on the embedded VDS console: sticky Ctrl/Alt/Shift/Win, navigation and F-keys, and shortcuts (Ctrl+Alt+Del, Ctrl+Alt+Esc/F1–F7, Alt+F4, Alt+Tab, Print Screen) via noVNC `sendKey`. by @nayskutzu
+- VNC extra keys on the embedded VDS console: sticky Ctrl/Alt/Shift/Win, navigation and F-keys, and shortcuts (Ctrl+Alt+Del, Ctrl+Alt+Esc/F1-F7, Alt+F4, Alt+Tab, Print Screen) via noVNC `sendKey`. by @nayskutzu
 - Granular admin permissions: separate nodes for Wings (`admin.nodes.*`), web hosting (`admin.web_nodes.*`), VDS/Proxmox (`admin.vm_nodes.*`, `admin.vm_instances.*` including create), mail/DNS hosts, hosting packages, AbuseIPDB, and audit log. Role editor, admin sidebar and create-server actions gate on the matching permission. Migrations copy existing grants so upgrades keep access. by @nayskutzu
 - Source installer: FeatherTail / Proxmox host agent path (`--feathertail-install-only`, `feathertail|proxmox` aliases), optional full `apt upgrade` with an interactive warning and `FP_SYSTEM_UPGRADE`, and `FeatherTail/` ignored in git. by @nayskutzu
 - Bring your own backup storage: users can add their own S3 compatible buckets (Account, Backup storage) and pick one when creating a backup, in full server backups and in backup schedule tasks. Keys are stored encrypted, endpoints must be https and resolve to public addresses (checked when saved and again on every use, with DNS pinned), and each destination can be tested. Admins turn it on with `backup_byo_enabled` and set allowed providers (`backup_byo_providers`) and a per-user limit (`backup_byo_max_per_user`). Backups on user storage still count toward the server backup limit; the backup list shows where each backup lives, and removing a destination marks its backups as orphaned. by @nayskutzu
@@ -55,7 +55,7 @@
 - Server list polish for phones and desktop: the My/All servers and All/By folder switches are proper tabs with full width, 44px tap targets and focus rings, the folder view shows an empty state instead of a blank page, the empty card got a cleaner look with a gentle fade (off with reduced motion), pagination buttons have labels, and the dashboard shell keeps content clear of the phone home bar. by @nayskutzu
 - Admin home toolbar on phones: Refresh, Customize, Clear and Settings now sit in an even two-column grid with 44px buttons and matching styles instead of a ragged wrap. by @nayskutzu
 - Admin lists (users, nodes, servers and every other list on the shared table): clickable rows can be reached with Tab and opened with Enter, the row menu is a 44px target on phones, phone cards fade in gently (off with reduced motion), the loading skeleton now has the same shape as the table or cards it replaces, and Blocked email domains switched from a sideways-scrolling table to the shared table with phone cards. by @nayskutzu
-- **Panel – safe areas & keyboard focus**: the viewport now uses `viewport-fit=cover` and the dashboard shell, mobile sidebar drawer and auth screens pad themselves with `env(safe-area-inset-*)`, so nothing sits under a notch or home bar. Every link/button/tab gets a visible focus outline for keyboard users, and the phone navbar title now truncates instead of pushing the notification bell and avatar off screen on server pages.
+- **Panel - safe areas & keyboard focus**: the viewport now uses `viewport-fit=cover` and the dashboard shell, mobile sidebar drawer and auth screens pad themselves with `env(safe-area-inset-*)`, so nothing sits under a notch or home bar. Every link/button/tab gets a visible focus outline for keyboard users, and the phone navbar title now truncates instead of pushing the notification bell and avatar off screen on server pages.
 - Server pages read better in light mode and on phones: amber warnings, IP/port chips and other dark-only panels now have proper light-theme colours, page loads show a skeleton of the page instead of a lone spinner, and header actions sit on one row on phones (the main action grows, refresh/import stay square 44px buttons) instead of a stack of full-width icon buttons. by @nayskutzu
 - Sign-in, register and password screens get a slow theme-coloured aurora background with a faint dot grid (Aurora and Glass presets, CSS only, paused with reduced motion) and a soft glow behind the form card.
 - Panel polish: loading skeletons now shimmer instead of blinking, server cards lift with a theme-tinted shadow on hover and press down on tap, the live status dot pulses with a soft ring, status badges are readable in dark mode, resource bars ease smoothly and text selection uses the theme colour. Everything respects reduced motion.
@@ -264,7 +264,7 @@
 - Server **lifecycle hooks**: Discord webhook steps resolve container environment placeholders (e.g. `{{env.SERVER_PORT}}`, `{{env.YOUR_VAR}}`) in content, username, and embeds when the webhook is sent. by @nayskutzu
 - Server **lifecycle hooks**: new `post_stop` hook (runs after the server has stopped; webhook / HTTP / sleep steps only) and Container Shell steps now capture and log truncated stdout/stderr. by @nayskutzu
 - Server **lifecycle hooks** can now run a **Backup** step (server files, database dumps or full backup) just like schedule backup tasks, sharing the same limit/FIFO handling. Available on every hook type. by @nayskutzu
-- Schedules can now run a **Container Shell** task: a Linux command executed inside the server's Docker container (`docker exec … sh -c`) with a 1–120s timeout, captured stdout/stderr in the activity log, behind the existing admin Container Shell switch and the `control.console` permission. by @nayskutzu
+- Schedules can now run a **Container Shell** task: a Linux command executed inside the server's Docker container (`docker exec … sh -c`) with a 1-120s timeout, captured stdout/stderr in the activity log, behind the existing admin Container Shell switch and the `control.console` permission. by @nayskutzu
 - Webmail links now use short-lived signed SSO tokens with encrypted mailbox credentials for both web-node Roundcube and the panel's Roundcube instance; plaintext credentials are no longer placed in URLs. by @nayskutzu
 - Servers can be chosen to be hidden from the public status page. by @nayskutzu
 - WebHosting was now added to the panel. by @nayskutzu
@@ -351,7 +351,7 @@
 - Server console on phones no longer scrolls the page instead of the terminal buffer; touch pans stay in the console, and auto-scroll pauses while reading older output so the scrollbar does not jump. by @nayskutzu
 - Rules & filters on mobile no longer shows the title and description twice when the sheet opens. by @nayskutzu
 - Opening Rules & filters on tablet/desktop no longer also pops the mobile side sheet (it was ignoring `sm:hidden` because the sheet portals to the document body). by @nayskutzu
-- Subuser management endpoints now enforce `user.read` / `user.create` / `user.update` / `user.delete`, reject self-modification, validate permission names against the known set, and block assigning permissions the actor does not hold — closing privilege escalation where any invited subuser could rewrite their own permission list. by @nayskutzu
+- Subuser management endpoints now enforce `user.read` / `user.create` / `user.update` / `user.delete`, reject self-modification, validate permission names against the known set, and block assigning permissions the actor does not hold - closing privilege escalation where any invited subuser could rewrite their own permission list. by @nayskutzu
 - Fixed an issue where the server would incorrectly display "Java version 69 required" instead of showing the correct Java version (it was displaying the internal class file version). by @nayskutzu
 - Frontend Docker image no longer crash-loops on Next.js 16.3.1 (`Cannot find module @swc/helpers/esm/_interop_require_default.js`), which left Caddy returning 502. by @nayskutzu
 
@@ -367,7 +367,7 @@
 - File download signed JWTs now include `user_uuid`, matching Wings revocation checks. Missing that claim made Wings return 404 on `/download/file` so clicks appeared to do nothing. by @nayskutzu
 - Deleting a firewall rule no longer shows a false error when the rule was actually removed (delete now returns 200 with a JSON body instead of 204). by @nayskutzu
 - Ticket priorities now sort by severity level (Low → Medium → High) instead of alphabetically (High → Low → Medium). Admins can also reorder priorities. (FeatherPanel#125) by @nayskutzu
-- Installing phpMyAdmin no longer fails with `Failed to delete directory: .../public/pma` when that path is a Docker volume mount — the installer clears and writes into the mount instead of trying to remove it. by @nayskutzu
+- Installing phpMyAdmin no longer fails with `Failed to delete directory: .../public/pma` when that path is a Docker volume mount - the installer clears and writes into the mount instead of trying to remove it. by @nayskutzu
 - Marketplace/plugin updates no longer wipe addon `Storage/` uploads (e.g. Digital File Store product images and downloadable files). Existing Storage is backed up and restored during plugin reinstall. by @nayskutzu
 
 ### Added
@@ -426,11 +426,11 @@
 - Optional **Wings Remote URL** (`wings_remote_url`) under Admin → Settings → App so FeatherWings can call the panel via a DNS-only hostname when Cloudflare Prenayskutzu / Under Attack Mode blocks daemon traffic to App URL (fixes SFTP “wrong password” when Maximize Security is on). Re-fetch node config after changing. by @nayskutzu
 - Mythic Cloud (Panels API) integration updates: OAuth link via `https://my.mythicalsystems.org/oauth2`, Panel API client defaulting to `https://panels.mythicalsystems.org` (configurable / `panels-dev`), handshake + finish routes, marketplace/eggs/pastes/issues client surfaces, and admin issue reporter. by @nayskutzu
 - User self-service **account deletion** with admin-configurable verification (2FA and/or email OTP) and deletion modes (instant, delayed with cancellable grace period, or after active services expire). by @nayskutzu
-- **Proxmox Backup Server (PBS)** destination for Docker server backups: when Wings has `system.backups.pbs` enabled, new backups stream via `proxmox-backup-client` (pxar) instead of local tar.gz — no zip/archive on the Wings backup folder, with PBS chunk deduplication. Restore/delete use PBS snapshots; file download is disabled for PBS backups. by @nayskutzu
+- **Proxmox Backup Server (PBS)** destination for Docker server backups: when Wings has `system.backups.pbs` enabled, new backups stream via `proxmox-backup-client` (pxar) instead of local tar.gz - no zip/archive on the Wings backup folder, with PBS chunk deduplication. Restore/delete use PBS snapshots; file download is disabled for PBS backups. by @nayskutzu
 - AbuseIPDB integration: configure an API key under Admin → Settings → Security, check registering IPs (block / log / auto-ban), scan existing users for reported IPs, and optionally report a user's IP to AbuseIPDB when banning (with official category dropdown). by @nayskutzu
 - Roles can now use custom icon/image badges, uploadable from the role editor and shown on role badges throughout the panel. by @nayskutzu
 - Server **lifecycle hooks**: added **Server-crash Hook** pipeline that runs when Wings reports a crashed container (Discord webhooks, HTTP requests, container commands). by @nayskutzu
-- Server **lifecycle hooks**: added **Sleep** step type (1–300 seconds) that can be placed between other pipeline steps. by @nayskutzu
+- Server **lifecycle hooks**: added **Sleep** step type (1-300 seconds) that can be placed between other pipeline steps. by @nayskutzu
 - Server **lifecycle hooks**: added **Container Shell** step type that runs `/bin/sh -c` inside the Docker container via Wings docker exec (with configurable timeout and non-zero exit failure). Gated by admin setting `server_lifecycle_hooks_container_shell_enabled` (default off) under Settings → Servers. by @nayskutzu
 - Button in the admin are to mass start, restart, kill, stop servers by @nayskutzu
 - Roles can now have custom icons by @nayskutzu
@@ -451,7 +451,7 @@
 ### Fixed
 
 - Cloudflare Under Attack Mode / challenge HTML no longer clears the panel session or empties permissions (admin appearing as a normal user, owned-server access errors, console JWT failures). by @nayskutzu
-- Marketplace/cloud `.fpa` installs failing with `ADDON_EXTRACT_FAILED`: Mythic packages use AES-256 (PKZIP 5.1) while Info-ZIP `unzip` only supports ZipCrypto — extraction now uses PHP `ZipArchive` (with unzip fallback). by @nayskutzu
+- Marketplace/cloud `.fpa` installs failing with `ADDON_EXTRACT_FAILED`: Mythic packages use AES-256 (PKZIP 5.1) while Info-ZIP `unzip` only supports ZipCrypto - extraction now uses PHP `ZipArchive` (with unzip fallback). by @nayskutzu
 - Admin area stats were not loading correctly. by @nayskutzu
 - Fixed the issue with unlimited backup limit. by @nayskutzu
 - Issues related to port allocation were fixed. by @nayskutzu
@@ -464,7 +464,7 @@
 ### Added
 
 - Configurable default avatar provider in admin settings (Gravatar by default, with panel logo, UI Avatars, RoboHash, DiceBear, and custom URL template support). by @nayskutzu
-- Admin SSO token settings: configure the default token lifetime in App settings, and optionally pass `expires_in` (minutes, 1–1440) when calling `POST /api/admin/users/{uuid}/sso-token`. by @nayskutzu
+- Admin SSO token settings: configure the default token lifetime in App settings, and optionally pass `expires_in` (minutes, 1-1440) when calling `POST /api/admin/users/{uuid}/sso-token`. by @nayskutzu
 - Admin list pages (users, servers, VDS nodes, nodes, VM instances, spells, roles, tickets, and others) now remember search, filters, sort, and pagination in localStorage. by @nayskutzu
 - Spells now support a configurable default Docker image (star icon on the spell Docker tab) so new servers use the correct runtime on first install when game images are updated. by @nayskutzu
 - Server startup Docker image selection is locked to spell-configured images by default; admins can enable custom Docker image input under Settings → Servers (`server_allow_custom_docker_image`, default off). by @nayskutzu
@@ -600,12 +600,12 @@
 - Server **lifecycle hooks**: configurable pre-start and pre-stop pipelines (container commands, Discord webhooks with multi-embed builder and preview, HTTP requests). by @nayskutzu
 - Enhanced OAuth2 configuration by displaying the authorization URL, allowing users to easily identify and verify their OCID endpoint. by @nayskutzu
 - Introduced UUID-based response for /admin/api/users when creating a new user, aligning with other API endpoints that rely on UUID identifiers. by @nayskutzu
-- Added server and VM instance expiry date feature with automatic suspension—set an expiration date on any server or VDS/VPS instance, and it will be automatically suspended when the date is reached. by @nayskutzu
+- Added server and VM instance expiry date feature with automatic suspension-set an expiration date on any server or VDS/VPS instance, and it will be automatically suspended when the date is reached. by @nayskutzu
 - Enhance power control with state-based actions and kill confirmation by @nayskutzu
 - Support for a really early in development player counter by @nayskutzu
 - Added an email domain blacklist feature, allowing you to block registrations from unwanted or spammy domains, keeping your platform cleaner. by @nayskutzu
-- Added the ability to assign databases to specific nodes—now you can restrict a database (e.g., "hiyra") to be accessible only on selected nodes such as node 1 or node 2, as desired. by @nayskutzu
-- Seamlessly create new allocations directly from the server creation tab—no need to leave the page or interrupt your workflow. by @nayskutzu
+- Added the ability to assign databases to specific nodes-now you can restrict a database (e.g., "hiyra") to be accessible only on selected nodes such as node 1 or node 2, as desired. by @nayskutzu
+- Seamlessly create new allocations directly from the server creation tab-no need to leave the page or interrupt your workflow. by @nayskutzu
 - Significantly streamlined and enhanced the server creation workflow for a faster, smoother, and more intuitive experience. by @nayskutzu
 - Significantly streamlined and enhanced the vds creation workflow for a faster, smoother, and more intuitive experience. by @nayskutzu
 - Added a Redis notification system to reload settings across all services when settings are updated. by @nayskutzu
@@ -619,9 +619,9 @@
 
 - Fixed an issue where two loading spinners would appear simultaneously when creating a new VDS instance, ensuring only one spinner is shown as intended. by @nayskutzu
 - Resolved an issue where users were redirected to a raw JSON page after logging in via an OIDC provider, ensuring a seamless post-login experience.
-- Fixed Proxmox node selection displaying in inconsistent order when creating VDS instances—nodes are now sorted alphabetically for predictable selection.
+- Fixed Proxmox node selection displaying in inconsistent order when creating VDS instances-nodes are now sorted alphabetically for predictable selection.
 - Fixed inconsistency where /admin/api/users returned userId instead of UUID, which caused issues when interacting with endpoints such as user retrieval and SSO token creation that require UUID. by @nayskutzu
-- Resolved an issue where email subjects were previously hardcoded and could not be customized—subjects are now fully editable. by @nayskutzu
+- Resolved an issue where email subjects were previously hardcoded and could not be customized-subjects are now fully editable. by @nayskutzu
 - The copy and the move files operations now work correctly and display progress indicators to the user. by @nayskutzu
 - Fixed an issue where in the sidebar you would see the node be active when you were on the status page. by @nayskutzu
 
@@ -632,7 +632,7 @@
 - Made the kill button less prominent (ghost variant) to further reduce accidental clicks. by @nayskutzu
 - Completely reimagined the admin sidebar user experience for enhanced usability and navigation. by @nayskutzu
 - Completely removed the FeatherPanel partner showcases from the UI for a cleaner user experience. by @nayskutzu
-- You can now seamlessly create a new location while creating a node—no more jumping between steps or prerequisites, making your setup process much easier. by @nayskutzu
+- You can now seamlessly create a new location while creating a node-no more jumping between steps or prerequisites, making your setup process much easier. by @nayskutzu
 - The admin area button now intelligently adapts its destination: on a server page, it directs you to the relevant server or VDS edit page; on the dashboard, it takes you to the main admin area. Additionally, while in the admin section, the admin area button is hidden for a cleaner interface. by @nayskutzu
 - Brand new log file rotation and cleanup system that ensures log files are rotated and old logs are cleaned up automatically, freeing up disk space and keeping logs organized. by @nayskutzu
 - Resolved various issues with the translations import system, ensuring a smoother and more reliable experience. by @nayskutzu
@@ -651,7 +651,7 @@
 
 ### Fixed
 
-- Resolved an issue where the Rust async-runner occasionally used IPv6, leading to instability—now reliably defaults to the intended address family for stable operation. by @nayskutzu
+- Resolved an issue where the Rust async-runner occasionally used IPv6, leading to instability-now reliably defaults to the intended address family for stable operation. by @nayskutzu
 - Fixed a bug where the copy button failed to work as expected by @nayskutzu.
 - Addressed intermittent issues with drag-and-drop file movement by @nayskutzu.
 - Resolved an issue where IP addresses beginning with 172. were incorrectly prioritized as the primary address, ensuring correct IP selection and improved reliability. by @nayskutzu
@@ -702,14 +702,14 @@
 ### Added
 
 - Added a new admin setting to hide IP addresses across server activity logs and account activity views, masking them as `***.***.***.***` for improved privacy. by @nayskutzu
-- Crushed those pesky bugs blocking seamless VM ISO mounting for images larger than 1GB—run your massive ISOs with blana bomba smoothness! by @nayskutzu
+- Crushed those pesky bugs blocking seamless VM ISO mounting for images larger than 1GB-run your massive ISOs with blana bomba smoothness! by @nayskutzu
 - Introduced comprehensive mounts support to FeatherPanel, empowering flexible volume management and unlocking new deployment possibilities. by @nayskutzu
 - Implemented an advanced rotation scheme featuring FIFO (First-In, First-Out) logic, also known as Rolling Backup Retention, delivering reliable and automated backup management for your servers. by @nayskutzu
-- Unleashed API key sign-in: authenticate seamlessly with either API public or private keys—flexibility and security both ways. by @nayskutzu
+- Unleashed API key sign-in: authenticate seamlessly with either API public or private keys-flexibility and security both ways. by @nayskutzu
 - Enhanced API key security with robust access controls and advanced IP restriction support, ensuring even greater protection for your integrations. by @nayskutzu
 - Introduced the Favorite Servers feature: effortlessly mark your most-used servers for instant access and seamless management from your dashboard. by @nayskutzu
 - Introduced the Storage Sense feature: effortlessly analyze and manage old log data with automated cleanup and retention controls for optimal performance and storage efficiency. by @nayskutzu
-- Introduced a convenient new button for seamless management of your FeatherPanel local storage—giving you greater control and visibility right from the panel. by @nayskutzu
+- Introduced a convenient new button for seamless management of your FeatherPanel local storage-giving you greater control and visibility right from the panel. by @nayskutzu
 - Introduced robust file integrity checks, empowering users to effortlessly identify and address anomalies or unexpected changes in their files. by @nayskutzu
 - You can now create realms directly from the Install Spell window, streamlining your workflow with no need to leave the install process. by @nayskutzu
 
@@ -802,16 +802,16 @@
 - Resolved an issue where updating environment variables was not functioning correctly. by @nayskutzu
 - By default, SEO indexing is now turned off to enhance privacy and control over search engine visibility. by @nayskutzu
 - Significantly enhanced the logs uploading process for increased reliability and performance. by @nayskutzu
-- One-click mass plugin installation—no more waiting through endless refreshes. by @nayskutzu
+- One-click mass plugin installation-no more waiting through endless refreshes. by @nayskutzu
 - The node name is now prominently displayed on the server console page for improved clarity. by @nayskutzu
 - Seamless folder upload is now supported in FeatherPanel, allowing users to upload entire directories with a single action. by @nayskutzu
 
 ### Added
 
-- Theme customizer now supports backdrop blur (0–24px), backdrop darken (0–100% overlay), and for custom background images: fit options (Cover, Contain, Fill). Settings apply across the panel including login and error pages. by @nayskutzu
+- Theme customizer now supports backdrop blur (0-24px), backdrop darken (0-100% overlay), and for custom background images: fit options (Cover, Contain, Fill). Settings apply across the panel including login and error pages. by @nayskutzu
 - Animations can be customized app-wide: choose Full, Reduced (default), or Off. Controlled from the theme palette and from the background settings dialog. by @nayskutzu
 - Many new motion and animation improvements: page content fades in on load, cards and server cards have hover lift and scale, dashboard server list uses staggered entrance, welcome banner scales in, and new global utilities (fade-in-up, scale-in, slide-in-right, pulse-soft, glow, hover-lift, hover-scale, stagger-children) for consistent polish across the panel. by @nayskutzu
-- Introduced seamless Ctrl+S (or Cmd+S) keyboard shortcut support in the file manager—enabling quick and convenient file saving. by @nayskutzu
+- Introduced seamless Ctrl+S (or Cmd+S) keyboard shortcut support in the file manager-enabling quick and convenient file saving. by @nayskutzu
 - Default user profile pictures now automatically use the panel’s app logo URL for a more unified look. by @nayskutzu
 - Admin users can now seamlessly access and view all servers directly from the dashboard page. by @nayskutzu
 - Expanded theme customization options for enhanced personalization and flexibility. by @nayskutzu
@@ -889,9 +889,9 @@
 
 - Resolved an issue affecting the database host selection modal on the server's databases page for a smoother, more reliable user experience. by @nayskutzu
 - Fixed the API documentation button so it now functions correctly and directs users to the intended icanhasfeatherpanel endpoint. by @nayskutzu
-- Resolved an issue where interacting with the file manager's context menu would unintentionally open files—context menu actions now work as intended. by @nayskutzu
+- Resolved an issue where interacting with the file manager's context menu would unintentionally open files-context menu actions now work as intended. by @nayskutzu
 - Fixed an issue where Control + C and copying server console output did not work as expected. You can now reliably copy from the console! by @nayskutzu
-- Fixed an issue where selecting multiple files or folders incorrectly showed a download button that hasn’t worked since the Wings migration—this button now functions as expected, ensuring a smoother file management experience. by @nayskutzu
+- Fixed an issue where selecting multiple files or folders incorrectly showed a download button that hasn’t worked since the Wings migration-this button now functions as expected, ensuring a smoother file management experience. by @nayskutzu
 - Addressed occasional inaccuracies in server KPIs caused by Wings misconfigurations, ensuring analytics are now more reliable and reflective of actual server states. by @nayskutzu
 - Use unhashed password in email templates after hashing for storage. by @nayskutzu
 - Correct command history navigation and indexing in the server terminal. by @nayskutzu
@@ -919,7 +919,7 @@
 
 - Implement route name validation in admin rate limits API, enhancing error handling for invalid requests. Enable debug mode across various files for improved troubleshooting during development. by @nayskutzu
 - Improve plugin directory handling in PluginManager by adding checks for empty directories and ensuring only directories are returned, enhancing plugin management reliability.
-- Ollama integration is now fully functional—issues preventing it from working have been resolved! by @nayskutzu
+- Ollama integration is now fully functional-issues preventing it from working have been resolved! by @nayskutzu
 - Resolved several issues affecting the reliable saving and persistence of rate limits. by @nayskutzu
 
 ### Updated
@@ -933,22 +933,22 @@
 
 - Plugins can now seamlessly integrate with and extend existing sidebar routes, including injecting custom previews! by @nayskutzu
 - Introduced a seamless option to resynchronize plugin symlinks, ensuring all plugins remain properly linked and up to date. by @nayskutzu
-- Added a new, interactive flow for users to delete their own servers—requiring completion of one math, one reading, and one spelling challenge for extra security. by @nayskutzu
+- Added a new, interactive flow for users to delete their own servers-requiring completion of one math, one reading, and one spelling challenge for extra security. by @nayskutzu
 - The standard plugins page now also supports update checking, not just the marketplace! by @nayskutzu
 - Plugins can now specify a unique cloud plugin ID, enabling them to automatically detect and fetch their own updates from the cloud. by @nayskutzu
-- Plugins can now specify an exact panel version requirement, not just an SDK version—offering greater precision and reliability for compatibility! by @nayskutzu
+- Plugins can now specify an exact panel version requirement, not just an SDK version-offering greater precision and reliability for compatibility! by @nayskutzu
 - Introduced the new `--skip-path-check` command-line option, allowing developers and advanced users to bypass automatic path validation when running CLI actions. by @nayskutzu
-- Instantly sync your appearance settings to the cloud with the new one click option—no more 5-minute wait times. by @nayskutzu
+- Instantly sync your appearance settings to the cloud with the new one click option-no more 5-minute wait times. by @nayskutzu
 - Added the ability to query user data by external_id and server data via the admin API. by @nayskutzu
 - The API documentation has been significantly enhanced with detailed versioning and additional metadata, offering clearer and more accurate information. by @nayskutzu
 - Plugin Widgets now intelligently detect and adapt to their initialization page, enabling more context-aware behavior and seamless integration. by @nayskutzu
 - Added a streamlined option to automatically reinstall any plugins removed during a panel update, eliminating the need for manual reinstallation. by @nayskutzu
 - You can now seamlessly download premium plugins directly, once your panel is linked to your FeatherCloud account. by @nayskutzu
-- Seamless FeatherCloud OAuth2 integration now available—securely link your panel to the cloud in just a few clicks! by @nayskutzu
+- Seamless FeatherCloud OAuth2 integration now available-securely link your panel to the cloud in just a few clicks! by @nayskutzu
 
 ### Improved
 
-- Significant performance enhancements—optimized resource usage for a faster, more efficient app experience. by @nayskutzu
+- Significant performance enhancements-optimized resource usage for a faster, more efficient app experience. by @nayskutzu
 - Plugin dependency checks are now performed directly via config files instead of in-memory loading, preventing possible conflicts and ensuring more reliable operation. by @nayskutzu
 - Plugin-rendered pages now feature improved layouts with the footer automatically hidden, resulting in a cleaner, more spacious, and visually appealing experience. by @nayskutzu
 
@@ -979,7 +979,7 @@
 
 ### Added
 
-- Introduced a dedicated user detail page for viewing and editing users, replacing the previous drawer approach—delivering a much improved and more intuitive UX/UI. by @nayskutzu
+- Introduced a dedicated user detail page for viewing and editing users, replacing the previous drawer approach-delivering a much improved and more intuitive UX/UI. by @nayskutzu
 
 ## v1.1.0 STABLE
 
@@ -997,7 +997,7 @@
 ### Added
 
 - Powerful Wings modules support: create custom modules for Wings and seamlessly manage them through integrated admin pages in the panel. by @nayskutzu
-- Introduced robust "Always Online" server support—now featuring customizable MOTD and kick messages for a seamless, uninterrupted player experience. by @nayskutzu
+- Introduced robust "Always Online" server support-now featuring customizable MOTD and kick messages for a seamless, uninterrupted player experience. by @nayskutzu
 - Introduced a powerful and intuitive firewall manager for servers, easily enabled through the settings area, providing enhanced security and effortless control. by @nayskutzu
 - Seamless phpMyAdmin integration: effortlessly install, upgrade, and access phpMyAdmin directly through FeatherPanel for powerful database management. by @nayskutzu
 - Introduced an intuitive allocation template for creating new allocations, making the process faster and easier than ever! by @nayskutzu
@@ -1006,7 +1006,7 @@
 - Introduced an experimental Redis-backed cache layer, offering an alternative to traditional file-based caching for improved performance and scalability. by @nayskutzu
 - Introduced robust API rate limiting to effectively safeguard against abuse and ensure fair use for all users. by @nayskutzu
 - Newly registered panel users now receive their password details directly in their welcome email, making onboarding smoother and more convenient. by @nayskutzu
-- Introducing elegant image previews in the file manager—supported image formats now display crisp, in-panel thumbnails for a more intuitive and visually engaging browsing experience. by @nayskutzu
+- Introducing elegant image previews in the file manager-supported image formats now display crisp, in-panel thumbnails for a more intuitive and visually engaging browsing experience. by @nayskutzu
 - Introduced advanced server reverse proxy support, allowing you to seamlessly expose server ports to the web with optional SSL certificate integration for secure connections! by @nayskutzu
 - Introducing seamless server import capabilities: effortlessly migrate servers from other hosts using SFTP or FTP with a powerful, intuitive importer! by @nayskutzu
 - Added granular control to zero trust verification: now you can selectively skip zero trust checks on individual servers if desired, providing greater flexibility and customization. by @nayskutzu
@@ -1018,7 +1018,7 @@
 
 ### Improved
 
-- No more frustrating page refreshes after failed captcha attempts—requests to captcha-protected endpoints are now automatically retried for a seamless experience! by @nayskutzu
+- No more frustrating page refreshes after failed captcha attempts-requests to captcha-protected endpoints are now automatically retried for a seamless experience! by @nayskutzu
 - Revamped node management interface: each node now has its own dedicated page for an improved and more intuitive management experience. by @nayskutzu
 - Log uploads now use the FeatherPanel API instead of mclogs, providing a more seamless and integrated experience. by @nayskutzu
 - Bulk deletion of allocations now offers the flexibility to target and remove allocations from a specific subnet, empowering more precise management. by @nayskutzu
@@ -1032,12 +1032,12 @@
 
 - Resolved an issue where user server pagination was not functioning correctly; pagination now works as intended. Fixed by
   @nayskutzu
-- The Pterodactyl importer page has been significantly improved—it now reliably displays your actual API key for seamless integration! by @nayskutzu
+- The Pterodactyl importer page has been significantly improved-it now reliably displays your actual API key for seamless integration! by @nayskutzu
 - Enhanced the Pterodactyl importer page with clear, user-friendly labels for improved navigation and ease of use. by @nayskutzu
 - Resolved various mobile UI issues on the server resources page for a smoother, more polished user experience. by @nayskutzu
 - Resolved longstanding issues with server transfers in FeatherPanel: transfers are now fully functional and reliable. by @nayskutzu
 - Resolved a query error that occurred when a database host was associated with active servers. by @nayskutzu
-- Resolved an issue preventing EULA and egg/spell features from functioning correctly—these are now properly included in server requests, restoring expected functionality. by @nayskutzu
+- Resolved an issue preventing EULA and egg/spell features from functioning correctly-these are now properly included in server requests, restoring expected functionality. by @nayskutzu
 - Fixed an issue where role names and colors were not properly displayed on the frontend; these are now shown as intended. by @nayskutzu
 - Resolved an issue preventing JSON files from being opened and edited; you can now seamlessly edit JSON files as intended. by @nayskutzu
 - Improved the handling of the --skip-os-check flag: the installer will now correctly honor this option even if /etc/os-release is missing, ensuring a smoother and more flexible installation experience. by @nayskutzu
@@ -1054,7 +1054,7 @@
 - Introduced a new feature allowing administrators to restrict user access to the client API for enhanced security and control. by @nayskutzu
 - Implemented API documentation caching for significantly faster load times in production environments. by @nayskutzu
 - Enhanced server locations with vibrant country flags for a fresh, modern look! by @nayskutzu
-- Introduced a built-in Knowledgebase, allowing users to easily access essential documentation directly within FeatherPanel—no need for third-party solutions! by @nayskutzu
+- Introduced a built-in Knowledgebase, allowing users to easily access essential documentation directly within FeatherPanel-no need for third-party solutions! by @nayskutzu
 - Introduced a sleek and informative Status Page for users! When enabled, it provides real-time insights into node statuses and other key system information, enhancing transparency and monitoring. by @nayskutzu
 - Introduced seamless SSO authentication support, enabling integration with WHMCS and other external platforms for a unified login experience. by @nayskutzu
 - Rolled out a comprehensive, user-friendly ticket system packed with advanced features and thoughtful enhancements for a seamless support experience. by @nayskutzu
@@ -1108,7 +1108,7 @@
 - Allow compression of files in the right click context menu. by @puttydotexe
 - Introduced a brand new Marketplace hub, allowing you to easily choose between installing spells, plugins, or AI agents, all from one unified area. by @nayskutzu
 - Empower users with complete theme customization easily personalize the entire look and feel of FeatherPanel to match your unique style! by @nayskutzu
-- Unleash your creativity with full Accent Color customization—easily personalize the app’s primary color scheme to reflect your individual style! by @nayskutzu
+- Unleash your creativity with full Accent Color customization-easily personalize the app’s primary color scheme to reflect your individual style! by @nayskutzu
 - Introduced a sleek and consistent custom scrollbar for both side panels and the entire app, elevating the overall user experience. by @nayskutzu
 - Added an automated FeatherTrust scan report button to the FeatherZero Trust page, enabling instant access to security scan reports with a single click! by @nayskutzu
 - Introduced FeatherAI, an intelligent AI-powered chatbot assistant built into FeatherPanel, enabling users to get instant help, perform actions, and receive expert guidance right within the app. by @nayskutzu
@@ -1120,7 +1120,7 @@
 - Added an advanced Wings configuration file editor in the admin area, enabling effortless direct editing and management of Wings daemon settings. by @nayskutzu
 - Release notes are now written in markdown, enabling enhanced formatting and a more visually appealing presentation. by @nayskutzu
 - Added a stylish and dedicated section to display user social links on navbar, making it easy to connect and showcase your online presence. by @nayskutzu
-- Introduced a feature that lets you pin your favorite pages for easy access—quickly save and revisit the places you care about most! by @nayskutzu
+- Introduced a feature that lets you pin your favorite pages for easy access-quickly save and revisit the places you care about most! by @nayskutzu
 
 ### Fixed
 
@@ -1193,7 +1193,7 @@
 - Built-in subdomain manager now available for all users at no additional cost.
 - Added the ability to retrieve comprehensive system diagnostics directly from the admin panel for easier troubleshooting and insight.
 - You can now seamlessly update Wings directly from the admin panel, making upgrades faster and easier than ever before!
-- Added full Wings terminal integration—execute system commands directly on your Wings server from the panel!
+- Added full Wings terminal integration-execute system commands directly on your Wings server from the panel!
 - The panel now updates itself automatically whenever FeatherPanel is restarted this ensures you’re always running the latest version without manual intervention. This feature can be disabled in your docker-compose.yml if desired.
 
 ### Fixed
@@ -1218,12 +1218,12 @@
 
 ### Fixed
 
-- Resolved an issue that prevented using Ctrl+C to interrupt processes in the server console—keyboard shortcuts now work as expected.
+- Resolved an issue that prevented using Ctrl+C to interrupt processes in the server console-keyboard shortcuts now work as expected.
 - Fixed an issue where subuser search filters and the table would appear even when there were no subusers these elements now only show when subusers exist.
 - Navigating to a plugin page that does not exist now correctly sends you to the 404 Not Found page.
 - Fixed a connection timeout issue that could occur after being idle (AFK) on the console page connections now remain stable during periods of inactivity.
 - Fixed an issue where the Postgres driver was not detected, ensuring proper database connectivity.
-- Fixed an issue where autoscroll was not functioning properly in the console—the console now automatically scrolls to show the latest output as expected.
+- Fixed an issue where autoscroll was not functioning properly in the console-the console now automatically scrolls to show the latest output as expected.
 
 ### Improved
 
@@ -1270,10 +1270,10 @@
 
 ### Fixed
 
-- Fixed an issue where plugins were not appearing on the server route—plugins now display correctly as intended.
+- Fixed an issue where plugins were not appearing on the server route-plugins now display correctly as intended.
 - Fixed an issue where wings was unable to parse the right env for file edit!
-- Fixed an issue where databases were not properly removed when deleting a server from the admin interface—server database cleanup now works reliably and automatically.
-- Fixed a critical bug where updating server variables would previously delete ALL variables—including read-only and admin-only variables—instead of only modifying the variables provided in the update request.
+- Fixed an issue where databases were not properly removed when deleting a server from the admin interface-server database cleanup now works reliably and automatically.
+- Fixed a critical bug where updating server variables would previously delete ALL variables-including read-only and admin-only variables-instead of only modifying the variables provided in the update request.
 - Fixed an issue where the sidebar logo could become stuck in dark mode and not update correctly when themes were changed.
 - Fixed a broken database schema migration that could cause issues when upgrading from older versions.
 - No longer performing JWT renewals over the WebSocket protocol; authentication tokens must now be refreshed via the REST API and re-established by reconnecting the WebSocket when needed.
@@ -1303,31 +1303,31 @@
 - Added admin analytics dashboard (KPI) for detailed user statistics and insights.
 - Added the ability to bulk delete allocations directly from the admin interface for faster cleanup and management.
 - Introduced an option to quickly remove all unused allocations in one action, streamlining server resource management.
-- Removed the empty content validation for file writes—now only requests with a truly missing (null) body are rejected, allowing writing empty files or clearing content.
-- Added an error message when there are no database hosts configured—users will now see a clear notice instead of an unexpected error.
+- Removed the empty content validation for file writes-now only requests with a truly missing (null) body are rejected, allowing writing empty files or clearing content.
+- Added an error message when there are no database hosts configured-users will now see a clear notice instead of an unexpected error.
 - Added power controls (start, stop, restart, kill) and detailed server resource info to the sidebar when viewing server routes, enabling direct server management and status visibility from the sidebar.
 - Added display of the current app version in the admin UI for easier version awareness and debugging.
-- Introduced Server Transfers—now available for beta testing! Move servers between nodes seamlessly; feedback welcome as we refine this powerful new feature.
+- Introduced Server Transfers-now available for beta testing! Move servers between nodes seamlessly; feedback welcome as we refine this powerful new feature.
 - Added detection and support for classic Minecraft 1.19 "requires running the server with Java 17 or above. Download Java 17 (or above) from https://adoptium.net/" messages to provide users with clear Java requirements.
 - Introduced a modern and intuitive Global Context Menu UI, providing convenient right-click actions and a more seamless app-wide user experience.
 - User preferences are now saved and synced with the database every 5 minutes!
 
 ### Fixed
 
-- Resolved an issue that prevented updating a user's password via the admin UI—admins can now seamlessly modify user passwords from the frontend interface.
+- Resolved an issue that prevented updating a user's password via the admin UI-admins can now seamlessly modify user passwords from the frontend interface.
 - Fixed problems with JWT authentication when connecting to the server console, ensuring reliable and secure access.
 - Fixed an issue where redirect links were sometimes broken or incomplete, ensuring full and correct links are now generated.
 - Fixed an issue where server allocations would not display as expected in the admin UI; allocations are now properly visible.
-- Fixed an issue where destructive action confirmation dialogs (e.g., "Delete Selected", "Delete Unused") were difficult to read in light mode due to poor contrast—these dialogs are now fully legible in both dark and light themes.
+- Fixed an issue where destructive action confirmation dialogs (e.g., "Delete Selected", "Delete Unused") were difficult to read in light mode due to poor contrast-these dialogs are now fully legible in both dark and light themes.
 - Resolved an issue where avatars and images were not displayed correctly in select column dropdowns, ensuring consistent visuals throughout the UI.
 - Fixed a problem where the "empty folder" layout was not shown when a user had no available servers, providing clearer feedback in such cases.
 - Resolved an issue with the Quick Links widget, ensuring only valid and functional links are displayed.
 - Fixed a bug that prevented files from being completely cleared; empty files can now be saved without issue.
 - Fixed an issue where the installer did not automatically install Docker as required for Wings, ensuring a smoother and more reliable Wings installation process.
 - The installer now properly stops and frees port 80 before launching a standalone server, preventing conflicts and ensuring successful SSL certificate generation.
-- File manager URL not updating when navigating directories—browser history (back/forward) support is now enabled.
-- File manager Ctrl + F was not properly focusing the search input—it now works as expected.
-- Fixed an issue where the MacDock would disappear after refreshing the page or navigating to a different route—it now stays visible and persistent across navigation.
+- File manager URL not updating when navigating directories-browser history (back/forward) support is now enabled.
+- File manager Ctrl + F was not properly focusing the search input-it now works as expected.
+- Fixed an issue where the MacDock would disappear after refreshing the page or navigating to a different route-it now stays visible and persistent across navigation.
 - Fixed an issue where it was not possible to directly navigate to a specific tab within the account settings page.
 - Enhanced the Server List page for mobile devices: simplified the layout, removed folder views (which were impractical on smaller screens), and optimized usability for mobile users.
 - Added support for customizable ignored files and folders in the file manager, allowing you to effortlessly hide files or directories you don't want to see.
@@ -1335,7 +1335,7 @@
 
 ### Improved
 
-- Redesigned admin pages to deliver a more modern, visually cohesive experience—replaced old error messages with clean toast notifications for clearer and more user-friendly feedback throughout the admin interface!
+- Redesigned admin pages to deliver a more modern, visually cohesive experience-replaced old error messages with clean toast notifications for clearer and more user-friendly feedback throughout the admin interface!
 - The plugins page has been redesigned to offer a more visually appealing and modern user experience.
 - Sidebar navigation now groups admin sections for improved organization and clarity, making it easier to find settings, content, plugins, and system options.
 - Introduced a brand new sidebar design for the server client interface, providing a modern look and improved usability.
@@ -1344,7 +1344,7 @@
 - Brand new footer design for mobile and pc users (More compact and small)
 - Admin and profile page links are now hidden from the user sidebar while you are actively viewing them.
 - Added new modals for streamlined allocation and spell selection when editing servers. Selections are now managed via a modern, searchable modal interface rather than older dropdowns.
-- Improved Docker Images for Spells: When editing a server, available Docker images are now correctly shown and selectable—images update live with the selected spell.
+- Improved Docker Images for Spells: When editing a server, available Docker images are now correctly shown and selectable-images update live with the selected spell.
 - Updated the admin UI to feature a more appropriate and visually fitting icon for Roles
 - Reordered action buttons in the Realm administration interface for improved visual layout.
 - Adjusted spacing in admin widgets to refine vertical and grid gaps for a cleaner UI.
@@ -1381,7 +1381,7 @@
 
 ### Added
 
-- Introduced support for premium plugins—enhance your panel with exclusive addon features!
+- Introduced support for premium plugins-enhance your panel with exclusive addon features!
 - Enabled plugin server UUID forwarding for advanced developer integrations.
 - Added plugin user UUID forwarding to support custom user tracking and integrations (for developers).
 - Allow plugins to optionally hide their name badges in the sidebar for a cleaner look.
@@ -1390,11 +1390,11 @@
 
 ### Fixed
 
-- Resolved an issue where navigating between plugin-rendered pages wouldn’t work as expected—switching between custom plugin pages is now seamless!
+- Resolved an issue where navigating between plugin-rendered pages wouldn’t work as expected-switching between custom plugin pages is now seamless!
 
 ### Improved
 
-- Significantly enhanced the overall UI experience, bringing smoother interactions, sharper visuals, and a more cohesive feel—special thanks to @Tweenty\_ for the design magic!
+- Significantly enhanced the overall UI experience, bringing smoother interactions, sharper visuals, and a more cohesive feel-special thanks to @Tweenty\_ for the design magic!
 
 ## v0.0.7-Alpha
 
@@ -1404,9 +1404,9 @@
 
 ### Fixed
 
-- Resolved an issue with the sidebar avatar positioning when collapsed—now perfectly aligned!
+- Resolved an issue with the sidebar avatar positioning when collapsed-now perfectly aligned!
 - Addressed a problem where the logo would fail to load until the theme was changed; logos now always appear as expected.
-- Fixed an annoying bug that prevented editing spells without features—you can now edit all spells seamlessly.
+- Fixed an annoying bug that prevented editing spells without features-you can now edit all spells seamlessly.
 - Fixed an issue where server variable visibility and permissions were not respected: variables marked as hidden or non-editable by the user were still shown or editable in the UI. Now, user view/edit restrictions for variables are properly enforced.
 - Fixed an issue where Docker images for Spells could not be viewed or edited because they weren't displayed in the edit drawer. Docker images are now properly shown and editable.
 
@@ -1420,7 +1420,7 @@
 
 ### Removed
 
-- Deprecated legacy realm logos—spells now manage logos for a cleaner and unified experience.
+- Deprecated legacy realm logos-spells now manage logos for a cleaner and unified experience.
 - Removed redundant realm author field, as this information is now fully managed by spells.
 - Removed the refresh button from server settings as it was unused and unnecessary.
 
@@ -1486,7 +1486,7 @@
 - Added comprehensive unit tests for more core admin controllers.
 - Added initial `.nayskutzu/rules/*` files, enabling extensive and fine-grained codebase navigation and enforcing coding standards across CLI commands, controllers, chat models, and routes for improved consistency and contributor onboarding.
 - Added "Pull file" support to the file manager, enabling users to pull/download files directly from remote URLs into the server. Manage and monitor remote downloads in real time from the Active Downloads panel.
-- Added automatic route indexing for plugins: Rather than requiring each plugin to register its own API routes during the app ready event, the route indexer now automatically discovers and loads routes from a `Routes` folder within each plugin. This simplifies plugin development—just place your route files in a `Routes` directory in your plugin, and they’ll be auto-registered without manual setup!
+- Added automatic route indexing for plugins: Rather than requiring each plugin to register its own API routes during the app ready event, the route indexer now automatically discovers and loads routes from a `Routes` folder within each plugin. This simplifies plugin development-just place your route files in a `Routes` directory in your plugin, and they’ll be auto-registered without manual setup!
 - Added full support for PostgreSQL databases, enabling seamless integration and management alongside MySQL and MariaDB.
 - Added support for users to upload their server and install logs to mclo.gs for easy sharing and diagnostics.
 - Added support for unique request IDs (`REQUEST_ID`) throughout backend and frontend responses for improved traceability of API calls, debugging, and support. All API responses now include a `request_id` field, and logs/diagnostics reference this value where possible.

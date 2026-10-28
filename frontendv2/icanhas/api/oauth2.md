@@ -17,7 +17,7 @@ Playground: [oauth2-playground.html](./oauth2-playground.html) · OpenAPI tag `U
 | -------------------------------------------------- | -------------------------------------------------- |
 | A redirect URL (web or custom scheme)              | Callback, `mode=user` or `mode=server`             |
 | No redirect URL                                    | Device                                             |
-| Accidentally set `mode=device` on the callback URL | Error `USE_DEVICE_ENDPOINT` — use device endpoints |
+| Accidentally set `mode=device` on the callback URL | Error `USE_DEVICE_ENDPOINT` - use device endpoints |
 
 ---
 
@@ -33,7 +33,7 @@ Playground: [oauth2-playground.html](./oauth2-playground.html) · OpenAPI tag `U
 | ------------------------------------- | -------- | -------------------------------------------------------- |
 | `name`                                | yes      | Key name on approve                                      |
 | `callbackurl`                         | yes      | Absolute `https://`, localhost `http://`, or `myapp://…` |
-| `mode`                                | no       | `user` (default) or `server` — never `device` here       |
+| `mode`                                | no       | `user` (default) or `server` - never `device` here       |
 | `allowedips`                          | no       | IPv4/IPv6/CIDR allow-list                                |
 | `alertCors`                           | no       | Notify on foreign-IP blocks (needs `allowedips`)         |
 | `appName` / `appLogo` / `description` | no       | Consent UI                                               |
@@ -56,13 +56,13 @@ Deny: `POST …/authorize/deny` with the same body.
 
 ### Delivery
 
-**`mode=user`** — redirect with fragment (browser-only; not sent to your server logs):
+**`mode=user`** - redirect with fragment (browser-only; not sent to your server logs):
 
 ```
 callbackurl#public_key=fp_…&private_key=fp_…&token_type=featherpanel_api_key&issued_at=…&authorization_code=fpoauthcode_…
 ```
 
-**`mode=server`** — panel POSTs JSON to `callbackurl`; user stays on the panel success page.
+**`mode=server`** - panel POSTs JSON to `callbackurl`; user stays on the panel success page.
 
 Optional one-time exchange (public):
 

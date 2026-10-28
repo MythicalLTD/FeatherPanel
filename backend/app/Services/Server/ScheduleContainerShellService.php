@@ -34,7 +34,7 @@ use App\Helpers\DaemonCapabilities;
  * ({@see ConfigInterface::SERVER_LIFECYCLE_HOOKS_CONTAINER_SHELL_ENABLED}) and by the daemon's
  * `container_exec` capability.
  *
- * Task payload: JSON object `{"command": "...", "timeout": 30}` (timeout optional, 1–120s) or,
+ * Task payload: JSON object `{"command": "...", "timeout": 30}` (timeout optional, 1-120s) or,
  * for API convenience, a plain string which is treated as the command with the default timeout.
  */
 class ScheduleContainerShellService

@@ -1,6 +1,6 @@
 /**
  * FeatherPanel / Wings file paths are relative to the server volume root ("/").
- * Inside the Docker container that root is /home/container — models often confuse
+ * Inside the Docker container that root is /home/container - models often confuse
  * the two and write to /home/container/..., which creates literal home/container
  * folders on the volume.
  */

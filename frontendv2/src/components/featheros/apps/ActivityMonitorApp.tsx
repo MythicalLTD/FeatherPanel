@@ -265,31 +265,31 @@ export default function ActivityMonitorApp({ win }: OsAppProps) {
                                 <td className='px-2 py-1 font-medium'>{r.server.name}</td>
                                 {tab === 'cpu' && (
                                     <td className='px-2 py-1 text-right tabular-nums'>
-                                        {r.hasStats ? `${r.cpu.toFixed(0)}%` : '—'}
+                                        {r.hasStats ? `${r.cpu.toFixed(0)}%` : '-'}
                                     </td>
                                 )}
                                 {tab === 'memory' && (
                                     <td className='px-2 py-1 text-right tabular-nums'>
-                                        {r.hasStats ? formatBytes(r.memory) : '—'}
+                                        {r.hasStats ? formatBytes(r.memory) : '-'}
                                     </td>
                                 )}
                                 {tab === 'disk' && (
                                     <td className='px-2 py-1 text-right tabular-nums'>
-                                        {r.hasStats ? formatBytes(r.disk) : '—'}
+                                        {r.hasStats ? formatBytes(r.disk) : '-'}
                                     </td>
                                 )}
                                 {tab === 'network' && (
                                     <td className='px-2 py-1 text-right tabular-nums'>
-                                        {r.hasStats ? `${formatBytes(r.rx)}/s` : '—'}
+                                        {r.hasStats ? `${formatBytes(r.rx)}/s` : '-'}
                                     </td>
                                 )}
                                 {tab === 'network' && (
                                     <td className='px-2 py-1 text-right tabular-nums'>
-                                        {r.hasStats ? `${formatBytes(r.tx)}/s` : '—'}
+                                        {r.hasStats ? `${formatBytes(r.tx)}/s` : '-'}
                                     </td>
                                 )}
                                 <td className='px-2 py-1 text-right tabular-nums'>
-                                    {r.hasStats && r.uptime ? formatUptime(r.uptime) : '—'}
+                                    {r.hasStats && r.uptime ? formatUptime(r.uptime) : '-'}
                                 </td>
                                 <td className='px-2 py-1'>
                                     <span className='flex items-center gap-1.5'>

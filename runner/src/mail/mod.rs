@@ -1,10 +1,10 @@
 //! Panel outbound mail delivery.
 //!
 //! Layout:
-//! - [`controller`] — `MailController` trait
-//! - [`controllers`] — one controller struct per transport
-//! - [`dispatcher`] — resolves `mail_transport` and calls the controller
-//! - [`helpers`] — shared From headers / HTTP client / API key checks
+//! - [`controller`] - `MailController` trait
+//! - [`controllers`] - one controller struct per transport
+//! - [`dispatcher`] - resolves `mail_transport` and calls the controller
+//! - [`helpers`] - shared From headers / HTTP client / API key checks
 //!
 //! Strategy:
 //! - SMTP: lettre

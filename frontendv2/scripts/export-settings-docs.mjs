@@ -183,7 +183,7 @@ This documents every setting exposed by \`SettingsController\` (Admin → Settin
 
 Open \`/admin/settings\` (or Admin → Settings). Categories:
 
-${categories.map((c) => `- **${c.name}** (\`${c.id}\`) — ${c.description} (${c.settings_count} keys)`).join('\n')}
+${categories.map((c) => `- **${c.name}** (\`${c.id}\`) - ${c.description} (${c.settings_count} keys)`).join('\n')}
 
 ### HTTP API
 
@@ -220,7 +220,7 @@ DB/API/CLI use string \`'true'\` / \`'false'\` (not JSON booleans).
 
 ## Full machine-readable dumps
 
-- [all.json](./all.json) — settings + categories + constants
+- [all.json](./all.json) - settings + categories + constants
 - [categories.json](./categories.json)
 - [constants.json](./constants.json)
 `;
@@ -230,8 +230,8 @@ function categoryMarkdown(category, settingsByKey) {
     const rows = category.setting_keys
         .map((key) => {
             const s = settingsByKey[key];
-            if (!s) return `| \`${key}\` | — | — | — |`;
-            const opts = s.options.length ? s.options.map((o) => `\`${o}\``).join(', ') : '—';
+            if (!s) return `| \`${key}\` | - | - | - |`;
+            const opts = s.options.length ? s.options.map((o) => `\`${o}\``).join(', ') : '-';
             return `| \`${key}\` | ${s.type} | ${s.description.replace(/\|/g, '\\|')} | ${opts} |`;
         })
         .join('\n');
@@ -258,8 +258,8 @@ function settingMarkdown(setting) {
 - **Type:** \`${setting.type}\`
 - **Required:** ${setting.required ? 'yes' : 'no'}
 - **Sensitive:** ${setting.sensitive ? 'yes' : 'no'}
-- **Validation:** \`${setting.validation || '—'}\`
-- **Placeholder / default hint:** \`${setting.placeholder || '—'}\`
+- **Validation:** \`${setting.validation || '-'}\`
+- **Placeholder / default hint:** \`${setting.placeholder || '-'}\`
 
 ## Description
 
@@ -369,8 +369,8 @@ function generateCategoryPage(category, settingsByKey) {
                 `${key} ${s?.description || ''} ${s?.type || ''}`,
             )}">
   <td><a href="${DOCS_BASE}/settings/${escapeHtml(key)}.html"><code>${escapeHtml(key)}</code></a></td>
-  <td>${escapeHtml(s?.type || '—')}</td>
-  <td>${escapeHtml(s?.description || '—')}</td>
+  <td>${escapeHtml(s?.type || '-')}</td>
+  <td>${escapeHtml(s?.description || '-')}</td>
 </tr>`;
         })
         .join('\n');
@@ -419,8 +419,8 @@ ${hero({
   <ul>
     <li>Category: <code>${escapeHtml(setting.category)}</code></li>
     <li>Constant: <code>ConfigInterface::${escapeHtml(setting.constant)}</code></li>
-    <li>Validation: <code>${escapeHtml(setting.validation || '—')}</code></li>
-    <li>Placeholder: <code>${escapeHtml(setting.placeholder || '—')}</code></li>
+    <li>Validation: <code>${escapeHtml(setting.validation || '-')}</code></li>
+    <li>Placeholder: <code>${escapeHtml(setting.placeholder || '-')}</code></li>
   </ul>
   ${
       setting.options.length

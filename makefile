@@ -6,7 +6,7 @@ BACKEND_DIR = backend
 RUNNER_DIR = runner
 MCP_DIR = mcp
 
-# Only these entrypoints define APP_DEBUG — do not scan the whole tree
+# Only these entrypoints define APP_DEBUG - do not scan the whole tree
 APP_DEBUG_FILES = $(BACKEND_DIR)/public/index.php $(BACKEND_DIR)/storage/cron/runner.php
 
 PNPM = pnpm
@@ -107,7 +107,7 @@ mcp-dev:
 	@cd $(MCP_DIR) && FEATHERPANEL_URL=$${FEATHERPANEL_URL:-http://127.0.0.1:4831} MCP_HOST=$${MCP_HOST:-0.0.0.0} MCP_PORT=$${MCP_PORT:-3001} $(PNPM) run dev
 
 # ------------------------------------------
-# Release — ordered, fail-fast; README stats live in CI
+# Release - ordered, fail-fast; README stats live in CI
 # ------------------------------------------
 # Frontend ncu -u stays in release (needed).
 # Full composer/mcp bumps: `make deps-update`.
@@ -134,7 +134,7 @@ permissions:
 	@$(PHP) app exportPermissions
 	@echo -e "${GREEN}${CHECK} Permissions exported${NC}\n"
 
-# Kept for local/manual use — release does not run this (CI owns it)
+# Kept for local/manual use - release does not run this (CI owns it)
 readme-stats:
 	@echo -e "${PURPLE}${INFO} Updating README code stats...${NC}"
 	@$(NODE) .github/tools/count.js --update-readme
@@ -180,7 +180,7 @@ install:
 	@cd $(MCP_DIR) && $(PNPM) install
 	@echo -e "${GREEN}${CHECK} Dependencies installed${NC}\n"
 
-# Broader bump (frontend ncu + composer update + mcp) — optional
+# Broader bump (frontend ncu + composer update + mcp) - optional
 deps-update:
 	@echo -e "\n${BOLD}${BLUE}Updating Dependencies${NC} ${WARN}"
 	@echo -e "${CYAN}=======================${NC}"
@@ -188,7 +188,7 @@ deps-update:
 	@echo -e "${YELLOW}${WARN} Running composer update...${NC}"
 	@cd $(BACKEND_DIR) && $(COMPOSER) update
 	@cd $(MCP_DIR) && $(PNPM) update
-	@echo -e "${GREEN}${CHECK} Dependencies updated — review lockfile diffs before committing${NC}\n"
+	@echo -e "${GREEN}${CHECK} Dependencies updated - review lockfile diffs before committing${NC}\n"
 
 # ------------------------------------------
 # Mode / cleanup

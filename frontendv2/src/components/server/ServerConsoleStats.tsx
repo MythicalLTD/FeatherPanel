@@ -102,7 +102,7 @@ function UsageRing({ percent, warn }: { percent: number | null; warn?: boolean }
                 )}
             </svg>
             <span className='text-muted-foreground absolute inset-0 flex items-center justify-center text-[9px] font-medium tabular-nums'>
-                {percent === null ? '–' : `${Math.round(clamped)}%`}
+                {percent === null ? '-' : `${Math.round(clamped)}%`}
             </span>
         </div>
     );

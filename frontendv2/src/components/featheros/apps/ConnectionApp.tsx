@@ -77,7 +77,7 @@ export default function ConnectionApp({ win }: OsAppProps) {
                 {rows.map(([label, value]) => (
                     <div key={label} className='flex items-center gap-2 px-3 py-2 text-[12px]'>
                         <span className='text-muted-foreground w-24 shrink-0'>{label}</span>
-                        <span className='min-w-0 flex-1 truncate font-mono text-[11px]'>{value || '—'}</span>
+                        <span className='min-w-0 flex-1 truncate font-mono text-[11px]'>{value || '-'}</span>
                         {value && (
                             <button
                                 type='button'

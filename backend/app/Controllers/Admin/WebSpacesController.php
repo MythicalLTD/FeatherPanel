@@ -1130,7 +1130,7 @@ class WebSpacesController
         $result = DnsProvisioner::provisionARecords($webNode, $domains, $space);
         if (!$result['ok']) {
             return ApiResponse::error(
-                'DNS provision failed — link a DNS zone or configure DNS credentials on the web node',
+                'DNS provision failed - link a DNS zone or configure DNS credentials on the web node',
                 'DNS_PROVISION_FAILED',
                 502,
                 $result,

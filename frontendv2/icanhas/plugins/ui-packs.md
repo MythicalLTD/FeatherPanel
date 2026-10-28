@@ -55,7 +55,7 @@ APIs:
 | -------------------- | ------------------------------------------------------------------------------------------------------- |
 | `theme`              | Theme pack id (`plugin:id` or bare id for this plugin)                                                  |
 | `shell.replace`      | Map of shell slots → `{ hide, component, remote }`                                                      |
-| `pages[]`            | `{ match, hide, replace, enabled, hidden }` — `match` like `/dashboard` or `/server/:uuidShort/console` |
+| `pages[]`            | `{ match, hide, replace, enabled, hidden }` - `match` like `/dashboard` or `/server/:uuidShort/console` |
 | `hide[]`             | Slot ids to hide globally for the pack                                                                  |
 | `actions[]`          | Toolbar / slot actions pointing at HTML components                                                      |
 | `enabled` / `hidden` | Visibility rules (bool or `{ type: plugin_setting, key, equals }`)                                      |
@@ -71,8 +71,8 @@ APIs:
 }
 ```
 
-- `component` — HTML under `/components/{identifier}/…` (iframe)
-- `remote` — ESM remote module (advanced)
+- `component` - HTML under `/components/{identifier}/…` (iframe)
+- `remote` - ESM remote module (advanced)
 
 ## `overrides.json`
 

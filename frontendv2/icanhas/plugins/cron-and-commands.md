@@ -22,7 +22,7 @@ namespace App\Addons\{identifier}\Cron;
 
 Implement `App\Cron\TimeTask` with `public function run(): void` (or `run()`).
 
-### Real example — `billinglinks`
+### Real example - `billinglinks`
 
 Path: `backend/storage/addons/billinglinks/Cron/LinkPurgeCron.php`
 
@@ -68,7 +68,7 @@ Units are upper case. Anything else (`'1d'`, `'1.5H'`, `'H'`) throws an `\Except
 
 ### Empty Cron dirs
 
-Some plugins (e.g. `fivemutils`) ship an empty `Cron/` folder — harmless. Prefer omitting empty dirs.
+Some plugins (e.g. `fivemutils`) ship an empty `Cron/` folder - harmless. Prefer omitting empty dirs.
 
 ### Generating Cron via tooling
 
@@ -139,7 +139,7 @@ class HelloWorld implements CommandBuilder
 }
 ```
 
-### Real example family — `devutils`
+### Real example family - `devutils`
 
 `backend/storage/addons/devutils/Commands/` includes generators:
 
@@ -147,7 +147,7 @@ class HelloWorld implements CommandBuilder
 - `FrontendBuild`, `FrontendWatch`, `BackendWatch`, `BackendLint`
 - `ExportPermissions`, `Colors`, …
 
-Study these when building author tooling — not required for normal feature plugins.
+Study these when building author tooling - not required for normal feature plugins.
 
 ### Colorized CLI output
 

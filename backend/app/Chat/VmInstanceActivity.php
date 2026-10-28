@@ -22,7 +22,7 @@ use App\App;
 /**
  * VmInstanceActivity service/model for CRUD operations on the featherpanel_vm_instance_activities table.
  *
- * VM instance–specific activity log (power, subuser, console, etc.), similar to ServerActivity for servers.
+ * VM instance-specific activity log (power, subuser, console, etc.), similar to ServerActivity for servers.
  */
 class VmInstanceActivity
 {

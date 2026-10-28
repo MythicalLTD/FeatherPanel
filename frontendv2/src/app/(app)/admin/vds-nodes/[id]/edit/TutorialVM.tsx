@@ -86,7 +86,7 @@ wget https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.i
                     <span className='text-foreground font-semibold'>
                         {t('ui.admin.vdsNodes.edit.tutorialVM.doNotLiterallyType')}
                     </span>{' '}
-                    <code>&lt;storage&gt;</code> – replace it with your storage ID from <code>qm config</code>{' '}
+                    <code>&lt;storage&gt;</code> - replace it with your storage ID from <code>qm config</code>{' '}
                     {t('ui.admin.vdsNodes.edit.tutorialVM.forExample')} <code>local</code> or <code>local-lvm</code>).
                 </p>
                 <pre className='bg-muted/60 overflow-x-auto rounded-md p-3 text-xs'>
@@ -133,7 +133,7 @@ qm set 9000 --serial0 socket --vga serial0`}</code>
                     <span className='text-foreground font-semibold'>
                         {t('ui.admin.vdsNodes.edit.tutorialVM.doNotRemoveTheCloudInitDrive')}
                     </span>{' '}
-                    – it is required for FeatherPanel to inject IP, user, password and SSH keys. Finally, right‑click
+                    - it is required for FeatherPanel to inject IP, user, password and SSH keys. Finally, right‑click
                     the VM in the tree, choose <code>{t('ui.admin.vdsNodes.edit.tutorialVM.convertToTemplate')}</code>{' '}
                     and confirm. This gives you a ready‑to‑use cloud-init template for that OS.
                 </p>
@@ -218,7 +218,7 @@ qm set 9001 --serial0 socket --vga serial0`}</code>
                     <span className='text-foreground font-semibold'>
                         {t('ui.admin.vdsNodes.edit.tutorialVM.doNotRemoveTheCloudInitDrive')}
                     </span>{' '}
-                    – it is required for FeatherPanel to inject IP, user, password and SSH keys. Finally, right‑click
+                    - it is required for FeatherPanel to inject IP, user, password and SSH keys. Finally, right‑click
                     the VM in the tree, choose <code>{t('ui.admin.vdsNodes.edit.tutorialVM.convertToTemplate')}</code>{' '}
                     and confirm. This gives you a ready‑to‑use cloud-init template for that OS.
                 </p>

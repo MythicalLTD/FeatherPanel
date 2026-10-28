@@ -8,7 +8,7 @@ declare(strict_types=1);
  * UIs look realistic: banned users, suspended / failed servers, tickets,
  * activity logs, extra webspaces & VMs.
  *
- * Idempotent — safe on every bootstrap / golden rebuild.
+ * Idempotent - safe on every bootstrap / golden rebuild.
  */
 
 define('APP_PUBLIC', '/var/www/html');
@@ -184,7 +184,7 @@ function ensure_junk_servers(): void
     $node = Node::getNodeByName(env_str('DEMO_NODE_NAME', 'Demo Wings'));
     $pair = resolve_realm_spell();
     if ($node === null || $pair === null) {
-        junk_log('WARNING: node/realm/spell missing — skip junk servers');
+        junk_log('WARNING: node/realm/spell missing - skip junk servers');
 
         return;
     }
@@ -200,7 +200,7 @@ function ensure_junk_servers(): void
     $specs = [
         [
             'name' => 'Suspended Skyblock',
-            'description' => 'Suspended for ToS — resource abuse',
+            'description' => 'Suspended for ToS - resource abuse',
             'owner' => $demo,
             'status' => 'suspended',
             'suspended' => 1,
@@ -222,7 +222,7 @@ function ensure_junk_servers(): void
         ],
         [
             'name' => 'Install Failed Proxy',
-            'description' => 'Failed install — useful for install KPI charts',
+            'description' => 'Failed install - useful for install KPI charts',
             'owner' => $player01,
             'status' => 'install_failed',
             'suspended' => 0,
@@ -442,7 +442,7 @@ function ensure_tickets(): void
     $priorities = TicketPriority::getAll(null, 50, 0);
     $statuses = TicketStatus::getAll(null, 50, 0);
     if ($categories === [] || $priorities === [] || $statuses === []) {
-        junk_log('WARNING: ticket taxonomy incomplete — skip tickets');
+        junk_log('WARNING: ticket taxonomy incomplete - skip tickets');
 
         return;
     }
@@ -514,7 +514,7 @@ function ensure_tickets(): void
             'priority' => $high,
             'status' => $progress,
             'replies' => [
-                [$support, 'Thanks — looking at the console logs now.', false],
+                [$support, 'Thanks - looking at the console logs now.', false],
                 [$admin, 'Internal: likely entity lag near spawn. Suggest region purge.', true],
                 [$support, 'We rolled back the plugin and TPS recovered. Closing soon if OK.', false],
             ],
@@ -547,7 +547,7 @@ function ensure_tickets(): void
             'priority' => $low,
             'status' => $closed,
             'replies' => [
-                [$support, 'Yes — upgrades are prorated to the next renewal.', false],
+                [$support, 'Yes - upgrades are prorated to the next renewal.', false],
                 [$demo, 'Perfect, thanks!', false],
             ],
             'closed' => true,

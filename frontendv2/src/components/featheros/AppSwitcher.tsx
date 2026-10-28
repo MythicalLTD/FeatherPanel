@@ -43,7 +43,7 @@ export function AppSwitcher({
     if (!open || ordered.length === 0) return null;
 
     const titleOf = (win: OsWindow) =>
-        [t(OS_APPS[win.app].nameKey), getServer(win.serverUuid)?.name].filter(Boolean).join(' — ');
+        [t(OS_APPS[win.app].nameKey), getServer(win.serverUuid)?.name].filter(Boolean).join(' - ');
     const selected = ordered[selectedIndex];
 
     return (

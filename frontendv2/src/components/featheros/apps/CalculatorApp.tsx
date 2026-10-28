@@ -22,7 +22,7 @@ import type { OsAppProps } from './index';
 const BTNS = [
     ['C', '±', '%', '÷'],
     ['7', '8', '9', '×'],
-    ['4', '5', '6', '−'],
+    ['4', '5', '6', '-'],
     ['1', '2', '3', '+'],
     ['0', '.', '='],
 ] as const;
@@ -31,7 +31,7 @@ function apply(a: number, b: number, op: string): number {
     switch (op) {
         case '+':
             return a + b;
-        case '−':
+        case '-':
             return a - b;
         case '×':
             return a * b;
@@ -66,7 +66,7 @@ export default function CalculatorApp({ win }: OsAppProps) {
             setFresh(true);
             return;
         }
-        if ('÷×−+'.includes(key)) {
+        if ('÷×-+'.includes(key)) {
             const n = parseFloat(display);
             if (acc !== null && op && !fresh) {
                 const r = apply(acc, n, op);
@@ -108,7 +108,7 @@ export default function CalculatorApp({ win }: OsAppProps) {
                         className={cn(
                             'rounded-full text-xl font-medium active:scale-95',
                             key === '0' && 'col-span-2',
-                            '÷×−+='.includes(key)
+                            '÷×-+='.includes(key)
                                 ? 'bg-amber-500 text-white'
                                 : 'C±%'.includes(key)
                                   ? 'bg-zinc-500'

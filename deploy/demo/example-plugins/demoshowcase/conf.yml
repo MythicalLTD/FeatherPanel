@@ -1,7 +1,7 @@
 plugin:
   name: DemoShowcase
   identifier: demoshowcase
-  description: 'Public demo showcase addon — widgets on dashboard/admin/server pages, hide toggles, and spell-limited server nav.'
+  description: 'Public demo showcase addon - widgets on dashboard/admin/server pages, hide toggles, and spell-limited server nav.'
   flags:
     - hasEvents
     - hasInstallScript

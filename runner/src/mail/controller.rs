@@ -1,4 +1,4 @@
-//! Mail controller trait — one implementor per outbound transport.
+//! Mail controller trait - one implementor per outbound transport.
 
 use anyhow::Result;
 use std::future::Future;

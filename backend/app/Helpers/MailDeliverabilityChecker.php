@@ -232,7 +232,7 @@ class MailDeliverabilityChecker
                 'id' => 'dkim',
                 'status' => 'warn',
                 'label' => 'DKIM',
-                'detail' => 'DKIM keys are not ready yet — retry DNS provision shortly.',
+                'detail' => 'DKIM keys are not ready yet - retry DNS provision shortly.',
                 'fixable' => $fixable,
             ];
         }

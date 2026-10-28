@@ -186,7 +186,7 @@ export function FirewallTab({ nodeId }: { nodeId: string }) {
 
     useEffect(() => {
         void load(undefined);
-        // Initial load only — subsequent refreshes go through load()/node picker.
+        // Initial load only - subsequent refreshes go through load()/node picker.
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [nodeId]);
 

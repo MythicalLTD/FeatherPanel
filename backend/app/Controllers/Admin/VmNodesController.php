@@ -1517,7 +1517,7 @@ class VmNodesController
     }
 
     /**
-     * GET /api/admin/vm-nodes/{id}/firewall — Proxmox host/node firewall options + rules.
+     * GET /api/admin/vm-nodes/{id}/firewall - Proxmox host/node firewall options + rules.
      */
     public function getFirewall(Request $request, int $id): Response
     {
@@ -1734,6 +1734,8 @@ class VmNodesController
         return ApiResponse::success([
             'install_command' => $commands['install_command'],
             'setup_command' => $commands['setup_command'],
+            'install_command_display' => $commands['install_command_display'],
+            'setup_command_display' => $commands['setup_command_display'],
             'config_path_hint' => $commands['config_path_hint'],
             'notes' => $commands['notes'],
             'feathertail_url' => $url,

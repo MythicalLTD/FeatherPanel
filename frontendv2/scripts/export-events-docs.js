@@ -343,7 +343,7 @@ function indexMarkdown(categories, grouped, events, emittedCount, definedOnlyCou
             const sanitized = sanitizeCategory(category);
             const list = grouped[category] || [];
             const emitted = list.filter((e) => e.emitted).length;
-            return `- [${category}](./${sanitized}.md) (${list.length} events, ${emitted} emitted) — [\`${sanitized}.json\`](./${sanitized}.json)`;
+            return `- [${category}](./${sanitized}.md) (${list.length} events, ${emitted} emitted) - [\`${sanitized}.json\`](./${sanitized}.json)`;
         })
         .join('\n');
 

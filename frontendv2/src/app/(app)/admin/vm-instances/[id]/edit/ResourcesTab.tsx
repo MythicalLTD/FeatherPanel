@@ -283,7 +283,7 @@ export function ResourcesTab({
                                             min={0}
                                             max={100}
                                             value={snapshotLimit}
-                                            placeholder='—'
+                                            placeholder='-'
                                             onChange={(e) =>
                                                 setSnapshotLimit(
                                                     e.target.value === ''

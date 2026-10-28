@@ -95,7 +95,7 @@ php cli makemigration
 
 | Term | Meaning |
 |------|---------|
-| Plugin / Addon | Same — `storage/addons` directory |
+| Plugin / Addon | Same - `storage/addons` directory |
 | Identifier | Folder name + settings namespace |
 | Entry class | Root `AppPlugin` implementation |
 | Spell / Realm | Use these (not egg/nest) |

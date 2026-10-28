@@ -23,7 +23,7 @@ const ADMIN_SETTING_DISPLAY_NAMES: Record<string, string> = {
     server_lifecycle_hooks_container_shell_enabled: 'Container Shell (docker exec) for lifecycle hooks & schedules',
 };
 
-/** First matching group wins — keep in sync with VdsSettingsSections GROUPS. */
+/** First matching group wins - keep in sync with VdsSettingsSections GROUPS. */
 const VDS_SETTING_GROUPS: { id: string; match: (key: string) => boolean }[] = [
     { id: 'branding', match: (k) => k.startsWith('vds_console_brand_') },
     {

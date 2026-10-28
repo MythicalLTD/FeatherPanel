@@ -109,7 +109,7 @@ interface ConfigInterface
     public const RECAPTCHA_SECRET_KEY = 'recaptcha_secret_key';
     /** reCAPTCHA widget type: v2 (checkbox) or v3 (score). */
     public const RECAPTCHA_VERSION = 'recaptcha_version';
-    /** Minimum v3 score (0.0–1.0); ignored for v2. */
+    /** Minimum v3 score (0.0-1.0); ignored for v2. */
     public const RECAPTCHA_V3_MIN_SCORE = 'recaptcha_v3_min_score';
     /** v3 action name sent to Google (must match frontend execute action). */
     public const RECAPTCHA_V3_ACTION = 'recaptcha_v3_action';

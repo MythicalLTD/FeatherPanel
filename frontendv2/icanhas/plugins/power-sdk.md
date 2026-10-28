@@ -1,6 +1,6 @@
 # Power SDK (`window.FeatherPanel`)
 
-Runtime host API for plugins — events, cancellable actions, toasts, modals, search, shortcuts. Source: `frontendv2/src/lib/plugin-sdk/` (host version 2). HTML overview: [`../plugin-power.html`](../plugin-power.html).
+Runtime host API for plugins - events, cancellable actions, toasts, modals, search, shortcuts. Source: `frontendv2/src/lib/plugin-sdk/` (host version 2). HTML overview: [`../plugin-power.html`](../plugin-power.html).
 
 ## When to use it
 
@@ -16,7 +16,7 @@ Runtime host API for plugins — events, cancellable actions, toasts, modals, se
 
 ## Boot
 
-`Frontend/index.js` — wait for the host; it is not always there on the first tick.
+`Frontend/index.js` - wait for the host; it is not always there on the first tick.
 
 ```js
 (function () {
@@ -68,9 +68,9 @@ Slots you will see: `shell.*`, `toolbar.server-header`, `toolbar.server-console`
 
 ## Real plugins (lighter than full SDK)
 
-- **discordplus** — waits for `FP.api`, polls status, overlays a link. Often no `actions`.
-- **billingreferrals** — DOM hooks on `/auth/register`.
-- **widgetbot** — loads a third-party embed after `waitForAPI()`.
+- **discordplus** - waits for `FP.api`, polls status, overlays a link. Often no `actions`.
+- **billingreferrals** - DOM hooks on `/auth/register`.
+- **widgetbot** - loads a third-party embed after `waitForAPI()`.
 
 ## Debug
 

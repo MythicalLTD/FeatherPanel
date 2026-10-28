@@ -42,7 +42,7 @@ type PersistedShape = {
 
 const PENDING_TTL_MS = 15 * 60 * 1000;
 const CODE_TTL_MS = 5 * 60 * 1000;
-export const ACCESS_TOKEN_TTL_SEC = 24 * 60 * 60; // 24h — Claude.ai is flaky with short-lived tokens
+export const ACCESS_TOKEN_TTL_SEC = 24 * 60 * 60; // 24h - Claude.ai is flaky with short-lived tokens
 export const REFRESH_TOKEN_TTL_SEC = 30 * 24 * 60 * 60;
 
 function storePath(): string | undefined {
@@ -91,7 +91,7 @@ export class OAuthStore {
         this.refreshIndex.set(refresh, access);
       }
     } catch {
-      // Missing or corrupt store — start empty
+      // Missing or corrupt store - start empty
     }
   }
 

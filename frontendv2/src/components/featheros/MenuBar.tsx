@@ -347,7 +347,7 @@ export function MenuBar() {
                     const server = getServer(w.serverUuid);
                     return {
                         id: w.id,
-                        label: [t(OS_APPS[w.app].nameKey), server?.name].filter(Boolean).join(' — '),
+                        label: [t(OS_APPS[w.app].nameKey), server?.name].filter(Boolean).join(' - '),
                         icon: AppWindow,
                         checked: w.id === focusedId,
                         onSelect: () => focusWindow(w.id),

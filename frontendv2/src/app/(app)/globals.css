@@ -969,7 +969,7 @@ html.fp-privacy [data-fp-sensitive]:not(:focus) {
     backdrop-filter: blur(14px) saturate(var(--fp-surface-saturate));
 }
 
-/* Same chrome as fp-surface, but opaque — sibling cards/bars match regardless of backdrop. */
+/* Same chrome as fp-surface, but opaque - sibling cards/bars match regardless of backdrop. */
 @utility fp-surface-solid {
     background-color: hsl(var(--fp-surface-tint) / 0.92);
     border-color: var(--fp-surface-border);

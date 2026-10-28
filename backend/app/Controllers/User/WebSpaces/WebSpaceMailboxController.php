@@ -317,7 +317,7 @@ class WebSpaceMailboxController
         }
 
         return ApiResponse::success($result, empty($result['dkim_ready'])
-            ? 'MX/SPF provisioned; DKIM still pending — retry shortly'
+            ? 'MX/SPF provisioned; DKIM still pending - retry shortly'
             : 'Mail DNS records provisioned', 200);
     }
 

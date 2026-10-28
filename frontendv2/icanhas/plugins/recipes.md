@@ -4,7 +4,7 @@ Replace `helloplugin` / `HelloPlugin` consistently. Prefer studying [examples.md
 
 ---
 
-## Recipe 1 — Minimal plugin
+## Recipe 1 - Minimal plugin
 
 ### `conf.yml`
 
@@ -43,13 +43,13 @@ class HelloPlugin implements AppPlugin
 
 ---
 
-## Recipe 2 — Authenticated JSON API
+## Recipe 2 - Authenticated JSON API
 
-`Routes/helloplugin.php` + `Controllers/User/HelloController.php` — see previous docs / discordplus & featherimages for `registerAuthRoute` + `ApiResponse::success`.
+`Routes/helloplugin.php` + `Controllers/User/HelloController.php` - see previous docs / discordplus & featherimages for `registerAuthRoute` + `ApiResponse::success`.
 
 ---
 
-## Recipe 3 — Admin setting defaults
+## Recipe 3 - Admin setting defaults
 
 Add `config:` entries (see [conf-yml.md](./conf-yml.md)). In `pluginInstall`:
 
@@ -63,25 +63,25 @@ if (PluginSettings::getSetting('helloplugin', 'greeting') === null) {
 
 ---
 
-## Recipe 4 — Dashboard widget
+## Recipe 4 - Dashboard widget
 
-`Frontend/widgets.json` + `Frontend/Components/widget.html` — pattern from discordplus (raw banner) or card widgets. Full sample in earlier recipes; page slugs from [../widgets/](../widgets/).
+`Frontend/widgets.json` + `Frontend/Components/widget.html` - pattern from discordplus (raw banner) or card widgets. Full sample in earlier recipes; page slugs from [../widgets/](../widgets/).
 
 ---
 
-## Recipe 5 — Admin sidebar page
+## Recipe 5 - Admin sidebar page
 
 `Frontend/sidebar.json` admin section → `component: "/helloplugin/admin.html"` (discordplus-style).
 
 ---
 
-## Recipe 6 — Migration + Chat model
+## Recipe 6 - Migration + Chat model
 
-SQL in `Migrations/` + class in `Chat/` using `Database::getPdoConnection()` — copy idioms from featherimages ([database.md](./database.md)).
+SQL in `Migrations/` + class in `Chat/` using `Database::getPdoConnection()` - copy idioms from featherimages ([database.md](./database.md)).
 
 ---
 
-## Recipe 7 — Addon Cron (billinglinks-style)
+## Recipe 7 - Addon Cron (billinglinks-style)
 
 `Cron/HelloPurgeCron.php`:
 
@@ -107,13 +107,13 @@ class HelloPurgeCron implements TimeTask
 
 ---
 
-## Recipe 8 — CLI command
+## Recipe 8 - CLI command
 
 `Commands/HelloWorld.php` implementing `CommandBuilder` → `php cli helloworld` ([cron-and-commands.md](./cron-and-commands.md)).
 
 ---
 
-## Recipe 9 — Server-scoped route (minecraftutils-style)
+## Recipe 9 - Server-scoped route (minecraftutils-style)
 
 ```php
 use Symfony\Component\HttpFoundation\Request;
@@ -138,7 +138,7 @@ Pair with `sidebar.json` → `server` section + `group`.
 
 ---
 
-## Recipe 10 — Public page (billingplans-style)
+## Recipe 10 - Public page (billingplans-style)
 
 `Frontend/public.json`:
 
@@ -156,23 +156,23 @@ Pair with `sidebar.json` → `server` section + `group`.
 }
 ```
 
-Avoid reserved prefixes — [public-pages.md](./public-pages.md).
+Avoid reserved prefixes - [public-pages.md](./public-pages.md).
 
 ---
 
-## Recipe 11 — Theme pack
+## Recipe 11 - Theme pack
 
 Use Dev template `theme`, or add `Frontend/theme.json` + `theme.css` from [themes.md](./themes.md).
 
 ---
 
-## Recipe 12 — UI pack
+## Recipe 12 - UI pack
 
-Use Dev template `ui-pack` for `ui.json`, `overrides.json`, sample `Components/action-panel.html`, and Power SDK `index.js` — [ui-packs.md](./ui-packs.md).
+Use Dev template `ui-pack` for `ui.json`, `overrides.json`, sample `Components/action-panel.html`, and Power SDK `index.js` - [ui-packs.md](./ui-packs.md).
 
 ---
 
-## Recipe 13 — Depends on another plugin
+## Recipe 13 - Depends on another plugin
 
 ```yaml
 dependencies:
@@ -185,7 +185,7 @@ Guard calls to `App\Addons\billingcore\…` if missing.
 
 ---
 
-## Recipe 14 — Middleware gate (discordplus-style)
+## Recipe 14 - Middleware gate (discordplus-style)
 
 1. `middleware/RequireSomethingMiddleware.php` implementing `MiddlewareInterface`
 2. Attach from `processEvents` → `AppEvent::onRouterReady`

@@ -446,7 +446,7 @@ class LogViewerController
                 );
                 $results['web'] = LogHelper::uploadPaste($webContent, 'featherpanel-web');
             } else {
-                // Do not fail the whole upload if web logs are missing – this is expected on some setups.
+                // Do not fail the whole upload if web logs are missing - this is expected on some setups.
                 $results['web'] = [
                     'success' => false,
                     'error' => 'Web log file not found (this is normal when web server logs are external)',

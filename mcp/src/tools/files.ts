@@ -6,7 +6,7 @@ import { normalizeServerPath } from "../paths.js";
 const serverId = z.string().describe("Server short UUID (uuidShort)");
 
 const PATH_HINT =
-  "Panel path is relative to the server volume root. Use / for root (e.g. /server.jar). NEVER use /home/container — that is only inside Docker and creates literal home/container folders on the volume.";
+  "Panel path is relative to the server volume root. Use / for root (e.g. /server.jar). NEVER use /home/container - that is only inside Docker and creates literal home/container folders on the volume.";
 
 export function registerFileTools(server: McpServer): void {
   server.registerTool(
@@ -319,7 +319,7 @@ export function registerFileTools(server: McpServer): void {
     "pull_file",
     {
       title: "Pull remote file",
-      description: `Download a remote URL into the server filesystem. MUST be a direct binary URL. root MUST be / for server root (e.g. pull server.jar into /) — NEVER /home/container. Minecraft: avoid download.getbukkit.org; prefer Paper fill-data URLs from fill.papermc.io/v3. Pass fileName (e.g. server.jar). Foreground by default. ${PATH_HINT}`,
+      description: `Download a remote URL into the server filesystem. MUST be a direct binary URL. root MUST be / for server root (e.g. pull server.jar into /) - NEVER /home/container. Minecraft: avoid download.getbukkit.org; prefer Paper fill-data URLs from fill.papermc.io/v3. Pass fileName (e.g. server.jar). Foreground by default. ${PATH_HINT}`,
       inputSchema: {
         server_id: serverId,
         url: z

@@ -1323,7 +1323,7 @@ export default function FinderApp({ win }: OsAppProps) {
                                                 </span>
                                             </td>
                                             <td className='fos-finder-list-size'>
-                                                {f.isFile ? formatBytes(f.size) : '—'}
+                                                {f.isFile ? formatBytes(f.size) : '-'}
                                             </td>
                                             <td className='fos-finder-list-modified'>
                                                 {f.modified_at ? new Date(f.modified_at).toLocaleString() : ''}

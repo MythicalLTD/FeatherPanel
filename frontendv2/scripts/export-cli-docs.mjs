@@ -122,7 +122,7 @@ function collectCommands() {
 }
 
 function usageGuideMarkdown(commands) {
-    return `# FeatherPanel CLI — how to run in production
+    return `# FeatherPanel CLI - how to run in production
 
 FeatherPanel’s CLI lives in \`backend/cli\` and is invoked as \`php cli <command>\` inside the backend container.
 
@@ -184,7 +184,7 @@ ${commands
     .map((c) => {
         const subs = c.subcommands.length
             ? c.subcommands.map((s) => `  - \`${c.name} ${s.name}\`: ${s.description}`).join('\n')
-            : '  - _(no subcommands — run the command directly)_';
+            : '  - _(no subcommands - run the command directly)_';
         return `### \`${c.name}\`\n\n${c.description}\n\n\`\`\`bash\nfeatherpanel ${c.name}\n\`\`\`\n\n${subs}`;
     })
     .join('\n\n')}
@@ -212,7 +212,7 @@ Installer: [../installer/index.md](../installer/index.md).
 function commandMarkdown(cmd) {
     const subs = cmd.subcommands.length
         ? cmd.subcommands.map((s) => `| \`${s.name}\` | ${s.description} |`).join('\n')
-        : '| — | No subcommands |';
+        : '| - | No subcommands |';
 
     return `# CLI: \`${cmd.name}\`
 
@@ -322,7 +322,7 @@ ${items}
 function generateDetailPage(cmd) {
     const subs = cmd.subcommands.length
         ? cmd.subcommands
-              .map((s) => `<li><code>${escapeHtml(s.name)}</code> — ${escapeHtml(s.description)}</li>`)
+              .map((s) => `<li><code>${escapeHtml(s.name)}</code> - ${escapeHtml(s.description)}</li>`)
               .join('\n')
         : '<li class="fp-muted">No subcommands</li>';
 

@@ -111,7 +111,7 @@ export function ShortcutsOverlay({ open, onClose }: { open: boolean; onClose: ()
             title: t('featheros.keys.group_apps'),
             rows: [
                 { keys: [[mod]], label: t('featheros.keys.launchpad') },
-                { keys: [[mod, '1–9']], label: t('featheros.keys.dock_slot') },
+                { keys: [[mod, '1-9']], label: t('featheros.keys.dock_slot') },
                 {
                     keys: [
                         ['Ctrl', 'Space'],

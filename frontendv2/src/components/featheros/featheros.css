@@ -332,7 +332,7 @@
     text-shadow: 0 1px 8px rgb(0 0 0 / 0.45);
 }
 
-/* Holding Win/⌘ peeks dock slot numbers for Win+1–9 */
+/* Holding Win/⌘ peeks dock slot numbers for Win+1-9 */
 .fos-dock-keyhint {
     position: absolute;
     top: 50%;

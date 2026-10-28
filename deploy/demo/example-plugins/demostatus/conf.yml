@@ -1,7 +1,7 @@
 plugin:
   name: DemoStatus
   identifier: demostatus
-  description: 'Free example plugin for the FeatherPanel demo — status / health showcase stub.'
+  description: 'Free example plugin for the FeatherPanel demo - status / health showcase stub.'
   flags:
     - hasEvents
   version: 1.0.0

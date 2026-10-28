@@ -1,4 +1,4 @@
 .env2
-# Runtime SSO secrets — never commit
+# Runtime SSO secrets - never commit
 webmail.sso.secret
 *.sso.secret

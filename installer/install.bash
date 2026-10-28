@@ -49,7 +49,7 @@ while [[ $# -gt 0 ]]; do
 		;;
 	--system-cleanup)
 		# Opt-in: apt purge (no packages) + autoremove after essentials.
-		# Not run by default — risky on shared/production hosts with orphaned-but-in-use libs.
+		# Not run by default - risky on shared/production hosts with orphaned-but-in-use libs.
 		SYSTEM_CLEANUP=true
 		shift
 		;;
@@ -144,7 +144,7 @@ while [[ $# -gt 0 ]]; do
 		echo "Warning: Dev releases are development builds and may be unstable."
 		echo ""
 		echo "Support (install failures / tickets):"
-		echo "  Failed installs may upload logs automatically — share those URLs in your ticket."
+		echo "  Failed installs may upload logs automatically - share those URLs in your ticket."
 		echo "  Remote shell (sshx) is only for when FeatherPanel devs ask for access in an"
 		echo "  active support ticket. See Admin → Settings → Support in the panel, or run"
 		echo "  the installer until it fails to see sshx steps in the log output."
@@ -274,10 +274,10 @@ support_hint() {
 	echo -e "${YELLOW}Need help?${NC} Join Discord: ${BLUE}https://discord.mythical.systems${NC}  Docs: ${BLUE}https://docs.mythical.systems${NC}"
 }
 
-# Remote shell via sshx — only for users actively in a FeatherPanel dev support ticket.
+# Remote shell via sshx - only for users actively in a FeatherPanel dev support ticket.
 show_sshx_support_hint() {
 	echo ""
-	echo -e "${RED}${BOLD}⚠️  Remote shell (sshx) — ticket-only${NC}"
+	echo -e "${RED}${BOLD}⚠️  Remote shell (sshx) - ticket-only${NC}"
 	echo -e "${YELLOW}Use this ${BOLD}only${NC}${YELLOW} if you are ${BOLD}actively talking with FeatherPanel developers right now${NC}${YELLOW} in a support ticket${NC}"
 	echo -e "${YELLOW}and they explicitly asked you to share shell access.${NC}"
 	echo -e "${RED}An sshx link gives anyone full SSH access to this server. Do not share it outside that ticket.${NC}"
@@ -2315,7 +2315,7 @@ detect_reverse_proxy_has_ssl() {
 prompt_reverse_proxy_domain() {
 	local detected="$1"
 	local __varname="$2"
-	# IMPORTANT: do not name this local "domain" — printf -v would clobber the wrong scope.
+	# IMPORTANT: do not name this local "domain" - printf -v would clobber the wrong scope.
 	local entered=""
 
 	if [ -n "$detected" ]; then
@@ -2524,7 +2524,7 @@ show_wings_menu() {
 	echo -e "     ${BLUE}→ Removes Wings binary and data (optional)${NC}"
 	echo ""
 	echo -e "  ${YELLOW}${BOLD}[3]${NC} ${BOLD}Update Wings${NC}"
-	echo -e "     ${GREEN}→ APT (recommended): ${BOLD}apt upgrade${NC}${GREEN} — clean, supports stable ↔ nightly switches${NC}"
+	echo -e "     ${GREEN}→ APT (recommended): ${BOLD}apt upgrade${NC}${GREEN} - clean, supports stable ↔ nightly switches${NC}"
 	echo -e "     ${BLUE}→ Direct installs: download latest binary and restart${NC}"
 	echo ""
 	echo -e "  ${CYAN}${BOLD}[4]${NC} ${BOLD}Backup Manager${NC}"
@@ -2656,14 +2656,14 @@ show_access_method_menu() {
 	echo -e "  ${GREEN}[1]${NC} ${BOLD}Cloudflare Tunnel${NC} ${BLUE}(HTTPS via Cloudflare, no port forwarding)${NC}"
 	echo -e "  ${BLUE}[2]${NC} ${BOLD}Nginx Reverse Proxy${NC} ${BLUE}(Traditional reverse proxy)${NC}"
 	echo -e "  ${YELLOW}[3]${NC} ${BOLD}Apache2 Reverse Proxy${NC} ${BLUE}(Traditional reverse proxy)${NC}"
-	echo -e "  ${CYAN}[4]${NC} ${BOLD}Direct Access${NC} ${BLUE}(Home hosting / no domain – use http://YOUR_IP:${panel_port})${NC}"
+	echo -e "  ${CYAN}[4]${NC} ${BOLD}Direct Access${NC} ${BLUE}(Home hosting / no domain - use http://YOUR_IP:${panel_port})${NC}"
 	echo -e "     ${BLUE}→ No domain or SSL needed; ideal for local network or testing${NC}"
 	draw_hr
 }
 
 # Ensure system is ready: optional full apt upgrade (prompted), then essentials.
 # Uses apt-get directly (we run as root); run early after OS check passes.
-# Never force a full upgrade — ask first (Docker package updates can restart services / drop the host briefly).
+# Never force a full upgrade - ask first (Docker package updates can restart services / drop the host briefly).
 ensure_system_ready() {
 	if [ "$SKIP_SYSTEM_UPDATE" = true ]; then
 		log_warn "System update skipped via --skip-system-update flag"
@@ -2704,7 +2704,7 @@ ensure_system_ready() {
 			fi
 		else
 			# Non-interactive / piped: do not force a full upgrade down anyone's throat.
-			log_info "Non-interactive session — skipping full apt upgrade (set FP_SYSTEM_UPGRADE=yes to enable)."
+			log_info "Non-interactive session - skipping full apt upgrade (set FP_SYSTEM_UPGRADE=yes to enable)."
 			run_full_upgrade="no"
 		fi
 		;;
@@ -2717,7 +2717,7 @@ ensure_system_ready() {
 			return 1
 		fi
 		if ! apt-get upgrade -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" >>"$LOG_FILE" 2>&1; then
-			log_warn "Full apt upgrade reported issues — check $LOG_FILE. Continuing with essentials..."
+			log_warn "Full apt upgrade reported issues - check $LOG_FILE. Continuing with essentials..."
 		else
 			log_success "System packages updated (apt upgrade)."
 		fi
@@ -3344,7 +3344,7 @@ prompt_daemon_install_method() {
 
 	if [ "$force_apt_only" = "apt_only" ]; then
 		if [ "$method" = "direct" ]; then
-			log_warn "${component_label} only supports APT installs — ignoring direct method override."
+			log_warn "${component_label} only supports APT installs - ignoring direct method override."
 		fi
 		method="apt"
 		if [ "$apt_ok" != true ]; then
@@ -3373,11 +3373,11 @@ prompt_daemon_install_method() {
 			echo ""
 			echo -e "${BOLD}${CYAN}${component_label} install method${NC}"
 			if [ "$apt_ok" = true ]; then
-				echo -e "  ${GREEN}${BOLD}We strongly recommend APT${NC}${GREEN} — cleaner upgrades, package-managed systemd,${NC}"
+				echo -e "  ${GREEN}${BOLD}We strongly recommend APT${NC}${GREEN} - cleaner upgrades, package-managed systemd,${NC}"
 				echo -e "  ${GREEN}and easy migration between stable/nightly (or from a direct install).${NC}"
 				echo ""
 				echo -e "  ${GREEN}[1]${NC} ${BOLD}APT repository${NC} ${GREEN}(recommended)${NC}"
-				echo -e "  ${YELLOW}[2]${NC} ${BOLD}Direct binary${NC} ${CYAN}(GitHub download — manual updates)${NC}"
+				echo -e "  ${YELLOW}[2]${NC} ${BOLD}Direct binary${NC} ${CYAN}(GitHub download - manual updates)${NC}"
 				method_choice=""
 				prompt "${BOLD}Select method${NC} ${BLUE}(1 recommended / 2)${NC}: " method_choice
 				case "$method_choice" in
@@ -3385,7 +3385,7 @@ prompt_daemon_install_method() {
 				*) method="apt" ;;
 				esac
 			else
-				log_info "APT is not available on this OS — using direct binary install."
+				log_info "APT is not available on this OS - using direct binary install."
 				method="direct"
 			fi
 		fi
@@ -4117,7 +4117,7 @@ show_featherquilld_menu() {
 	echo -e "     ${BLUE}→ Stops and removes the APT package and optional data${NC}"
 	echo ""
 	echo -e "  ${YELLOW}${BOLD}[3]${NC} ${BOLD}Update FeatherQuilld${NC}"
-	echo -e "     ${GREEN}→ ${BOLD}apt upgrade${NC}${GREEN} — clean updates, supports stable ↔ nightly switches${NC}"
+	echo -e "     ${GREEN}→ ${BOLD}apt upgrade${NC}${GREEN} - clean updates, supports stable ↔ nightly switches${NC}"
 	echo ""
 	draw_hr
 }
@@ -4280,7 +4280,7 @@ update_featherquilld() {
 
 	# Legacy direct installs: migrate onto the APT package, then upgrade.
 	if [ -z "$apt_pkg" ]; then
-		log_warn "Direct binary install detected. FeatherQuilld is APT-only — migrating to the APT package..."
+		log_warn "Direct binary install detected. FeatherQuilld is APT-only - migrating to the APT package..."
 		DAEMON_APT_CHANNEL="stable"
 		if [ "${PREFER_DEV:-no}" = "yes" ]; then
 			DAEMON_APT_CHANNEL="nightly"
@@ -4316,14 +4316,14 @@ show_feathertail_menu() {
 	echo ""
 	echo -e "  ${GREEN}${BOLD}[1]${NC} ${BOLD}Install FeatherTail${NC}"
 	echo -e "     ${GREEN}→ ${BOLD}APT only${NC}${GREEN} via MythicalSystems repo (stable or nightly)${NC}"
-	echo -e "     ${BLUE}→ Requires Proxmox VE (${BOLD}pve-manager${NC}${BLUE}) — run on the Proxmox node${NC}"
+	echo -e "     ${BLUE}→ Requires Proxmox VE (${BOLD}pve-manager${NC}${BLUE}) - run on the Proxmox node${NC}"
 	echo -e "     ${BLUE}→ DHCP + Proxmox API agent; installs noVNC helper assets on start${NC}"
 	echo ""
 	echo -e "  ${RED}${BOLD}[2]${NC} ${BOLD}Uninstall FeatherTail${NC}"
 	echo -e "     ${YELLOW}⚠️  WARNING: This will remove FeatherTail and optionally its configuration${NC}"
 	echo ""
 	echo -e "  ${YELLOW}${BOLD}[3]${NC} ${BOLD}Update FeatherTail${NC}"
-	echo -e "     ${GREEN}→ ${BOLD}apt upgrade${NC}${GREEN} — supports stable ↔ nightly switches${NC}"
+	echo -e "     ${GREEN}→ ${BOLD}apt upgrade${NC}${GREEN} - supports stable ↔ nightly switches${NC}"
 	echo ""
 	draw_hr
 }
@@ -4433,7 +4433,7 @@ install_feathertail_apt() {
 	log_info "Installing APT package: ${pkg}"
 	if ! apt-get install -y "$pkg" >>"$LOG_FILE" 2>&1; then
 		log_error "Failed to install ${pkg} from MythicalSystems APT repository."
-		log_info "FeatherTail Depends on pve-manager — confirm Proxmox apt repos are enabled on this host."
+		log_info "FeatherTail Depends on pve-manager - confirm Proxmox apt repos are enabled on this host."
 		return 1
 	fi
 
@@ -4753,7 +4753,7 @@ restart_nginx_after_standalone() {
 
 	log_warn "Nginx still cannot start; continuing. Reverse proxy setup will rewrite the site config next."
 	printf '%s\n' "$test_out" >&2
-	# Must not trip ERR trap — bare failure here previously aborted the whole install.
+	# Must not trip ERR trap - bare failure here previously aborted the whole install.
 	systemctl start nginx >/dev/null 2>&1 || true
 	return 0
 }
@@ -5381,7 +5381,7 @@ ensure_nginx_proxy_buffers() {
 	cat "$tmp" >"$site_file"
 	rm -f "$tmp"
 
-	# Avoid `nginx -t | tee` under pipefail — tee/log failures must not undo a good patch.
+	# Avoid `nginx -t | tee` under pipefail - tee/log failures must not undo a good patch.
 	nginx_test_out="$(nginx -t 2>&1)" || nginx_test_rc=$?
 	if [ -n "${LOG_FILE:-}" ]; then
 		printf '%s\n' "$nginx_test_out" >>"$LOG_FILE" || true
@@ -5481,7 +5481,7 @@ setup_nginx_reverse_proxy() {
 	ln -sf /etc/nginx/sites-available/featherpanel /etc/nginx/sites-enabled/featherpanel
 	# Remove legacy filename if present so only one FeatherPanel site is active
 	if [ -f /etc/nginx/sites-enabled/featherpanel.conf ] && [ ! -L /etc/nginx/sites-enabled/featherpanel.conf ]; then
-		log_warn "Found legacy /etc/nginx/sites-enabled/featherpanel.conf — disabling it to avoid duplicate servers."
+		log_warn "Found legacy /etc/nginx/sites-enabled/featherpanel.conf - disabling it to avoid duplicate servers."
 		mv /etc/nginx/sites-enabled/featherpanel.conf "/etc/nginx/sites-enabled/featherpanel.conf.bak.$(date +%Y%m%d%H%M%S)"
 	elif [ -L /etc/nginx/sites-enabled/featherpanel.conf ]; then
 		rm -f /etc/nginx/sites-enabled/featherpanel.conf
@@ -5685,7 +5685,7 @@ is_featherpanel_installed() {
 setup_remote_mysql_host() {
 	print_banner
 	draw_hr
-	print_centered "Remote Databases – MySQL/MariaDB Helper" "$CYAN"
+	print_centered "Remote Databases - MySQL/MariaDB Helper" "$CYAN"
 	draw_hr
 	echo ""
 	echo -e "  ${BLUE}This helper will:${NC}"
@@ -5725,7 +5725,7 @@ setup_remote_mysql_host() {
 		install_mariadb_now=""
 		prompt "${BOLD}Install MariaDB server now?${NC} ${BLUE}(y/n)${NC}: " install_mariadb_now
 		if [[ ! "$install_mariadb_now" =~ ^[yY]$ ]]; then
-			log_warn "Remote Database setup cancelled – no database server installed."
+			log_warn "Remote Database setup cancelled - no database server installed."
 			return 1
 		fi
 
@@ -6940,7 +6940,7 @@ resolve_published_image_tag() {
 	local preferred_tag="$2"
 	local repo="mythicalltd/${image_name}"
 
-	# Stable / floating tags — trust as-is
+	# Stable / floating tags - trust as-is
 	case "$preferred_tag" in
 	latest | dev | main) echo "$preferred_tag"; return ;;
 	esac
@@ -7613,7 +7613,7 @@ if [ -f /etc/os-release ]; then
 	fi
 
 	# Environment overrides for non-interactive mode (must run before menus).
-	# Do not clear COMPONENT_TYPE on empty FP_COMPONENT — --config may have set it.
+	# Do not clear COMPONENT_TYPE on empty FP_COMPONENT - --config may have set it.
 	case "${FP_COMPONENT:-}" in
 	panel) COMPONENT_TYPE="1" ;;
 	wings) COMPONENT_TYPE="2" ;;
@@ -8188,7 +8188,7 @@ if [ -f /etc/os-release ]; then
 			CF_TUNNEL_SETUP="n"
 			REVERSE_PROXY_TYPE="none"
 			panel_port=$(get_panel_port)
-			log_info "Direct access selected – no domain or SSL needed."
+			log_info "Direct access selected - no domain or SSL needed."
 			log_info "Access the Panel at http://YOUR_IP:${panel_port} (open port ${panel_port} in your firewall if needed)."
 			;;
 		esac

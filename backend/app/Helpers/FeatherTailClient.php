@@ -104,7 +104,7 @@ class FeatherTailClient
         string $method,
         string $path,
         ?array $jsonBody,
-        int $timeout
+        int $timeout,
     ): array {
         $baseUrl = trim((string) ($vmNode['feathertail_url'] ?? ''));
         $token = trim((string) ($vmNode['feathertail_token'] ?? ''));
@@ -125,7 +125,7 @@ class FeatherTailClient
                 'status' => 'unhealthy',
                 'http_status' => null,
                 'body' => null,
-                'error' => 'FeatherTail token is missing — open the FeatherTail tab and run setup / reset token',
+                'error' => 'FeatherTail token is missing - open the FeatherTail tab and run setup / reset token',
                 'url' => rtrim($baseUrl, '/') . $path,
             ];
         }
@@ -192,7 +192,7 @@ class FeatherTailClient
 
             $error = 'FeatherTail returned HTTP ' . $statusCode;
             if ($statusCode === 401) {
-                $error = 'Unauthorized — FeatherTail token does not match /etc/feathertail/feathertail.toml';
+                $error = 'Unauthorized - FeatherTail token does not match /etc/feathertail/feathertail.toml';
             } elseif ($statusCode === 503) {
                 $error = 'FeatherTail DHCP is disabled (enable dhcp in feathertail.toml)';
             } elseif (is_array($body) && isset($body['error']) && is_string($body['error']) && $body['error'] !== '') {

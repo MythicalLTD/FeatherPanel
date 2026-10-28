@@ -208,7 +208,7 @@ export function QuickLook() {
                                             )}
                                             <span className='min-w-0 flex-1 truncate'>{f.name}</span>
                                             <span className='text-muted-foreground shrink-0 tabular-nums'>
-                                                {f.isFile ? formatBytes(f.size) : '—'}
+                                                {f.isFile ? formatBytes(f.size) : '-'}
                                             </span>
                                         </li>
                                     ))}

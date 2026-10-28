@@ -361,7 +361,7 @@ export function SetupWizard() {
     const skipCurrentStep = async () => {
         setSaving(true);
         const ok = await saveKeys(STEP_KEYS[step.id] ?? []);
-        // Skip on infrastructure lands on "done" — same completion as Finish, or admin links bounce via SetupGate.
+        // Skip on infrastructure lands on "done" - same completion as Finish, or admin links bounce via SetupGate.
         if (ok && STEPS[stepIndex + 1]?.id === 'done') {
             try {
                 await completeSetup();

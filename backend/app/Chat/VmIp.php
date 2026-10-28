@@ -84,42 +84,6 @@ class VmIp
     }
 
     /**
-     * Normalize address_scope / assignment_mode / pve_node on write.
-     *
-     * @param array<string, mixed> $data
-     *
-     * @return array<string, mixed>|false
-     */
-    private static function normalizePoolMeta(array $data, bool $forCreate): array | false
-    {
-        if (array_key_exists('address_scope', $data) || $forCreate) {
-            $scope = strtolower(trim((string) ($data['address_scope'] ?? 'public')));
-            if (!in_array($scope, ['public', 'private'], true)) {
-                return false;
-            }
-            $data['address_scope'] = $scope;
-        }
-
-        if (array_key_exists('assignment_mode', $data) || $forCreate) {
-            $mode = strtolower(trim((string) ($data['assignment_mode'] ?? 'static')));
-            if (!in_array($mode, ['static', 'dhcp'], true)) {
-                return false;
-            }
-            $data['assignment_mode'] = $mode;
-        }
-
-        if (array_key_exists('pve_node', $data) || $forCreate) {
-            $pve = isset($data['pve_node']) && is_string($data['pve_node']) ? trim($data['pve_node']) : '';
-            if ($pve !== '' && !preg_match('/^[A-Za-z0-9][A-Za-z0-9._-]{0,99}$/', $pve)) {
-                return false;
-            }
-            $data['pve_node'] = $pve !== '' ? $pve : null;
-        }
-
-        return $data;
-    }
-
-    /**
      * Get IP IDs that are assigned to a VM instance (in use) for a given node.
      *
      * @return array<int, int>
@@ -376,5 +340,41 @@ class VmIp
 
             return false;
         }
+    }
+
+    /**
+     * Normalize address_scope / assignment_mode / pve_node on write.
+     *
+     * @param array<string, mixed> $data
+     *
+     * @return array<string, mixed>|false
+     */
+    private static function normalizePoolMeta(array $data, bool $forCreate): array | false
+    {
+        if (array_key_exists('address_scope', $data) || $forCreate) {
+            $scope = strtolower(trim((string) ($data['address_scope'] ?? 'public')));
+            if (!in_array($scope, ['public', 'private'], true)) {
+                return false;
+            }
+            $data['address_scope'] = $scope;
+        }
+
+        if (array_key_exists('assignment_mode', $data) || $forCreate) {
+            $mode = strtolower(trim((string) ($data['assignment_mode'] ?? 'static')));
+            if (!in_array($mode, ['static', 'dhcp'], true)) {
+                return false;
+            }
+            $data['assignment_mode'] = $mode;
+        }
+
+        if (array_key_exists('pve_node', $data) || $forCreate) {
+            $pve = isset($data['pve_node']) && is_string($data['pve_node']) ? trim($data['pve_node']) : '';
+            if ($pve !== '' && !preg_match('/^[A-Za-z0-9][A-Za-z0-9._-]{0,99}$/', $pve)) {
+                return false;
+            }
+            $data['pve_node'] = $pve !== '' ? $pve : null;
+        }
+
+        return $data;
     }
 }

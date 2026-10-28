@@ -43,7 +43,7 @@ class BasicProvider implements ProviderInterface
 
         if (strpos($lowerMessage, 'hello') !== false || strpos($lowerMessage, 'hi') !== false) {
             $hello = $isDemo
-                ? "Hello! I'm Feather Demo AI — a basic chatbot with no external API key. Explore the panel, but remember this demo wipes and some actions are limited."
+                ? "Hello! I'm Feather Demo AI - a basic chatbot with no external API key. Explore the panel, but remember this demo wipes and some actions are limited."
                 : "Hello! I'm your AI assistant for FeatherPanel. How can I help you today?";
 
             return $this->response($message, $hello);
@@ -52,7 +52,7 @@ class BasicProvider implements ProviderInterface
         if (strpos($lowerMessage, 'demo') !== false || strpos($lowerMessage, 'wipe') !== false) {
             return $this->response(
                 $message,
-                "You're on the public FeatherPanel demo. It wipes on a schedule. Cloud linking, SMTP, secrets, plugin installs, developer console, and DB snapshots are disabled. Features like trash bin, status page, tickets, and this chatbot are enabled for showcase only — not production configs."
+                "You're on the public FeatherPanel demo. It wipes on a schedule. Cloud linking, SMTP, secrets, plugin installs, developer console, and DB snapshots are disabled. Features like trash bin, status page, tickets, and this chatbot are enabled for showcase only - not production configs."
             );
         }
 
@@ -84,7 +84,7 @@ class BasicProvider implements ProviderInterface
 
         return $this->response($message, "I understand you're asking about: " . $message . "\n\n" .
             ($isDemo
-                ? "I'm the demo basic assistant (no cloud AI key). Try the file manager, trash bin, schedules, tickets, or status page — or ask about demo limits."
+                ? "I'm the demo basic assistant (no cloud AI key). Try the file manager, trash bin, schedules, tickets, or status page - or ask about demo limits."
                 : "I'm a basic assistant. For more advanced responses, please configure Google Gemini, OpenRouter, or OpenAI in admin settings."));
     }
 

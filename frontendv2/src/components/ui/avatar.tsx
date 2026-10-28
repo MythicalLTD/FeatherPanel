@@ -35,7 +35,7 @@ const AvatarImage = React.forwardRef<HTMLImageElement, React.ImgHTMLAttributes<H
         const [loaded, setLoaded] = React.useState(false);
         const hasValidSrc = src && typeof src === 'string' && src.trim() !== '';
 
-        // Don't render img when no valid src or when load failed – avoids Firefox broken-image icon (grey dot)
+        // Don't render img when no valid src or when load failed - avoids Firefox broken-image icon (grey dot)
         if (!hasValidSrc || error) {
             return null;
         }

@@ -136,7 +136,7 @@ export default function BackupScheduleRunsPage() {
                                     failed: String(run.servers_failed),
                                     skipped: String(run.servers_skipped),
                                     total: String(run.servers_total),
-                                    started: run.started_at ?? '—',
+                                    started: run.started_at ?? '-',
                                 })}
                                 actions={
                                     <Button size='sm' variant='ghost' onClick={() => toggleRun(run.id)}>

@@ -331,7 +331,7 @@ function registerWebspaceCoreTools(server: McpServer): void {
     },
   ]);
 
-  // Power action sends { action } in body — override via custom registration
+  // Power action sends { action } in body - override via custom registration
   server.registerTool(
     "webspace_power_action",
     {

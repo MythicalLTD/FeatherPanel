@@ -238,7 +238,7 @@ export default function LogViewerApp({ win }: OsAppProps) {
                                         {new Date(a.timestamp ?? a.created_at ?? '').toLocaleString()}
                                     </td>
                                     <td className='px-2 py-1 font-mono text-[11px]'>{a.event}</td>
-                                    <td className='px-2 py-1'>{a.user?.username ?? '—'}</td>
+                                    <td className='px-2 py-1'>{a.user?.username ?? '-'}</td>
                                     <td className='px-2 py-1'>{a.message ?? ''}</td>
                                 </tr>
                             ))}

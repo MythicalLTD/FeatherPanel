@@ -1,7 +1,7 @@
 plugin:
   name: DemoWelcome
   identifier: demowelcome
-  description: 'Free example plugin shipped with the FeatherPanel demo — welcome banner / showcase stub.'
+  description: 'Free example plugin shipped with the FeatherPanel demo - welcome banner / showcase stub.'
   flags:
     - hasEvents
   version: 1.0.0

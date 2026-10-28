@@ -167,7 +167,7 @@ class CloudDataController
 
         $comment = trim((string) ($payload['comment'] ?? ''));
         if (strlen($comment) < 5 || strlen($comment) > 1000) {
-            return ApiResponse::error('Comment is required (5–1000 characters).', 'INVALID_COMMENT', 400);
+            return ApiResponse::error('Comment is required (5-1000 characters).', 'INVALID_COMMENT', 400);
         }
 
         $body = [
@@ -308,7 +308,7 @@ class CloudDataController
 
         $comment = trim((string) ($payload['comment'] ?? ''));
         if (strlen($comment) < 5 || strlen($comment) > 1000) {
-            return ApiResponse::error('Comment is required (5–1000 characters).', 'INVALID_COMMENT', 400);
+            return ApiResponse::error('Comment is required (5-1000 characters).', 'INVALID_COMMENT', 400);
         }
 
         $payload = [

@@ -891,7 +891,7 @@ export default function CreateWebSpacePage() {
                                                         {item.label}
                                                     </dt>
                                                     <dd className='mt-1 text-sm font-semibold break-words'>
-                                                        {item.value || '—'}
+                                                        {item.value || '-'}
                                                     </dd>
                                                 </div>
                                             ))}

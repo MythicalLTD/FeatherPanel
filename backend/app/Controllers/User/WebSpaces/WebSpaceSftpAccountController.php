@@ -66,7 +66,7 @@ class WebSpaceSftpAccountController
         $password = (string) ($content['password'] ?? '');
         if ($name === null) {
             return ApiResponse::error(
-                'account_name must be 2–32 chars: start with a letter, then letters/digits/_/-',
+                'account_name must be 2-32 chars: start with a letter, then letters/digits/_/-',
                 'INVALID_ACCOUNT_NAME',
                 400
             );

@@ -40,20 +40,20 @@ class MyPlugin implements AppPlugin
 
 | Hook | When |
 |------|------|
-| `processEvents` | Every boot — register `$event->on(...)` |
-| `pluginInstall` | Fresh install — seed settings |
+| `processEvents` | Every boot - register `$event->on(...)` |
+| `pluginInstall` | Fresh install - seed settings |
 | `pluginUpdate` | Update path |
 | `pluginUninstall` | Uninstall cleanup |
 
 Resolution: `App\Addons\{id}\{plugin.name}` with fallback to single root `AppPlugin`.
 
-### Real — discordplus install seeding
+### Real - discordplus install seeding
 
 ```php
 PluginSettings::setSetting('discordplus', 'require_discord_link', 'false');
 ```
 
-### Real — discordplus router hook
+### Real - discordplus router hook
 
 ```php
 $event->on(AppEvent::onRouterReady(), function ($payload) {
@@ -76,9 +76,9 @@ return function (RouteCollection $routes): void {
 
 Helpers (via `App::getInstance(true)`):
 
-- `registerAuthRoute` — logged-in user APIs (`discordplus`, `featherimages`)
-- `registerAdminRoute` — admin + permission node (`featherimages` admin)
-- `registerServerRoute` — server-scoped (`minecraftutils`, `bedrockaddoninstaller`, `fivemutils`)
+- `registerAuthRoute` - logged-in user APIs (`discordplus`, `featherimages`)
+- `registerAdminRoute` - admin + permission node (`featherimages` admin)
+- `registerServerRoute` - server-scoped (`minecraftutils`, `bedrockaddoninstaller`, `fivemutils`)
 
 ### Auth route sketch (discordplus-style)
 
@@ -119,7 +119,7 @@ App::getInstance(true)->registerServerRoute(
 - Every route closure (auth, admin, server, API) is called as `function (Request $request, array $args)`. `$args` holds the path parameters by name, for example `$args['uuidShort']`. A closure written as `function ($request, $uuidShort)` gets that array, not the string.
 - The other helpers have no server argument: `registerAuthRoute($routes, $name, $path, $controller, $methods, ...)` and `registerAdminRoute($routes, $name, $path, $controller, $permission, $methods, ...)`.
 
-**Controllers are not auto-discovered** — import and call them from the route closure.
+**Controllers are not auto-discovered** - import and call them from the route closure.
 
 Route basename should not equal another addon’s identifier (copy-paste guard).
 

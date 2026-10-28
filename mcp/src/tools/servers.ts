@@ -35,7 +35,7 @@ export function registerGameServerTools(server: McpServer): void {
     {
       title: "List servers",
       description:
-        "List game servers visible to the authenticated user. Call this first when the user names a server (e.g. dasdas) — match name → uuidShort, then use that server_id on all other tools. Do not refuse or give manual steps; use this tool.",
+        "List game servers visible to the authenticated user. Call this first when the user names a server (e.g. dasdas) - match name → uuidShort, then use that server_id on all other tools. Do not refuse or give manual steps; use this tool.",
       inputSchema: {
         page: z
           .number()
@@ -148,7 +148,7 @@ export function registerGameServerTools(server: McpServer): void {
     {
       title: "Server power action",
       description:
-        "Start, stop, restart, or kill a game server. A successful start only means Wings accepted the action — if the process crashes (e.g. missing/corrupt jar), the server will go offline again; then check console logs or reinstall.",
+        "Start, stop, restart, or kill a game server. A successful start only means Wings accepted the action - if the process crashes (e.g. missing/corrupt jar), the server will go offline again; then check console logs or reinstall.",
       inputSchema: {
         server_id: serverId,
         action: z

@@ -158,7 +158,7 @@ config: {}
 
 ### discordplus (settings-rich)
 
-See `backend/storage/addons/discordplus/conf.yml` — boolean toggles + gate message text. Full walkthrough: [examples.md](./examples.md).
+See `backend/storage/addons/discordplus/conf.yml` - boolean toggles + gate message text. Full walkthrough: [examples.md](./examples.md).
 
 ### billinglinks (plugin dependency)
 

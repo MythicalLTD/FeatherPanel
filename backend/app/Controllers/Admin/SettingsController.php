@@ -1517,7 +1517,7 @@ class SettingsController
                 'value' => $this->app
                     ->getConfig()
                     ->getSetting(ConfigInterface::APP_SSO_TOKEN_LIFETIME_MINUTES, '5'),
-                'description' => 'Default lifetime in minutes for admin-generated SSO login tokens (1–1440)',
+                'description' => 'Default lifetime in minutes for admin-generated SSO login tokens (1-1440)',
                 'type' => 'number',
                 'required' => true,
                 'placeholder' => '5',
@@ -1753,7 +1753,7 @@ class SettingsController
                         ConfigInterface::APP_BACKDROP_DARKEN_DEFAULT,
                         '0',
                     ),
-                'description' => 'Default backdrop darken overlay in percent (0–100)',
+                'description' => 'Default backdrop darken overlay in percent (0-100)',
                 'type' => 'number',
                 'required' => true,
                 'placeholder' => '0',
@@ -2274,7 +2274,7 @@ class SettingsController
                 'value' => $this->app
                     ->getConfig()
                     ->getSetting(ConfigInterface::RECAPTCHA_V3_MIN_SCORE, '0.5'),
-                'description' => 'Minimum v3 score (0.0–1.0). Higher is stricter. Ignored when version is v2.',
+                'description' => 'Minimum v3 score (0.0-1.0). Higher is stricter. Ignored when version is v2.',
                 'type' => 'text',
                 'required' => true,
                 'placeholder' => '0.5',
@@ -2380,7 +2380,7 @@ class SettingsController
                 'value' => $this->app
                     ->getConfig()
                     ->getSetting(ConfigInterface::AUTH_SHELL_TAGLINE, ''),
-                'description' => 'Short marketing line under the brand on the auth left panel. This is auth-only copy — it does NOT use SEO description. Leave empty for the default translated tagline.',
+                'description' => 'Short marketing line under the brand on the auth left panel. This is auth-only copy - it does NOT use SEO description. Leave empty for the default translated tagline.',
                 'type' => 'textarea',
                 'required' => false,
                 'placeholder' => 'Manage your game servers from anywhere.',

@@ -31,7 +31,7 @@ export function publicOriginFromRequest(req: Request): string {
         .trim();
 
     // Panel OAuth rejects non-localhost http callbacks. Upstream proxies sometimes
-    // drop X-Forwarded-Proto — prefer https for real hostnames.
+    // drop X-Forwarded-Proto - prefer https for real hostnames.
     if (proto === 'http' && !isLocalHost(host)) {
         proto = 'https';
     }

@@ -199,7 +199,7 @@ class ServerService
     /**
      * Execute a shell command inside the server Docker container via docker exec.
      *
-     * @param int $timeoutSeconds Optional timeout (1–120); Wings defaults to 30 when omitted/0
+     * @param int $timeoutSeconds Optional timeout (1-120); Wings defaults to 30 when omitted/0
      */
     public function execInContainer(string $serverUuid, string $command, int $timeoutSeconds = 30): WingsResponse
     {

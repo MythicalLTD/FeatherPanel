@@ -333,7 +333,7 @@ export default function ServerManagerApp({ win }: OsAppProps) {
                                 ? t('serverSubdomains.requirementAddressPending')
                                 : s.allocation
                                   ? `${s.allocation.ip_alias || s.allocation.ip}:${s.allocation.port}`
-                                  : '—';
+                                  : '-';
                             return (
                                 <tr
                                     key={s.uuidShort}
@@ -377,16 +377,16 @@ export default function ServerManagerApp({ win }: OsAppProps) {
                                         </span>
                                     </td>
                                     <td className='px-2 py-1.5 tabular-nums'>
-                                        {ld?.stats ? `${ld.stats.cpuUsage}%` : '—'}
+                                        {ld?.stats ? `${ld.stats.cpuUsage}%` : '-'}
                                     </td>
                                     <td className='px-2 py-1.5 tabular-nums'>
-                                        {ld?.stats ? formatBytes(ld.stats.memoryUsage) : '—'}
+                                        {ld?.stats ? formatBytes(ld.stats.memoryUsage) : '-'}
                                         <span className='text-muted-foreground'>
                                             {' '}
                                             / {s.memory ? formatBytes(s.memory * 1024 * 1024, 0) : '∞'}
                                         </span>
                                     </td>
-                                    <td className='text-muted-foreground px-2 py-1.5'>{s.node?.name ?? '—'}</td>
+                                    <td className='text-muted-foreground px-2 py-1.5'>{s.node?.name ?? '-'}</td>
                                     <td className='text-muted-foreground px-2 py-1.5 font-mono text-[11px]'>{addr}</td>
                                     <td className='px-2 py-1.5'>
                                         <div className='flex justify-end gap-0.5'>

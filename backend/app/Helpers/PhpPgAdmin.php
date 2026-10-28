@@ -50,7 +50,7 @@ class PhpPgAdmin
             return;
         }
 
-        App::getInstance(true)->getLogger()->info('phpPgAdmin marker present but files missing — reinstalling');
+        App::getInstance(true)->getLogger()->info('phpPgAdmin marker present but files missing - reinstalling');
         self::download();
     }
 

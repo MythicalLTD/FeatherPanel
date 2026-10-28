@@ -771,7 +771,7 @@ export function Desktop() {
                                         ? `${Math.round(disk.pct)}% · ${formatDiskPair(disk.used, disk.limit)}`
                                         : disk.used
                                           ? formatDiskPair(disk.used, 0)
-                                          : '—'}
+                                          : '-'}
                                 </span>
                             </span>
                         )}

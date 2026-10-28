@@ -52,9 +52,9 @@ Implement `App\Middleware\MiddlewareInterface` with `handle($request, $next)`.
 
 ### Registration
 
-There is **no** `conf.yml` middleware list. You attach middleware in PHP — typically by mutating route defaults when the router is ready (see `discordplus`).
+There is **no** `conf.yml` middleware list. You attach middleware in PHP - typically by mutating route defaults when the router is ready (see `discordplus`).
 
-### Real example — Discord link gate
+### Real example - Discord link gate
 
 `discordplus/middleware/RequireDiscordLinkMiddleware.php`:
 
@@ -68,7 +68,7 @@ Another example pattern: API-key style middleware in addons such as `pterodactyl
 
 ### Guidelines
 
-1. Keep middleware fast — it may run on many requests  
+1. Keep middleware fast - it may run on many requests  
 2. Use `PluginSettings` for toggles; default **off** for invasive gates  
 3. Always provide admin bypass / escape hatches for lockouts  
 4. Return the same JSON error shapes as core APIs when blocking API clients  
@@ -93,6 +93,6 @@ Always guard with try/catch inside listeners so one plugin cannot take down boot
 
 ## Related
 
-- [backend.md](./backend.md) — routes & AppPlugin lifecycle  
-- [examples.md](./examples.md) — discordplus walkthrough  
+- [backend.md](./backend.md) - routes & AppPlugin lifecycle  
+- [examples.md](./examples.md) - discordplus walkthrough  
 - Events reference: [events.md](./events.md) and [../events/](../events/)

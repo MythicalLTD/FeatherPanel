@@ -847,7 +847,7 @@ export default function SettingsApp({ win }: OsAppProps) {
                                                             ? 'Show Desktop'
                                                             : action === 'notifications'
                                                               ? 'Notification Center'
-                                                              : '—',
+                                                              : '-',
                                             }),
                                         }))}
                                     />
@@ -1009,7 +1009,7 @@ export default function SettingsApp({ win }: OsAppProps) {
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={logoUrl} alt='' />
                         <h2>{osName}</h2>
-                        <p>{t('featheros.about.version', { version: version ?? '—' })}</p>
+                        <p>{t('featheros.about.version', { version: version ?? '-' })}</p>
                         <p>{t('featheros.about.description', { panel: panelName })}</p>
                     </div>
                 )}

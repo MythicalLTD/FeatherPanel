@@ -82,7 +82,7 @@ export function renderDocsPage({ title, description = '', active = 'home', body,
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>${escapeHtml(title)} — FeatherPanel Docs</title>
+  <title>${escapeHtml(title)} - FeatherPanel Docs</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />${descTag}
   <link rel="stylesheet" href="${DOCS_BASE}/assets/docs.css" />
 </head>

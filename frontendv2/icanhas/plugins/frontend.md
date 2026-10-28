@@ -49,7 +49,7 @@ Sections merged by the panel: **`server`**, **`vds`**, **`webspace`**, **`client
 
 ⚠️ Keys like `"dashboard"` (seen in some minecraft addons) are **silently ignored**.
 
-### Real example — discordplus (admin)
+### Real example - discordplus (admin)
 
 ```json
 {
@@ -70,7 +70,7 @@ Sections merged by the panel: **`server`**, **`vds`**, **`webspace`**, **`client
 }
 ```
 
-### Real example — minecraftutils (server group)
+### Real example - minecraftutils (server group)
 
 ```json
 {
@@ -96,7 +96,7 @@ Server items may be filtered by spell IDs via settings (`plugin-sidebar-server-a
 
 Array of objects. Required: `id`, `page`, `location`, `component`.
 
-### Real example — discordplus (truncated)
+### Real example - discordplus (truncated)
 
 ```json
 [
@@ -155,7 +155,7 @@ const res = await fetch('/api/user/discordplus/status', {
 });
 ```
 
-Or use `window.FeatherPanel.api` / postMessage bridge — [power-sdk.md](./power-sdk.md).
+Or use `window.FeatherPanel.api` / postMessage bridge - [power-sdk.md](./power-sdk.md).
 
 ## `index.js` patterns (real)
 

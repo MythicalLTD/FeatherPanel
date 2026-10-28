@@ -32,7 +32,7 @@ prune_disk() {
 	docker container prune -f >/dev/null 2>&1 || true
 	docker network prune -f >/dev/null 2>&1 || true
 	docker builder prune -af >/dev/null 2>&1 || true
-	# Keep named volumes (DB / golden snapshot) — never prune -a volumes
+	# Keep named volumes (DB / golden snapshot) - never prune -a volumes
 	docker volume prune -f >/dev/null 2>&1 || true
 }
 

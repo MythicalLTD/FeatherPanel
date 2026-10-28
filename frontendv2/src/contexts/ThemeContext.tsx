@@ -148,7 +148,7 @@ interface ThemeContextType {
     backgroundImage: string;
     /** Backdrop blur in pixels (0, 4, 8, 12, 16, 24). */
     backdropBlur: number;
-    /** Backdrop dark overlay opacity 0–100. */
+    /** Backdrop dark overlay opacity 0-100. */
     backdropDarken: number;
     /** How custom background image fits (cover, contain, fill). */
     backgroundImageFit: BackgroundImageFit;

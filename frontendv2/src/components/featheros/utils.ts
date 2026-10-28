@@ -59,7 +59,7 @@ export function serverDiskUsage(server: { disk?: number } | undefined, usedBytes
 export function formatDiskPair(used: number, limit: number): string {
     if (limit > 0) return `${formatBytes(used, 1)} / ${formatBytes(limit, 0)}`;
     if (used > 0) return formatBytes(used, 1);
-    return '—';
+    return '-';
 }
 
 export function formatUptime(ms: number | null | undefined): string {

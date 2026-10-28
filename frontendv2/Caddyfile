@@ -32,7 +32,7 @@
 		respond "Bad Request" 400
 	}
 
-	# Proxmox VNC console websocket proxy (issue #168) — single-use tickets
+	# Proxmox VNC console websocket proxy (issue #168) - single-use tickets
 	# are issued by POST /api/.../vnc-ticket; the async-runner validates them
 	# and bridges the socket to the node's vncwebsocket endpoint.
 	@vncproxy path /vnc-proxy*

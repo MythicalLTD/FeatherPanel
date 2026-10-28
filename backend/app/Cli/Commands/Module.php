@@ -173,7 +173,7 @@ class Module extends App implements CommandBuilder
                 if (PhpMyAdmin::isInstalled()) {
                     $app->send('&a' . $module['name'] . ' is installed');
                 } else {
-                    $app->send('&7' . $module['name'] . ' is not marked for install — nothing to do');
+                    $app->send('&7' . $module['name'] . ' is not marked for install - nothing to do');
                 }
 
                 return;

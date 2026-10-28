@@ -22,22 +22,22 @@ import {
     isCustomAccent,
 } from '@/lib/accent-color-utils';
 
-/** Aurora color stops [left, mid, right] per accent – for Aurora and ColorBends */
+/** Aurora color stops [left, mid, right] per accent - for Aurora and ColorBends */
 export const ACCENT_AURORA_STOPS: Record<string, [string, string, string]> = Object.fromEntries(
     Object.entries(ACCENT_PRESETS).map(([id, preset]) => [id, preset.aurora]),
 );
 
-/** Single primary hex per accent – for Silk, etc. */
+/** Single primary hex per accent - for Silk, etc. */
 export const ACCENT_PRIMARY_HEX: Record<string, string> = Object.fromEntries(
     Object.entries(ACCENT_PRESETS).map(([id, preset]) => [id, preset.hex]),
 );
 
-/** Brighter hex for Beams light – shows up on black background */
+/** Brighter hex for Beams light - shows up on black background */
 export const ACCENT_BEAM_LIGHT_HEX: Record<string, string> = Object.fromEntries(
     Object.entries(ACCENT_PRESETS).map(([id, preset]) => [id, preset.beamLight]),
 );
 
-/** Hue in degrees (0–360) per accent – for animated backgrounds / theme tooling */
+/** Hue in degrees (0-360) per accent - for animated backgrounds / theme tooling */
 export const ACCENT_HUE: Record<string, number> = Object.fromEntries(
     Object.entries(ACCENT_PRESETS).map(([id, preset]) => [id, preset.hue]),
 );

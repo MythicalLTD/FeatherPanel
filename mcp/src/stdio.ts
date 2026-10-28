@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * FeatherPanel MCP — stdio entry for local Claude Desktop / Cursor.
+ * FeatherPanel MCP - stdio entry for local Claude Desktop / Cursor.
  *
  * Env:
  *   FEATHERPANEL_URL      Panel base URL (e.g. https://panel.example.com)

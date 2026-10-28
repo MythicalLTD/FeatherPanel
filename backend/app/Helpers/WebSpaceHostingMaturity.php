@@ -126,7 +126,7 @@ class WebSpaceHostingMaturity
                 $daemonHealthy,
                 $daemonHealthy
                     ? 'FeatherQuilld reachable' . ($sampleNodeId ? ' (node #' . $sampleNodeId . ')' : '')
-                    : 'Daemon not reachable — check token, firewall, Behind Proxy',
+                    : 'Daemon not reachable - check token, firewall, Behind Proxy',
                 $sampleNodeId ? ['label' => 'Open web node', 'href' => WebNodeAdminUrl::edit($sampleNodeId, 'diagnostics')] : null,
             ),
             self::setupItem(
@@ -163,7 +163,7 @@ class WebSpaceHostingMaturity
                 'mail_hosts',
                 $mailHostCount > 0,
                 $mailHostCount > 0
-                    ? (string) $mailHostCount . ' mail host(s) — install Mailserver on web nodes to add more'
+                    ? (string) $mailHostCount . ' mail host(s) - install Mailserver on web nodes to add more'
                     : 'Install the Mailserver package on a web node (creates a mail host automatically)',
                 $mailHostCount > 0
                     ? ['label' => 'View mail', 'href' => '/admin/mail-hosts']

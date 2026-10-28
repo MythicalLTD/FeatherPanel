@@ -59,7 +59,7 @@ interface VmStatus {
 }
 
 function formatUptime(seconds: number): string {
-    if (!seconds) return '—';
+    if (!seconds) return '-';
     const d = Math.floor(seconds / 86400);
     const h = Math.floor((seconds % 86400) / 3600);
     const m = Math.floor((seconds % 3600) / 60);
@@ -109,7 +109,7 @@ export default function VdsConsolePage() {
     const [copied, setCopied] = useState(false);
     const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const statusInFlightRef = useRef(false);
-    /** User had (or wants) an embedded console — reconnect after reboot/start. */
+    /** User had (or wants) an embedded console - reconnect after reboot/start. */
     const wantVncRef = useRef(false);
     const vncReconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const vncReconnectAttemptsRef = useRef(0);
@@ -144,7 +144,7 @@ export default function VdsConsolePage() {
                 setVmStatus(status);
 
                 const now = Date.now();
-                // Proxmox returns CPU as a 0–1 fraction; charts expect percent 0–100.
+                // Proxmox returns CPU as a 0-1 fraction; charts expect percent 0-100.
                 const cpuPercent = (status.cpu ?? 0) * 100;
 
                 setCpuData((prev) => [...prev.slice(-maxDataPoints + 1), { timestamp: now, value: cpuPercent }]);
@@ -419,16 +419,16 @@ export default function VdsConsolePage() {
 
     const diskAllocatedGb = instance.plan_disk ?? instance.disk_gb;
     const details: { label: string; value: string; mono?: boolean }[] = [
-        { label: t('vds.console.details.hostname'), value: instance.hostname ?? '—' },
+        { label: t('vds.console.details.hostname'), value: instance.hostname ?? '-' },
         { label: t('vds.console.details.vmid'), value: String(instance.vmid), mono: true },
         { label: t('vds.console.details.type'), value: instance.vm_type?.toUpperCase() ?? 'QEMU' },
         { label: t('vds.console.details.status'), value: statusLabel },
-        { label: t('vds.console.details.node'), value: instance.node_name ?? instance.pve_node ?? '—' },
-        { label: t('vds.console.details.plan'), value: instance.plan_name ?? '—' },
-        { label: t('vds.console.details.ip'), value: ip ?? '—', mono: true },
+        { label: t('vds.console.details.node'), value: instance.node_name ?? instance.pve_node ?? '-' },
+        { label: t('vds.console.details.plan'), value: instance.plan_name ?? '-' },
+        { label: t('vds.console.details.ip'), value: ip ?? '-', mono: true },
         {
             label: t('vds.settings.instance_info.disk'),
-            value: diskAllocatedGb ? `${diskAllocatedGb} GB` : '—',
+            value: diskAllocatedGb ? `${diskAllocatedGb} GB` : '-',
             mono: true,
         },
         {

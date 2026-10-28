@@ -569,7 +569,7 @@ export function FeatherOsProvider({ children }: { children: ReactNode }) {
     useEffect(() => {
         if (!ready) return;
         if (settings.theme !== 'auto') {
-            // Mirror an explicit OS theme into the panel for this session only — do not
+            // Mirror an explicit OS theme into the panel for this session only - do not
             // stamp themeUserOverride (that was locking the whole panel to light after /os).
             if (settings.theme !== panelTheme) {
                 setPanelTheme(settings.theme, { markUserOverride: false });

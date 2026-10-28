@@ -58,7 +58,7 @@ const GENERATORS = [
     { id: 'installer', script: 'export-installer-docs.mjs', required: true },
 ];
 
-/** Stale hand-authored HTML/indexes — scripts regenerate these. */
+/** Stale hand-authored HTML/indexes - scripts regenerate these. */
 const SKIP_SEED_NAMES = new Set(['index.html', 'view.html', 'llms.txt', 'catalog.json']);
 
 function copyRecursive(source, destination, { skipNames = new Set() } = {}) {
@@ -260,7 +260,7 @@ function buildPluginsSection() {
         extraSectionsHtml: `<section class="fp-section">
   <h2>Appearance portals</h2>
   <div class="fp-grid">
-    <a class="fp-card-link" href="${DOCS_BASE}/plugin-themes.html"><div class="fp-card"><h2>Themes &amp; UI packs</h2><p>Human HTML overview — how to make theme.json / ui.json packs.</p></div></a>
+    <a class="fp-card-link" href="${DOCS_BASE}/plugin-themes.html"><div class="fp-card"><h2>Themes &amp; UI packs</h2><p>Human HTML overview - how to make theme.json / ui.json packs.</p></div></a>
     <a class="fp-card-link" href="${DOCS_BASE}/plugin-power.html"><div class="fp-card"><h2>Power SDK</h2><p>window.FeatherPanel events, actions, modals, search, shortcuts.</p></div></a>
   </div>
 </section>`,
@@ -269,7 +269,7 @@ function buildPluginsSection() {
 
 function buildAuthSection() {
     if (!fs.existsSync(path.join(PUBLIC_DIR, 'auth'))) {
-        console.warn('⚠️  No auth/ docs seeded — skipping auth index');
+        console.warn('⚠️  No auth/ docs seeded - skipping auth index');
         return;
     }
     buildMarkdownSection({
@@ -300,7 +300,7 @@ function buildAuthSection() {
 function attachOpenApi() {
     if (!fs.existsSync(OPENAPI_SOURCE)) {
         console.warn(
-            `⚠️  openapi.json not found at ${OPENAPI_SOURCE} — API Redoc will lack the spec until Pages/CI generates it.`,
+            `⚠️  openapi.json not found at ${OPENAPI_SOURCE} - API Redoc will lack the spec until Pages/CI generates it.`,
         );
         return false;
     }
@@ -343,7 +343,7 @@ function assertOutputs() {
     ];
     const missing = required.filter((rel) => !fs.existsSync(path.join(PUBLIC_DIR, rel)));
     if (missing.length) {
-        throw new Error(`Docs build incomplete — missing:\n  - ${missing.join('\n  - ')}`);
+        throw new Error(`Docs build incomplete - missing:\n  - ${missing.join('\n  - ')}`);
     }
 }
 

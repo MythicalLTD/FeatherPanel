@@ -56,7 +56,7 @@ export function VdsHostIsoCard({ vmId, features, canSettings, onChanged }: VdsHo
                 setMountedIso(data.data?.mounted_iso ?? null);
             }
         } catch {
-            // Transient — leave previous state.
+            // Transient - leave previous state.
         } finally {
             setLoading(false);
         }

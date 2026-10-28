@@ -644,7 +644,7 @@ class ServerMetadataBackupService
             $payload = $meta['payload'];
             $count = is_array($payload) ? (array_is_list($payload) ? count($payload) : 1) : 0;
             $lines[] = sprintf(
-                '- **[%s](%s/%s.html)** (`%s`) — %s (%d)',
+                '- **[%s](%s/%s.html)** (`%s`) - %s (%d)',
                 $meta['title'],
                 $slug,
                 $slug,
@@ -976,9 +976,9 @@ class ServerMetadataBackupService
             . '</div></div>'
             . '<div class="mt-4 grid gap-3 border-t border-[var(--line)] pt-4 sm:grid-cols-2">'
             . '<div><p class="font-mono text-[11px] uppercase tracking-wider text-[var(--muted)]">timestamp</p>'
-            . '<p class="mt-1 font-mono text-sm text-[var(--ink)]">' . self::e((string) ($row['timestamp'] ?? '—')) . '</p></div>'
+            . '<p class="mt-1 font-mono text-sm text-[var(--ink)]">' . self::e((string) ($row['timestamp'] ?? '-')) . '</p></div>'
             . '<div><p class="font-mono text-[11px] uppercase tracking-wider text-[var(--muted)]">ip</p>'
-            . '<p class="mt-1 font-mono text-sm text-[var(--ink)]">' . self::e((string) ($row['ip'] ?? '—')) . '</p></div>'
+            . '<p class="mt-1 font-mono text-sm text-[var(--ink)]">' . self::e((string) ($row['ip'] ?? '-')) . '</p></div>'
             . '</div>'
             . '<div class="mt-4">'
             . '<p class="mb-2 font-mono text-[11px] uppercase tracking-wider text-[var(--muted)]">metadata</p>'

@@ -126,7 +126,7 @@ class WebSpaceDomain
         foreach ($routes as $route) {
             if (self::findOwnerId($route['domain'], $webspaceId) !== null) {
                 \App\App::getInstance(true)->getLogger()->warning(
-                    "WebSpaceDomain: skipping legacy domain '{$route['domain']}' for webspace {$webspaceId} — already owned by another WebSpace"
+                    "WebSpaceDomain: skipping legacy domain '{$route['domain']}' for webspace {$webspaceId} - already owned by another WebSpace"
                 );
                 continue;
             }

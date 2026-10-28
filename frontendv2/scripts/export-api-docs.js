@@ -29,7 +29,7 @@ function generateApiDocsPage() {
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>API Reference — FeatherPanel Docs</title>
+  <title>API Reference - FeatherPanel Docs</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="${DOCS_BASE}/assets/docs.css" />
   <style>
@@ -244,7 +244,7 @@ function generateOAuth2DocsAndPlaygroundPage() {
         <thead><tr><th>Situation</th><th>Flow</th></tr></thead>
         <tbody>
           <tr><td>Web app with a redirect URL</td><td><strong>Callback</strong> <code>mode=user</code> (fragment) or <code>mode=server</code> (panel POSTs JSON)</td></tr>
-          <tr><td>CLI / TV / headless — <em>no</em> redirect URL</td><td><strong>Device</strong> — user enters a short code; client polls</td></tr>
+          <tr><td>CLI / TV / headless - <em>no</em> redirect URL</td><td><strong>Device</strong> - user enters a short code; client polls</td></tr>
         </tbody>
       </table>
       <p>Full guide (RAG): <a href="${DOCS_BASE}/api/oauth2.md">api/oauth2.md</a> · Login SSO is different: <a href="${DOCS_BASE}/auth/oidc-sso.md">auth/oidc-sso.md</a></p>
@@ -258,7 +258,7 @@ function generateOAuth2DocsAndPlaygroundPage() {
         <li><code>mode=user</code>: panel redirects user to <code>callbackurl</code> with result in URL fragment (<code>#...</code>).</li>
         <li><code>mode=server</code>: panel calls <code>callbackurl</code> server-to-server with JSON credentials, then shows success in panel UI.</li>
         <li>Optional: app exchanges one-time <code>authorization_code</code> via <code>POST /api/user/api-clients/oauth2/token</code>.</li>
-        <li>Do <strong>not</strong> pass <code>mode=device</code> on the callback URL — use the device endpoints below.</li>
+        <li>Do <strong>not</strong> pass <code>mode=device</code> on the callback URL - use the device endpoints below.</li>
       </ol>
     </div>
 
@@ -282,7 +282,7 @@ function generateOAuth2DocsAndPlaygroundPage() {
     </div>
 
     <div class="panel">
-      <h2>Playground — callback (with redirect URL)</h2>
+      <h2>Playground - callback (with redirect URL)</h2>
       <p>Generate, validate, and open consent URLs for <code>mode=user</code> / <code>mode=server</code>.</p>
       <div class="grid">
         <div><label>name *</label><input id="name" value="My Integration" /></div>
@@ -324,7 +324,7 @@ function generateOAuth2DocsAndPlaygroundPage() {
     </div>
 
     <div class="panel">
-      <h2>Playground — device (no redirect URL)</h2>
+      <h2>Playground - device (no redirect URL)</h2>
       <p>RFC 8628-style. Start a device grant, show the user the verification URI + code, then poll until keys arrive. Live calls need a running panel (same origin).</p>
       <div class="grid">
         <div><label>name *</label><input id="deviceName" value="My CLI" /></div>
@@ -564,10 +564,10 @@ Interactive docs: [HTML (Redoc)](./index.html)
 
 ## Machine-readable
 
-- [\`openapi.json\`](./openapi.json) — full OpenAPI 3 specification (preferred for RAG / codegen)
-- [\`index.json\`](./index.json) — pointers for this section
-- [OAuth2 API consent guide](./oauth2.md) — callback (\`mode=user|server\`) **and** device flow
-- [OAuth2 playground](./oauth2-playground.html) — browser helper for both flows (live calls need a running panel)
+- [\`openapi.json\`](./openapi.json) - full OpenAPI 3 specification (preferred for RAG / codegen)
+- [\`index.json\`](./index.json) - pointers for this section
+- [OAuth2 API consent guide](./oauth2.md) - callback (\`mode=user|server\`) **and** device flow
+- [OAuth2 playground](./oauth2-playground.html) - browser helper for both flows (live calls need a running panel)
 
 Related auth (login, not API keys): [../auth/README.md](../auth/README.md)
 

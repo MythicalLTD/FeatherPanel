@@ -9,7 +9,7 @@ declare(strict_types=1);
  * spell + custom env vars, import logs, extra allocations, API keys,
  * Ghost-ready Node webspace, mail host + mailboxes, webspace DBs/SFTP.
  *
- * Idempotent — safe on every bootstrap / golden rebuild.
+ * Idempotent - safe on every bootstrap / golden rebuild.
  */
 
 define('APP_PUBLIC', '/var/www/html');
@@ -370,9 +370,9 @@ function ensure_backups(array $server): void
     }
 
     $specs = [
-        ['Daily Auto — ' . date('Y-m-d', strtotime('-1 day')), true, true, 48_200_000, true],
+        ['Daily Auto - ' . date('Y-m-d', strtotime('-1 day')), true, true, 48_200_000, true],
         ['Pre-update snapshot', true, false, 51_800_000, false],
-        ['Manual — configs only', true, false, 2_400_000, false],
+        ['Manual - configs only', true, false, 2_400_000, false],
         ['Failed / incomplete', false, false, 0, false],
         ['Locked archival', true, true, 120_000_000, true],
     ];
@@ -700,7 +700,7 @@ function ensure_api_clients(): void
             $id = ApiClient::createApiClient([
                 'user_uuid' => (string) $user['uuid'],
                 'name' => $name,
-                'description' => 'Demo API key — rotated on wipe. Not for production.',
+                'description' => 'Demo API key - rotated on wipe. Not for production.',
                 'public_key' => 'fp_' . bin2hex(random_bytes(16)),
                 'private_key' => 'fp_' . bin2hex(random_bytes(32)),
                 'allowed_ips' => '',
@@ -934,7 +934,7 @@ function ensure_ghost_and_web_bloat(): void
             'imap_port' => 993,
             'smtp_host' => 'mail.demo.featherpanel.local',
             'smtp_port' => 587,
-            'description' => 'Fake mail host for demo UI — not a real MTA',
+            'description' => 'Fake mail host for demo UI - not a real MTA',
         ]);
         $mailHost = $id ? MailHost::getById((int) $id) : null;
         bloat_log($mailHost ? 'Created Demo Mail host' : 'WARNING: mail host create failed');
@@ -987,7 +987,7 @@ function ensure_ghost_and_web_bloat(): void
                 WebSpaceBackup::create([
                     'webspace_id' => (int) $ws['id'],
                     'uuid' => demo_uuid(),
-                    'name' => 'Weekly auto — ' . date('Y-m-d', strtotime('-3 days')),
+                    'name' => 'Weekly auto - ' . date('Y-m-d', strtotime('-3 days')),
                     'bytes' => random_int(2_000_000, 40_000_000),
                     'checksum' => 'sha1:' . sha1((string) $ws['uuid']),
                     'status' => 'completed',
@@ -1228,7 +1228,7 @@ function ensure_zero_trust_logs(array $servers): void
             'status' => 'completed',
             'detections' => 0,
             'errors' => 0,
-            'summary' => 'Clean scan — no malware signatures matched',
+            'summary' => 'Clean scan - no malware signatures matched',
         ],
         [
             'status' => 'completed',
@@ -1810,7 +1810,7 @@ function ensure_more_api_keys(): void
         $id = ApiClient::createApiClient([
             'user_uuid' => (string) $user['uuid'],
             'name' => 'Demo Integrations',
-            'description' => 'Extra demo API key — wiped with the demo. Not for production.',
+            'description' => 'Extra demo API key - wiped with the demo. Not for production.',
             'public_key' => 'fp_' . bin2hex(random_bytes(16)),
             'private_key' => 'fp_' . bin2hex(random_bytes(32)),
             'allowed_ips' => '10.0.0.0/8,192.168.0.0/16',
@@ -1833,7 +1833,7 @@ if (!file_exists(APP_PUBLIC . '/storage/config/.env')) {
 
 $servers = healthy_demo_servers();
 if ($servers === []) {
-    bloat_log('WARNING: no healthy demo servers — nothing to bloat');
+    bloat_log('WARNING: no healthy demo servers - nothing to bloat');
     exit(0);
 }
 
@@ -1845,7 +1845,7 @@ foreach (DatabaseInstance::getAllDatabases() as $row) {
     }
 }
 if ($dbHostRow === null) {
-    bloat_log('WARNING: Demo MariaDB host missing — server DBs skipped');
+    bloat_log('WARNING: Demo MariaDB host missing - server DBs skipped');
 }
 
 $spell = null;

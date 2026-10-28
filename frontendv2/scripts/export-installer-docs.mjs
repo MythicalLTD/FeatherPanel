@@ -236,7 +236,7 @@ sudo FP_COMPONENT=panel FP_ACTION=install bash installer/install.bash --dev-bran
 | --- | --- |
 ${meta.env_automation.map((e) => `| \`${e.name}\` | ${e.description} (e.g. \`${e.example}\`) |`).join('\n')}
 
-## After install — guide users
+## After install - guide users
 
 | Task | What to tell the user |
 | --- | --- |
@@ -263,14 +263,14 @@ ${meta.menus
     .map(
         (menu) =>
             `### ${menu.title}\n\n` +
-            menu.items.map((i) => `- **[${i.key}] ${i.label}** — ${i.description}`).join('\n'),
+            menu.items.map((i) => `- **[${i.key}] ${i.label}** - ${i.description}`).join('\n'),
     )
     .join('\n\n')}
 
 ## AI support tips
 
 - Prefer Docker mode for most users; source mode is advanced.
-- Never invent flags — use the table above.
+- Never invent flags - use the table above.
 - For install failures: ask for \`${meta.paths.install_log}\` and any paste URLs the installer printed.
 - Remote shell (sshx) is **only** when FeatherPanel staff request it in an active ticket (Admin → Settings → Support).
 - After install, \`featherpanel\` wraps \`docker exec … php cli\`.
@@ -306,7 +306,7 @@ function generatePage(meta) {
 
     const body = `${hero({
         title: 'Installer',
-        subtitle: `install.bash v${escapeHtml(meta.script_version)} — Docker-first Ubuntu/Debian installer, updates, Wings, SSL, and the global featherpanel CLI.`,
+        subtitle: `install.bash v${escapeHtml(meta.script_version)} - Docker-first Ubuntu/Debian installer, updates, Wings, SSL, and the global featherpanel CLI.`,
         badges: [`${meta.flags.length} flags`, 'root required'],
         formats: [
             { href: `${DOCS_BASE}/installer/guide.md`, label: 'guide.md' },

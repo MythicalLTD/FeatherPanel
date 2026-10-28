@@ -198,7 +198,7 @@ export function Dock() {
         const items: OsContextMenuItem[] = [
             ...appWindows.map((w) => ({
                 id: w.id,
-                label: [t(OS_APPS[app].nameKey), getServer(w.serverUuid)?.name].filter(Boolean).join(' — '),
+                label: [t(OS_APPS[app].nameKey), getServer(w.serverUuid)?.name].filter(Boolean).join(' - '),
                 icon: AppWindow,
                 checked: w.id === focusedId,
                 onSelect: () => focusWindow(w.id),
@@ -308,7 +308,7 @@ export function Dock() {
                           getServer(windows.find((w) => w.id === entry.windowId)?.serverUuid)?.name,
                       ]
                           .filter(Boolean)
-                          .join(' — ')
+                          .join(' - ')
                     : t(OS_APPS[entry.app!].nameKey);
         return (
             <div

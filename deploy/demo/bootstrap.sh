@@ -135,12 +135,12 @@ create_golden_snapshot() {
 			log "Golden snapshot already exists: ${GOLDEN_NAME}"
 			return 0
 		fi
-		log "Seed version changed — rebuilding golden snapshot..."
+		log "Seed version changed - rebuilding golden snapshot..."
 		rm -f "$GOLDEN_PATH"
 	fi
 
 	if [ "${DEMO_REBUILD_GOLDEN:-0}" = "1" ] && [ -f "$GOLDEN_PATH" ]; then
-		log "DEMO_REBUILD_GOLDEN=1 — removing existing golden snapshot"
+		log "DEMO_REBUILD_GOLDEN=1 - removing existing golden snapshot"
 		rm -f "$GOLDEN_PATH"
 	fi
 

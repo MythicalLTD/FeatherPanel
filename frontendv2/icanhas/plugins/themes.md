@@ -23,7 +23,7 @@ APIs: `GET /api/system/plugin-themes`, `GET /api/system/plugin-theme-css?id={plu
 
 ## `theme.json`
 
-Color values are **HSL components without** `hsl()` — e.g. `"199 89% 48%"`. `radius` is a length (`0.5rem`).
+Color values are **HSL components without** `hsl()` - e.g. `"199 89% 48%"`. `radius` is a length (`0.5rem`).
 
 ```json
 {
