@@ -66,7 +66,7 @@ interface FirewallState {
 type Policy = 'ACCEPT' | 'DROP' | 'REJECT';
 
 const EMPTY_RULE = {
-    type: 'in' as const,
+    type: 'in' as 'in' | 'out',
     action: 'ACCEPT' as Policy,
     proto: 'tcp',
     dport: '',
@@ -126,15 +126,7 @@ function Segmented<T extends string>({
     );
 }
 
-function OptionRow({
-    title,
-    hint,
-    children,
-}: {
-    title: string;
-    hint: string;
-    children: ReactNode;
-}) {
+function OptionRow({ title, hint, children }: { title: string; hint: string; children: ReactNode }) {
     return (
         <div className='fp-surface-inset flex flex-col gap-3 rounded-xl border p-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6'>
             <div className='min-w-0 space-y-0.5'>
@@ -246,9 +238,7 @@ export function FirewallTab({ nodeId }: { nodeId: string }) {
     }
 
     const policyIn = (['ACCEPT', 'DROP', 'REJECT'].includes(state.policy_in) ? state.policy_in : 'ACCEPT') as Policy;
-    const policyOut = (['ACCEPT', 'DROP', 'REJECT'].includes(state.policy_out)
-        ? state.policy_out
-        : 'ACCEPT') as Policy;
+    const policyOut = (['ACCEPT', 'DROP', 'REJECT'].includes(state.policy_out) ? state.policy_out : 'ACCEPT') as Policy;
 
     return (
         <div className='space-y-6'>
@@ -290,7 +280,7 @@ export function FirewallTab({ nodeId }: { nodeId: string }) {
                     </div>
                 )}
 
-                <div className='mb-4 flex gap-3 rounded-xl border border-border/40 bg-muted/20 p-3 text-sm'>
+                <div className='border-border/40 bg-muted/20 mb-4 flex gap-3 rounded-xl border p-3 text-sm'>
                     <AlertTriangle className='text-muted-foreground mt-0.5 h-4 w-4 shrink-0' />
                     <p className='text-muted-foreground'>{t('admin.vdsNodes.firewall_tab.host_warning')}</p>
                 </div>
