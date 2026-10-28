@@ -465,4 +465,56 @@ return function (RouteCollection $routes): void {
         Permissions::ADMIN_VM_NODES_VIEW,
         ['POST']
     );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-vm-nodes-feathertail-leases-list',
+        '/api/admin/vm-nodes/{id}/feathertail/leases',
+        function (Request $request, array $args) {
+            $id = $args['id'] ?? null;
+            if (!$id || !is_numeric($id)) {
+                return ApiResponse::error('Missing or invalid ID', 'INVALID_ID', 400);
+            }
+
+            return (new VmNodesController())->listFeatherTailLeases($request, (int) $id);
+        },
+        Permissions::ADMIN_VM_NODES_VIEW,
+        ['GET']
+    );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-vm-nodes-feathertail-leases-assign',
+        '/api/admin/vm-nodes/{id}/feathertail/leases',
+        function (Request $request, array $args) {
+            $id = $args['id'] ?? null;
+            if (!$id || !is_numeric($id)) {
+                return ApiResponse::error('Missing or invalid ID', 'INVALID_ID', 400);
+            }
+
+            return (new VmNodesController())->assignFeatherTailLease($request, (int) $id);
+        },
+        Permissions::ADMIN_VM_NODES_EDIT,
+        ['POST']
+    );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-vm-nodes-feathertail-leases-delete',
+        '/api/admin/vm-nodes/{id}/feathertail/leases/vm/{vmid}',
+        function (Request $request, array $args) {
+            $id = $args['id'] ?? null;
+            $vmid = $args['vmid'] ?? null;
+            if (!$id || !is_numeric($id)) {
+                return ApiResponse::error('Missing or invalid ID', 'INVALID_ID', 400);
+            }
+            if ($vmid === null || !is_numeric($vmid)) {
+                return ApiResponse::error('Missing or invalid VMID', 'INVALID_VMID', 400);
+            }
+
+            return (new VmNodesController())->deleteFeatherTailLease($request, (int) $id, (int) $vmid);
+        },
+        Permissions::ADMIN_VM_NODES_EDIT,
+        ['DELETE']
+    );
 };

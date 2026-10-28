@@ -1082,6 +1082,9 @@ class VmNodesController
                     new OA\Property(property: 'cidr', type: 'integer', nullable: true, description: 'CIDR prefix length'),
                     new OA\Property(property: 'gateway', type: 'string', nullable: true, description: 'Gateway IP'),
                     new OA\Property(property: 'is_primary', type: 'string', enum: ['true', 'false'], description: 'Mark as primary IP'),
+                    new OA\Property(property: 'address_scope', type: 'string', enum: ['public', 'private'], description: 'Public or private address'),
+                    new OA\Property(property: 'assignment_mode', type: 'string', enum: ['static', 'dhcp'], description: 'Static cloud-init or FeatherTail DHCP'),
+                    new OA\Property(property: 'pve_node', type: 'string', nullable: true, description: 'Proxmox cluster node this IP may be used on (null = any)'),
                     new OA\Property(property: 'notes', type: 'string', nullable: true, description: 'Notes'),
                 ]
             )
@@ -1170,6 +1173,9 @@ class VmNodesController
                     new OA\Property(property: 'cidr', type: 'integer', nullable: true, description: 'CIDR prefix length'),
                     new OA\Property(property: 'gateway', type: 'string', nullable: true, description: 'Gateway IP'),
                     new OA\Property(property: 'is_primary', type: 'string', enum: ['true', 'false'], description: 'Mark as primary IP'),
+                    new OA\Property(property: 'address_scope', type: 'string', enum: ['public', 'private'], description: 'Public or private address'),
+                    new OA\Property(property: 'assignment_mode', type: 'string', enum: ['static', 'dhcp'], description: 'Static cloud-init or FeatherTail DHCP'),
+                    new OA\Property(property: 'pve_node', type: 'string', nullable: true, description: 'Proxmox cluster node this IP may be used on (null = any)'),
                     new OA\Property(property: 'notes', type: 'string', nullable: true, description: 'Notes'),
                 ]
             )
@@ -1380,7 +1386,8 @@ class VmNodesController
         if (!$vmNode) {
             return ApiResponse::error('VM node not found', 'VM_NODE_NOT_FOUND', 404);
         }
-        $ips = VmIp::getFreeIpsForNode($id);
+        $pveNode = trim((string) $request->query->get('pve_node', ''));
+        $ips = VmIp::getFreeIpsForNode($id, $pveNode !== '' ? $pveNode : null);
 
         return ApiResponse::success(['free_ips' => $ips], 'Free IPs fetched successfully', 200);
     }
@@ -1812,6 +1819,168 @@ class VmNodesController
             'url' => $result['url'],
             'body' => $result['body'],
         ], $healthy ? 'FeatherTail is reachable' : 'FeatherTail probe failed', $healthy ? 200 : 200);
+    }
+
+    #[OA\Get(
+        path: '/api/admin/vm-nodes/{id}/feathertail/leases',
+        summary: 'List FeatherTail DHCP leases',
+        tags: ['Admin - VM Nodes'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Lease list'),
+            new OA\Response(response: 404, description: 'VM node not found'),
+        ]
+    )]
+    public function listFeatherTailLeases(Request $request, int $id): Response
+    {
+        $vmNode = VmNode::getVmNodeById($id);
+        if (!$vmNode) {
+            return ApiResponse::error('VM node not found', 'VM_NODE_NOT_FOUND', 404);
+        }
+
+        $result = FeatherTailClient::listLeases($vmNode);
+        if (($result['status'] ?? '') !== 'healthy') {
+            return ApiResponse::error(
+                $result['error'] ?? 'Failed to list FeatherTail leases',
+                'FEATHERTAIL_LEASES_FAILED',
+                502,
+                ['http_status' => $result['http_status'], 'body' => $result['body']]
+            );
+        }
+
+        $leases = is_array($result['body']['leases'] ?? null) ? $result['body']['leases'] : [];
+
+        return ApiResponse::success(['leases' => $leases], 'FeatherTail leases fetched', 200);
+    }
+
+    #[OA\Post(
+        path: '/api/admin/vm-nodes/{id}/feathertail/leases',
+        summary: 'Assign a FeatherTail DHCP lease',
+        tags: ['Admin - VM Nodes'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['vmid', 'hostname', 'ip', 'gateway', 'cidr'],
+                properties: [
+                    new OA\Property(property: 'vmid', type: 'integer'),
+                    new OA\Property(property: 'hostname', type: 'string'),
+                    new OA\Property(property: 'ip', type: 'string'),
+                    new OA\Property(property: 'gateway', type: 'string'),
+                    new OA\Property(property: 'cidr', type: 'integer'),
+                    new OA\Property(property: 'dns_servers', type: 'array', items: new OA\Items(type: 'string')),
+                    new OA\Property(property: 'lease_time_secs', type: 'integer', nullable: true),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'Lease assigned'),
+            new OA\Response(response: 400, description: 'Invalid payload'),
+            new OA\Response(response: 404, description: 'VM node not found'),
+        ]
+    )]
+    public function assignFeatherTailLease(Request $request, int $id): Response
+    {
+        $admin = $request->attributes->get('user');
+        $vmNode = VmNode::getVmNodeById($id);
+        if (!$vmNode) {
+            return ApiResponse::error('VM node not found', 'VM_NODE_NOT_FOUND', 404);
+        }
+
+        $data = json_decode($request->getContent(), true);
+        if (json_last_error() !== JSON_ERROR_NONE || !is_array($data)) {
+            return ApiResponse::error('Invalid JSON in request body', 'INVALID_JSON', 400);
+        }
+
+        $vmid = isset($data['vmid']) ? (int) $data['vmid'] : 0;
+        $hostname = isset($data['hostname']) && is_string($data['hostname']) ? trim($data['hostname']) : '';
+        $ip = isset($data['ip']) && is_string($data['ip']) ? trim($data['ip']) : '';
+        $gateway = isset($data['gateway']) && is_string($data['gateway']) ? trim($data['gateway']) : '';
+        $cidr = isset($data['cidr']) ? (int) $data['cidr'] : 0;
+        if ($vmid <= 0 || $hostname === '' || $ip === '' || $gateway === '' || $cidr <= 0) {
+            return ApiResponse::error('vmid, hostname, ip, gateway and cidr are required', 'MISSING_REQUIRED_FIELDS', 400);
+        }
+
+        $payload = [
+            'vmid' => $vmid,
+            'hostname' => $hostname,
+            'ip' => $ip,
+            'gateway' => $gateway,
+            'cidr' => $cidr,
+            'dns_servers' => isset($data['dns_servers']) && is_array($data['dns_servers']) ? array_values($data['dns_servers']) : ['1.1.1.1', '8.8.8.8'],
+        ];
+        if (isset($data['lease_time_secs']) && is_numeric($data['lease_time_secs'])) {
+            $payload['lease_time_secs'] = (int) $data['lease_time_secs'];
+        }
+
+        $result = FeatherTailClient::assignLease($vmNode, $payload);
+        if (($result['status'] ?? '') !== 'healthy') {
+            return ApiResponse::error(
+                $result['error'] ?? 'Failed to assign FeatherTail lease',
+                'FEATHERTAIL_LEASE_ASSIGN_FAILED',
+                502,
+                ['http_status' => $result['http_status'], 'body' => $result['body']]
+            );
+        }
+
+        Activity::createActivity([
+            'user_uuid' => $admin['uuid'] ?? null,
+            'name' => 'assign_feathertail_lease',
+            'context' => 'Assigned FeatherTail lease ' . $ip . ' to VMID ' . $vmid . ' on node ' . ($vmNode['name'] ?? $id),
+            'ip_address' => CloudFlareRealIP::getRealIP(),
+        ]);
+
+        return ApiResponse::success(['lease' => $result['body']['lease'] ?? $result['body']], 'Lease assigned', 200);
+    }
+
+    #[OA\Delete(
+        path: '/api/admin/vm-nodes/{id}/feathertail/leases/vm/{vmid}',
+        summary: 'Delete FeatherTail DHCP lease by VMID',
+        tags: ['Admin - VM Nodes'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'vmid', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Lease deleted'),
+            new OA\Response(response: 404, description: 'VM node not found'),
+        ]
+    )]
+    public function deleteFeatherTailLease(Request $request, int $id, int $vmid): Response
+    {
+        $admin = $request->attributes->get('user');
+        $vmNode = VmNode::getVmNodeById($id);
+        if (!$vmNode) {
+            return ApiResponse::error('VM node not found', 'VM_NODE_NOT_FOUND', 404);
+        }
+        if ($vmid <= 0) {
+            return ApiResponse::error('Invalid VMID', 'INVALID_VMID', 400);
+        }
+
+        $result = FeatherTailClient::deleteLeaseByVmid($vmNode, $vmid);
+        if (($result['status'] ?? '') !== 'healthy') {
+            return ApiResponse::error(
+                $result['error'] ?? 'Failed to delete FeatherTail lease',
+                'FEATHERTAIL_LEASE_DELETE_FAILED',
+                502,
+                ['http_status' => $result['http_status'], 'body' => $result['body']]
+            );
+        }
+
+        Activity::createActivity([
+            'user_uuid' => $admin['uuid'] ?? null,
+            'name' => 'delete_feathertail_lease',
+            'context' => 'Deleted FeatherTail lease for VMID ' . $vmid . ' on node ' . ($vmNode['name'] ?? $id),
+            'ip_address' => CloudFlareRealIP::getRealIP(),
+        ]);
+
+        return ApiResponse::success([
+            'removed' => (bool) ($result['body']['removed'] ?? true),
+        ], 'Lease deleted', 200);
     }
 
     /**

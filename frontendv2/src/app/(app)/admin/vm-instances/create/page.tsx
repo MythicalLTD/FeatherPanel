@@ -74,6 +74,9 @@ interface FreeIp {
     ip: string;
     cidr: number | null;
     gateway: string | null;
+    address_scope?: 'public' | 'private';
+    assignment_mode?: 'static' | 'dhcp';
+    pve_node?: string | null;
 }
 
 interface VmTemplate {
@@ -262,7 +265,7 @@ export default function VmInstancesCreatePage() {
                 ]);
                 const ips = (ipsRes.data.data?.free_ips ?? []) as FreeIp[];
                 const tpls = (tplRes.data.data?.templates ?? []) as VmTemplate[];
-                setFreeIps(ips);
+                setFreeIps(ips); // refined once pveNode is known
                 setTemplates(tpls);
 
                 const preserve = opts?.preserveSelections === true;
@@ -296,6 +299,36 @@ export default function VmInstancesCreatePage() {
         if (nodeId > 0) setTemplateId(0);
         void loadNodeMeta();
     }, [nodeId, loadNodeMeta]);
+
+    useEffect(() => {
+        if (nodeId <= 0) return;
+        let cancelled = false;
+        (async () => {
+            try {
+                const { data } = await axios.get(`/api/admin/vm-nodes/${nodeId}/free-ips`, {
+                    params: pveNode ? { pve_node: pveNode } : undefined,
+                });
+                if (cancelled) return;
+                let ips = (data.data?.free_ips ?? []) as FreeIp[];
+                if (isLxcTemplate) {
+                    ips = ips.filter((ip) => (ip.assignment_mode ?? 'static') !== 'dhcp');
+                }
+                setFreeIps(ips);
+                setNetworks((prev) =>
+                    prev.map((row) =>
+                        row.vm_ip_id != null && ips.some((ip) => ip.id === row.vm_ip_id)
+                            ? row
+                            : { ...row, vm_ip_id: null },
+                    ),
+                );
+            } catch {
+                if (!cancelled) setFreeIps([]);
+            }
+        })();
+        return () => {
+            cancelled = true;
+        };
+    }, [nodeId, pveNode, isLxcTemplate]);
 
     useEffect(() => {
         if (nodeId <= 0 || pveNode === '') {
@@ -1095,9 +1128,39 @@ export default function VmInstancesCreatePage() {
                                                 >
                                                     {row.vm_ip_id != null ? (
                                                         <div className='min-w-0'>
-                                                            <div className='truncate font-mono font-medium'>
-                                                                {freeIps.find((ip) => ip.id === row.vm_ip_id)?.ip ||
-                                                                    t('admin.vmInstances.select_ip')}
+                                                            <div className='flex flex-wrap items-center gap-2'>
+                                                                <span className='truncate font-mono font-medium'>
+                                                                    {freeIps.find((ip) => ip.id === row.vm_ip_id)?.ip ||
+                                                                        t('admin.vmInstances.select_ip')}
+                                                                </span>
+                                                                {(() => {
+                                                                    const selected = freeIps.find(
+                                                                        (ip) => ip.id === row.vm_ip_id,
+                                                                    );
+                                                                    if (!selected) return null;
+                                                                    return (
+                                                                        <>
+                                                                            <span className='text-muted-foreground text-[10px] uppercase'>
+                                                                                {(selected.address_scope ??
+                                                                                    'public') === 'private'
+                                                                                    ? t(
+                                                                                          'admin.vdsNodes.ips.scope_private',
+                                                                                      )
+                                                                                    : t(
+                                                                                          'admin.vdsNodes.ips.scope_public',
+                                                                                      )}
+                                                                            </span>
+                                                                            <span className='text-muted-foreground text-[10px] uppercase'>
+                                                                                {(selected.assignment_mode ??
+                                                                                    'static') === 'dhcp'
+                                                                                    ? t('admin.vdsNodes.ips.mode_dhcp')
+                                                                                    : t(
+                                                                                          'admin.vdsNodes.ips.mode_static',
+                                                                                      )}
+                                                                            </span>
+                                                                        </>
+                                                                    );
+                                                                })()}
                                                             </div>
                                                             <div className='text-muted-foreground font-mono text-xs'>
                                                                 {(() => {

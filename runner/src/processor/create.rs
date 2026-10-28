@@ -13,6 +13,8 @@ pub async fn handle_create_task(
     task: &sqlx::mysql::MySqlRow,
     meta: &Value,
     client: &ProxmoxClient,
+    node: &sqlx::mysql::MySqlRow,
+    encryption_key: &str,
 ) -> Result<()> {
     let upid: String = task.try_get("upid").unwrap_or_default();
     
@@ -38,7 +40,19 @@ pub async fn handle_create_task(
         }
         "config" => {
             info!("🔧 CREATE: Applying VM configuration...");
-            apply_create_config(pool, task_id, task, &target_node, vmid as u32, vm_type, meta, client).await?;
+            apply_create_config(
+                pool,
+                task_id,
+                task,
+                &target_node,
+                vmid as u32,
+                vm_type,
+                meta,
+                client,
+                node,
+                encryption_key,
+            )
+            .await?;
         }
         "start" => {
             info!("🔧 CREATE: Starting VM...");
@@ -59,12 +73,12 @@ pub async fn handle_create_task(
                 info!("✅ Start initiated with UPID: {}, advancing to finalize step", start_upid);
             } else {
                 // Start succeeded without UPID
-                finalize_create(pool, task_id, meta).await?;
+                finalize_create(pool, task_id, meta, node, encryption_key, vmid as u32, vm_type_str).await?;
             }
         }
         "finalize" => {
             info!("🔧 CREATE: Finalizing...");
-            finalize_create(pool, task_id, meta).await?;
+            finalize_create(pool, task_id, meta, node, encryption_key, vmid as u32, vm_type_str).await?;
         }
         _ => {
             warn!("Unknown create step: {}", step);
@@ -355,6 +369,8 @@ async fn apply_create_config(
     vm_type: VmType,
     meta: &Value,
     client: &ProxmoxClient,
+    vm_node_row: &sqlx::mysql::MySqlRow,
+    encryption_key: &str,
 ) -> Result<()> {
     let user_uuid: String = task.try_get("user_uuid").unwrap_or_default();
     let default_hostname = format!("vm-{}", vmid);
@@ -371,6 +387,10 @@ async fn apply_create_config(
     let ip: String = ip_row.try_get("ip")?;
     let cidr: i32 = ip_row.try_get("cidr").unwrap_or(24);
     let gateway: String = ip_row.try_get("gateway").unwrap_or_default();
+    let assignment_mode: String = ip_row
+        .try_get("assignment_mode")
+        .unwrap_or_else(|_| "static".to_string());
+    let use_dhcp = assignment_mode == "dhcp" || crate::feathertail::meta_uses_dhcp(meta);
     
     let memory = meta["memory"].as_i64().unwrap_or(512);
     let cpus = meta["cpus"].as_i64().unwrap_or(1);
@@ -381,7 +401,9 @@ async fn apply_create_config(
     let config = if vm_type.as_str() == "qemu" {
         let ci_user = meta["ci_user"].as_str().unwrap_or("debian");
         let ci_password = meta["ci_password"].as_str().unwrap_or("changeme");
-        let ipconfig = if gateway.is_empty() {
+        let ipconfig = if use_dhcp {
+            "ip=dhcp".to_string()
+        } else if gateway.is_empty() {
             format!("ip={}/{}", ip, cidr)
         } else {
             format!("ip={}/{},gw={}", ip, cidr, gateway)
@@ -402,6 +424,7 @@ async fn apply_create_config(
                 ip, hostname, user_uuid, chrono::Utc::now().format("%Y-%m-%d %H:%M:%S"))
         })
     } else {
+        // LXC: DHCP assignment is unsupported (FeatherTail MAC resolve is QEMU-only).
         let net0 = if gateway.is_empty() {
             format!("name=eth0,bridge={},ip={}/{}", bridge, ip, cidr)
         } else {
@@ -422,11 +445,98 @@ async fn apply_create_config(
     
     client.set_vm_config(node, vmid, vm_type, &config).await?;
     
-    // Create database record
-    create_vm_instance_record(pool, task, meta, vmid, node, &ip, &gateway, hostname).await?;
+    // Create database record + multi-NIC junction rows
+    let instance_id =
+        create_vm_instance_record(pool, task, meta, vmid, node, &ip, &gateway, hostname).await?;
+    sync_instance_networks(pool, instance_id, meta, bridge).await?;
+
+    // Register FeatherTail static DHCP lease(s) now that the QEMU MAC exists.
+    if use_dhcp && vm_type.as_str() == "qemu" {
+        match crate::feathertail::load_creds_from_node(vm_node_row, encryption_key) {
+            Ok(Some(creds)) => {
+                crate::feathertail::assign_lease(&creds, vmid, hostname, &ip, &gateway, cidr)
+                    .await
+                    .map_err(|e| anyhow::anyhow!("FeatherTail DHCP lease assign failed: {e}"))?;
+            }
+            Ok(None) => {
+                return Err(anyhow::anyhow!(
+                    "DHCP IP selected but FeatherTail is not enabled on this VDS node"
+                ));
+            }
+            Err(e) => {
+                return Err(anyhow::anyhow!("FeatherTail credentials: {e}"));
+            }
+        }
+    }
     
     // Move to start step
     advance_step(pool, task_id, "start").await?;
+    Ok(())
+}
+
+async fn sync_instance_networks(
+    pool: &MySqlPool,
+    instance_id: i64,
+    meta: &Value,
+    default_bridge: &str,
+) -> Result<()> {
+    let Some(networks) = meta["networks"].as_array() else {
+        // Primary-only create: still record net0 if we have vm_ip_id.
+        let vm_ip_id = meta["vm_ip_id"].as_i64().unwrap_or(0);
+        if vm_ip_id > 0 {
+            let _ = sqlx::query("DELETE FROM featherpanel_vm_instance_ips WHERE vm_instance_id = ?")
+                .bind(instance_id)
+                .execute(pool)
+                .await;
+            sqlx::query(
+                "INSERT INTO featherpanel_vm_instance_ips
+                 (vm_instance_id, vm_ip_id, network_key, bridge, interface_name, is_primary, sort_order)
+                 VALUES (?, ?, 'net0', ?, 'eth0', 1, 0)",
+            )
+            .bind(instance_id)
+            .bind(vm_ip_id)
+            .bind(default_bridge)
+            .execute(pool)
+            .await?;
+        }
+        return Ok(());
+    };
+
+    let _ = sqlx::query("DELETE FROM featherpanel_vm_instance_ips WHERE vm_instance_id = ?")
+        .bind(instance_id)
+        .execute(pool)
+        .await;
+
+    for (index, network) in networks.iter().enumerate() {
+        let vm_ip_id = network["vm_ip_id"].as_i64().unwrap_or(0);
+        if vm_ip_id <= 0 {
+            continue;
+        }
+        let key = network["key"].as_str().unwrap_or("net0");
+        let bridge = network["bridge"].as_str().unwrap_or(default_bridge);
+        let iface = network["interface_name"]
+            .as_str()
+            .map(|s| s.to_string())
+            .unwrap_or_else(|| format!("eth{}", index));
+        let is_primary = network["is_primary"].as_bool().unwrap_or(index == 0);
+        let sort_order = network["sort_order"].as_i64().unwrap_or(index as i64);
+
+        sqlx::query(
+            "INSERT INTO featherpanel_vm_instance_ips
+             (vm_instance_id, vm_ip_id, network_key, bridge, interface_name, is_primary, sort_order)
+             VALUES (?, ?, ?, ?, ?, ?, ?)",
+        )
+        .bind(instance_id)
+        .bind(vm_ip_id)
+        .bind(key)
+        .bind(bridge)
+        .bind(iface)
+        .bind(if is_primary { 1 } else { 0 })
+        .bind(sort_order)
+        .execute(pool)
+        .await?;
+    }
+
     Ok(())
 }
 
@@ -498,7 +608,15 @@ async fn create_vm_instance_record(
     Ok(instance_id)
 }
 
-async fn finalize_create(pool: &MySqlPool, task_id: &str, meta: &Value) -> Result<()> {
+async fn finalize_create(
+    pool: &MySqlPool,
+    task_id: &str,
+    meta: &Value,
+    vm_node_row: &sqlx::mysql::MySqlRow,
+    encryption_key: &str,
+    vmid: u32,
+    vm_type: &str,
+) -> Result<()> {
     if let Some(instance_id) = meta["instance_id"].as_i64() {
         sqlx::query("UPDATE featherpanel_vm_instances SET status = 'running' WHERE id = ?")
             .bind(instance_id)
@@ -508,6 +626,28 @@ async fn finalize_create(pool: &MySqlPool, task_id: &str, meta: &Value) -> Resul
         // Queue email notification for VM creation
         if let Err(e) = queue_vm_created_email(pool, instance_id, meta).await {
             tracing::warn!("⚠️ Failed to queue VM created email: {}", e);
+        }
+    }
+
+    // Optional LXC root password via FeatherTail (container must be running).
+    if vm_type == "lxc" && meta["feathertail_enabled"].as_bool().unwrap_or(false) {
+        let password = meta["ci_password"]
+            .as_str()
+            .or_else(|| meta["lxc_root_password"].as_str())
+            .unwrap_or("")
+            .trim();
+        if !password.is_empty() && vmid > 0 {
+            match crate::feathertail::load_creds_from_node(vm_node_row, encryption_key) {
+                Ok(Some(creds)) => {
+                    if let Err(e) =
+                        crate::feathertail::set_lxc_root_password(&creds, vmid, password).await
+                    {
+                        crate::feathertail::warn_lease_err("set LXC root password", e);
+                    }
+                }
+                Ok(None) => {}
+                Err(e) => crate::feathertail::warn_lease_err("load creds for LXC password", e),
+            }
         }
     }
     

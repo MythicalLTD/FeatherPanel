@@ -39,11 +39,34 @@ interface VmIp {
     cidr: number | null;
     gateway: string | null;
     is_primary: 'true' | 'false';
+    address_scope?: 'public' | 'private';
+    assignment_mode?: 'static' | 'dhcp';
+    pve_node?: string | null;
     notes: string | null;
     created_at: string;
     updated_at: string;
     in_use?: boolean;
 }
+
+type IpFormMeta = {
+    ip: string;
+    cidr: string;
+    gateway: string;
+    notes: string;
+    address_scope: 'public' | 'private';
+    assignment_mode: 'static' | 'dhcp';
+    pve_node: string;
+};
+
+const emptyIpForm = (): IpFormMeta => ({
+    ip: '',
+    cidr: '',
+    gateway: '',
+    notes: '',
+    address_scope: 'public',
+    assignment_mode: 'static',
+    pve_node: '',
+});
 
 interface IpPoolTabProps {
     nodeId: string | number;
@@ -67,27 +90,71 @@ export function IpPoolTab({ nodeId, nodeName }: IpPoolTabProps) {
 
     const [createOpen, setCreateOpen] = useState(false);
     const [createMode, setCreateMode] = useState<'single' | 'bulk'>('single');
-    const [createForm, setCreateForm] = useState({ ip: '', cidr: '', gateway: '', notes: '' });
+    const [createForm, setCreateForm] = useState<IpFormMeta>(emptyIpForm);
     const [bulkIpsInput, setBulkIpsInput] = useState('');
     const [createErrors, setCreateErrors] = useState<Record<string, string>>({});
     const [creating, setCreating] = useState(false);
 
     const [editIp, setEditIp] = useState<VmIp | null>(null);
-    const [editForm, setEditForm] = useState({ ip: '', cidr: '', gateway: '', notes: '' });
+    const [editForm, setEditForm] = useState<IpFormMeta>(emptyIpForm);
     const [editErrors, setEditErrors] = useState<Record<string, string>>({});
     const [editing, setEditing] = useState(false);
 
     const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
     const [setPrimaryLoading, setSetPrimaryLoading] = useState<number | null>(null);
+    const [pveNodes, setPveNodes] = useState<string[]>([]);
+    const [filterScope, setFilterScope] = useState<'all' | 'public' | 'private'>('all');
+    const [filterMode, setFilterMode] = useState<'all' | 'static' | 'dhcp'>('all');
+    const [filterPve, setFilterPve] = useState('');
+
+    useEffect(() => {
+        let cancelled = false;
+        (async () => {
+            try {
+                const { data } = await axios.get(`/api/admin/vm-nodes/${nodeId}/cluster-nodes`);
+                const nodes = (data.data?.nodes ?? []) as Array<{ node?: string }>;
+                if (!cancelled) {
+                    setPveNodes(
+                        nodes
+                            .map((n) => (typeof n.node === 'string' ? n.node.trim() : ''))
+                            .filter(Boolean)
+                            .sort((a, b) => a.localeCompare(b)),
+                    );
+                }
+            } catch {
+                if (!cancelled) setPveNodes([]);
+            }
+        })();
+        return () => {
+            cancelled = true;
+        };
+    }, [nodeId]);
 
     const filteredIps = Array.isArray(ips)
-        ? ips.filter(
-              (ip) =>
+        ? ips.filter((ip) => {
+              const q = searchQuery.toLowerCase();
+              const matchesSearch =
+                  !q ||
                   ip.ip.includes(searchQuery) ||
                   (ip.gateway && ip.gateway.includes(searchQuery)) ||
-                  (ip.notes && ip.notes.toLowerCase().includes(searchQuery.toLowerCase())),
-          )
+                  (ip.notes && ip.notes.toLowerCase().includes(q)) ||
+                  (ip.pve_node && ip.pve_node.toLowerCase().includes(q));
+              const scope = ip.address_scope ?? 'public';
+              const mode = ip.assignment_mode ?? 'static';
+              const matchesScope = filterScope === 'all' || scope === filterScope;
+              const matchesMode = filterMode === 'all' || mode === filterMode;
+              const matchesPve =
+                  !filterPve ||
+                  (filterPve === '__any__' ? !ip.pve_node : (ip.pve_node ?? '') === filterPve);
+              return matchesSearch && matchesScope && matchesMode && matchesPve;
+          })
         : [];
+
+    const metaPayload = (form: IpFormMeta) => ({
+        address_scope: form.address_scope,
+        assignment_mode: form.assignment_mode,
+        pve_node: form.pve_node.trim() || null,
+    });
 
     const loadIps = useCallback(async () => {
         setLoading(true);
@@ -149,10 +216,11 @@ export function IpPoolTab({ nodeId, nodeName }: IpPoolTabProps) {
                 cidr: createForm.cidr !== '' ? parseInt(createForm.cidr, 10) : null,
                 gateway: createForm.gateway || null,
                 notes: createForm.notes || null,
+                ...metaPayload(createForm),
             });
             toast.success(t('admin.vdsNodes.ips.add_success'));
             setCreateOpen(false);
-            setCreateForm({ ip: '', cidr: '', gateway: '', notes: '' });
+            setCreateForm(emptyIpForm());
             setCreateErrors({});
             loadIps();
         } catch (error) {
@@ -204,6 +272,7 @@ export function IpPoolTab({ nodeId, nodeName }: IpPoolTabProps) {
                         cidr: createForm.cidr !== '' ? parseInt(createForm.cidr, 10) : null,
                         gateway: createForm.gateway || null,
                         notes: createForm.notes || null,
+                        ...metaPayload(createForm),
                     });
                     success++;
                 } catch {
@@ -227,7 +296,7 @@ export function IpPoolTab({ nodeId, nodeName }: IpPoolTabProps) {
                     );
                 setCreateOpen(false);
                 setBulkIpsInput('');
-                setCreateForm({ ip: '', cidr: '', gateway: '', notes: '' });
+                setCreateForm(emptyIpForm());
                 setCreateErrors({});
                 loadIps();
             } else {
@@ -258,6 +327,7 @@ export function IpPoolTab({ nodeId, nodeName }: IpPoolTabProps) {
                 cidr: editForm.cidr !== '' ? parseInt(editForm.cidr, 10) : null,
                 gateway: editForm.gateway || null,
                 notes: editForm.notes || null,
+                ...metaPayload(editForm),
             });
             toast.success(t('admin.vdsNodes.ips.update_success'));
             setEditIp(null);
@@ -320,6 +390,40 @@ export function IpPoolTab({ nodeId, nodeName }: IpPoolTabProps) {
                                 className='h-11 pl-10'
                             />
                         </div>
+                        <select
+                            className='border-border/50 bg-background h-11 rounded-xl border px-3 text-sm'
+                            value={filterScope}
+                            onChange={(e) => setFilterScope(e.target.value as 'all' | 'public' | 'private')}
+                            aria-label={t('admin.vdsNodes.ips.col_scope')}
+                        >
+                            <option value='all'>{t('admin.vdsNodes.ips.filter_scope_all')}</option>
+                            <option value='public'>{t('admin.vdsNodes.ips.scope_public')}</option>
+                            <option value='private'>{t('admin.vdsNodes.ips.scope_private')}</option>
+                        </select>
+                        <select
+                            className='border-border/50 bg-background h-11 rounded-xl border px-3 text-sm'
+                            value={filterMode}
+                            onChange={(e) => setFilterMode(e.target.value as 'all' | 'static' | 'dhcp')}
+                            aria-label={t('admin.vdsNodes.ips.col_mode')}
+                        >
+                            <option value='all'>{t('admin.vdsNodes.ips.filter_mode_all')}</option>
+                            <option value='static'>{t('admin.vdsNodes.ips.mode_static')}</option>
+                            <option value='dhcp'>{t('admin.vdsNodes.ips.mode_dhcp')}</option>
+                        </select>
+                        <select
+                            className='border-border/50 bg-background h-11 rounded-xl border px-3 text-sm'
+                            value={filterPve}
+                            onChange={(e) => setFilterPve(e.target.value)}
+                            aria-label={t('admin.vdsNodes.ips.col_pve_node')}
+                        >
+                            <option value=''>{t('admin.vdsNodes.ips.filter_pve_all')}</option>
+                            <option value='__any__'>{t('admin.vdsNodes.ips.pve_any')}</option>
+                            {pveNodes.map((n) => (
+                                <option key={n} value={n}>
+                                    {n}
+                                </option>
+                            ))}
+                        </select>
                         <Button variant='outline' size='icon' onClick={loadIps} loading={loading} className='h-11 w-11'>
                             <RefreshCw className='h-4 w-4' />
                         </Button>
@@ -354,6 +458,15 @@ export function IpPoolTab({ nodeId, nodeName }: IpPoolTabProps) {
                                         </th>
                                         <th className='text-muted-foreground px-4 py-3 text-left font-medium'>
                                             {t('admin.vdsNodes.ips.col_gateway')}
+                                        </th>
+                                        <th className='text-muted-foreground px-4 py-3 text-left font-medium'>
+                                            {t('admin.vdsNodes.ips.col_scope')}
+                                        </th>
+                                        <th className='text-muted-foreground px-4 py-3 text-left font-medium'>
+                                            {t('admin.vdsNodes.ips.col_mode')}
+                                        </th>
+                                        <th className='text-muted-foreground px-4 py-3 text-left font-medium'>
+                                            {t('admin.vdsNodes.ips.col_pve_node')}
                                         </th>
                                         <th className='text-muted-foreground px-4 py-3 text-left font-medium'>
                                             {t('admin.vdsNodes.ips.col_notes')}
@@ -393,6 +506,19 @@ export function IpPoolTab({ nodeId, nodeName }: IpPoolTabProps) {
                                             <td className='text-muted-foreground px-4 py-3 font-mono'>
                                                 {ip.gateway || '-'}
                                             </td>
+                                            <td className='px-4 py-3 text-xs'>
+                                                {(ip.address_scope ?? 'public') === 'private'
+                                                    ? t('admin.vdsNodes.ips.scope_private')
+                                                    : t('admin.vdsNodes.ips.scope_public')}
+                                            </td>
+                                            <td className='px-4 py-3 text-xs'>
+                                                {(ip.assignment_mode ?? 'static') === 'dhcp'
+                                                    ? t('admin.vdsNodes.ips.mode_dhcp')
+                                                    : t('admin.vdsNodes.ips.mode_static')}
+                                            </td>
+                                            <td className='text-muted-foreground px-4 py-3 font-mono text-xs'>
+                                                {ip.pve_node || t('admin.vdsNodes.ips.pve_any')}
+                                            </td>
                                             <td className='text-muted-foreground max-w-[180px] truncate px-4 py-3'>
                                                 {ip.notes || '-'}
                                             </td>
@@ -430,6 +556,9 @@ export function IpPoolTab({ nodeId, nodeName }: IpPoolTabProps) {
                                                                 cidr: ip.cidr !== null ? String(ip.cidr) : '',
                                                                 gateway: ip.gateway || '',
                                                                 notes: ip.notes || '',
+                                                                address_scope: ip.address_scope ?? 'public',
+                                                                assignment_mode: ip.assignment_mode ?? 'static',
+                                                                pve_node: ip.pve_node ?? '',
                                                             });
                                                         }}
                                                         title={t('common.edit')}
@@ -618,6 +747,55 @@ export function IpPoolTab({ nodeId, nodeName }: IpPoolTabProps) {
                             )}
                         </div>
                     </div>
+                    <div className='grid grid-cols-1 gap-4 md:grid-cols-3'>
+                        <div className='space-y-2'>
+                            <Label className='text-sm font-semibold'>{t('admin.vdsNodes.ips.col_scope')}</Label>
+                            <select
+                                className='border-border/50 bg-background h-11 w-full rounded-xl border px-3 text-sm'
+                                value={createForm.address_scope}
+                                onChange={(e) =>
+                                    setCreateForm((p) => ({
+                                        ...p,
+                                        address_scope: e.target.value as 'public' | 'private',
+                                    }))
+                                }
+                            >
+                                <option value='public'>{t('admin.vdsNodes.ips.scope_public')}</option>
+                                <option value='private'>{t('admin.vdsNodes.ips.scope_private')}</option>
+                            </select>
+                        </div>
+                        <div className='space-y-2'>
+                            <Label className='text-sm font-semibold'>{t('admin.vdsNodes.ips.col_mode')}</Label>
+                            <select
+                                className='border-border/50 bg-background h-11 w-full rounded-xl border px-3 text-sm'
+                                value={createForm.assignment_mode}
+                                onChange={(e) =>
+                                    setCreateForm((p) => ({
+                                        ...p,
+                                        assignment_mode: e.target.value as 'static' | 'dhcp',
+                                    }))
+                                }
+                            >
+                                <option value='static'>{t('admin.vdsNodes.ips.mode_static')}</option>
+                                <option value='dhcp'>{t('admin.vdsNodes.ips.mode_dhcp')}</option>
+                            </select>
+                        </div>
+                        <div className='space-y-2'>
+                            <Label className='text-sm font-semibold'>{t('admin.vdsNodes.ips.col_pve_node')}</Label>
+                            <select
+                                className='border-border/50 bg-background h-11 w-full rounded-xl border px-3 text-sm'
+                                value={createForm.pve_node}
+                                onChange={(e) => setCreateForm((p) => ({ ...p, pve_node: e.target.value }))}
+                            >
+                                <option value=''>{t('admin.vdsNodes.ips.pve_any')}</option>
+                                {pveNodes.map((n) => (
+                                    <option key={n} value={n}>
+                                        {n}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
                     <div className='space-y-2'>
                         <Label className='text-sm font-semibold'>{t('admin.vdsNodes.ips.col_notes')}</Label>
                         <Textarea
@@ -685,6 +863,55 @@ export function IpPoolTab({ nodeId, nodeName }: IpPoolTabProps) {
                             {editErrors.gateway && (
                                 <p className='text-xs font-medium text-red-500'>{editErrors.gateway}</p>
                             )}
+                        </div>
+                    </div>
+                    <div className='grid grid-cols-1 gap-4 md:grid-cols-3'>
+                        <div className='space-y-2'>
+                            <Label className='text-sm font-semibold'>{t('admin.vdsNodes.ips.col_scope')}</Label>
+                            <select
+                                className='border-border/50 bg-background h-11 w-full rounded-xl border px-3 text-sm'
+                                value={editForm.address_scope}
+                                onChange={(e) =>
+                                    setEditForm((p) => ({
+                                        ...p,
+                                        address_scope: e.target.value as 'public' | 'private',
+                                    }))
+                                }
+                            >
+                                <option value='public'>{t('admin.vdsNodes.ips.scope_public')}</option>
+                                <option value='private'>{t('admin.vdsNodes.ips.scope_private')}</option>
+                            </select>
+                        </div>
+                        <div className='space-y-2'>
+                            <Label className='text-sm font-semibold'>{t('admin.vdsNodes.ips.col_mode')}</Label>
+                            <select
+                                className='border-border/50 bg-background h-11 w-full rounded-xl border px-3 text-sm'
+                                value={editForm.assignment_mode}
+                                onChange={(e) =>
+                                    setEditForm((p) => ({
+                                        ...p,
+                                        assignment_mode: e.target.value as 'static' | 'dhcp',
+                                    }))
+                                }
+                            >
+                                <option value='static'>{t('admin.vdsNodes.ips.mode_static')}</option>
+                                <option value='dhcp'>{t('admin.vdsNodes.ips.mode_dhcp')}</option>
+                            </select>
+                        </div>
+                        <div className='space-y-2'>
+                            <Label className='text-sm font-semibold'>{t('admin.vdsNodes.ips.col_pve_node')}</Label>
+                            <select
+                                className='border-border/50 bg-background h-11 w-full rounded-xl border px-3 text-sm'
+                                value={editForm.pve_node}
+                                onChange={(e) => setEditForm((p) => ({ ...p, pve_node: e.target.value }))}
+                            >
+                                <option value=''>{t('admin.vdsNodes.ips.pve_any')}</option>
+                                {pveNodes.map((n) => (
+                                    <option key={n} value={n}>
+                                        {n}
+                                    </option>
+                                ))}
+                            </select>
                         </div>
                     </div>
                     <div className='space-y-2'>

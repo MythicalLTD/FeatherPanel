@@ -17,7 +17,7 @@ COPY frontendv2/ .
 RUN pnpm build
 
 # ============================================================================
-FROM rust:1.93-slim AS runner-builder
+FROM rust:slim AS runner-builder
 
 # Build the Rust async runner
 WORKDIR /build

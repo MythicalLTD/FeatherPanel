@@ -328,11 +328,11 @@ async fn process_vm_task_inner(pool: &MySqlPool, task_id: &str, encryption_key: 
                 return Ok(());
             }
             "delete" => {
-                handle_delete_task(pool, task_id, &task, &meta, &client).await?;
+                handle_delete_task(pool, task_id, &task, &meta, &client, &node, encryption_key).await?;
                 return Ok(());
             }
             "create" => {
-                match handle_create_task(pool, task_id, &task, &meta, &client).await {
+                match handle_create_task(pool, task_id, &task, &meta, &client, &node, encryption_key).await {
                     Ok(_) => {
                         // Continue loop to check next step
                         tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
@@ -532,12 +532,31 @@ async fn handle_delete_task(
     task: &sqlx::mysql::MySqlRow,
     meta: &Value,
     client: &ProxmoxClient,
+    node: &sqlx::mysql::MySqlRow,
+    encryption_key: &str,
 ) -> Result<()> {
     let target_node: String = task.try_get("target_node").unwrap_or_default();
     let vmid: i32 = task.try_get("vmid").unwrap_or(0);
     let vm_type_str = meta["vm_type"].as_str().unwrap_or("qemu");
     let vm_type = VmType::from_str(vm_type_str);
     let instance_id = meta["instance_id"].as_i64().unwrap_or(0);
+
+    // Drop FeatherTail DHCP lease before destroying the guest (MAC still present).
+    let should_drop_lease = crate::feathertail::meta_uses_dhcp(meta)
+        || crate::feathertail::instance_uses_dhcp_ip(pool, instance_id)
+            .await
+            .unwrap_or(false);
+    if should_drop_lease && vmid > 0 {
+        match crate::feathertail::load_creds_from_node(node, encryption_key) {
+            Ok(Some(creds)) => {
+                if let Err(e) = crate::feathertail::delete_lease(&creds, vmid as u32).await {
+                    crate::feathertail::warn_lease_err("delete lease on VM delete", e);
+                }
+            }
+            Ok(None) => {}
+            Err(e) => crate::feathertail::warn_lease_err("load creds on VM delete", e),
+        }
+    }
 
     // Delete all backups for this VM
     if instance_id > 0 {

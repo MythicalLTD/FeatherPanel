@@ -52,13 +52,14 @@ class VmIp
     /**
      * Get IPs for a VM node that are not assigned to any VM instance (free pool).
      * Excludes the primary IP (Proxmox host) so it is never offered for VM assignment.
+     * When $pveNode is set, exclude rows pinned to a different Proxmox cluster member.
      *
      * @return array<int, array<string, mixed>>
      */
-    public static function getFreeIpsForNode(int $vmNodeId): array
+    public static function getFreeIpsForNode(int $vmNodeId, ?string $pveNode = null): array
     {
         $pdo = Database::getPdoConnection();
-        $stmt = $pdo->prepare('
+        $sql = '
             SELECT ip.* FROM ' . self::$table . ' ip
             WHERE ip.vm_node_id = :vm_node_id
             AND ip.is_primary = \'false\'
@@ -68,11 +69,54 @@ class VmIp
                 UNION
                 SELECT vm_ip_id FROM featherpanel_vm_instance_ips
             )
-            ORDER BY ip.ip ASC
-        ');
-        $stmt->execute(['vm_node_id' => $vmNodeId]);
+        ';
+        $params = ['vm_node_id' => $vmNodeId];
+        $pveNode = $pveNode !== null ? trim($pveNode) : '';
+        if ($pveNode !== '') {
+            $sql .= ' AND (ip.pve_node IS NULL OR ip.pve_node = \'\' OR ip.pve_node = :pve_node)';
+            $params['pve_node'] = $pveNode;
+        }
+        $sql .= ' ORDER BY ip.ip ASC';
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
 
         return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Normalize address_scope / assignment_mode / pve_node on write.
+     *
+     * @param array<string, mixed> $data
+     *
+     * @return array<string, mixed>|false
+     */
+    private static function normalizePoolMeta(array $data, bool $forCreate): array | false
+    {
+        if (array_key_exists('address_scope', $data) || $forCreate) {
+            $scope = strtolower(trim((string) ($data['address_scope'] ?? 'public')));
+            if (!in_array($scope, ['public', 'private'], true)) {
+                return false;
+            }
+            $data['address_scope'] = $scope;
+        }
+
+        if (array_key_exists('assignment_mode', $data) || $forCreate) {
+            $mode = strtolower(trim((string) ($data['assignment_mode'] ?? 'static')));
+            if (!in_array($mode, ['static', 'dhcp'], true)) {
+                return false;
+            }
+            $data['assignment_mode'] = $mode;
+        }
+
+        if (array_key_exists('pve_node', $data) || $forCreate) {
+            $pve = isset($data['pve_node']) && is_string($data['pve_node']) ? trim($data['pve_node']) : '';
+            if ($pve !== '' && !preg_match('/^[A-Za-z0-9][A-Za-z0-9._-]{0,99}$/', $pve)) {
+                return false;
+            }
+            $data['pve_node'] = $pve !== '' ? $pve : null;
+        }
+
+        return $data;
     }
 
     /**
@@ -148,17 +192,26 @@ class VmIp
             return false;
         }
 
+        $normalized = self::normalizePoolMeta($data, true);
+        if ($normalized === false) {
+            return false;
+        }
+        $data = $normalized;
+
         if (!self::isUniqueIp($vmNodeId, $data['ip'])) {
             return false;
         }
 
-        $fields = ['vm_node_id', 'ip', 'cidr', 'gateway', 'is_primary', 'notes'];
+        $fields = ['vm_node_id', 'ip', 'cidr', 'gateway', 'is_primary', 'address_scope', 'assignment_mode', 'pve_node', 'notes'];
         $insert = [
             'vm_node_id' => $vmNodeId,
             'ip' => $data['ip'],
             'cidr' => $data['cidr'],
             'gateway' => $data['gateway'],
             'is_primary' => $data['is_primary'],
+            'address_scope' => $data['address_scope'],
+            'assignment_mode' => $data['assignment_mode'],
+            'pve_node' => $data['pve_node'],
             'notes' => $data['notes'] ?? null,
         ];
 
@@ -184,7 +237,7 @@ class VmIp
             return false;
         }
 
-        $fields = ['ip', 'cidr', 'gateway', 'is_primary', 'notes'];
+        $fields = ['ip', 'cidr', 'gateway', 'is_primary', 'address_scope', 'assignment_mode', 'pve_node', 'notes'];
         $set = [];
         $params = ['id' => $id];
 
@@ -225,6 +278,12 @@ class VmIp
         if (isset($data['notes']) && !is_string($data['notes'])) {
             return false;
         }
+
+        $normalized = self::normalizePoolMeta($data, false);
+        if ($normalized === false) {
+            return false;
+        }
+        $data = $normalized;
 
         foreach ($fields as $field) {
             if (array_key_exists($field, $data)) {

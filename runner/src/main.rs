@@ -5,6 +5,7 @@ use tracing_subscriber::{fmt, layer::SubscriberExt, util::SubscriberInitExt};
 mod config;
 mod database;
 mod encryption;
+mod feathertail;
 mod mail;
 mod processor;
 mod proxmox;

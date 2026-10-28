@@ -18,7 +18,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import { useCallback, useEffect, useState } from 'react';
 import axios, { isAxiosError } from 'axios';
 import { toast } from 'sonner';
-import { Copy, RefreshCw, Terminal, Wifi, WifiOff, Zap } from 'lucide-react';
+import { Copy, RefreshCw, Terminal, Trash2, Wifi, WifiOff, Zap } from 'lucide-react';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
@@ -29,6 +29,17 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { copyToClipboard } from '@/lib/utils';
 import { getApiErrorMessage } from '@/lib/api-errors';
 import type { VdsNodeForm } from './page';
+import { TabTableShell } from './TabPrimitives';
+
+interface TailLease {
+    mac?: string;
+    ip?: string;
+    hostname?: string | null;
+    vmid?: number | null;
+    node?: string | null;
+    state?: string;
+    static_lease?: boolean;
+}
 
 interface DhcpAgentTabProps {
     nodeId: string;
@@ -82,6 +93,9 @@ export function DhcpAgentTab({ nodeId, form, setForm, configRefreshKey = 0 }: Dh
     const [resetting, setResetting] = useState(false);
     const [testing, setTesting] = useState(false);
     const [testResult, setTestResult] = useState<{ ok: boolean; message: string } | null>(null);
+    const [leases, setLeases] = useState<TailLease[]>([]);
+    const [leasesLoading, setLeasesLoading] = useState(false);
+    const [deletingVmid, setDeletingVmid] = useState<number | null>(null);
 
     const fetchSetupCommand = useCallback(async () => {
         if (!nodeId) return;
@@ -107,6 +121,37 @@ export function DhcpAgentTab({ nodeId, form, setForm, configRefreshKey = 0 }: Dh
     useEffect(() => {
         fetchSetupCommand();
     }, [fetchSetupCommand, configRefreshKey]);
+
+    const fetchLeases = useCallback(async () => {
+        if (!nodeId) return;
+        setLeasesLoading(true);
+        try {
+            const { data } = await axios.get(`/api/admin/vm-nodes/${nodeId}/feathertail/leases`);
+            setLeases(Array.isArray(data?.data?.leases) ? data.data.leases : []);
+        } catch (error) {
+            setLeases([]);
+            toast.error(getApiErrorMessage(error, t, 'admin.vdsNodes.feathertail.leases_fetch_failed'));
+        } finally {
+            setLeasesLoading(false);
+        }
+    }, [nodeId, t]);
+
+    useEffect(() => {
+        void fetchLeases();
+    }, [fetchLeases, configRefreshKey]);
+
+    const handleDeleteLease = async (vmid: number) => {
+        setDeletingVmid(vmid);
+        try {
+            await axios.delete(`/api/admin/vm-nodes/${nodeId}/feathertail/leases/vm/${vmid}`);
+            toast.success(t('admin.vdsNodes.feathertail.leases_delete_success'));
+            await fetchLeases();
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.vdsNodes.feathertail.leases_delete_failed'));
+        } finally {
+            setDeletingVmid(null);
+        }
+    };
 
     const handleResetToken = async () => {
         setResetting(true);
@@ -280,6 +325,81 @@ export function DhcpAgentTab({ nodeId, form, setForm, configRefreshKey = 0 }: Dh
                         </Button>
                     </div>
                     <p className='text-muted-foreground text-xs'>{t('admin.vdsNodes.feathertail.reset_help')}</p>
+                </div>
+            </PageCard>
+
+            <PageCard
+                title={t('admin.vdsNodes.feathertail.leases_title')}
+                icon={Zap}
+                action={
+                    <Button type='button' variant='outline' size='sm' onClick={() => void fetchLeases()} loading={leasesLoading}>
+                        <RefreshCw className='mr-2 h-4 w-4' />
+                        {t('common.refresh')}
+                    </Button>
+                }
+            >
+                <div className='space-y-4'>
+                    <p className='text-muted-foreground text-sm'>{t('admin.vdsNodes.feathertail.leases_help')}</p>
+                    {leasesLoading ? (
+                        <p className='text-muted-foreground text-sm'>{t('common.loading')}...</p>
+                    ) : leases.length === 0 ? (
+                        <p className='text-muted-foreground text-sm'>{t('admin.vdsNodes.feathertail.leases_empty')}</p>
+                    ) : (
+                        <TabTableShell>
+                            <table className='w-full text-sm'>
+                                <thead className='bg-muted/20 border-border/50 border-b'>
+                                    <tr>
+                                        <th className='text-muted-foreground px-4 py-3 text-left font-medium'>
+                                            {t('admin.vdsNodes.feathertail.leases_col_vmid')}
+                                        </th>
+                                        <th className='text-muted-foreground px-4 py-3 text-left font-medium'>
+                                            {t('admin.vdsNodes.feathertail.leases_col_ip')}
+                                        </th>
+                                        <th className='text-muted-foreground px-4 py-3 text-left font-medium'>
+                                            {t('admin.vdsNodes.feathertail.leases_col_mac')}
+                                        </th>
+                                        <th className='text-muted-foreground px-4 py-3 text-left font-medium'>
+                                            {t('admin.vdsNodes.feathertail.leases_col_state')}
+                                        </th>
+                                        <th className='text-muted-foreground px-4 py-3 text-right font-medium'>
+                                            {t('common.actions')}
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody className='divide-border/50 divide-y'>
+                                    {leases.map((lease) => {
+                                        const vmid = typeof lease.vmid === 'number' ? lease.vmid : null;
+                                        return (
+                                            <tr key={`${lease.mac ?? ''}-${lease.ip ?? ''}-${vmid ?? ''}`}>
+                                                <td className='px-4 py-3 font-mono text-xs'>{vmid ?? '—'}</td>
+                                                <td className='px-4 py-3 font-mono text-xs'>
+                                                    <Sensitive>{lease.ip ?? '—'}</Sensitive>
+                                                </td>
+                                                <td className='text-muted-foreground px-4 py-3 font-mono text-xs'>
+                                                    {lease.mac ?? '—'}
+                                                </td>
+                                                <td className='px-4 py-3 text-xs'>{lease.state ?? '—'}</td>
+                                                <td className='px-4 py-3 text-right'>
+                                                    {vmid != null ? (
+                                                        <Button
+                                                            type='button'
+                                                            variant='ghost'
+                                                            size='sm'
+                                                            className='text-destructive hover:bg-destructive/10'
+                                                            loading={deletingVmid === vmid}
+                                                            onClick={() => void handleDeleteLease(vmid)}
+                                                        >
+                                                            <Trash2 className='h-4 w-4' />
+                                                        </Button>
+                                                    ) : null}
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </TabTableShell>
+                    )}
                 </div>
             </PageCard>
         </div>

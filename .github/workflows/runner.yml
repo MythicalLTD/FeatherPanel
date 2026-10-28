@@ -22,7 +22,7 @@ jobs:
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: 1.93
+          toolchain: stable
       - name: Build
         run: cargo build --release --locked --bin async-runner
       - name: Test

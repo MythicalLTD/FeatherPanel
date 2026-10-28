@@ -34,6 +34,9 @@ export interface VmFreeIpOption {
     ip: string;
     cidr: number | null;
     gateway: string | null;
+    address_scope?: 'public' | 'private';
+    assignment_mode?: 'static' | 'dhcp';
+    pve_node?: string | null;
 }
 
 interface Props {
@@ -380,13 +383,26 @@ export function VmIpPickerSheet({
                             <div className='bg-primary/10 mt-0.5 rounded-lg p-2'>
                                 <Network className='text-primary h-4 w-4' />
                             </div>
-                            <div>
-                                <div className='font-mono font-semibold'>
-                                    <Sensitive>{ip.ip}</Sensitive>
+                            <div className='min-w-0'>
+                                <div className='flex flex-wrap items-center gap-2'>
+                                    <span className='font-mono font-semibold'>
+                                        <Sensitive>{ip.ip}</Sensitive>
+                                    </span>
+                                    <span className='text-muted-foreground text-[10px] font-medium uppercase'>
+                                        {(ip.address_scope ?? 'public') === 'private'
+                                            ? t('admin.vdsNodes.ips.scope_private')
+                                            : t('admin.vdsNodes.ips.scope_public')}
+                                    </span>
+                                    <span className='text-muted-foreground text-[10px] font-medium uppercase'>
+                                        {(ip.assignment_mode ?? 'static') === 'dhcp'
+                                            ? t('admin.vdsNodes.ips.mode_dhcp')
+                                            : t('admin.vdsNodes.ips.mode_static')}
+                                    </span>
                                 </div>
                                 <div className='text-muted-foreground font-mono text-xs'>
                                     {ip.cidr !== null ? `/${ip.cidr}` : t('ui.components.admin.vmIpPickerSheet.noCIDR')}{' '}
                                     · {ip.gateway || t('ui.components.admin.vmIpPickerSheet.noGateway')}
+                                    {ip.pve_node ? ` · ${ip.pve_node}` : ''}
                                 </div>
                             </div>
                         </div>

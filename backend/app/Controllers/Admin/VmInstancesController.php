@@ -34,6 +34,7 @@ use App\Chat\VmInstanceBackup;
 use App\Config\ConfigInterface;
 use App\Chat\VmInstanceActivity;
 use App\Mail\templates\VmSuspended;
+use App\Helpers\FeatherTailClient;
 use App\Services\Vm\VmInstanceUtil;
 use App\CloudFlare\CloudFlareRealIP;
 use App\Mail\templates\VmUnsuspended;
@@ -433,6 +434,50 @@ class VmInstancesController
             $targetNode = (string) $nodesResult['nodes'][0]['node'];
         }
 
+        $usesDhcp = false;
+        foreach ($networkAssignments as $assignment) {
+            $ipRow = $freeIpsById[(int) $assignment['vm_ip_id']] ?? VmIp::getById((int) $assignment['vm_ip_id']);
+            if ($ipRow === null) {
+                return ApiResponse::error('Invalid vm_ip_id or IP is already assigned to another instance', 'INVALID_VM_IP', 400);
+            }
+            $pin = trim((string) ($ipRow['pve_node'] ?? ''));
+            if ($pin !== '' && $pin !== $targetNode) {
+                return ApiResponse::error(
+                    'IP ' . ($ipRow['ip'] ?? '') . ' is pinned to Proxmox node ' . $pin . ', not ' . $targetNode,
+                    'IP_PVE_NODE_MISMATCH',
+                    400
+                );
+            }
+            if (($ipRow['assignment_mode'] ?? 'static') === 'dhcp') {
+                $usesDhcp = true;
+            }
+        }
+
+        if ($usesDhcp) {
+            if ($vmType !== 'qemu') {
+                return ApiResponse::error(
+                    'DHCP-assigned IPs require a QEMU/KVM guest (FeatherTail resolves MAC from QEMU config)',
+                    'DHCP_LXC_UNSUPPORTED',
+                    400
+                );
+            }
+            if ((int) ($vmNode['feathertail_enabled'] ?? 0) !== 1) {
+                return ApiResponse::error(
+                    'Enable FeatherTail on this VDS node before assigning DHCP IPs',
+                    'FEATHERTAIL_REQUIRED',
+                    400
+                );
+            }
+            $tailHealth = FeatherTailClient::health($vmNode);
+            if (($tailHealth['status'] ?? '') !== 'healthy') {
+                return ApiResponse::error(
+                    'FeatherTail is unreachable: ' . ($tailHealth['error'] ?? 'unknown error'),
+                    'FEATHERTAIL_UNREACHABLE',
+                    502
+                );
+            }
+        }
+
         $nextResult = $client->getNextVmid(5000);
         if (!$nextResult['ok'] || $nextResult['vmid'] === null) {
             return ApiResponse::error(
@@ -453,13 +498,25 @@ class VmInstancesController
             'template_vmid' => $templateVmid,
             'template_node' => $templateNode,
             'vm_ip_id' => $vmIpId,
-            'networks' => array_map(static function (array $assignment): array {
+            'networks' => array_map(static function (array $assignment) use ($freeIpsById): array {
+                $ipRow = $freeIpsById[(int) $assignment['vm_ip_id']] ?? VmIp::getById((int) $assignment['vm_ip_id']) ?? [];
+
                 return [
                     'key' => $assignment['network_key'],
                     'vm_ip_id' => (int) $assignment['vm_ip_id'],
                     'bridge' => $assignment['bridge'] ?? null,
+                    'ip' => $ipRow['ip'] ?? null,
+                    'cidr' => isset($ipRow['cidr']) ? (int) $ipRow['cidr'] : null,
+                    'gateway' => $ipRow['gateway'] ?? null,
+                    'address_scope' => $ipRow['address_scope'] ?? 'public',
+                    'assignment_mode' => $ipRow['assignment_mode'] ?? 'static',
+                    'is_primary' => !empty($assignment['is_primary']),
+                    'interface_name' => $assignment['interface_name'] ?? null,
+                    'sort_order' => (int) ($assignment['sort_order'] ?? 0),
                 ];
             }, $networkAssignments),
+            'uses_dhcp' => $usesDhcp,
+            'feathertail_enabled' => (int) ($vmNode['feathertail_enabled'] ?? 0) === 1,
             'notes' => $notesRaw,
             'vm_type' => $vmType,
             'memory' => $memory,
