@@ -28,6 +28,7 @@ use App\Services\Storage\StorageSettings;
 use App\Services\Storage\StorageException;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use App\Services\Storage\StorageDestinationService;
 use App\Services\Storage\Providers\ProviderRegistry;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 
@@ -144,6 +145,12 @@ class StorageOAuthController
             $isPending ? UserStorageDestination::hardDeletePending((int) $row['id']) : UserStorageDestination::update((int) $row['id'], ['config' => $clean]);
 
             return $this->back(null, $e->errorCode());
+        }
+
+        // Fill in quota right away (best effort; the user can test again later).
+        $fresh = UserStorageDestination::getById((int) $row['id']);
+        if ($fresh !== null) {
+            StorageDestinationService::test($fresh);
         }
 
         Activity::createActivity([
