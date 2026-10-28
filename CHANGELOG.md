@@ -78,6 +78,7 @@
 
 ### Fixed
 
+- Develop builds are green again: the async runner pins the AWS SDK crates to versions that build on Rust 1.93 (newer ones need 1.94.1), and the new mail and VM error codes have English translations. by @nayskutzu
 - Production containers no longer grow to many GB and get OOM killed; cron no longer runs every job twice after a failed run. (#338) by @nayskutzu
 - Clearing a user's fingerprint in alt detection now also drops IP based alt links. (#342) by @nayskutzu
 - Missing setup wizard module step translations. (#339) by @nayskutzu
