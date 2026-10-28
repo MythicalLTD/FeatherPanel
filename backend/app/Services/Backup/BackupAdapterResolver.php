@@ -31,6 +31,9 @@ final class BackupAdapterResolver
 
     public const ADAPTER_S3 = 's3';
 
+    /** FeatherWings streaming upload to a session URL (Google Drive, Dropbox, OneDrive, panel relay). */
+    public const ADAPTER_RESUMABLE = 'resumable';
+
     /** Calagopus kebab-case name for PBS. */
     public const ADAPTER_PROXMOX_BACKUP_SERVER = 'proxmox-backup-server';
 
@@ -196,6 +199,9 @@ final class BackupAdapterResolver
         }
         if ($v === self::ADAPTER_S3) {
             return self::ADAPTER_S3;
+        }
+        if ($v === self::ADAPTER_RESUMABLE) {
+            return self::ADAPTER_RESUMABLE;
         }
         if (
             in_array($v, [

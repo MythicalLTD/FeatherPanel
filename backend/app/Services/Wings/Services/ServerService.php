@@ -1059,8 +1059,11 @@ class ServerService
 
     /**
      * Restore backup.
+     *
+     * @param array<string, string> $headers extra request headers Wings sends when fetching download_url
+     *                                       (s3 and resumable adapters), e.g. a provider bearer token
      */
-    public function restoreBackup(string $serverUuid, string $backupId, string $adapter, bool $truncateDirectory, ?string $downloadUrl = null): WingsResponse
+    public function restoreBackup(string $serverUuid, string $backupId, string $adapter, bool $truncateDirectory, ?string $downloadUrl = null, array $headers = []): WingsResponse
     {
         try {
             $data = [
@@ -1070,6 +1073,9 @@ class ServerService
 
             if ($downloadUrl) {
                 $data['download_url'] = $downloadUrl;
+            }
+            if ($headers !== []) {
+                $data['headers'] = $headers;
             }
 
             $response = $this->connection->post("/api/servers/{$serverUuid}/backup/{$backupId}/restore", $data);

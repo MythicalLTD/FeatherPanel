@@ -43,12 +43,14 @@ final class StorageSettings
     public const BYO_PROVIDERS = 'backup_byo_providers';
     public const BYO_MAX_PER_USER = 'backup_byo_max_per_user';
     public const BYO_COUNT_TOWARD_LIMIT = 'backup_byo_count_toward_limit';
+    public const GOOGLE_CLIENT_ID = 'backup_byo_google_client_id';
+    public const GOOGLE_CLIENT_SECRET = 'backup_byo_google_client_secret';
 
     /** Providers users may connect, in display order. */
-    public const PROVIDERS = ['s3'];
+    public const PROVIDERS = ['s3', 'gdrive'];
 
     /** @var list<string> */
-    public const SENSITIVE = [self::S3_SECRET_KEY];
+    public const SENSITIVE = [self::S3_SECRET_KEY, self::GOOGLE_CLIENT_SECRET];
 
     /**
      * Ordered list of [key, default, type, description, options, validation, placeholder].
@@ -73,9 +75,11 @@ final class StorageSettings
             [self::MAX_CONCURRENT_UPLOADS, '4', 'number', 'How many parts Wings may upload in parallel (sent to Wings as max_concurrent_uploads).', [], 'required|integer|min:1|max:32', '4'],
             [self::PRESIGN_TTL_MINUTES, '60', 'number', 'How long presigned upload/download URLs stay valid, in minutes.', [], 'required|integer|min:5|max:10080', '60'],
             [self::BYO_ENABLED, 'false', 'select', 'Let users add their own backup storage (Account, Storage) and pick it when creating a backup or schedule. Backups on their own storage do not count toward the server backup limit unless you enable the option below. Custom S3 endpoints must use https and a public address.', $bool, 'required|string|in:true,false', 'false'],
-            [self::BYO_PROVIDERS, 's3', 'text', 'Comma separated providers users may connect. Available: s3', [], 'nullable|string|max:255', 's3'],
+            [self::BYO_PROVIDERS, 's3', 'text', 'Comma separated providers users may connect. Available: s3, gdrive (Google Drive). OAuth providers also need their client ID and secret below. Cloud providers need FeatherWings with resumable backup uploads on the node.', [], 'nullable|string|max:255', 's3'],
             [self::BYO_MAX_PER_USER, '3', 'number', 'Maximum storage destinations per user.', [], 'required|integer|min:1|max:50', '3'],
             [self::BYO_COUNT_TOWARD_LIMIT, 'false', 'select', 'Count backups stored on a user\'s own storage toward the server backup limit. Off by default: they use no host disk or bucket space. Rotation never removes a backup from a different storage than the new one.', $bool, 'required|string|in:true,false', 'false'],
+            [self::GOOGLE_CLIENT_ID, '', 'text', 'Google Drive: OAuth client ID (Google Cloud console, OAuth client of type "Web application", Drive API enabled). Authorized redirect URI: <panel URL>/api/user/storage-destinations/oauth/gdrive/callback. Only the drive.file scope is requested, so the panel sees just the files it created.', [], 'nullable|string|max:255', '1234-abc.apps.googleusercontent.com'],
+            [self::GOOGLE_CLIENT_SECRET, '', 'password', 'Google Drive: OAuth client secret (stored encrypted).', [], 'nullable|string|max:255', 'Enter secret to change'],
         ];
     }
 
@@ -156,6 +160,15 @@ final class StorageSettings
         $wanted = array_map(static fn (string $p): string => strtolower(trim($p)), explode(',', self::get(self::BYO_PROVIDERS)));
 
         return array_values(array_filter(self::PROVIDERS, static fn (string $p): bool => in_array($p, $wanted, true)));
+    }
+
+    /** Admin credentials for an OAuth provider: [client id, client secret], empty strings when unset. */
+    public static function oauthClient(string $provider): array
+    {
+        return match ($provider) {
+            'gdrive' => [trim(self::get(self::GOOGLE_CLIENT_ID)), trim(self::get(self::GOOGLE_CLIENT_SECRET))],
+            default => ['', ''],
+        };
     }
 
     public static function maxDestinationsPerUser(): int

@@ -27,6 +27,12 @@ use App\App;
  */
 class UserStorageDestination
 {
+    /** OAuth consent in progress; invisible to the user and to backups until the callback completes. */
+    public const STATUS_PENDING = 'pending';
+
+    /** Pending rows older than this are dropped. */
+    public const PENDING_TTL_SECONDS = 900;
+
     public const STATUS_ACTIVE = 'active';
     public const STATUS_ERROR = 'error';
     public const STATUS_REVOKED = 'revoked';
@@ -36,16 +42,17 @@ class UserStorageDestination
     /**
      * @param array<string, mixed> $config
      */
-    public static function create(int $userId, string $name, string $provider, array $config): int | false
+    public static function create(int $userId, string $name, string $provider, array $config, string $status = self::STATUS_ACTIVE): int | false
     {
         $pdo = Database::getPdoConnection();
-        $stmt = $pdo->prepare('INSERT INTO ' . self::$table . ' (`uuid`, `user_id`, `name`, `provider`, `config`) VALUES (:uuid, :user_id, :name, :provider, :config)');
+        $stmt = $pdo->prepare('INSERT INTO ' . self::$table . ' (`uuid`, `user_id`, `name`, `provider`, `config`, `status`) VALUES (:uuid, :user_id, :name, :provider, :config, :status)');
         $ok = $stmt->execute([
             'uuid' => self::uuid(),
             'user_id' => $userId,
             'name' => $name,
             'provider' => $provider,
             'config' => self::encryptConfig($config),
+            'status' => $status,
         ]);
 
         return $ok ? (int) $pdo->lastInsertId() : false;
@@ -64,11 +71,43 @@ class UserStorageDestination
         return $row ?: null;
     }
 
-    public static function getForUser(int $id, int $userId): ?array
+    public static function getForUser(int $id, int $userId, bool $withPending = false): ?array
     {
         $row = self::getById($id);
+        if ($row === null || (int) $row['user_id'] !== $userId) {
+            return null;
+        }
+        if (!$withPending && (string) $row['status'] === self::STATUS_PENDING) {
+            return null;
+        }
 
-        return ($row !== null && (int) $row['user_id'] === $userId) ? $row : null;
+        return $row;
+    }
+
+    public static function getByUuidForUser(string $uuid, int $userId): ?array
+    {
+        $stmt = Database::getPdoConnection()->prepare('SELECT * FROM ' . self::$table . ' WHERE uuid = :uuid AND user_id = :u AND deleted_at IS NULL LIMIT 1');
+        $stmt->execute(['uuid' => $uuid, 'u' => $userId]);
+        $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        return $row ?: null;
+    }
+
+    /** Drop consent attempts the user never finished. They never held backups, so they are removed outright. */
+    public static function purgeStalePending(): void
+    {
+        Database::getPdoConnection()->prepare('DELETE FROM ' . self::$table . ' WHERE status = :p AND created_at < (NOW() - INTERVAL ' . self::PENDING_TTL_SECONDS . ' SECOND)')->execute(['p' => self::STATUS_PENDING]);
+    }
+
+    /** A new consent attempt supersedes the user's unfinished ones, so an abandoned tab never blocks the limit. */
+    public static function purgePendingForUser(int $userId): void
+    {
+        Database::getPdoConnection()->prepare('DELETE FROM ' . self::$table . ' WHERE user_id = :u AND status = :p')->execute(['u' => $userId, 'p' => self::STATUS_PENDING]);
+    }
+
+    public static function hardDeletePending(int $id): void
+    {
+        Database::getPdoConnection()->prepare('DELETE FROM ' . self::$table . ' WHERE id = :id AND status = :p')->execute(['id' => $id, 'p' => self::STATUS_PENDING]);
     }
 
     /**
@@ -76,7 +115,7 @@ class UserStorageDestination
      */
     public static function listForUser(int $userId): array
     {
-        $stmt = Database::getPdoConnection()->prepare('SELECT * FROM ' . self::$table . ' WHERE user_id = :u AND deleted_at IS NULL ORDER BY id ASC');
+        $stmt = Database::getPdoConnection()->prepare('SELECT * FROM ' . self::$table . ' WHERE user_id = :u AND deleted_at IS NULL AND status <> \'pending\' ORDER BY id ASC');
         $stmt->execute(['u' => $userId]);
 
         return $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];

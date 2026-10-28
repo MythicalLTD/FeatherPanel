@@ -75,7 +75,7 @@ export function BackupDestinationPicker({ value, onChange, disabled = false, hin
                         id: d.id,
                         name:
                             d.status === 'active'
-                                ? `${d.name} (${d.config.bucket})`
+                                ? `${d.name} (${d.config ? d.config.bucket : t(`account.storage.providers.${d.provider}`)})`
                                 : `${d.name} (${t(`account.storage.status.${d.status}`)})`,
                     })),
                 ]}

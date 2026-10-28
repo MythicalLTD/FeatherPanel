@@ -150,8 +150,8 @@ class WingsBackupController
 
             return ApiResponse::error('Failed to prepare remote backup upload: ' . $e->getMessage(), 'BACKUP_PRESIGN_FAILED', 502);
         }
-        $parts = $info['parts'];
-        $partSize = $info['part_size'];
+        $parts = $info['parts'] ?? [];
+        $partSize = $info['part_size'] ?? ($info['chunk_size'] ?? 0);
 
         // Emit event
         global $eventManager;
@@ -163,6 +163,7 @@ class WingsBackupController
                 'server' => $server,
                 'node' => $node,
                 'upload_info' => [
+                    'adapter' => $info['adapter'] ?? 's3',
                     'parts' => $parts,
                     'part_size' => $partSize,
                     'total_size' => $size,

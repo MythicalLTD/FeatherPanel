@@ -36,7 +36,8 @@ type EventKey =
     | 'vds_high_cpu'
     | 'vds_backup_failed'
     | 'vds_bandwidth'
-    | 'vds_expiring';
+    | 'vds_expiring'
+    | 'storage_disconnected';
 
 interface NotificationSettings {
     email_enabled: boolean;
@@ -57,6 +58,7 @@ const EVENTS: EventKey[] = [
     'vds_backup_failed',
     'vds_bandwidth',
     'vds_expiring',
+    'storage_disconnected',
 ];
 
 const DEFAULTS: NotificationSettings = {
@@ -75,6 +77,7 @@ const DEFAULTS: NotificationSettings = {
         vds_backup_failed: true,
         vds_bandwidth: true,
         vds_expiring: true,
+        storage_disconnected: true,
     },
 };
 
