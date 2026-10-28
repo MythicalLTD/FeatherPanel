@@ -20,6 +20,8 @@ namespace App\Services\Storage;
 use App\Chat\Backup;
 use App\Chat\UserStorageDestination;
 use App\Services\Backup\BackupAdapterResolver;
+use App\Services\Storage\Providers\ProviderRegistry;
+use App\Services\Storage\Providers\StorageProviderInterface;
 
 /**
  * Panel-side coordination of remote (object storage) backups.
@@ -34,7 +36,39 @@ class BackupStorageService
 
     public static function isRemote(array $backup): bool
     {
-        return BackupAdapterResolver::normalizeStored($backup['disk'] ?? '') === BackupAdapterResolver::ADAPTER_S3;
+        return in_array(BackupAdapterResolver::normalizeStored($backup['disk'] ?? ''), [BackupAdapterResolver::ADAPTER_S3, BackupAdapterResolver::ADAPTER_RESUMABLE], true);
+    }
+
+    /** Stored on a cloud provider (Google Drive, ...) through the Wings resumable adapter. */
+    public static function isResumable(array $backup): bool
+    {
+        return BackupAdapterResolver::normalizeStored($backup['disk'] ?? '') === BackupAdapterResolver::ADAPTER_RESUMABLE;
+    }
+
+    /**
+     * The usable destination row of a backup (throws when it was removed or disconnected).
+     */
+    public static function destinationFor(array $backup): array
+    {
+        $destination = !empty($backup['destination_id']) ? UserStorageDestination::getById((int) $backup['destination_id'], true) : null;
+        if ($destination === null || $destination['deleted_at'] !== null) {
+            throw new StorageException('The storage destination of this backup was removed; the backup is orphaned', 'DESTINATION_ORPHANED', 409);
+        }
+        if ((string) $destination['status'] === UserStorageDestination::STATUS_REVOKED) {
+            throw new StorageException('The storage destination of this backup was disconnected; reconnect it to use this backup', 'DESTINATION_REVOKED', 409);
+        }
+
+        return $destination;
+    }
+
+    /**
+     * @return array{0: StorageProviderInterface, 1: array<string, mixed>}
+     */
+    public static function providerFor(array $backup): array
+    {
+        $destination = self::destinationFor($backup);
+
+        return [ProviderRegistry::get((string) $destination['provider']), $destination];
     }
 
     /**
@@ -46,15 +80,7 @@ class BackupStorageService
             return (self::$storeFactory)($backup);
         }
         if (!empty($backup['destination_id'])) {
-            $destination = UserStorageDestination::getById((int) $backup['destination_id'], true);
-            if ($destination === null || $destination['deleted_at'] !== null) {
-                throw new StorageException('The storage destination of this backup was removed; the backup is orphaned', 'DESTINATION_ORPHANED', 409);
-            }
-            if ((string) $destination['status'] === UserStorageDestination::STATUS_REVOKED) {
-                throw new StorageException('The storage destination of this backup was disconnected; reconnect it to use this backup', 'DESTINATION_REVOKED', 409);
-            }
-
-            return StorageDestinationService::storeFor($destination);
+            return StorageDestinationService::storeFor(self::destinationFor($backup));
         }
         if (!StorageSettings::globalS3Configured()) {
             return null;
@@ -70,6 +96,15 @@ class BackupStorageService
     public static function chooseAdapter(\App\Services\Wings\Wings $wings, ?int $destinationId): string
     {
         if ($destinationId !== null && $destinationId > 0) {
+            $destination = UserStorageDestination::getById($destinationId);
+            if ($destination !== null && ProviderRegistry::has((string) $destination['provider'])) {
+                if (!self::nodeSupportsResumable($wings)) {
+                    throw new StorageException('This node runs a FeatherWings version without resumable backup uploads, so it cannot send backups to ' . ProviderRegistry::get((string) $destination['provider'])->label() . '. Ask an administrator to update Wings.', 'NODE_RESUMABLE_UNSUPPORTED', 422);
+                }
+
+                return BackupAdapterResolver::ADAPTER_RESUMABLE;
+            }
+
             return BackupAdapterResolver::ADAPTER_S3;
         }
         if (StorageSettings::bool(StorageSettings::S3_USE_BY_DEFAULT) && StorageSettings::globalS3Configured()) {
@@ -77,6 +112,19 @@ class BackupStorageService
         }
 
         return BackupAdapterResolver::resolveDefault($wings);
+    }
+
+    /** GET /api/system features.resumable_backup_upload; a missing key means unsupported. */
+    public static function nodeSupportsResumable(\App\Services\Wings\Wings $wings): bool
+    {
+        try {
+            $info = $wings->getSystem()->getSystemInfo();
+        } catch (\Throwable) {
+            return false;
+        }
+        $features = $info['features'] ?? ($info['data']['features'] ?? []);
+
+        return is_array($features) && !empty($features['resumable_backup_upload']);
     }
 
     public static function objectKey(S3ObjectStore $store, array $server, array $backup): string
@@ -92,6 +140,11 @@ class BackupStorageService
      */
     public static function uploadInfo(array $backup, array $server, int $size): array
     {
+        if (self::isResumable($backup)) {
+            [$provider, $destination] = self::providerFor($backup);
+
+            return $provider->openUpload($destination, $server, $backup, $size);
+        }
         $store = self::storeFor($backup);
         if ($store === null) {
             throw new StorageException('S3 backup storage is not configured on the panel', 'S3_NOT_CONFIGURED', 503);
@@ -132,6 +185,18 @@ class BackupStorageService
      */
     public static function finalize(array $backup, array $server, array $body): void
     {
+        if (self::isResumable($backup)) {
+            [$provider, $destination] = self::providerFor($backup);
+            if (empty($body['successful'])) {
+                $provider->abortUpload($destination, $server, $backup);
+
+                return;
+            }
+            $ref = $provider->completeUpload($destination, $server, $backup, (int) ($body['size'] ?? -1), strtolower((string) ($body['checksum'] ?? '')));
+            Backup::updateBackup((int) $backup['id'], ['remote_ref' => $ref]);
+
+            return;
+        }
         $uploadId = (string) ($backup['upload_id'] ?? '');
         if ($uploadId === '') {
             throw new StorageException('No multipart upload is in progress for this backup', 'NO_UPLOAD_IN_PROGRESS', 400);
@@ -164,13 +229,39 @@ class BackupStorageService
 
     public static function downloadUrl(array $backup, array $server): string
     {
+        if (self::isResumable($backup)) {
+            [$provider, $destination] = self::providerFor($backup);
+            $direct = $provider->browserDownloadUrl($destination, $server, $backup, self::downloadName($backup));
+
+            return $direct ?? BackupStreamSigner::url((string) $backup['uuid']);
+        }
         $store = self::storeFor($backup);
         if ($store === null) {
             throw new StorageException('S3 backup storage is not configured on the panel', 'S3_NOT_CONFIGURED', 503);
         }
-        $name = preg_replace('/[^A-Za-z0-9._-]+/', '_', (string) ($backup['name'] ?? 'backup')) . '.tar.gz';
 
-        return $store->presignGet(self::objectKey($store, $server, $backup), StorageSettings::presignTtlSeconds(), $name);
+        return $store->presignGet(self::objectKey($store, $server, $backup), StorageSettings::presignTtlSeconds(), self::downloadName($backup));
+    }
+
+    public static function downloadName(array $backup): string
+    {
+        return preg_replace('/[^A-Za-z0-9._-]+/', '_', (string) ($backup['name'] ?? 'backup')) . '.tar.gz';
+    }
+
+    /**
+     * What Wings needs to fetch the archive for a restore.
+     *
+     * @return array{download_url: string, headers: array<string, string>}
+     */
+    public static function restoreSource(array $backup, array $server): array
+    {
+        if (self::isResumable($backup)) {
+            [$provider, $destination] = self::providerFor($backup);
+
+            return $provider->restoreSource($destination, $server, $backup);
+        }
+
+        return ['download_url' => self::downloadUrl($backup, $server), 'headers' => []];
     }
 
     /**
@@ -193,6 +284,12 @@ class BackupStorageService
     {
         if (in_array(self::destinationState($backup), ['orphaned', 'revoked'], true)) {
             // The panel can no longer reach that storage; only the record is removed.
+            return;
+        }
+        if (self::isResumable($backup)) {
+            [$provider, $destination] = self::providerFor($backup);
+            $provider->delete($destination, $server, $backup);
+
             return;
         }
         $store = self::storeFor($backup);
