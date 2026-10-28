@@ -49,7 +49,7 @@ class StorageOAuthController
         if (!StorageSettings::byoEnabled()) {
             return ApiResponse::error('Bring-your-own backup storage is disabled on this panel', 'BYO_STORAGE_DISABLED', 403);
         }
-        if (!ProviderRegistry::has($provider) || !in_array($provider, StorageSettings::allowedProviders(), true)) {
+        if (!ProviderRegistry::isOAuth($provider) || !in_array($provider, StorageSettings::allowedProviders(), true)) {
             return ApiResponse::error('This storage provider is not allowed on this panel', 'PROVIDER_NOT_ALLOWED', 403);
         }
         $oauth = ProviderRegistry::oauth($provider);

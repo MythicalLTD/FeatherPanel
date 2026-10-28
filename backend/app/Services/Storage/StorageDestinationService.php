@@ -220,7 +220,10 @@ final class StorageDestinationService
     {
         $config = UserStorageDestination::config($row);
         $access = (string) ($config['access_key'] ?? '');
-        $oauth = ProviderRegistry::has((string) $row['provider']);
+        $provider = (string) $row['provider'];
+        $oauth = ProviderRegistry::isOAuth($provider);
+        $relay = ProviderRegistry::isRelay($provider);
+        $remote = $oauth || $relay;
 
         return [
             'id' => (int) $row['id'],
@@ -233,9 +236,10 @@ final class StorageDestinationService
             'created_at' => $row['created_at'] ?? null,
             'backups_count' => UserStorageDestination::countBackups((int) $row['id']),
             'oauth' => $oauth,
-            'account' => $oauth ? ($config['account'] ?? null) : null,
-            'quota' => $oauth && is_array($config['quota'] ?? null) ? $config['quota'] : null,
-            'config' => $oauth ? null : [
+            'relay' => $relay,
+            'account' => $remote ? ($config['account'] ?? null) : null,
+            'quota' => $remote && is_array($config['quota'] ?? null) ? $config['quota'] : null,
+            'config' => $oauth ? null : ($relay ? ProviderRegistry::relay($provider)->publicConfig($config) : [
                 'endpoint' => $config['endpoint'] ?? '',
                 'region' => $config['region'] ?? '',
                 'bucket' => $config['bucket'] ?? '',
@@ -243,7 +247,7 @@ final class StorageDestinationService
                 'path_style' => (bool) ($config['path_style'] ?? true),
                 'access_key_hint' => $access === '' ? '' : '…' . substr($access, -4),
                 'has_secret' => !empty($config['secret_key']),
-            ],
+            ]),
         ];
     }
 }
