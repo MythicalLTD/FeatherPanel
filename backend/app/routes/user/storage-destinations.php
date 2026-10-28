@@ -24,6 +24,7 @@ use App\Middleware\AuthMiddleware;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RouteCollection;
 use Symfony\Component\HttpFoundation\RedirectResponse;
+use App\Controllers\User\Storage\RelayUploadController;
 use App\Controllers\User\Storage\BackupStreamController;
 use App\Controllers\User\Storage\StorageOAuthController;
 use App\Controllers\User\Storage\StorageDestinationController;
@@ -158,5 +159,23 @@ return function (RouteCollection $routes): void {
         ['GET'],
         Rate::perMinute(30),
         'storage-backup-stream'
+    );
+
+    // Signed, expiring link (no session): Wings uploads SFTP / WebDAV backup chunks here.
+    App::getInstance(true)->registerApiRoute(
+        $routes,
+        'storage-backup-relay',
+        '/api/storage/relay/{uuid}',
+        function (Request $request, array $args) {
+            $uuid = (string) ($args['uuid'] ?? '');
+            if (!preg_match('/^[a-f0-9-]{36}$/', $uuid)) {
+                return ApiResponse::error('Backup not found', 'BACKUP_NOT_FOUND', 404);
+            }
+
+            return (new RelayUploadController())->receive($request, $uuid);
+        },
+        ['PUT'],
+        Rate::perMinute(600),
+        'storage-backup-relay'
     );
 };

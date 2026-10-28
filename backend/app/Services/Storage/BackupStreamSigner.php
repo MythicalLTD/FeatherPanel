@@ -42,6 +42,23 @@ final class BackupStreamSigner
         return hash_equals(self::sign($backupUuid, (int) $expires), $signature);
     }
 
+    /** Upload URL for the SFTP / WebDAV relay (Wings PUTs Content-Range chunks to it). */
+    public static function relayUrl(string $backupUuid, int $ttl = 86400): string
+    {
+        $expires = time() + $ttl;
+
+        return AppUrlHelper::baseUrl() . '/api/storage/relay/' . rawurlencode($backupUuid) . '?expires=' . $expires . '&signature=' . self::sign('relay|' . $backupUuid, $expires);
+    }
+
+    public static function verifyRelay(string $backupUuid, mixed $expires, mixed $signature): bool
+    {
+        if (!is_string($signature) || !is_numeric($expires) || (int) $expires < time()) {
+            return false;
+        }
+
+        return hash_equals(self::sign('relay|' . $backupUuid, (int) $expires), $signature);
+    }
+
     private static function sign(string $backupUuid, int $expires): string
     {
         $key = (string) (App::env('DATABASE_ENCRYPTION_KEY') ?? '');

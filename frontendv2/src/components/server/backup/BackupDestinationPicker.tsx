@@ -20,7 +20,7 @@ import Link from 'next/link';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { Label } from '@/components/ui/label';
 import { HeadlessSelect } from '@/components/ui/headless-select';
-import { fetchStorageDestinations, type StorageDestination } from '@/lib/storage-destinations';
+import { fetchStorageDestinations, type StorageDestination, isS3Config } from '@/lib/storage-destinations';
 
 type Props = {
     value: number | null;
@@ -75,7 +75,7 @@ export function BackupDestinationPicker({ value, onChange, disabled = false, hin
                         id: d.id,
                         name:
                             d.status === 'active'
-                                ? `${d.name} (${d.config ? d.config.bucket : t(`account.storage.providers.${d.provider}`)})`
+                                ? `${d.name} (${isS3Config(d.config) ? d.config.bucket : t(`account.storage.providers.${d.provider}`)})`
                                 : `${d.name} (${t(`account.storage.status.${d.status}`)})`,
                     })),
                 ]}

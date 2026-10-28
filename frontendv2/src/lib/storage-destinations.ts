@@ -29,17 +29,36 @@ export interface StorageDestination {
     backups_count: number;
     /** Connected through OAuth (Google Drive, ...): no editable config, only account and quota. */
     oauth: boolean;
+    /** SFTP / WebDAV: credentials form, data relayed through the panel. */
+    relay?: boolean;
     account: string | null;
     quota: { used: number; total: number | null } | null;
-    config: {
-        endpoint: string;
-        region: string;
-        bucket: string;
-        prefix: string;
-        path_style: boolean;
-        access_key_hint: string;
-        has_secret: boolean;
-    } | null;
+    config: S3Config | RelayConfig | null;
+}
+
+export interface S3Config {
+    endpoint: string;
+    region: string;
+    bucket: string;
+    prefix: string;
+    path_style: boolean;
+    access_key_hint: string;
+    has_secret: boolean;
+}
+
+export interface RelayConfig {
+    host?: string;
+    port?: number;
+    url?: string;
+    username: string;
+    root: string;
+    has_password: boolean;
+    has_private_key?: boolean;
+    host_key?: string;
+}
+
+export function isS3Config(c: StorageDestination['config']): c is S3Config {
+    return !!c && 'bucket' in c;
 }
 
 export interface StorageCapabilities {
@@ -47,6 +66,7 @@ export interface StorageCapabilities {
     byo_s3: boolean;
     providers: string[];
     oauth_providers: string[];
+    relay_providers?: string[];
     max_destinations: number;
 }
 
@@ -69,6 +89,7 @@ export async function fetchStorageDestinations(): Promise<{
             byo_s3: false,
             providers: [],
             oauth_providers: [],
+            relay_providers: [],
             max_destinations: 0,
         },
     };

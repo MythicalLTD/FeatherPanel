@@ -59,8 +59,12 @@ class StorageDestinationController
         if (!in_array($provider, StorageSettings::allowedProviders(), true)) {
             return ApiResponse::error('This storage provider is not allowed on this panel', 'PROVIDER_NOT_ALLOWED', 403);
         }
-        if (ProviderRegistry::has($provider)) {
+        if (ProviderRegistry::isOAuth($provider)) {
             return ApiResponse::error('Connect this provider with its sign-in flow', 'OAUTH_REQUIRED', 400);
+        }
+        $relay = ProviderRegistry::isRelay($provider) ? ProviderRegistry::relay($provider) : null;
+        if ($relay !== null && !$relay->available()) {
+            return ApiResponse::error('SFTP and WebDAV storage is turned off on this panel', 'RELAY_DISABLED', 403);
         }
         $name = mb_substr(trim((string) ($body['name'] ?? '')), 0, 100);
         if ($name === '') {
@@ -70,7 +74,8 @@ class StorageDestinationController
             return ApiResponse::error('You reached the maximum number of storage destinations', 'DESTINATION_LIMIT_REACHED', 400);
         }
         try {
-            $config = StorageDestinationService::normalizeS3Config((array) ($body['config'] ?? []));
+            $input = (array) ($body['config'] ?? []);
+            $config = $relay !== null ? $relay->normalizeConfig($input) : StorageDestinationService::normalizeS3Config($input);
         } catch (StorageException $e) {
             return ApiResponse::error($e->getMessage(), $e->errorCode(), $e->status());
         }
@@ -84,7 +89,7 @@ class StorageDestinationController
             $test = StorageDestinationService::test($row);
             $row = UserStorageDestination::getById($id);
         }
-        $this->audit($user, 'storage_destination_created', 'Added backup storage "' . $name . '" (' . $provider . ', ' . $config['endpoint'] . ')');
+        $this->audit($user, 'storage_destination_created', 'Added backup storage "' . $name . '" (' . $provider . ', ' . ($config['endpoint'] ?? $config['url'] ?? $config['host'] ?? '') . ')');
 
         return ApiResponse::success(['destination' => StorageDestinationService::view($row), 'test' => $test], 'Storage destination created', 201);
     }
@@ -108,13 +113,16 @@ class StorageDestinationController
             }
             $update['name'] = $name;
         }
-        if (isset($body['config']) && is_array($body['config']) && !ProviderRegistry::has((string) $row['provider'])) {
+        $provider = (string) $row['provider'];
+        if (isset($body['config']) && is_array($body['config']) && !ProviderRegistry::isOAuth($provider)) {
             try {
                 $current = UserStorageDestination::config($row);
-                $next = StorageDestinationService::normalizeS3Config($body['config'], $current);
+                $relay = ProviderRegistry::isRelay($provider) ? ProviderRegistry::relay($provider) : null;
+                $next = $relay !== null ? $relay->normalizeConfig($body['config'], $current) : StorageDestinationService::normalizeS3Config($body['config'], $current);
+                $moved = $relay !== null ? $relay->locationChanged($current, $next) : StorageDestinationService::locationChanged($current, $next);
                 // Existing backups are addressed through this config, so their location must not move.
-                if (UserStorageDestination::countBackups($id) > 0 && StorageDestinationService::locationChanged($current, $next)) {
-                    return ApiResponse::error('This storage still holds backups, so its endpoint, bucket, region, folder and URL style cannot change. Add a new storage instead.', 'DESTINATION_IN_USE', 409);
+                if (UserStorageDestination::countBackups($id) > 0 && $moved) {
+                    return ApiResponse::error('This storage still holds backups, so its server and folder cannot change. Add a new storage instead.', 'DESTINATION_IN_USE', 409);
                 }
                 $update['config'] = $next;
             } catch (StorageException $e) {
@@ -183,7 +191,9 @@ class StorageDestinationController
             'byo_enabled' => $enabled,
             'byo_s3' => $enabled && in_array('s3', $providers, true),
             'providers' => $providers,
-            'oauth_providers' => array_values(array_filter($providers, static fn (string $p): bool => ProviderRegistry::has($p) && ProviderRegistry::get($p)->available())),
+            'oauth_providers' => array_values(array_filter($providers, static fn (string $p): bool => ProviderRegistry::isOAuth($p) && ProviderRegistry::get($p)->available())),
+            // SFTP / WebDAV: only when the admin turned the relay on and this panel supports them.
+            'relay_providers' => array_values(array_filter($providers, static fn (string $p): bool => ProviderRegistry::isRelay($p) && ProviderRegistry::get($p)->available())),
             'max_destinations' => StorageSettings::maxDestinationsPerUser(),
         ];
     }

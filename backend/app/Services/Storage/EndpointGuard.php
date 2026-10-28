@@ -95,4 +95,28 @@ final class EndpointGuard
 
         return $resolve === [] ? [] : ['curl' => [CURLOPT_RESOLVE => array_values(array_unique($resolve))]];
     }
+
+    /**
+     * Resolve a bare host (SFTP) and return the addresses after the same public-address check.
+     *
+     * @return list<string>
+     */
+    public static function resolveHost(string $host): array
+    {
+        $host = trim($host, '[]');
+        if ($host === '' || !preg_match('/^[A-Za-z0-9.\-:]+$/', $host)) {
+            throw new StorageException('Host is invalid', 'ENDPOINT_INVALID', 422);
+        }
+        $ips = filter_var($host, FILTER_VALIDATE_IP) !== false ? [$host] : (self::$resolver !== null ? (self::$resolver)($host) : SafeUrlFetcher::resolveHost($host));
+        if ($ips === []) {
+            throw new StorageException('Host ' . $host . ' does not resolve', 'ENDPOINT_UNRESOLVABLE', 422);
+        }
+        foreach ($ips as $ip) {
+            if (!SafeUrlFetcher::isPublicIp($ip) && !self::allowPrivate()) {
+                throw new StorageException('Host ' . $host . ' resolves to a private or reserved address', 'ENDPOINT_PRIVATE_ADDRESS', 422);
+            }
+        }
+
+        return array_values($ips);
+    }
 }

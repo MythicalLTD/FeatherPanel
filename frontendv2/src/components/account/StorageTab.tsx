@@ -18,7 +18,18 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import { useCallback, useEffect, useState } from 'react';
 import axios from 'axios';
 import { toast } from 'sonner';
-import { Cloud, Plus, RefreshCw, Trash2, Pencil, PlugZap, AlertTriangle, CheckCircle2, Link2 } from 'lucide-react';
+import {
+    Cloud,
+    Plus,
+    RefreshCw,
+    Trash2,
+    Pencil,
+    PlugZap,
+    AlertTriangle,
+    CheckCircle2,
+    Link2,
+    Server,
+} from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { Dialog, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/featherui/Button';
@@ -30,7 +41,9 @@ import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-err
 import { formatBytes } from '@/lib/format';
 import {
     fetchStorageDestinations,
+    isS3Config,
     startStorageOAuth,
+    type RelayConfig,
     type StorageCapabilities,
     type StorageDestination,
 } from '@/lib/storage-destinations';
@@ -44,6 +57,16 @@ interface FormState {
     access_key: string;
     secret_key: string;
     path_style: boolean;
+    // SFTP / WebDAV
+    kind: 's3' | 'sftp' | 'webdav';
+    host: string;
+    port: string;
+    username: string;
+    password: string;
+    private_key: string;
+    url: string;
+    root: string;
+    reset_host_key: boolean;
 }
 
 const emptyForm: FormState = {
@@ -55,10 +78,22 @@ const emptyForm: FormState = {
     access_key: '',
     secret_key: '',
     path_style: false,
+    kind: 's3',
+    host: '',
+    port: '22',
+    username: '',
+    password: '',
+    private_key: '',
+    url: '',
+    root: 'featherpanel',
+    reset_host_key: false,
 };
 
 /** Provider keys the panel can connect through OAuth, in display order. */
-const OAUTH_PROVIDERS = ['gdrive'] as const;
+const OAUTH_PROVIDERS = ['gdrive', 'dropbox', 'onedrive'] as const;
+
+/** Providers with a credentials form whose traffic the panel relays (enabled by the admin). */
+const RELAY_PROVIDERS = ['sftp', 'webdav'] as const;
 
 export default function StorageTab() {
     const { t } = useTranslation();
@@ -111,22 +146,37 @@ export default function StorageTab() {
         window.history.replaceState(null, '', `${window.location.pathname}${qs ? `?${qs}` : ''}`);
     }, [t]);
 
-    const openCreate = () => {
+    const openCreate = (kind: FormState['kind'] = 's3') => {
         setEditing(null);
-        setForm(emptyForm);
+        setForm({ ...emptyForm, kind });
         setFormOpen(true);
     };
 
     const openEdit = (d: StorageDestination) => {
         setEditing(d);
+        if (d.relay && d.config && !isS3Config(d.config)) {
+            const c = d.config as RelayConfig;
+            setForm({
+                ...emptyForm,
+                kind: d.provider === 'webdav' ? 'webdav' : 'sftp',
+                name: d.name,
+                host: c.host ?? '',
+                port: String(c.port ?? 22),
+                username: c.username ?? '',
+                url: c.url ?? '',
+                root: c.root ?? '',
+            });
+            setFormOpen(true);
+            return;
+        }
         setForm({
             ...emptyForm,
             name: d.name,
-            endpoint: d.config?.endpoint ?? '',
-            region: d.config?.region ?? '',
-            bucket: d.config?.bucket ?? '',
-            prefix: d.config?.prefix ?? '',
-            path_style: d.config?.path_style ?? false,
+            endpoint: isS3Config(d.config) ? d.config.endpoint : '',
+            region: isS3Config(d.config) ? d.config.region : '',
+            bucket: isS3Config(d.config) ? d.config.bucket : '',
+            prefix: isS3Config(d.config) ? d.config.prefix : '',
+            path_style: isS3Config(d.config) ? d.config.path_style : false,
         });
         setFormOpen(true);
     };
@@ -167,18 +217,33 @@ export default function StorageTab() {
                 await load();
                 return;
             }
-            const config: Record<string, unknown> = {
-                endpoint: form.endpoint.trim(),
-                region: form.region.trim(),
-                bucket: form.bucket.trim(),
-                prefix: form.prefix.trim(),
-                path_style: form.path_style,
-            };
-            if (form.access_key.trim() !== '') config.access_key = form.access_key.trim();
-            if (form.secret_key !== '') config.secret_key = form.secret_key;
+            let config: Record<string, unknown>;
+            if (form.kind === 'sftp') {
+                config = {
+                    host: form.host.trim(),
+                    port: Number(form.port) || 22,
+                    username: form.username.trim(),
+                    root: form.root.trim(),
+                };
+                if (form.private_key.trim() !== '') config.private_key = form.private_key;
+                if (form.reset_host_key) config.reset_host_key = true;
+            } else if (form.kind === 'webdav') {
+                config = { url: form.url.trim(), username: form.username.trim(), root: form.root.trim() };
+            } else {
+                config = {
+                    endpoint: form.endpoint.trim(),
+                    region: form.region.trim(),
+                    bucket: form.bucket.trim(),
+                    prefix: form.prefix.trim(),
+                    path_style: form.path_style,
+                };
+                if (form.access_key.trim() !== '') config.access_key = form.access_key.trim();
+                if (form.secret_key !== '') config.secret_key = form.secret_key;
+            }
+            if (form.kind !== 's3' && form.password !== '') config.password = form.password;
             const { data } = editing
                 ? await axios.patch(`/api/user/storage-destinations/${editing.id}`, { name: form.name, config })
-                : await axios.post('/api/user/storage-destinations', { name: form.name, provider: 's3', config });
+                : await axios.post('/api/user/storage-destinations', { name: form.name, provider: form.kind, config });
             const test = data?.data?.test as { ok: boolean; error: string | null } | null;
             if (test && !test.ok) {
                 toast.warning(t('account.storage.savedButTestFailed', { error: test.error ?? '' }));
@@ -234,9 +299,15 @@ export default function StorageTab() {
     }
 
     const oauthProviders = OAUTH_PROVIDERS.filter((p) => caps?.oauth_providers?.includes(p));
+    const relayProviders = RELAY_PROVIDERS.filter((p) => caps?.relay_providers?.includes(p));
     const underLimit = destinations.length < (caps?.max_destinations ?? 0);
     const canAdd = !!caps?.byo_s3 && underLimit;
     const canConnect = oauthProviders.length > 0 && underLimit;
+    const relayLocation = (d: StorageDestination) => {
+        const c = d.config as RelayConfig;
+        const where = d.provider === 'sftp' ? `sftp://${c.username}@${c.host}:${c.port ?? 22}` : (c.url ?? '');
+        return c.root ? `${where}/${c.root}` : where;
+    };
     const quotaLine = (d: StorageDestination) =>
         d.quota
             ? d.quota.total
@@ -277,11 +348,23 @@ export default function StorageTab() {
                         {t('account.storage.refresh')}
                     </Button>
                     {caps?.byo_s3 ? (
-                        <Button onClick={openCreate} size='sm' disabled={!canAdd}>
+                        <Button onClick={() => openCreate('s3')} size='sm' disabled={!canAdd}>
                             <Plus className='mr-2 h-4 w-4' />
                             {t('account.storage.add')}
                         </Button>
                     ) : null}
+                    {relayProviders.map((p) => (
+                        <Button
+                            key={p}
+                            onClick={() => openCreate(p)}
+                            size='sm'
+                            variant='outline'
+                            disabled={!underLimit}
+                        >
+                            <Server className='mr-2 h-4 w-4' />
+                            {t('account.storage.addRelay', { provider: t(`account.storage.providers.${p}`) })}
+                        </Button>
+                    ))}
                     {oauthProviders.map((p) => (
                         <Button
                             key={p}
@@ -312,7 +395,7 @@ export default function StorageTab() {
                         <p className='text-muted-foreground mb-4 text-sm'>{t('account.storage.emptyHint')}</p>
                         <div className='flex flex-wrap justify-center gap-2'>
                             {canAdd ? (
-                                <Button onClick={openCreate} variant='outline'>
+                                <Button onClick={() => openCreate('s3')} variant='outline'>
                                     {t('account.storage.add')}
                                 </Button>
                             ) : null}
@@ -340,7 +423,20 @@ export default function StorageTab() {
                             <div className='mb-3 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between'>
                                 <div className='min-w-0 flex-1'>
                                     <h4 className='text-foreground text-sm font-semibold'>{d.name}</h4>
-                                    {d.oauth || !d.config ? (
+                                    {d.relay && d.config ? (
+                                        <>
+                                            <p className='text-muted-foreground mt-1 truncate font-mono text-xs'>
+                                                {relayLocation(d)}
+                                            </p>
+                                            <p className='text-muted-foreground mt-1 text-xs'>
+                                                {t('account.storage.metaOauth', {
+                                                    provider: t(`account.storage.providers.${d.provider}`),
+                                                    count: String(d.backups_count),
+                                                    quota: quotaLine(d),
+                                                })}
+                                            </p>
+                                        </>
+                                    ) : d.oauth || !isS3Config(d.config) ? (
                                         <>
                                             <p className='text-muted-foreground mt-1 truncate text-xs'>
                                                 {d.account ?? t('account.storage.accountUnknown')}
@@ -433,14 +529,113 @@ export default function StorageTab() {
                             ? t('account.storage.renameTitle')
                             : editing
                               ? t('account.storage.editTitle')
-                              : t('account.storage.addTitle')}
+                              : form.kind !== 's3'
+                                ? t('account.storage.addRelayTitle', {
+                                      provider: t(`account.storage.providers.${form.kind}`),
+                                  })
+                                : t('account.storage.addTitle')}
                     </DialogTitle>
                     <DialogDescription>
-                        {editing?.oauth ? t('account.storage.renameDescription') : t('account.storage.formDescription')}
+                        {editing?.oauth
+                            ? t('account.storage.renameDescription')
+                            : form.kind !== 's3'
+                              ? t(`account.storage.relayDescription.${form.kind}`)
+                              : t('account.storage.formDescription')}
                     </DialogDescription>
                 </DialogHeader>
+                {!editing?.oauth && form.kind !== 's3' ? (
+                    <div className='mb-4 flex gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-700 dark:text-amber-300'>
+                        <AlertTriangle className='mt-0.5 h-4 w-4 shrink-0' />
+                        <span>{t('account.storage.relayWarning')}</span>
+                    </div>
+                ) : null}
                 {editing?.oauth ? (
                     field('name', t('account.storage.fields.name'), t('account.storage.fields.namePlaceholder'))
+                ) : form.kind !== 's3' ? (
+                    <div className='grid gap-4 sm:grid-cols-2'>
+                        <div className='sm:col-span-2'>
+                            {field(
+                                'name',
+                                t('account.storage.fields.name'),
+                                t(`account.storage.fields.namePlaceholderRelay`),
+                            )}
+                        </div>
+                        {form.kind === 'sftp' ? (
+                            <>
+                                {field('host', t('account.storage.fields.host'), 'backup.example.com')}
+                                {field('port', t('account.storage.fields.port'), '22', 'number')}
+                            </>
+                        ) : (
+                            <div className='sm:col-span-2'>
+                                {field(
+                                    'url',
+                                    t('account.storage.fields.webdavUrl'),
+                                    'https://cloud.example.com/remote.php/dav/files/me',
+                                    'url',
+                                    t('account.storage.fields.webdavUrlHint'),
+                                )}
+                            </div>
+                        )}
+                        {field('username', t('account.storage.fields.username'), 'backup')}
+                        {field(
+                            'password',
+                            form.kind === 'sftp'
+                                ? t('account.storage.fields.passwordOrPassphrase')
+                                : t('account.storage.fields.password'),
+                            editing ? t('account.storage.fields.keepCurrent') : '••••••••',
+                            'password',
+                        )}
+                        <div className='sm:col-span-2'>
+                            {field(
+                                'root',
+                                t('account.storage.fields.folder'),
+                                'featherpanel',
+                                'text',
+                                t('account.storage.fields.folderHint'),
+                            )}
+                        </div>
+                        {form.kind === 'sftp' ? (
+                            <div className='sm:col-span-2'>
+                                <Label htmlFor='storage-private_key' className='text-foreground'>
+                                    {t('account.storage.fields.privateKey')}
+                                </Label>
+                                <textarea
+                                    id='storage-private_key'
+                                    value={form.private_key}
+                                    onChange={(e) => setForm((f) => ({ ...f, private_key: e.target.value }))}
+                                    placeholder={
+                                        editing
+                                            ? t('account.storage.fields.keepCurrent')
+                                            : '-----BEGIN OPENSSH PRIVATE KEY-----'
+                                    }
+                                    rows={4}
+                                    spellCheck={false}
+                                    autoComplete='off'
+                                    className='border-input bg-background mt-2 w-full rounded-md border px-3 py-2 font-mono text-xs'
+                                />
+                                <p className='text-muted-foreground mt-1 text-xs'>
+                                    {t('account.storage.fields.privateKeyHint')}
+                                </p>
+                            </div>
+                        ) : null}
+                        {form.kind === 'sftp' && editing && (editing.config as RelayConfig | null)?.host_key ? (
+                            <div className='flex items-end justify-between gap-3 pb-1 sm:col-span-2'>
+                                <div className='min-w-0'>
+                                    <Label htmlFor='storage-reset-host-key' className='text-foreground'>
+                                        {t('account.storage.fields.resetHostKey')}
+                                    </Label>
+                                    <p className='text-muted-foreground mt-1 truncate font-mono text-xs'>
+                                        {(editing.config as RelayConfig).host_key}
+                                    </p>
+                                </div>
+                                <Switch
+                                    id='storage-reset-host-key'
+                                    checked={form.reset_host_key}
+                                    onCheckedChange={(v) => setForm((f) => ({ ...f, reset_host_key: v }))}
+                                />
+                            </div>
+                        ) : null}
+                    </div>
                 ) : (
                     <div className='grid gap-4 sm:grid-cols-2'>
                         <div className='sm:col-span-2'>
@@ -491,7 +686,13 @@ export default function StorageTab() {
                     </div>
                 )}
                 {editing?.oauth ? null : (
-                    <p className='text-muted-foreground mt-3 text-xs'>{t('account.storage.securityNote')}</p>
+                    <p className='text-muted-foreground mt-3 text-xs'>
+                        {form.kind === 'sftp'
+                            ? t('account.storage.securityNoteSftp')
+                            : form.kind === 'webdav'
+                              ? t('account.storage.securityNoteWebdav')
+                              : t('account.storage.securityNote')}
+                    </p>
                 )}
                 <DialogFooter>
                     <Button onClick={save} className='flex-1' disabled={saving || form.name.trim() === ''}>
@@ -530,7 +731,9 @@ export default function StorageTab() {
                         className='mt-2'
                     />
                 </div>
-                <p className='text-muted-foreground mt-3 text-xs'>{t('account.storage.connectNote')}</p>
+                <p className='text-muted-foreground mt-3 text-xs'>
+                    {connectProvider ? t(`account.storage.connectNote.${connectProvider}`) : ''}
+                </p>
                 <DialogFooter>
                     <Button onClick={connect} className='flex-1' disabled={connecting || connectName.trim() === ''}>
                         {connecting ? t('account.storage.redirecting') : t('account.storage.continue')}
@@ -550,9 +753,16 @@ export default function StorageTab() {
                 <DialogHeader>
                     <DialogTitle>{t('account.storage.removeTitle', { name: deleting?.name ?? '' })}</DialogTitle>
                     <DialogDescription>
-                        {t(deleting?.oauth ? 'account.storage.removeWarningOauth' : 'account.storage.removeWarning', {
-                            count: String(deleting?.backups_count ?? 0),
-                        })}
+                        {t(
+                            deleting?.oauth
+                                ? 'account.storage.removeWarningOauth'
+                                : deleting?.relay
+                                  ? 'account.storage.removeWarningRelay'
+                                  : 'account.storage.removeWarning',
+                            {
+                                count: String(deleting?.backups_count ?? 0),
+                            },
+                        )}
                     </DialogDescription>
                 </DialogHeader>
                 <DialogFooter>
