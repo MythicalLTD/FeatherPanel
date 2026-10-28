@@ -417,4 +417,52 @@ return function (RouteCollection $routes): void {
         Permissions::ADMIN_VM_NODES_EDIT,
         ['DELETE']
     );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-vm-nodes-setup-command',
+        '/api/admin/vm-nodes/{id}/setup-command',
+        function (Request $request, array $args) {
+            $id = $args['id'] ?? null;
+            if (!$id || !is_numeric($id)) {
+                return ApiResponse::error('Missing or invalid ID', 'INVALID_ID', 400);
+            }
+
+            return (new VmNodesController())->getSetupCommand($request, (int) $id);
+        },
+        Permissions::ADMIN_VM_NODES_VIEW,
+        ['GET']
+    );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-vm-nodes-feathertail-reset-token',
+        '/api/admin/vm-nodes/{id}/feathertail/reset-token',
+        function (Request $request, array $args) {
+            $id = $args['id'] ?? null;
+            if (!$id || !is_numeric($id)) {
+                return ApiResponse::error('Missing or invalid ID', 'INVALID_ID', 400);
+            }
+
+            return (new VmNodesController())->resetFeatherTailToken($request, (int) $id);
+        },
+        Permissions::ADMIN_VM_NODES_EDIT,
+        ['POST']
+    );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-vm-nodes-feathertail-test',
+        '/api/admin/vm-nodes/{id}/feathertail/test',
+        function (Request $request, array $args) {
+            $id = $args['id'] ?? null;
+            if (!$id || !is_numeric($id)) {
+                return ApiResponse::error('Missing or invalid ID', 'INVALID_ID', 400);
+            }
+
+            return (new VmNodesController())->testFeatherTail($request, (int) $id);
+        },
+        Permissions::ADMIN_VM_NODES_VIEW,
+        ['POST']
+    );
 };

@@ -90,7 +90,7 @@ function parseInstallerMeta(source) {
                 { key: '3', label: 'CLI', description: 'Migration & server management helpers' },
                 { key: '4', label: 'SSL Certificates', description: "Let's Encrypt tools" },
                 { key: '5', label: 'Databases', description: 'Remote MySQL/MariaDB hosts' },
-                { key: '6', label: 'Proxmox VNC Agent', description: 'Install on Proxmox node' },
+                { key: '6', label: 'FeatherTail', description: 'Proxmox host agent (APT)' },
                 { key: '7', label: 'FeatherQuilld Daemon', description: 'WebHosting daemon' },
                 { key: '8', label: 'Configuration', description: 'Settings & preferences' },
             ],
@@ -124,6 +124,21 @@ function parseInstallerMeta(source) {
             name: 'FP_QUILLD_SKIP_CONFIGURE',
             description: 'Skip FeatherQuilld configure wizard after install (panel step 2 handles join-data)',
             example: 'FP_QUILLD_SKIP_CONFIGURE=true',
+        },
+        {
+            name: 'FP_TAIL_TOKEN',
+            description: 'Panel-issued FeatherTail api_token written to /etc/feathertail/feathertail.toml on install',
+            example: "FP_TAIL_TOKEN='…'",
+        },
+        {
+            name: 'FP_TAIL_SKIP_CONFIRM',
+            description: 'Skip interactive “are you on Proxmox?” prompt when host checks pass',
+            example: 'FP_TAIL_SKIP_CONFIRM=true',
+        },
+        {
+            name: 'FP_TAIL_BIND',
+            description: 'Optional FeatherTail API bind (default 0.0.0.0:8686 when writing config from panel)',
+            example: 'FP_TAIL_BIND=0.0.0.0:8686',
         },
     ];
 
@@ -172,7 +187,7 @@ sudo bash installer/install.bash --help
 ## What it does (high level)
 
 1. Validates OS / virt / existing install (unless skipped).
-2. Interactive main menu (Panel, Wings, CLI helpers, SSL, DBs, Proxmox VNC, Quilld, Configuration).
+2. Interactive main menu (Panel, Wings, CLI helpers, SSL, DBs, FeatherTail, Quilld, Configuration).
 3. For Panel (Docker mode): installs Docker, writes compose + \`.featherpanel.conf\`, pulls images, starts \`featherpanel_backend\` (+ mysql/redis as configured), installs reverse proxy / tunnel options, installs global \`featherpanel\` CLI.
 4. Logs to \`${meta.paths.install_log}\`. Failed installs may upload logs for support tickets.
 

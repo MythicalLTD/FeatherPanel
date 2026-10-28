@@ -64,11 +64,7 @@ import {
 import { reopenSetup } from '@/lib/setup-wizard';
 import { copyToClipboard, cn } from '@/lib/utils';
 import { ImageAttachmentField } from '@/components/featherui/ImageAttachmentField';
-import {
-    matchesAdminSettingQuery,
-    resolveAdminSettingLabel,
-    vdsGroupSearchText,
-} from '@/lib/admin-settings-search';
+import { matchesAdminSettingQuery, resolveAdminSettingLabel, vdsGroupSearchText } from '@/lib/admin-settings-search';
 
 interface LogData {
     success: boolean;
@@ -464,11 +460,9 @@ export default function SettingsPage() {
             const region = String(value).trim();
             const presetId = String(settings.mail_provider_preset?.value ?? '');
             setSettings((prev) => {
-                const updated = {
-                    ...prev,
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    [key]: { ...prev[key], value: value as any },
-                };
+                const updated: Record<string, Setting> = { ...prev };
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                updated[key] = { ...prev[key], value: value as any };
                 if (presetId === 'ses_smtp' && region && updated.smtp_host) {
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     updated.smtp_host = { ...updated.smtp_host, value: `email-smtp.${region}.amazonaws.com` as any };

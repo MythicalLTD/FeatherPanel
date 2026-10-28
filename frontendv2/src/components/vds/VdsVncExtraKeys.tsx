@@ -35,7 +35,22 @@ const MODS: { id: StickyModifier; labelKey: string }[] = [
     { id: 'meta', labelKey: 'meta' },
 ];
 
-const NAV_IDS = ['esc', 'tab', 'enter', 'bksp', 'del', 'ins', 'home', 'end', 'pgup', 'pgdn', 'up', 'down', 'left', 'right'];
+const NAV_IDS = [
+    'esc',
+    'tab',
+    'enter',
+    'bksp',
+    'del',
+    'ins',
+    'home',
+    'end',
+    'pgup',
+    'pgdn',
+    'up',
+    'down',
+    'left',
+    'right',
+];
 const FN_IDS = ['f1', 'f2', 'f3', 'f4', 'f5', 'f6', 'f7', 'f8', 'f9', 'f10', 'f11', 'f12'];
 const COMBO_IDS = ['cad', 'cae', 'cab', 'caf1', 'caf2', 'caf3', 'caf7', 'altf4', 'alttab', 'win', 'prtsc'];
 

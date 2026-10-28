@@ -4356,6 +4356,64 @@ feathertail_require_proxmox_host() {
 	return 1
 }
 
+# Write / merge panel-issued FeatherTail token (+ optional bind) into feathertail.toml.
+configure_feathertail_from_panel_env() {
+	local cfg="/etc/feathertail/feathertail.toml"
+	local token="${FP_TAIL_TOKEN:-}"
+	local bind="${FP_TAIL_BIND:-0.0.0.0:8686}"
+
+	mkdir -p /etc/feathertail /var/lib/feathertail
+
+	if [ -z "$token" ]; then
+		return 0
+	fi
+
+	if [ ! -f "$cfg" ]; then
+		cat >"$cfg" <<EOF
+[daemon]
+name = "feathertail-proxmox"
+poll_interval_secs = 15
+log_level = "info"
+
+[proxmox]
+pvesh_bin = "pvesh"
+pct_bin = "pct"
+
+[api]
+bind = "${bind}"
+
+[auth]
+api_token = "${token}"
+
+[dhcp]
+enabled = false
+bind = "0.0.0.0:67"
+server_ip = "10.0.0.1"
+lease_time_secs = 86400
+database_path = "/var/lib/feathertail/dhcp.sqlite3"
+firewall_mode = "off"
+firewall_allow_macs = []
+firewall_deny_macs = []
+firewall_allow_vmids = []
+firewall_deny_vmids = []
+EOF
+	else
+		if grep -qE '^[[:space:]]*api_token[[:space:]]*=' "$cfg"; then
+			sed -i "s|^[[:space:]]*api_token[[:space:]]*=.*|api_token = \"${token}\"|" "$cfg"
+		else
+			printf '\n[auth]\napi_token = "%s"\n' "$token" >>"$cfg"
+		fi
+		if [ -n "${FP_TAIL_BIND:-}" ]; then
+			if grep -qE '^[[:space:]]*bind[[:space:]]*=' "$cfg"; then
+				# First bind= is under [api] in the packaged template.
+				sed -i "0,/^[[:space:]]*bind[[:space:]]*=.*/s|^[[:space:]]*bind[[:space:]]*=.*|bind = \"${bind}\"|" "$cfg"
+			fi
+		fi
+	fi
+
+	log_success "FeatherTail token configured from panel (FP_TAIL_TOKEN)."
+}
+
 install_feathertail_apt() {
 	local pkg="feathertail"
 	if [ "${DAEMON_APT_CHANNEL:-stable}" = "nightly" ]; then
@@ -4379,6 +4437,8 @@ install_feathertail_apt() {
 		return 1
 	fi
 
+	configure_feathertail_from_panel_env
+
 	systemctl enable feathertail >/dev/null 2>&1 || true
 	systemctl restart feathertail >/dev/null 2>&1 || systemctl start feathertail >/dev/null 2>&1 || true
 	log_success "Installed ${pkg} via APT."
@@ -4387,20 +4447,32 @@ install_feathertail_apt() {
 install_feathertail() {
 	log_step "Installing FeatherTail Proxmox host agent..."
 
-	if [ -t 1 ]; then clear; fi
-	print_banner
-	draw_hr
-	echo -e "${BOLD}${CYAN}FeatherTail Installation${NC}"
-	draw_hr
-	echo ""
-	echo -e "${YELLOW}This must be run on the Proxmox node you want to integrate with FeatherPanel.${NC}"
-	echo -e "${BLUE}Install method: ${BOLD}APT only${NC}${BLUE} (package Depends on pve-manager).${NC}"
-	echo ""
-	confirm_node=""
-	prompt "${BOLD}Are you on the Proxmox node right now?${NC} ${BLUE}(y/n)${NC}: " confirm_node
-	if [[ ! "$confirm_node" =~ ^[yY]$ ]]; then
-		log_warn "Installation cancelled. Please run this on your Proxmox node when ready."
-		return 0
+	local skip_confirm=false
+	case "$(printf '%s' "${FP_TAIL_SKIP_CONFIRM:-}" | tr '[:upper:]' '[:lower:]')" in
+	1 | yes | y | true) skip_confirm=true ;;
+	esac
+	if [ ! -t 0 ] || [ ! -t 1 ]; then
+		skip_confirm=true
+	fi
+
+	if [ "$skip_confirm" != true ]; then
+		if [ -t 1 ]; then clear; fi
+		print_banner
+		draw_hr
+		echo -e "${BOLD}${CYAN}FeatherTail Installation${NC}"
+		draw_hr
+		echo ""
+		echo -e "${YELLOW}This must be run on the Proxmox node you want to integrate with FeatherPanel.${NC}"
+		echo -e "${BLUE}Install method: ${BOLD}APT only${NC}${BLUE} (package Depends on pve-manager).${NC}"
+		echo ""
+		confirm_node=""
+		prompt "${BOLD}Are you on the Proxmox node right now?${NC} ${BLUE}(y/n)${NC}: " confirm_node
+		if [[ ! "$confirm_node" =~ ^[yY]$ ]]; then
+			log_warn "Installation cancelled. Please run this on your Proxmox node when ready."
+			return 0
+		fi
+	else
+		log_info "Skipping interactive Proxmox confirm (FP_TAIL_SKIP_CONFIRM / non-interactive)."
 	fi
 
 	if ! feathertail_require_proxmox_host; then
@@ -4417,7 +4489,11 @@ install_feathertail() {
 	fi
 
 	log_success "FeatherTail installed successfully."
-	log_info "Edit /etc/feathertail/feathertail.toml (set api_token), then:"
+	if [ -n "${FP_TAIL_TOKEN:-}" ]; then
+		log_info "Panel token applied to /etc/feathertail/feathertail.toml"
+	else
+		log_info "Edit /etc/feathertail/feathertail.toml (set api_token), then:"
+	fi
 	log_info "  systemctl status feathertail"
 	log_info "  journalctl -u feathertail -f"
 }

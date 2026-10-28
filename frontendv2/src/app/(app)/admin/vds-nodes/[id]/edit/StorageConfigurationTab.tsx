@@ -96,8 +96,7 @@ export function StorageConfigurationTab({ nodeId, form, setForm, errors }: Stora
 
     const rescueOptions = useMemo(() => {
         const allowed = parseCsv(form.storage_iso_allowed);
-        const files =
-            allowed.length === 0 ? isoFiles : isoFiles.filter((f) => allowed.includes(f.storage));
+        const files = allowed.length === 0 ? isoFiles : isoFiles.filter((f) => allowed.includes(f.storage));
         if (form.rescue_iso && !files.some((f) => f.volid === form.rescue_iso)) {
             return [{ volid: form.rescue_iso, name: form.rescue_iso, storage: '', size: 0 }, ...files];
         }
@@ -227,7 +226,9 @@ export function StorageConfigurationTab({ nodeId, form, setForm, errors }: Stora
                         </div>
 
                         <div className='space-y-2'>
-                            <Label className='text-sm font-medium'>{t('admin.vdsNodes.form.iso_allowed_storages')}</Label>
+                            <Label className='text-sm font-medium'>
+                                {t('admin.vdsNodes.form.iso_allowed_storages')}
+                            </Label>
                             {isoStorages.length === 0 ? (
                                 <p className='text-muted-foreground text-sm'>
                                     {storagesLoading
@@ -276,7 +277,9 @@ export function StorageConfigurationTab({ nodeId, form, setForm, errors }: Stora
                                     </option>
                                 ))}
                             </Select>
-                            <p className='text-muted-foreground/70 text-xs'>{t('admin.vdsNodes.form.rescue_iso_help')}</p>
+                            <p className='text-muted-foreground/70 text-xs'>
+                                {t('admin.vdsNodes.form.rescue_iso_help')}
+                            </p>
                         </div>
                     </div>
                 </TabSection>

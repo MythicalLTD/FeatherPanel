@@ -138,11 +138,7 @@ export function VdsHostIsoCard({ vmId, features, canSettings, onChanged }: VdsHo
 
                     <div className='border-border/50 flex flex-wrap items-center justify-between gap-3 border-t pt-4'>
                         <p className='text-muted-foreground text-sm'>{t('vds.iso.library_hint')}</p>
-                        <Button
-                            variant='outline'
-                            disabled={!canSettings || features?.iso.enabled === false}
-                            onClick={() => setDialogOpen(true)}
-                        >
+                        <Button variant='outline' disabled={!canSettings} onClick={() => setDialogOpen(true)}>
                             {t('vds.console.actions.iso_mount')}
                         </Button>
                     </div>

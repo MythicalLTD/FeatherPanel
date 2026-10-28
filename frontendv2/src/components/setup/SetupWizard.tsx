@@ -59,11 +59,7 @@ import { cn } from '@/lib/utils';
 import { FEATHERPANEL_DONATE_URL } from '@/lib/premium-links';
 import { usePremiumInactive } from '@/components/admin/DonationNudge';
 import { EmailProviderHint } from '@/components/admin/EmailProviderHint';
-import {
-    applyMailProviderPreset,
-    isApiMailTransport,
-    MAIL_PROVIDER_PRESETS,
-} from '@/lib/mail-providers';
+import { applyMailProviderPreset, isApiMailTransport, MAIL_PROVIDER_PRESETS } from '@/lib/mail-providers';
 
 type StepId = 'welcome' | 'locale' | 'mail' | 'modules' | 'security' | 'infrastructure' | 'done';
 
@@ -277,10 +273,7 @@ export function SetupWizard() {
         for (const key of keys) {
             const value = values[key] ?? '';
             if (value === (initial[key] ?? '')) continue;
-            if (
-                (key === 'smtp_pass' || key === 'mail_api_key' || key === 'turnstile_key_priv') &&
-                value === ''
-            )
+            if ((key === 'smtp_pass' || key === 'mail_api_key' || key === 'turnstile_key_priv') && value === '')
                 continue;
             changed[key] = value;
         }
@@ -783,9 +776,7 @@ export function SetupWizard() {
                                                     <Input
                                                         label={t('setup_wizard.mail.api_domain')}
                                                         value={values.mail_api_domain || ''}
-                                                        onChange={(e) =>
-                                                            set('mail_api_domain', e.target.value.trim())
-                                                        }
+                                                        onChange={(e) => set('mail_api_domain', e.target.value.trim())}
                                                         error={
                                                             showErrors && errors.mail_api_domain
                                                                 ? t(errors.mail_api_domain)
@@ -800,9 +791,7 @@ export function SetupWizard() {
                                                     <Input
                                                         label={t('setup_wizard.mail.api_region')}
                                                         value={values.mail_api_region || ''}
-                                                        onChange={(e) =>
-                                                            set('mail_api_region', e.target.value.trim())
-                                                        }
+                                                        onChange={(e) => set('mail_api_region', e.target.value.trim())}
                                                         error={
                                                             showErrors && errors.mail_api_region
                                                                 ? t(errors.mail_api_region)
@@ -819,9 +808,7 @@ export function SetupWizard() {
                                                     value={values.smtp_host || ''}
                                                     onChange={(e) => set('smtp_host', e.target.value.trim())}
                                                     error={
-                                                        showErrors && errors.smtp_host
-                                                            ? t(errors.smtp_host)
-                                                            : undefined
+                                                        showErrors && errors.smtp_host ? t(errors.smtp_host) : undefined
                                                     }
                                                 />
                                                 <div className='grid grid-cols-2 gap-4'>
@@ -842,12 +829,10 @@ export function SetupWizard() {
                                                         label={t('setup_wizard.mail.encryption')}
                                                         value={values.smtp_encryption || 'tls'}
                                                         onChange={(v) => set('smtp_encryption', String(v))}
-                                                        options={(options.smtp_encryption ?? ['tls']).map(
-                                                            (o) => ({
-                                                                id: o,
-                                                                name: o,
-                                                            }),
-                                                        )}
+                                                        options={(options.smtp_encryption ?? ['tls']).map((o) => ({
+                                                            id: o,
+                                                            name: o,
+                                                        }))}
                                                     />
                                                 </div>
                                                 <Input
@@ -860,9 +845,7 @@ export function SetupWizard() {
                                                     label={t('setup_wizard.mail.password')}
                                                     type='password'
                                                     value={
-                                                        values.smtp_pass === '••••••••'
-                                                            ? ''
-                                                            : values.smtp_pass || ''
+                                                        values.smtp_pass === '••••••••' ? '' : values.smtp_pass || ''
                                                     }
                                                     placeholder={initial.smtp_pass ? '••••••••' : ''}
                                                     onChange={(e) => set('smtp_pass', e.target.value)}

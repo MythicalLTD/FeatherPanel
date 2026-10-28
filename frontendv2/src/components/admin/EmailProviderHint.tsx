@@ -26,8 +26,7 @@ export function EmailProviderHint({
     t: (key: string) => string;
 }) {
     const preset = getMailProviderPreset(presetId);
-    const note =
-        preset.noteKey && t(preset.noteKey) !== preset.noteKey ? t(preset.noteKey) : null;
+    const note = preset.noteKey && t(preset.noteKey) !== preset.noteKey ? t(preset.noteKey) : null;
 
     if (!note && !preset.docsUrl && !preset.freeTier) {
         return null;

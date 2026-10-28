@@ -26,9 +26,11 @@ use App\Chat\VmInstance;
 use App\Chat\VmTemplate;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
-use App\Services\Vm\VmInstanceUtil;
 use App\Services\Vm\IsoLibrary;
+use App\Helpers\FeatherTailClient;
+use App\Services\Vm\VmInstanceUtil;
 use App\CloudFlare\CloudFlareRealIP;
+use App\Helpers\FeatherTailCapabilities;
 use App\Plugins\Events\Events\VdsNodeEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -57,6 +59,9 @@ use Symfony\Component\HttpFoundation\Response;
         new OA\Property(property: 'storage_iso_user', type: 'string', description: 'Proxmox storage for user-uploaded ISOs'),
         new OA\Property(property: 'storage_iso_allowed', type: 'string', description: 'Comma-separated ISO storages users may mount from (empty = all)'),
         new OA\Property(property: 'rescue_iso', type: 'string', description: 'Proxmox volid of the rescue ISO for this node'),
+        new OA\Property(property: 'feathertail_enabled', type: 'integer', description: 'Whether FeatherTail agent integration is enabled (0/1)'),
+        new OA\Property(property: 'feathertail_url', type: 'string', description: 'FeatherTail agent base URL (e.g. http://node:8686)'),
+        new OA\Property(property: 'feathertail_tls_no_verify', type: 'integer', description: 'Skip TLS verification when calling FeatherTail (0/1)'),
         new OA\Property(property: 'created_at', type: 'string', format: 'date-time', description: 'Creation timestamp'),
         new OA\Property(property: 'updated_at', type: 'string', format: 'date-time', description: 'Last update timestamp'),
     ]
@@ -99,6 +104,9 @@ use Symfony\Component\HttpFoundation\Response;
         new OA\Property(property: 'storage_iso_user', type: 'string', nullable: true, description: 'Proxmox storage for user-uploaded ISOs'),
         new OA\Property(property: 'storage_iso_allowed', type: 'string', nullable: true, description: 'Comma-separated ISO storages users may mount from'),
         new OA\Property(property: 'rescue_iso', type: 'string', nullable: true, description: 'Proxmox volid of the rescue ISO'),
+        new OA\Property(property: 'feathertail_enabled', type: 'integer', nullable: true, description: 'Enable FeatherTail agent integration'),
+        new OA\Property(property: 'feathertail_url', type: 'string', nullable: true, description: 'FeatherTail agent base URL'),
+        new OA\Property(property: 'feathertail_tls_no_verify', type: 'integer', nullable: true, description: 'Skip TLS verification for FeatherTail'),
         new OA\Property(property: 'id', type: 'integer', nullable: true, description: 'Optional VM node ID (useful for migrations)'),
     ]
 )]
@@ -125,10 +133,16 @@ use Symfony\Component\HttpFoundation\Response;
         new OA\Property(property: 'storage_iso_user', type: 'string', nullable: true, description: 'Proxmox storage for user-uploaded ISOs'),
         new OA\Property(property: 'storage_iso_allowed', type: 'string', nullable: true, description: 'Comma-separated ISO storages users may mount from'),
         new OA\Property(property: 'rescue_iso', type: 'string', nullable: true, description: 'Proxmox volid of the rescue ISO'),
+        new OA\Property(property: 'feathertail_enabled', type: 'integer', nullable: true, description: 'Enable FeatherTail agent integration'),
+        new OA\Property(property: 'feathertail_url', type: 'string', nullable: true, description: 'FeatherTail agent base URL'),
+        new OA\Property(property: 'feathertail_tls_no_verify', type: 'integer', nullable: true, description: 'Skip TLS verification for FeatherTail'),
     ]
 )]
 class VmNodesController
 {
+    private const FIREWALL_ACTIONS = ['ACCEPT', 'DROP', 'REJECT'];
+    private const FIREWALL_PROTOCOLS = ['tcp', 'udp', 'icmp', 'ipv6-icmp'];
+
     #[OA\Get(
         path: '/api/admin/vm-nodes',
         summary: 'Get all Proxmox VM nodes',
@@ -209,6 +223,7 @@ class VmNodesController
         }
 
         $vmNodes = VmNode::searchVmNodes(page: $page, limit: $limit, search: (string) $search, locationId: $locationId);
+        $vmNodes = array_map(static fn (array $row): array => VmNode::sanitizeForAdminResponse($row), $vmNodes);
         $total = VmNode::getVmNodesCount(search: (string) $search, locationId: $locationId);
 
         $totalPages = (int) ceil($total / $limit);
@@ -271,7 +286,7 @@ class VmNodesController
             return ApiResponse::error('VM node not found', 'VM_NODE_NOT_FOUND', 404);
         }
 
-        return ApiResponse::success(['vm_node' => $vmNode], 'VM node fetched successfully', 200);
+        return ApiResponse::success(['vm_node' => VmNode::sanitizeForAdminResponse($vmNode)], 'VM node fetched successfully', 200);
     }
 
     #[OA\Put(
@@ -385,14 +400,16 @@ class VmNodesController
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
 
+        $safeNode = VmNode::sanitizeForAdminResponse($vmNode ?? []);
+
         self::emitVdsEvent(VdsNodeEvent::onVdsNodeCreated(), [
             'user_uuid' => $admin['uuid'] ?? null,
             'vm_node_id' => (int) $vmNodeId,
-            'vm_node' => $vmNode,
+            'vm_node' => $safeNode,
             'context' => ['source' => 'admin'],
         ]);
 
-        return ApiResponse::success(['vm_node' => $vmNode], 'VM node created successfully', 201);
+        return ApiResponse::success(['vm_node' => $safeNode], 'VM node created successfully', 201);
     }
 
     #[OA\Patch(
@@ -507,15 +524,17 @@ class VmNodesController
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
 
+        $safeNode = VmNode::sanitizeForAdminResponse($vmNode ?? []);
+
         self::emitVdsEvent(VdsNodeEvent::onVdsNodeUpdated(), [
             'user_uuid' => $admin['uuid'] ?? null,
             'vm_node_id' => $id,
-            'vm_node' => $vmNode,
+            'vm_node' => $safeNode,
             'changed_fields' => array_keys($data),
             'context' => ['source' => 'admin'],
         ]);
 
-        return ApiResponse::success(['vm_node' => $vmNode], 'VM node updated successfully', 200);
+        return ApiResponse::success(['vm_node' => $safeNode], 'VM node updated successfully', 200);
     }
 
     #[OA\Delete(
@@ -1526,7 +1545,7 @@ class VmNodesController
     }
 
     /**
-     * PUT /api/admin/vm-nodes/{id}/firewall/options
+     * PUT /api/admin/vm-nodes/{id}/firewall/options.
      */
     public function setFirewallOptions(Request $request, int $id): Response
     {
@@ -1583,7 +1602,7 @@ class VmNodesController
     }
 
     /**
-     * POST /api/admin/vm-nodes/{id}/firewall/rules
+     * POST /api/admin/vm-nodes/{id}/firewall/rules.
      */
     public function addFirewallRule(Request $request, int $id): Response
     {
@@ -1631,7 +1650,7 @@ class VmNodesController
     }
 
     /**
-     * DELETE /api/admin/vm-nodes/{id}/firewall/rules/{pos}
+     * DELETE /api/admin/vm-nodes/{id}/firewall/rules/{pos}.
      */
     public function deleteFirewallRule(Request $request, int $id, int $pos): Response
     {
@@ -1666,8 +1685,134 @@ class VmNodesController
         return ApiResponse::success([], 'Rule deleted', 200);
     }
 
-    private const FIREWALL_ACTIONS = ['ACCEPT', 'DROP', 'REJECT'];
-    private const FIREWALL_PROTOCOLS = ['tcp', 'udp', 'icmp', 'ipv6-icmp'];
+    #[OA\Get(
+        path: '/api/admin/vm-nodes/{id}/setup-command',
+        summary: 'Get FeatherTail setup commands',
+        description: 'Returns APT install and config commands for FeatherTail on this Proxmox node (includes panel-issued token).',
+        tags: ['Admin - VM Nodes'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', description: 'VM Node ID', required: true, schema: new OA\Schema(type: 'integer')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Setup commands'),
+            new OA\Response(response: 404, description: 'VM node not found'),
+        ]
+    )]
+    public function getSetupCommand(Request $request, int $id): Response
+    {
+        $vmNode = VmNode::getVmNodeById($id);
+        if (!$vmNode) {
+            return ApiResponse::error('VM node not found', 'VM_NODE_NOT_FOUND', 404);
+        }
+
+        $token = trim((string) ($vmNode['feathertail_token'] ?? ''));
+        if ($token === '') {
+            $token = VmNode::generateFeatherTailToken();
+            VmNode::updateVmNodeById($id, ['feathertail_token' => $token]);
+            $vmNode = VmNode::getVmNodeById($id) ?? $vmNode;
+            $token = trim((string) ($vmNode['feathertail_token'] ?? $token));
+        }
+
+        $url = trim((string) ($vmNode['feathertail_url'] ?? ''));
+        if ($url === '') {
+            $url = VmNode::defaultFeatherTailUrl((string) ($vmNode['fqdn'] ?? ''));
+            VmNode::updateVmNodeById($id, ['feathertail_url' => $url]);
+            $vmNode['feathertail_url'] = $url;
+        }
+
+        $bind = '0.0.0.0:8686';
+        $commands = FeatherTailCapabilities::buildSetupCommands($token, $url, $bind);
+        $defaults = FeatherTailCapabilities::defaults();
+
+        return ApiResponse::success([
+            'install_command' => $commands['install_command'],
+            'setup_command' => $commands['setup_command'],
+            'config_path_hint' => $commands['config_path_hint'],
+            'notes' => $commands['notes'],
+            'feathertail_url' => $url,
+            'feathertail_enabled' => (int) ($vmNode['feathertail_enabled'] ?? 0),
+            'feathertail_tls_no_verify' => (int) ($vmNode['feathertail_tls_no_verify'] ?? 0),
+            'daemon_type' => 'feathertail',
+            'daemon_display_name' => $defaults['display_name'],
+            'systemd_unit' => $defaults['systemd_unit'],
+            'default_port' => $defaults['default_port'],
+        ], 'Setup command retrieved successfully', 200);
+    }
+
+    #[OA\Post(
+        path: '/api/admin/vm-nodes/{id}/feathertail/reset-token',
+        summary: 'Reset FeatherTail agent token',
+        description: 'Regenerates the FeatherTail Bearer token. Re-run the setup command on the Proxmox node afterward.',
+        tags: ['Admin - VM Nodes'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', description: 'VM Node ID', required: true, schema: new OA\Schema(type: 'integer')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Token reset'),
+            new OA\Response(response: 404, description: 'VM node not found'),
+        ]
+    )]
+    public function resetFeatherTailToken(Request $request, int $id): Response
+    {
+        $admin = $request->attributes->get('user');
+        $vmNode = VmNode::getVmNodeById($id);
+        if (!$vmNode) {
+            return ApiResponse::error('VM node not found', 'VM_NODE_NOT_FOUND', 404);
+        }
+
+        $token = VmNode::generateFeatherTailToken();
+        $ok = VmNode::updateVmNodeById($id, ['feathertail_token' => $token]);
+        if (!$ok) {
+            return ApiResponse::error('Failed to reset FeatherTail token', 'FEATHERTAIL_TOKEN_RESET_FAILED', 400);
+        }
+
+        $vmNode = VmNode::getVmNodeById($id);
+
+        Activity::createActivity([
+            'user_uuid' => $admin['uuid'] ?? null,
+            'name' => 'reset_feathertail_token',
+            'context' => 'Reset FeatherTail token for VM node: ' . ($vmNode['name'] ?? $id),
+            'ip_address' => CloudFlareRealIP::getRealIP(),
+        ]);
+
+        return ApiResponse::success([
+            'vm_node' => VmNode::sanitizeForAdminResponse($vmNode ?? []),
+            'feathertail_token' => $token,
+        ], 'FeatherTail token reset successfully', 200);
+    }
+
+    #[OA\Post(
+        path: '/api/admin/vm-nodes/{id}/feathertail/test',
+        summary: 'Test FeatherTail agent connection',
+        description: 'Calls FeatherTail GET /api/v1/system/health using the stored URL and token.',
+        tags: ['Admin - VM Nodes'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', description: 'VM Node ID', required: true, schema: new OA\Schema(type: 'integer')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Probe result'),
+            new OA\Response(response: 404, description: 'VM node not found'),
+        ]
+    )]
+    public function testFeatherTail(Request $request, int $id): Response
+    {
+        $vmNode = VmNode::getVmNodeById($id);
+        if (!$vmNode) {
+            return ApiResponse::error('VM node not found', 'VM_NODE_NOT_FOUND', 404);
+        }
+
+        $result = FeatherTailClient::health($vmNode);
+        $healthy = ($result['status'] ?? '') === 'healthy';
+
+        return ApiResponse::success([
+            'healthy' => $healthy,
+            'status' => $result['status'],
+            'http_status' => $result['http_status'],
+            'error' => $result['error'],
+            'url' => $result['url'],
+            'body' => $result['body'],
+        ], $healthy ? 'FeatherTail is reachable' : 'FeatherTail probe failed', $healthy ? 200 : 200);
+    }
 
     /**
      * @return array{vmNode: array, client: \App\Services\Proxmox\Proxmox, pveNode: string, availableNodes: list<string>}|Response
@@ -1757,7 +1902,6 @@ class VmNodesController
         return $rules;
     }
 
-    /** @return array|string */
     private static function validateFirewallRule(array $b): array | string
     {
         $type = strtolower((string) ($b['type'] ?? 'in'));
@@ -1817,7 +1961,6 @@ class VmNodesController
         return ctype_digit($mask) && (int) $mask >= 0 && (int) $mask <= $max;
     }
 
-    /** @return array|Response */
     private function jsonBody(Request $request): array | Response
     {
         $data = json_decode($request->getContent(), true);

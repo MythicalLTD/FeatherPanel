@@ -59,7 +59,11 @@ export default function VdsBootPage() {
     if (!isQemu) {
         return (
             <div className='mx-auto flex w-full max-w-(--fp-content-max,80rem) flex-1 flex-col gap-6 px-0 pb-10'>
-                <VdsPageHeader title={t('vds.boot.title')} description={t('vds.boot.lxc_unsupported')} icon={HardDrive} />
+                <VdsPageHeader
+                    title={t('vds.boot.title')}
+                    description={t('vds.boot.lxc_unsupported')}
+                    icon={HardDrive}
+                />
                 <p className='text-muted-foreground text-sm'>
                     <Link href={`/vds/${id}/settings`} className='text-primary underline-offset-4 hover:underline'>
                         {t('vds.boot.back_to_settings')}
@@ -73,11 +77,7 @@ export default function VdsBootPage() {
         <div className='mx-auto flex w-full max-w-(--fp-content-max,80rem) flex-1 flex-col gap-6 px-0 pb-10'>
             <VdsPageHeader title={t('vds.boot.title')} description={t('vds.boot.description')} icon={HardDrive} />
 
-            <VdsBootOrderCard
-                vmId={vmId}
-                canEdit={canSettings}
-                refreshKey={orderRefresh}
-            />
+            <VdsBootOrderCard vmId={vmId} canEdit={canSettings} refreshKey={orderRefresh} />
 
             <VdsHostIsoCard
                 vmId={vmId}

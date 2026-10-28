@@ -362,12 +362,8 @@ export default function CreateVdsNodePage() {
 
                         <PageCard title={t('admin.vdsNodes.form.proxmox')} icon={Server}>
                             <div className='space-y-6'>
-                                <div className='rounded-xl border border-amber-500/25 bg-amber-500/[0.06] p-4 text-sm text-amber-100'>
-                                    {t('ui.admin.vdsNodes.create.forVDSConsoleAccessOverVNC')}
-                                    <div className='bg-muted mt-2 rounded-md px-3 py-2 font-mono text-xs break-all'>
-                                        curl -sSL https://get.featherpanel.com/installer.sh | bash
-                                    </div>
-                                    {t('ui.admin.vdsNodes.create.thenSelectTheVNCOptionDuring')}
+                                <div className='fp-surface rounded-xl border p-4 text-sm'>
+                                    {t('ui.admin.vdsNodes.create.afterCreateOpenFeatherTail')}
                                 </div>
                                 <div className='space-y-2'>
                                     <Label className='text-sm font-semibold'>{t('admin.vdsNodes.form.user')}</Label>

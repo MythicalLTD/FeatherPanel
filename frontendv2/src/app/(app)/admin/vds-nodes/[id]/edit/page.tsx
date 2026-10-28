@@ -96,6 +96,9 @@ export interface VdsNodeForm {
     vnc_upstream_host: string;
     vnc_upstream_port: number;
     vnc_upstream_scheme: 'http' | 'https' | '';
+    feathertail_enabled: boolean;
+    feathertail_url: string;
+    feathertail_tls_no_verify: boolean;
 }
 
 export default function EditVdsNodePage() {
@@ -125,6 +128,9 @@ export default function EditVdsNodePage() {
         vnc_upstream_host: '',
         vnc_upstream_port: 8006,
         vnc_upstream_scheme: '',
+        feathertail_enabled: false,
+        feathertail_url: '',
+        feathertail_tls_no_verify: false,
     });
     const { dirty: unsaved, markClean, restore: restoreForm } = useFormBaseline(form);
     const [errors, setErrors] = useState<Record<string, string>>({});
@@ -243,6 +249,9 @@ export default function EditVdsNodePage() {
                     vnc_upstream_host: vncHost,
                     vnc_upstream_port: vncPort,
                     vnc_upstream_scheme: vncScheme,
+                    feathertail_enabled: Boolean(Number(node.feathertail_enabled ?? 0)),
+                    feathertail_url: node.feathertail_url ?? '',
+                    feathertail_tls_no_verify: Boolean(Number(node.feathertail_tls_no_verify ?? 0)),
                 });
                 setQueryParams(otherParams);
                 markClean();
@@ -289,6 +298,8 @@ export default function EditVdsNodePage() {
             const { vnc_upstream_host: _vh, vnc_upstream_port: _vp, vnc_upstream_scheme: _vs, ...formRest } = form;
             const payload: Record<string, unknown> = {
                 ...formRest,
+                feathertail_enabled: form.feathertail_enabled ? 1 : 0,
+                feathertail_tls_no_verify: form.feathertail_tls_no_verify ? 1 : 0,
                 addional_headers: Object.keys(headersMap).length ? JSON.stringify(headersMap) : null,
                 additional_params: Object.keys(paramsMap).length ? JSON.stringify(paramsMap) : null,
             };
@@ -357,7 +368,7 @@ export default function EditVdsNodePage() {
         { value: 'storage', label: t('admin.vdsNodes.tabs.storage'), icon: HardDrive },
         { value: 'ip-pool', label: t('admin.vdsNodes.tabs.ip_pool'), icon: Globe },
         { value: 'templates', label: t('admin.vdsNodes.tabs.templates'), icon: Layers },
-        { value: 'dhcp', label: t('admin.vdsNodes.tabs.dhcp'), icon: Zap },
+        { value: 'dhcp', label: t('admin.vdsNodes.tabs.feathertail'), icon: Zap },
         { value: 'firewall', label: t('admin.vdsNodes.tabs.firewall'), icon: Shield },
         { value: 'info', label: t('admin.vdsNodes.tabs.info'), icon: Activity },
     ] as const;
@@ -491,7 +502,7 @@ export default function EditVdsNodePage() {
                         </TabsContent>
 
                         <TabsContent value='dhcp' className='mt-0 focus-visible:ring-0 focus-visible:outline-none'>
-                            <DhcpAgentTab />
+                            <DhcpAgentTab nodeId={id} form={form} setForm={setForm} />
                         </TabsContent>
 
                         <TabsContent value='firewall' className='mt-0 focus-visible:ring-0 focus-visible:outline-none'>

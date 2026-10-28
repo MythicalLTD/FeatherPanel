@@ -412,8 +412,7 @@ export default function VdsConsolePage() {
     const networkRxTotal = vmStatus?.netin ?? 0;
     const networkTxTotal = vmStatus?.netout ?? 0;
     const statsReady = vmStatus != null;
-    const diskUnavailableHint =
-        statsReady && !diskReady ? t('vds.console.performance.disk_unavailable') : undefined;
+    const diskUnavailableHint = statsReady && !diskReady ? t('vds.console.performance.disk_unavailable') : undefined;
     // ServerConsoleStats uses game-server units: CPU percent where 100 = one core, memory/disk in MiB.
     const cpuScale = cpuCores > 0 ? cpuCores * 100 : 100;
     const statusLabel = t(`vds.console.status.${displayStatus}`, { defaultValue: displayStatus });

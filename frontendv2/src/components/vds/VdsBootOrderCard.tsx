@@ -133,9 +133,7 @@ export function VdsBootOrderCard({ vmId, canEdit, refreshKey = 0 }: VdsBootOrder
         }
     };
 
-    const orderedEnabled = order
-        .map((id) => devices.find((d) => d.id === id))
-        .filter((d): d is BootDevice => !!d);
+    const orderedEnabled = order.map((id) => devices.find((d) => d.id === id)).filter((d): d is BootDevice => !!d);
     const disabled = devices.filter((d) => !order.includes(d.id));
 
     return (

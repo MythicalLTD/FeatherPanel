@@ -3,16 +3,23 @@
  * SMTP presets autofill host/port/encryption; API presets set mail_transport.
  */
 
+/*
+This file is part of FeatherPanel.
+
+Copyright (C) 2025 MythicalSystems Studios
+Copyright (C) 2025 FeatherPanel Contributors
+Copyright (C) 2025 Cassian Gherman (aka NaysKutzu)
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as published
+by the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+See the LICENSE file or <https://www.gnu.org/licenses/>.
+*/
+
 export type MailTransport =
-    | 'smtp'
-    | 'resend'
-    | 'sendgrid'
-    | 'mailgun'
-    | 'postmark'
-    | 'brevo'
-    | 'mailersend'
-    | 'sparkpost'
-    | 'ses';
+    'smtp' | 'resend' | 'sendgrid' | 'mailgun' | 'postmark' | 'brevo' | 'mailersend' | 'sparkpost' | 'ses';
 
 export type MailProviderMode = 'smtp' | 'api';
 
@@ -278,13 +285,7 @@ export function isApiMailTransport(transport: string | undefined | null): boolea
 }
 
 /** Setting keys that apply only when using SMTP transport. */
-export const SMTP_ONLY_SETTING_KEYS = [
-    'smtp_host',
-    'smtp_port',
-    'smtp_user',
-    'smtp_pass',
-    'smtp_encryption',
-] as const;
+export const SMTP_ONLY_SETTING_KEYS = ['smtp_host', 'smtp_port', 'smtp_user', 'smtp_pass', 'smtp_encryption'] as const;
 
 /** Setting keys that apply only when using an HTTP API transport. */
 export const API_ONLY_SETTING_KEYS = ['mail_api_key', 'mail_api_domain', 'mail_api_region'] as const;
@@ -320,10 +321,7 @@ export function shouldShowMailSetting(
     return true;
 }
 
-export function applyMailProviderPreset(
-    presetId: string,
-    setValue: (key: string, value: string) => void,
-): void {
+export function applyMailProviderPreset(presetId: string, setValue: (key: string, value: string) => void): void {
     const preset = getMailProviderPreset(presetId);
     setValue('mail_provider_preset', preset.id);
     setValue('mail_transport', preset.transport);

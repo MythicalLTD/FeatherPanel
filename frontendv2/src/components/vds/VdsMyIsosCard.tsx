@@ -26,12 +26,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useTranslation } from '@/contexts/TranslationContext';
 import type { VdsFeatures } from '@/hooks/useVdsFeatures';
-import {
-    apiIsoError,
-    formatIsoSize,
-    type IsoList,
-    type UserIso,
-} from '@/components/vds/VdsIsoDialog';
+import { apiIsoError, formatIsoSize, type IsoList, type UserIso } from '@/components/vds/VdsIsoDialog';
 
 interface VdsMyIsosCardProps {
     vmId: number;
@@ -160,8 +155,7 @@ export function VdsMyIsosCard({ vmId, features, canSettings, onMounted }: VdsMyI
     };
 
     const userIsosOn = !!iso?.user_isos;
-    const canAdd =
-        canSettings && userIsosOn && !!iso?.can_upload && (iso.upload_enabled || iso.url_enabled);
+    const canAdd = canSettings && userIsosOn && !!iso?.can_upload && (iso.upload_enabled || iso.url_enabled);
     const quotaFull = !!list && list.quota.max > 0 && list.quota.used >= list.quota.max;
 
     let guideKey: string | null = null;
@@ -193,9 +187,7 @@ export function VdsMyIsosCard({ vmId, features, canSettings, onMounted }: VdsMyI
                             </span>
                         )}
                     </CardTitle>
-                    <CardDescription className='text-muted-foreground'>
-                        {t('vds.iso.my_description')}
-                    </CardDescription>
+                    <CardDescription className='text-muted-foreground'>{t('vds.iso.my_description')}</CardDescription>
                 </CardHeader>
                 <CardContent className='space-y-4'>
                     {list === null ? (
@@ -339,24 +331,15 @@ export function VdsMyIsosCard({ vmId, features, canSettings, onMounted }: VdsMyI
                                         </div>
                                     )}
                                     <div className='flex justify-end gap-2'>
-                                        <Button
-                                            size='sm'
-                                            variant='ghost'
-                                            onClick={resetForm}
-                                            disabled={busy === 'add'}
-                                        >
+                                        <Button size='sm' variant='ghost' onClick={resetForm} disabled={busy === 'add'}>
                                             {t('common.cancel')}
                                         </Button>
                                         <Button
                                             size='sm'
                                             onClick={() => void submit()}
-                                            disabled={
-                                                busy !== null || (addMode === 'upload' ? !file : !url.trim())
-                                            }
+                                            disabled={busy !== null || (addMode === 'upload' ? !file : !url.trim())}
                                         >
-                                            {busy === 'add' && (
-                                                <Loader2 className='mr-1.5 h-3.5 w-3.5 animate-spin' />
-                                            )}
+                                            {busy === 'add' && <Loader2 className='mr-1.5 h-3.5 w-3.5 animate-spin' />}
                                             {addMode === 'upload' ? t('vds.iso.upload') : t('vds.iso.download')}
                                         </Button>
                                     </div>

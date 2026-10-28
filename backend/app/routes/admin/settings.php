@@ -123,7 +123,7 @@ return function (RouteCollection $routes): void {
             }
             try {
                 (new \App\Services\Storage\S3ObjectStore(\App\Services\Storage\StorageSettings::globalS3Config()))->test();
-            } catch (\Throwable $e) {
+            } catch (Throwable $e) {
                 return \App\Helpers\ApiResponse::error('S3 test failed: ' . $e->getMessage(), 'S3_TEST_FAILED', 400);
             }
 

@@ -21,12 +21,7 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { cn } from '@/lib/utils';
 import type RFB from '@novnc/novnc';
 import { XK_SHIFT_L, normalizeTypedText, strokeFor } from '@/lib/vnc/usKeymap';
-import {
-    STICKY_MODIFIERS,
-    type ExtraKeyAction,
-    type StickyModifier,
-    type VncKeySpec,
-} from '@/lib/vnc/extraKeys';
+import { STICKY_MODIFIERS, type ExtraKeyAction, type StickyModifier, type VncKeySpec } from '@/lib/vnc/extraKeys';
 
 /** noVNC logs (does not throw) if disconnect() runs after the socket is already gone. */
 function disconnectRfb(rfb: RFB): void {

@@ -67,7 +67,21 @@ interface FirewallState {
 
 type Policy = 'ACCEPT' | 'DROP' | 'REJECT';
 
-const EMPTY_RULE = { type: 'in' as const, action: 'ACCEPT' as Policy, proto: 'tcp', dport: '', source: '', comment: '' };
+const EMPTY_RULE: {
+    type: 'in' | 'out';
+    action: Policy;
+    proto: string;
+    dport: string;
+    source: string;
+    comment: string;
+} = {
+    type: 'in',
+    action: 'ACCEPT',
+    proto: 'tcp',
+    dport: '',
+    source: '',
+    comment: '',
+};
 
 const ACTION_STYLE: Record<string, string> = {
     ACCEPT: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400',
@@ -121,15 +135,7 @@ function Segmented<T extends string>({
     );
 }
 
-function OptionRow({
-    title,
-    hint,
-    children,
-}: {
-    title: string;
-    hint: string;
-    children: ReactNode;
-}) {
+function OptionRow({ title, hint, children }: { title: string; hint: string; children: ReactNode }) {
     return (
         <div className='fp-surface-inset flex flex-col gap-3 rounded-xl border p-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6'>
             <div className='min-w-0 space-y-0.5'>
@@ -280,10 +286,7 @@ export default function VdsFirewallPage() {
                                         disabled={!canManage || busy}
                                         onClick={() =>
                                             void run(
-                                                () =>
-                                                    axios.post(
-                                                        `/api/user/vm-instances/${id}/firewall/presets/${p}`,
-                                                    ),
+                                                () => axios.post(`/api/user/vm-instances/${id}/firewall/presets/${p}`),
                                                 'vds.firewall.preset_applied',
                                                 'vds.firewall.preset_failed',
                                             )

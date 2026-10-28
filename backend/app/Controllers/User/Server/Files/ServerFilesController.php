@@ -1260,7 +1260,22 @@ class ServerFilesController
                 if (!is_string($sourcePath) || trim($sourcePath) === '') {
                     continue;
                 }
-                $sources[] = $this->normalizeAbsolutePath($sourcePath);
+                $normalizedSourcePath = $this->normalizeAbsolutePath($sourcePath);
+                // Copying "." / ".." / the server root into a child of itself recursively
+                // nests until the disk fills (seen as infinite ". - copy" trees).
+                $sourceBase = basename($normalizedSourcePath);
+                if (
+                    $normalizedSourcePath === '/'
+                    || $sourceBase === '.'
+                    || $sourceBase === '..'
+                ) {
+                    return ApiResponse::error(
+                        'Cannot copy the server root or relative path entries "." / ".."',
+                        'INVALID_COPY_SOURCE',
+                        400
+                    );
+                }
+                $sources[] = $normalizedSourcePath;
             }
             if ($sources === []) {
                 return ApiResponse::error('No valid files were provided to copy', 'INVALID_COPY_REQUEST', 400);
@@ -1268,6 +1283,13 @@ class ServerFilesController
             if ($copyName !== null && count($sources) > 1) {
                 return ApiResponse::error(
                     'name cannot be used when copying multiple files; each source is copied into the destination directory under its own filename',
+                    'INVALID_COPY_NAME',
+                    400
+                );
+            }
+            if ($copyName !== null && ($copyName === '.' || $copyName === '..')) {
+                return ApiResponse::error(
+                    'Cannot use "." or ".." as a destination name',
                     'INVALID_COPY_NAME',
                     400
                 );

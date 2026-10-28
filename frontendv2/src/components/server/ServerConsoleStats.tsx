@@ -258,11 +258,7 @@ export default React.memo(function ServerConsoleStats({
                 value={<AnimatedNumber value={diskUsage} duration={450} format={formatMib} />}
                 sub={diskSettledUnavailable ? diskUnavailableHint : ofLimit(diskLimitLabel)}
                 percent={
-                    diskSettledUnavailable
-                        ? null
-                        : diskLimit > 0
-                          ? getUsagePercentage(diskUsage, diskLimit)
-                          : null
+                    diskSettledUnavailable ? null : diskLimit > 0 ? getUsagePercentage(diskUsage, diskLimit) : null
                 }
                 warn={!diskSettledUnavailable && diskLimit > 0 && diskUsage > diskLimit}
                 data={diskData}
