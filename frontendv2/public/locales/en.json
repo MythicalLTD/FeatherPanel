@@ -1650,7 +1650,10 @@
             "PROVIDER_UNKNOWN": "This storage provider is not available on this panel.",
             "PROVIDER_UNREACHABLE": "The storage provider could not be reached. Try again later.",
             "REMOTE_CHECKSUM_MISMATCH": "The uploaded backup did not match on the storage provider, so it was discarded.",
-            "REMOTE_FILE_MISSING": "The backup file is no longer on your storage."
+            "REMOTE_FILE_MISSING": "The backup file is no longer on your storage.",
+            "RELAY_BAD_RANGE": "The uploaded chunk is too large or out of range.",
+            "RELAY_DISABLED": "SFTP and WebDAV storage is turned off on this panel.",
+            "UPLOAD_LINK_INVALID": "This upload link is invalid or expired."
         },
         "global": {}
     },
@@ -2918,14 +2921,33 @@
                 "pathStyleHint": "Needed for MinIO and some self-hosted S3.",
                 "accessKey": "Access key ID",
                 "secretKey": "Secret access key",
-                "keepCurrent": "Leave empty to keep the current one"
+                "keepCurrent": "Leave empty to keep the current one",
+                "namePlaceholderRelay": "My backup server",
+                "host": "Host",
+                "port": "Port",
+                "username": "Username",
+                "password": "Password",
+                "passwordOrPassphrase": "Password (or key passphrase)",
+                "webdavUrl": "WebDAV URL",
+                "webdavUrlHint": "The address of your WebDAV folder, for example from your Nextcloud settings.",
+                "folder": "Folder",
+                "folderHint": "Created if it does not exist. Relative to the login folder.",
+                "privateKey": "Private key (optional)",
+                "privateKeyHint": "OpenSSH or PEM. Leave empty to log in with the password.",
+                "resetHostKey": "Trust a new host key (only if the server key really changed)"
             },
             "connect": "Connect {provider}",
             "connectTitle": "Connect {provider}",
             "connectDescription": {
-                "gdrive": "You will sign in with Google and allow access. The panel can only see the files it creates, in a \"FeatherPanel Backups\" folder."
+                "gdrive": "You will sign in with Google and allow access. The panel can only see the files it creates, in a \"FeatherPanel Backups\" folder.",
+                "dropbox": "You will sign in with Dropbox and allow access. The panel only gets its own app folder (Apps/FeatherPanel), where backups go to \"FeatherPanel Backups\".",
+                "onedrive": "You will sign in with Microsoft and allow access. The panel only gets its own app folder in your OneDrive (Apps/FeatherPanel)."
             },
-            "connectNote": "You can disconnect at any time here or in your Google account settings. Backups use your own storage quota.",
+            "connectNote": {
+                "gdrive": "You can disconnect at any time here or in your Google account settings. Backups use your own storage quota.",
+                "dropbox": "You can disconnect at any time here or in your Dropbox settings (Connected apps). Backups use your own storage quota.",
+                "onedrive": "You can disconnect at any time here or in your Microsoft account (Apps and services). Backups use your own storage quota."
+            },
             "continue": "Continue",
             "redirecting": "Redirecting…",
             "connected": "Storage connected",
@@ -2943,8 +2965,22 @@
             "removeWarningOauth": "{count} backups use this storage. The panel gives up its access, so it can no longer download, restore or delete them (they show as orphaned). The files stay in your drive.",
             "providers": {
                 "s3": "S3",
-                "gdrive": "Google Drive"
-            }
+                "gdrive": "Google Drive",
+                "dropbox": "Dropbox",
+                "onedrive": "OneDrive",
+                "sftp": "SFTP",
+                "webdav": "WebDAV"
+            },
+            "addRelay": "Add {provider}",
+            "addRelayTitle": "Add {provider} storage",
+            "relayDescription": {
+                "sftp": "A server you can log in to over SFTP (SSH). Use a password or a private key.",
+                "webdav": "Any WebDAV server: Nextcloud, ownCloud, a NAS and more."
+            },
+            "relayWarning": "Backups, downloads and restores for this storage go through the panel, not straight from the node, so they can be slower than S3 or cloud drives.",
+            "securityNoteSftp": "The server must have a public address. Its host key is saved on the first connection and checked every time after that. Use an account that can only reach the backup folder.",
+            "securityNoteWebdav": "The URL must use https and a public address. Use an app password if your server has them.",
+            "removeWarningRelay": "{count} backups use this storage. They stay on your server but the panel can no longer download, restore or delete them (they show as orphaned)."
         }
     },
     "servers": {
