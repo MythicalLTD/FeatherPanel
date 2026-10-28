@@ -107,6 +107,28 @@ class InboxNotifier
         });
     }
 
+    /** A user's own backup storage lost access (token revoked at the provider). */
+    public static function storageDisconnected(array $destination, int $backups): void
+    {
+        self::guard(static function () use ($destination, $backups): void {
+            $user = User::getUserById((int) ($destination['user_id'] ?? 0));
+            if (!$user) {
+                return;
+            }
+            self::send(
+                [$user],
+                UserNotification::KIND_STORAGE_DISCONNECTED,
+                [
+                    'storage_name' => mb_substr((string) ($destination['name'] ?? ''), 0, 120),
+                    'provider' => (string) ($destination['provider'] ?? ''),
+                    'count' => (string) $backups,
+                ],
+                '/dashboard/account?tab=storage',
+                'storage:' . (string) ($destination['uuid'] ?? '')
+            );
+        });
+    }
+
     /** Wings reported a crash: owner and subusers with console access. Repeats fold into one unread item. */
     public static function serverCrashed(array $server): void
     {

@@ -47,6 +47,7 @@ class ExternalNotifier
         'vds_backup_failed' => [UserNotification::KIND_VDS_BACKUP_FAILED],
         'vds_bandwidth' => [UserNotification::KIND_VDS_BANDWIDTH],
         'vds_expiring' => [UserNotification::KIND_VDS_EXPIRING],
+        'storage_disconnected' => [UserNotification::KIND_STORAGE_DISCONNECTED],
     ];
 
     private const TITLES = [
@@ -62,6 +63,7 @@ class ExternalNotifier
         UserNotification::KIND_VDS_BACKUP_FAILED => 'VDS backup failed',
         UserNotification::KIND_VDS_BANDWIDTH => 'VDS traffic limit',
         UserNotification::KIND_VDS_EXPIRING => 'VDS expires soon',
+        UserNotification::KIND_STORAGE_DISCONNECTED => 'Backup storage disconnected',
     ];
 
     private const COLORS = [
@@ -73,6 +75,7 @@ class ExternalNotifier
         UserNotification::KIND_VDS_DOWN => 0xEF4444,
         UserNotification::KIND_VDS_HIGH_CPU => 0xF59E0B,
         UserNotification::KIND_VDS_BACKUP_FAILED => 0xEF4444,
+        UserNotification::KIND_STORAGE_DISCONNECTED => 0xEF4444,
         UserNotification::KIND_VDS_BANDWIDTH => 0xF59E0B,
         UserNotification::KIND_VDS_EXPIRING => 0xF97316,
     ];
@@ -197,6 +200,10 @@ class ExternalNotifier
         }
         if (!empty($data['target_name'])) {
             $lines[] = 'Target: ' . $data['target_name'] . ' (' . ($data['count'] ?? '0') . ' items)';
+        }
+        if ($kind === UserNotification::KIND_STORAGE_DISCONNECTED) {
+            $lines[] = 'Storage: ' . ($data['storage_name'] ?? '');
+            $lines[] = 'The panel lost access to this storage. ' . ($data['count'] ?? '0') . ' backups on it cannot be downloaded or restored until you reconnect it, and new backups to it fail.';
         }
         if ($kind === UserNotification::KIND_TRANSFER_POWER_FAILED) {
             $lines[] = 'The server was running before its transfer but could not be started on the new node. Start it manually.';
