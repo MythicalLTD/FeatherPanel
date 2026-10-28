@@ -1630,7 +1630,27 @@
             "CREDENTIALS_REQUIRED": "Access key and secret key are required",
             "DESTINATION_TEST_FAILED": "Storage test failed",
             "INVALID_DESTINATION_ID": "Invalid storage destination",
-            "DESTINATION_IN_USE": "This storage still holds backups, so its location cannot change. Add a new storage instead."
+            "DESTINATION_IN_USE": "This storage still holds backups, so its location cannot change. Add a new storage instead.",
+            "DESTINATION_NOT_CONNECTED": "This storage is not connected. Reconnect it and try again.",
+            "DOWNLOAD_LINK_INVALID": "This download link is invalid or has expired. Start the download again from the panel.",
+            "ENCRYPTION_KEY_MISSING": "The panel has no encryption key configured. Ask an administrator.",
+            "NODE_RESUMABLE_UNSUPPORTED": "This node runs a FeatherWings version that cannot upload backups to this storage. Ask an administrator to update Wings.",
+            "OAUTH_ACCOUNT_MISMATCH": "You signed in with a different account. Reconnect with the account this storage was set up with.",
+            "OAUTH_DENIED": "Access was not granted, so the storage was not connected.",
+            "OAUTH_FAILED": "Connecting the storage failed. Try again.",
+            "OAUTH_INVALID_GRANT": "The provider rejected the authorization. Try connecting again.",
+            "OAUTH_NO_REFRESH_TOKEN": "The provider did not grant offline access. Remove the panel from your account’s connected apps and connect again.",
+            "OAUTH_REQUIRED": "This storage provider is connected by signing in, not with keys.",
+            "OAUTH_STATE_INVALID": "The connection request expired or was already used. Start again from the storage page.",
+            "OAUTH_TOKEN_FAILED": "The provider did not issue an access token. Try again later.",
+            "PROVIDER_DOWNLOAD_FAILED": "The storage provider could not serve this backup.",
+            "PROVIDER_ERROR": "The storage provider returned an error. Try again later.",
+            "PROVIDER_NOT_CONFIGURED": "This storage provider is not set up on the panel. Ask an administrator.",
+            "PROVIDER_NOT_OAUTH": "This storage provider is not connected by signing in.",
+            "PROVIDER_UNKNOWN": "This storage provider is not available on this panel.",
+            "PROVIDER_UNREACHABLE": "The storage provider could not be reached. Try again later.",
+            "REMOTE_CHECKSUM_MISMATCH": "The uploaded backup did not match on the storage provider, so it was discarded.",
+            "REMOTE_FILE_MISSING": "The backup file is no longer on your storage."
         },
         "global": {}
     },
@@ -2839,7 +2859,8 @@
                 "vds_high_cpu": "VDS high CPU usage",
                 "vds_backup_failed": "VDS backup failed",
                 "vds_bandwidth": "VDS traffic limit",
-                "vds_expiring": "VDS expires soon"
+                "vds_expiring": "VDS expires soon",
+                "storage_disconnected": "Backup storage disconnected"
             },
             "save": "Save",
             "saved": "Notification settings saved",
@@ -2850,7 +2871,7 @@
         },
         "storage": {
             "title": "Backup storage",
-            "description": "Your own S3 compatible buckets for server backups. Credentials stay encrypted on the panel; nodes only get short-lived upload and download links.",
+            "description": "Your own cloud storage for server backups: S3 compatible buckets or a connected cloud drive. Credentials stay encrypted on the panel; nodes only get short-lived upload and download links.",
             "loading": "Loading storage…",
             "refresh": "Refresh",
             "add": "Add storage",
@@ -2858,7 +2879,7 @@
             "editTitle": "Edit storage",
             "formDescription": "Any S3 compatible service works: AWS S3, Cloudflare R2, Backblaze B2, Wasabi, MinIO and more.",
             "empty": "No storage yet",
-            "emptyHint": "Add a bucket to keep server backups in your own cloud storage.",
+            "emptyHint": "Add a bucket or connect a cloud drive to keep server backups in your own storage.",
             "disabled": "Bring-your-own backup storage is not enabled on this panel. Ask an administrator to turn it on.",
             "limitReached": "You can add up to {max} storage destinations.",
             "meta": "{provider} · {count} backups · key {key}",
@@ -2898,6 +2919,31 @@
                 "accessKey": "Access key ID",
                 "secretKey": "Secret access key",
                 "keepCurrent": "Leave empty to keep the current one"
+            },
+            "connect": "Connect {provider}",
+            "connectTitle": "Connect {provider}",
+            "connectDescription": {
+                "gdrive": "You will sign in with Google and allow access. The panel can only see the files it creates, in a \"FeatherPanel Backups\" folder."
+            },
+            "connectNote": "You can disconnect at any time here or in your Google account settings. Backups use your own storage quota.",
+            "continue": "Continue",
+            "redirecting": "Redirecting…",
+            "connected": "Storage connected",
+            "connectFailed": "Could not connect the storage",
+            "reconnect": "Reconnect",
+            "rename": "Rename",
+            "renameTitle": "Rename storage",
+            "renameDescription": "The name is only shown in the panel.",
+            "save": "Save",
+            "metaOauth": "{provider} · {count} backups · {quota}",
+            "quota": "{used} of {total} used",
+            "quotaUnlimited": "{used} used",
+            "quotaUnknown": "quota not checked yet",
+            "accountUnknown": "Account unknown",
+            "removeWarningOauth": "{count} backups use this storage. The panel gives up its access, so it can no longer download, restore or delete them (they show as orphaned). The files stay in your drive.",
+            "providers": {
+                "s3": "S3",
+                "gdrive": "Google Drive"
             }
         }
     },
@@ -4275,7 +4321,8 @@
                 "vds_high_cpu": "VDS high CPU usage",
                 "vds_backup_failed": "VDS backup failed",
                 "vds_bandwidth": "VDS traffic limit",
-                "vds_expiring": "VDS expires soon"
+                "vds_expiring": "VDS expires soon",
+                "storage_disconnected": "Storage disconnected"
             },
             "bodies": {
                 "ticket_reply": "New reply on \"{ticket}\".",
@@ -4290,7 +4337,8 @@
                 "vds_high_cpu": "{vds} has used over {percent}% CPU for {minutes} minutes.",
                 "vds_backup_failed": "A backup of {vds} failed: {error}",
                 "vds_bandwidth": "{vds} used {used_gb} GB of {limit_gb} GB traffic this month ({percent}%). {action_label}",
-                "vds_expiring": "{vds} expires on {expires_at} UTC ({days} day(s) left). Renew it to avoid suspension."
+                "vds_expiring": "{vds} expires on {expires_at} UTC ({days} day(s) left). Renew it to avoid suspension.",
+                "storage_disconnected": "The panel lost access to {storage}. Backups there ({files}) cannot be created, downloaded or restored until you reconnect it."
             },
             "metrics": {
                 "cpu": "CPU",
