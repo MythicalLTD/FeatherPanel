@@ -20,6 +20,8 @@ use RateLimit\Rate;
 use App\Helpers\ApiResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RouteCollection;
+use App\Controllers\User\Storage\BackupStreamController;
+use App\Controllers\User\Storage\StorageOAuthController;
 use App\Controllers\User\Storage\StorageDestinationController;
 
 return function (RouteCollection $routes): void {
@@ -90,5 +92,55 @@ return function (RouteCollection $routes): void {
         ['POST'],
         Rate::perMinute(10),
         'user-storage-destination-test'
+    );
+    $withProvider = static function (array $args, callable $fn) {
+        $provider = (string) ($args['provider'] ?? '');
+        if (!preg_match('/^[a-z0-9]{2,20}$/', $provider)) {
+            return ApiResponse::error('Unknown storage provider', 'PROVIDER_UNKNOWN', 400);
+        }
+
+        return $fn($provider);
+    };
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-storage-destination-oauth-start',
+        '/api/user/storage-destinations/oauth/{provider}/start',
+        function (Request $request, array $args) use ($withProvider) {
+            return $withProvider($args, fn (string $p) => (new StorageOAuthController())->start($request, $p));
+        },
+        ['POST'],
+        Rate::perMinute(10),
+        'user-storage-destination-write'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-storage-destination-oauth-callback',
+        '/api/user/storage-destinations/oauth/{provider}/callback',
+        function (Request $request, array $args) use ($withProvider) {
+            return $withProvider($args, fn (string $p) => (new StorageOAuthController())->callback($request, $p));
+        },
+        ['GET'],
+        Rate::perMinute(20),
+        'user-storage-destination-write'
+    );
+
+    // Signed, expiring link (no session): browser downloads of cloud-stored backups.
+    App::getInstance(true)->registerApiRoute(
+        $routes,
+        'storage-backup-stream',
+        '/api/storage/backups/{uuid}/download',
+        function (Request $request, array $args) {
+            $uuid = (string) ($args['uuid'] ?? '');
+            if (!preg_match('/^[a-f0-9-]{36}$/', $uuid)) {
+                return ApiResponse::error('Backup not found', 'BACKUP_NOT_FOUND', 404);
+            }
+
+            return (new BackupStreamController())->download($request, $uuid);
+        },
+        ['GET'],
+        Rate::perMinute(30),
+        'storage-backup-stream'
     );
 };

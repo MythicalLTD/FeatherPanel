@@ -27,6 +27,7 @@ use App\Services\Storage\StorageException;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use App\Services\Storage\StorageDestinationService;
+use App\Services\Storage\Providers\ProviderRegistry;
 
 /**
  * Bring-your-own backup storage destinations for the signed-in user.
@@ -57,6 +58,9 @@ class StorageDestinationController
         $provider = strtolower(trim((string) ($body['provider'] ?? 's3')));
         if (!in_array($provider, StorageSettings::allowedProviders(), true)) {
             return ApiResponse::error('This storage provider is not allowed on this panel', 'PROVIDER_NOT_ALLOWED', 403);
+        }
+        if (ProviderRegistry::has($provider)) {
+            return ApiResponse::error('Connect this provider with its sign-in flow', 'OAUTH_REQUIRED', 400);
         }
         $name = mb_substr(trim((string) ($body['name'] ?? '')), 0, 100);
         if ($name === '') {
@@ -104,7 +108,7 @@ class StorageDestinationController
             }
             $update['name'] = $name;
         }
-        if (isset($body['config']) && is_array($body['config'])) {
+        if (isset($body['config']) && is_array($body['config']) && !ProviderRegistry::has((string) $row['provider'])) {
             try {
                 $current = UserStorageDestination::config($row);
                 $next = StorageDestinationService::normalizeS3Config($body['config'], $current);
@@ -154,6 +158,13 @@ class StorageDestinationController
             return ApiResponse::error('Storage destination not found', 'DESTINATION_NOT_FOUND', 404);
         }
         $orphaned = UserStorageDestination::countBackups($id);
+        if (ProviderRegistry::has((string) $row['provider'])) {
+            // Revoke the panel's access at the provider; the files themselves stay in the user's account.
+            try {
+                ProviderRegistry::get((string) $row['provider'])->disconnect($row);
+            } catch (\Throwable) {
+            }
+        }
         UserStorageDestination::softDelete($id);
         $this->audit($user, 'storage_destination_deleted', 'Removed backup storage "' . $row['name'] . '" (' . $orphaned . ' backups orphaned, objects kept in the bucket)');
 
@@ -172,6 +183,7 @@ class StorageDestinationController
             'byo_enabled' => $enabled,
             'byo_s3' => $enabled && in_array('s3', $providers, true),
             'providers' => $providers,
+            'oauth_providers' => array_values(array_filter($providers, static fn (string $p): bool => ProviderRegistry::has($p) && ProviderRegistry::get($p)->available())),
             'max_destinations' => StorageSettings::maxDestinationsPerUser(),
         ];
     }

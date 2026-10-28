@@ -18,6 +18,7 @@
 namespace App\Services\Storage;
 
 use App\Chat\UserStorageDestination;
+use App\Services\Storage\Providers\ProviderRegistry;
 
 /**
  * Bring-your-own storage destinations: validation, client construction and the
@@ -114,17 +115,29 @@ final class StorageDestinationService
     public static function test(array $destination): array
     {
         try {
-            self::storeFor($destination)->test();
-            UserStorageDestination::update((int) $destination['id'], [
+            $update = [
                 'status' => UserStorageDestination::STATUS_ACTIVE,
                 'last_error' => null,
                 'last_tested_at' => date('Y-m-d H:i:s'),
-            ]);
+            ];
+            if (ProviderRegistry::has((string) $destination['provider'])) {
+                $info = ProviderRegistry::get((string) $destination['provider'])->test($destination);
+                $fresh = UserStorageDestination::getById((int) $destination['id']) ?? $destination;
+                $update['config'] = UserStorageDestination::config($fresh);
+                $update['config']['quota'] = $info['quota'];
+                if (!empty($info['account'])) {
+                    $update['config']['account'] = $info['account'];
+                }
+            } else {
+                self::storeFor($destination)->test();
+            }
+            UserStorageDestination::update((int) $destination['id'], $update);
 
             return ['ok' => true, 'error' => null];
         } catch (\Throwable $e) {
+            $revoked = $e instanceof StorageException && $e->errorCode() === 'DESTINATION_REVOKED';
             UserStorageDestination::update((int) $destination['id'], [
-                'status' => UserStorageDestination::STATUS_ERROR,
+                'status' => $revoked ? UserStorageDestination::STATUS_REVOKED : UserStorageDestination::STATUS_ERROR,
                 'last_error' => $e->getMessage(),
                 'last_tested_at' => date('Y-m-d H:i:s'),
             ]);
@@ -207,6 +220,7 @@ final class StorageDestinationService
     {
         $config = UserStorageDestination::config($row);
         $access = (string) ($config['access_key'] ?? '');
+        $oauth = ProviderRegistry::has((string) $row['provider']);
 
         return [
             'id' => (int) $row['id'],
@@ -218,7 +232,10 @@ final class StorageDestinationService
             'last_tested_at' => $row['last_tested_at'] ?? null,
             'created_at' => $row['created_at'] ?? null,
             'backups_count' => UserStorageDestination::countBackups((int) $row['id']),
-            'config' => [
+            'oauth' => $oauth,
+            'account' => $oauth ? ($config['account'] ?? null) : null,
+            'quota' => $oauth && is_array($config['quota'] ?? null) ? $config['quota'] : null,
+            'config' => $oauth ? null : [
                 'endpoint' => $config['endpoint'] ?? '',
                 'region' => $config['region'] ?? '',
                 'bucket' => $config['bucket'] ?? '',
