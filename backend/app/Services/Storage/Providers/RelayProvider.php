@@ -70,8 +70,9 @@ abstract class RelayProvider implements StorageProviderInterface
             throw new StorageException('SFTP and WebDAV storage is turned off on this panel', 'RELAY_DISABLED', 403);
         }
         self::clearState((string) $backup['uuid']);
+        self::purgeStale();
         $this->beginUpload($dest, $server, $backup);
-        self::saveState((string) $backup['uuid'], ['size' => $size, 'received' => 0, 'hash' => serialize(hash_init('sha1')), 'done' => false]);
+        self::saveState((string) $backup['uuid'], ['size' => $size, 'received' => 0, 'hash' => base64_encode(serialize(hash_init('sha1'))), 'done' => false]);
 
         return [
             'adapter' => 'resumable',
@@ -122,10 +123,10 @@ abstract class RelayProvider implements StorageProviderInterface
                 return $progress($state);
             }
             $this->writeChunk($dest, $server, $backup, $a, $body);
-            $ctx = unserialize((string) $state['hash'], ['allowed_classes' => [\HashContext::class]]);
+            $ctx = unserialize((string) base64_decode((string) $state['hash']), ['allowed_classes' => [\HashContext::class]]);
             hash_update($ctx, $body);
             $state['received'] = $b + 1;
-            $state['hash'] = serialize($ctx);
+            $state['hash'] = base64_encode(serialize($ctx));
             if ($state['received'] === $total) {
                 $this->finishUpload($dest, $server, $backup);
                 $state['done'] = true;
@@ -247,6 +248,16 @@ abstract class RelayProvider implements StorageProviderInterface
         return self::dir() . '/' . $uuid . '.part';
     }
 
+    /** Drop state and staged data of uploads abandoned for more than two days. */
+    private static function purgeStale(): void
+    {
+        foreach (glob(self::dir() . '/*.{json,part,lock}', GLOB_BRACE) ?: [] as $file) {
+            if (@filemtime($file) < time() - 172800) {
+                @unlink($file);
+            }
+        }
+    }
+
     /** @return array<string, mixed>|null */
     private static function state(string $uuid): ?array
     {
@@ -259,7 +270,7 @@ abstract class RelayProvider implements StorageProviderInterface
     private static function saveState(string $uuid, array $state): void
     {
         $file = self::dir() . '/' . $uuid . '.json';
-        file_put_contents($file . '.tmp', json_encode($state));
+        file_put_contents($file . '.tmp', json_encode($state, JSON_THROW_ON_ERROR));
         rename($file . '.tmp', $file);
     }
 }
