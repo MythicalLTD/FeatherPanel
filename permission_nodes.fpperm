@@ -39,11 +39,17 @@ ADMIN_SPELLS_CREATE=admin.spells.create | Admin Spells | Create new spells
 ADMIN_SPELLS_EDIT=admin.spells.edit | Admin Spells | Edit existing spells
 ADMIN_SPELLS_DELETE=admin.spells.delete | Admin Spells | Delete spells
 
-# Nodes Permissions
-ADMIN_NODES_VIEW=admin.nodes.view | Admin Nodes | View nodes
-ADMIN_NODES_CREATE=admin.nodes.create | Admin Nodes | Create new nodes
-ADMIN_NODES_EDIT=admin.nodes.edit | Admin Nodes | Edit existing nodes
-ADMIN_NODES_DELETE=admin.nodes.delete | Admin Nodes | Delete nodes
+# Nodes Permissions (Wings / game servers — not VDS/Proxmox or web hosting)
+ADMIN_NODES_VIEW=admin.nodes.view | Admin Nodes | View Wings/game nodes
+ADMIN_NODES_CREATE=admin.nodes.create | Admin Nodes | Create new Wings/game nodes
+ADMIN_NODES_EDIT=admin.nodes.edit | Admin Nodes | Edit existing Wings/game nodes
+ADMIN_NODES_DELETE=admin.nodes.delete | Admin Nodes | Delete Wings/game nodes
+
+# Web Nodes Permissions (Quilld / web hosting — separate from Wings admin.nodes.*)
+ADMIN_WEB_NODES_VIEW=admin.web_nodes.view | Admin Web Nodes | View web hosting nodes
+ADMIN_WEB_NODES_CREATE=admin.web_nodes.create | Admin Web Nodes | Create web hosting nodes
+ADMIN_WEB_NODES_EDIT=admin.web_nodes.edit | Admin Web Nodes | Edit web hosting nodes (token, packages, self-update)
+ADMIN_WEB_NODES_DELETE=admin.web_nodes.delete | Admin Web Nodes | Delete web hosting nodes
 
 # Roles Permissions
 ADMIN_ROLES_VIEW=admin.roles.view | Admin Roles | View roles
@@ -189,8 +195,15 @@ ADMIN_TICKET_ATTACHMENTS_MANAGE=admin.ticket_attachments.manage | Admin Ticket A
 ADMIN_TICKET_MESSAGES_VIEW=admin.ticket_messages.view | Admin Ticket Messages | View ticket messages
 ADMIN_TICKET_MESSAGES_MANAGE=admin.ticket_messages.manage | Admin Ticket Messages | Manage ticket messages
 
+# VM Nodes Permissions (VDS / Proxmox hosts — separate from Wings admin.nodes.*)
+ADMIN_VM_NODES_VIEW=admin.vm_nodes.view | Admin VM Nodes | View VDS/Proxmox nodes
+ADMIN_VM_NODES_CREATE=admin.vm_nodes.create | Admin VM Nodes | Create VDS/Proxmox nodes
+ADMIN_VM_NODES_EDIT=admin.vm_nodes.edit | Admin VM Nodes | Edit VDS/Proxmox nodes (storage, firewall, ISOs, templates)
+ADMIN_VM_NODES_DELETE=admin.vm_nodes.delete | Admin VM Nodes | Delete VDS/Proxmox nodes
+
 # VM Instances Permissions
 ADMIN_VM_INSTANCES_VIEW=admin.vm_instances.view | Admin VM Instances | View VM instances
+ADMIN_VM_INSTANCES_CREATE=admin.vm_instances.create | Admin VM Instances | Create VM instances
 ADMIN_VM_INSTANCES_EDIT=admin.vm_instances.edit | Admin VM Instances | Edit existing VM instances
 ADMIN_VM_INSTANCES_DELETE=admin.vm_instances.delete | Admin VM Instances | Delete VM instances
 
@@ -205,6 +218,31 @@ ADMIN_WEBSPACES_VIEW=admin.webspaces.view | Admin WebSpaces | View webspaces
 ADMIN_WEBSPACES_CREATE=admin.webspaces.create | Admin WebSpaces | Create new webspaces
 ADMIN_WEBSPACES_EDIT=admin.webspaces.edit | Admin WebSpaces | Edit existing webspaces
 ADMIN_WEBSPACES_DELETE=admin.webspaces.delete | Admin WebSpaces | Delete webspaces
+
+# Mail Hosts Permissions (separate from webspaces)
+ADMIN_MAIL_HOSTS_VIEW=admin.mail_hosts.view | Admin Mail Hosts | View mail hosts
+ADMIN_MAIL_HOSTS_CREATE=admin.mail_hosts.create | Admin Mail Hosts | Create mail hosts
+ADMIN_MAIL_HOSTS_EDIT=admin.mail_hosts.edit | Admin Mail Hosts | Edit mail hosts
+ADMIN_MAIL_HOSTS_DELETE=admin.mail_hosts.delete | Admin Mail Hosts | Delete mail hosts
+
+# DNS Hosts Permissions (separate from webspaces)
+ADMIN_DNS_HOSTS_VIEW=admin.dns_hosts.view | Admin DNS Hosts | View DNS hosts
+ADMIN_DNS_HOSTS_CREATE=admin.dns_hosts.create | Admin DNS Hosts | Create DNS hosts
+ADMIN_DNS_HOSTS_EDIT=admin.dns_hosts.edit | Admin DNS Hosts | Edit DNS hosts
+ADMIN_DNS_HOSTS_DELETE=admin.dns_hosts.delete | Admin DNS Hosts | Delete DNS hosts
+
+# Hosting Packages Permissions (separate from webspaces)
+ADMIN_HOSTING_PACKAGES_VIEW=admin.hosting_packages.view | Admin Hosting Packages | View hosting packages
+ADMIN_HOSTING_PACKAGES_CREATE=admin.hosting_packages.create | Admin Hosting Packages | Create hosting packages
+ADMIN_HOSTING_PACKAGES_EDIT=admin.hosting_packages.edit | Admin Hosting Packages | Edit hosting packages
+ADMIN_HOSTING_PACKAGES_DELETE=admin.hosting_packages.delete | Admin Hosting Packages | Delete hosting packages
+
+# AbuseIPDB Permissions (separate from users)
+ADMIN_ABUSEIPDB_VIEW=admin.abuseipdb.view | Admin AbuseIPDB | View AbuseIPDB status and lookups
+ADMIN_ABUSEIPDB_MANAGE=admin.abuseipdb.manage | Admin AbuseIPDB | Run AbuseIPDB scans and actions
+
+# Audit Log Permissions (separate from users)
+ADMIN_AUDIT_LOG_VIEW=admin.audit_log.view | Admin Audit Log | View the admin audit log
 
 ADMIN_WINGS_BACKUPS_VIEW=admin.wings_backups.view | Admin Wings Backups | View Wings backups
 ADMIN_WINGS_BACKUPS_MANAGE=admin.wings_backups.manage | Admin Wings Backups | Manage Wings backup settings

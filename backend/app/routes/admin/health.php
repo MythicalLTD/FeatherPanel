@@ -30,7 +30,7 @@ return function (RouteCollection $routes): void {
         function (Request $request) {
             return (new HealthController())->index($request);
         },
-        Permissions::ADMIN_NODES_VIEW,
+        Permissions::ADMIN_DASHBOARD_VIEW,
     );
 
     // Developer debug console (##icanhasfeatherpanel): read-only runtime facts.

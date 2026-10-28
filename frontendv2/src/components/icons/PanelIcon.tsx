@@ -20,6 +20,7 @@ import { Icon, iconLoaded, loadIcon } from '@iconify/react';
 import { CircleHelp } from 'lucide-react';
 import { DynamicIcon } from 'lucide-react/dynamic';
 import type { IconLibrary } from '@/lib/iconLibrary';
+import { isKnownLucideName } from '@/lib/iconLibrary';
 import { type PanelIconSource, type PanelIconSpec, resolvePanelIconFallbacks } from '@/lib/panelIcon';
 import { useSidebarPreferences } from '@/hooks/useSidebarPreferences';
 import { cn } from '@/lib/utils';
@@ -45,6 +46,7 @@ function isSyncSpec(spec: PanelIconSpec): boolean {
 }
 
 async function canRenderSpec(spec: PanelIconSpec): Promise<boolean> {
+    if (spec.type === 'lucide') return isKnownLucideName(spec.name);
     if (isSyncSpec(spec)) return true;
     const iconId = iconifyIdForSpec(spec);
     if (!iconId) return false;
@@ -110,6 +112,11 @@ function RenderPanelIconSpec({
 
     switch (spec.type) {
         case 'lucide':
+            if (!isKnownLucideName(spec.name)) {
+                return (
+                    <CircleHelp className={cn('shrink-0 opacity-70', className)} style={dimensionStyle} aria-hidden />
+                );
+            }
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             return <DynamicIcon name={spec.name as any} className={cn('shrink-0', className)} style={dimensionStyle} />;
         case 'iconify':

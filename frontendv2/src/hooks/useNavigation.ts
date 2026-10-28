@@ -100,7 +100,11 @@ export function useNavigation() {
         server,
         loading: serverPermissionsLoading,
     } = useServerPermissions(serverUuid || '');
-    const { hasPermission: hasVdsPermission, loading: vdsPermissionsLoading } = useVdsPermissions();
+    const {
+        hasPermission: hasVdsPermission,
+        loading: vdsPermissionsLoading,
+        instance: vdsInstance,
+    } = useVdsPermissions();
     const { hasPermission: hasWebSpacePermission, loading: webSpacePermissionsLoading } = useWebSpacePermissions(
         webspaceUuid || '',
     );
@@ -330,7 +334,7 @@ export function useNavigation() {
         }
 
         if (isVds && vdsId) {
-            let items = getVdsNavigationItems(t, vdsId);
+            let items = getVdsNavigationItems(t, vdsId, { vmType: vdsInstance?.vm_type });
             items = items.map((item) => ({
                 ...item,
                 isActive: checkActive(item.url, item.url === `/vds/${vdsId}`),
@@ -421,6 +425,7 @@ export function useNavigation() {
         isDeveloperModeEnabled,
         isVds,
         vdsId,
+        vdsInstance?.vm_type,
         hasVdsPermission,
         isWebspace,
         webspaceUuid,

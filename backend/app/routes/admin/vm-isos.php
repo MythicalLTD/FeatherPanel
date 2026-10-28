@@ -26,11 +26,11 @@ return function (RouteCollection $routes): void {
     $c = static fn () => new VmIsosController();
     $id = static fn (array $args): int => (int) ($args['id'] ?? 0);
 
-    $app->registerAdminRoute($routes, 'admin-vm-isos-index', '/api/admin/vm-isos', static fn (Request $r) => $c()->index($r), Permissions::ADMIN_NODES_VIEW, ['GET']);
-    $app->registerAdminRoute($routes, 'admin-vm-isos-scan', '/api/admin/vm-isos/scan', static fn (Request $r) => $c()->scan($r), Permissions::ADMIN_NODES_VIEW, ['GET']);
-    $app->registerAdminRoute($routes, 'admin-vm-isos-create', '/api/admin/vm-isos', static fn (Request $r) => $c()->create($r), Permissions::ADMIN_NODES_EDIT, ['POST']);
-    $app->registerAdminRoute($routes, 'admin-vm-isos-update', '/api/admin/vm-isos/{id}', static fn (Request $r, array $a) => $c()->update($r, $id($a)), Permissions::ADMIN_NODES_EDIT, ['PATCH']);
-    $app->registerAdminRoute($routes, 'admin-vm-isos-delete', '/api/admin/vm-isos/{id}', static fn (Request $r, array $a) => $c()->delete($r, $id($a)), Permissions::ADMIN_NODES_EDIT, ['DELETE']);
-    $app->registerAdminRoute($routes, 'admin-vm-isos-approve', '/api/admin/vm-isos/{id}/approve', static fn (Request $r, array $a) => $c()->approve($r, $id($a)), Permissions::ADMIN_NODES_EDIT, ['POST']);
-    $app->registerAdminRoute($routes, 'admin-vm-isos-reject', '/api/admin/vm-isos/{id}/reject', static fn (Request $r, array $a) => $c()->reject($r, $id($a)), Permissions::ADMIN_NODES_EDIT, ['POST']);
+    $app->registerAdminRoute($routes, 'admin-vm-isos-index', '/api/admin/vm-isos', static fn (Request $r) => $c()->index($r), Permissions::ADMIN_VM_NODES_VIEW, ['GET']);
+    $app->registerAdminRoute($routes, 'admin-vm-isos-scan', '/api/admin/vm-isos/scan', static fn (Request $r) => $c()->scan($r), Permissions::ADMIN_VM_NODES_VIEW, ['GET']);
+    $app->registerAdminRoute($routes, 'admin-vm-isos-create', '/api/admin/vm-isos', static fn (Request $r) => $c()->create($r), Permissions::ADMIN_VM_NODES_EDIT, ['POST']);
+    $app->registerAdminRoute($routes, 'admin-vm-isos-update', '/api/admin/vm-isos/{id}', static fn (Request $r, array $a) => $c()->update($r, $id($a)), Permissions::ADMIN_VM_NODES_EDIT, ['PATCH']);
+    $app->registerAdminRoute($routes, 'admin-vm-isos-delete', '/api/admin/vm-isos/{id}', static fn (Request $r, array $a) => $c()->delete($r, $id($a)), Permissions::ADMIN_VM_NODES_EDIT, ['DELETE']);
+    $app->registerAdminRoute($routes, 'admin-vm-isos-approve', '/api/admin/vm-isos/{id}/approve', static fn (Request $r, array $a) => $c()->approve($r, $id($a)), Permissions::ADMIN_VM_NODES_EDIT, ['POST']);
+    $app->registerAdminRoute($routes, 'admin-vm-isos-reject', '/api/admin/vm-isos/{id}/reject', static fn (Request $r, array $a) => $c()->reject($r, $id($a)), Permissions::ADMIN_VM_NODES_EDIT, ['POST']);
 };

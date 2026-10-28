@@ -49,7 +49,7 @@ class VmIsosController
             'isos' => array_map([self::class, 'serialize'], VmIso::listForAdmin($kind, is_string($approval) && $approval !== '' ? $approval : null, trim((string) $request->query->get('search', '')))),
             'pending_count' => VmIso::countPendingApproval(),
             'categories' => VmIso::CATEGORIES,
-            'user_storage' => IsoLibrary::userStorage(),
+            'user_storage' => self::aggregateUserIsoStorages(),
         ], 'ISOs fetched', 200);
     }
 
@@ -218,6 +218,25 @@ class VmIsosController
         }
 
         return IsoLibrary::deleteVolume($client, (string) $row['pve_node'], (string) $row['volid']);
+    }
+
+    /**
+     * Human-readable summary of per-node user ISO storages (plus legacy global fallback).
+     */
+    private static function aggregateUserIsoStorages(): string
+    {
+        $storages = [];
+        foreach (VmNode::getAllVmNodes() as $node) {
+            $value = IsoLibrary::userStorage($node);
+            if ($value !== '') {
+                $storages[$value] = true;
+            }
+        }
+        if ($storages === []) {
+            return IsoLibrary::userStorage();
+        }
+
+        return implode(', ', array_keys($storages));
     }
 
     /** @return array<string, mixed>|Response */

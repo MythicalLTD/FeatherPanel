@@ -29,7 +29,7 @@ return function (RouteCollection $routes): void {
         function (Request $request) {
             return (new AbuseIPDBController())->status($request);
         },
-        Permissions::ADMIN_USERS_VIEW,
+        Permissions::ADMIN_ABUSEIPDB_VIEW,
         ['GET']
     );
 
@@ -40,7 +40,7 @@ return function (RouteCollection $routes): void {
         function (Request $request) {
             return (new AbuseIPDBController())->categories($request);
         },
-        Permissions::ADMIN_USERS_VIEW,
+        Permissions::ADMIN_ABUSEIPDB_VIEW,
         ['GET']
     );
 
@@ -51,7 +51,7 @@ return function (RouteCollection $routes): void {
         function (Request $request) {
             return (new AbuseIPDBController())->check($request);
         },
-        Permissions::ADMIN_USERS_VIEW,
+        Permissions::ADMIN_ABUSEIPDB_VIEW,
         ['GET']
     );
 
@@ -62,7 +62,7 @@ return function (RouteCollection $routes): void {
         function (Request $request) {
             return (new AbuseIPDBController())->scan($request);
         },
-        Permissions::ADMIN_USERS_VIEW,
+        Permissions::ADMIN_ABUSEIPDB_MANAGE,
         ['POST']
     );
 };

@@ -30,7 +30,7 @@ return function (RouteCollection $routes): void {
         function (Request $request) {
             return (new DnsHostsController())->index($request);
         },
-        Permissions::ADMIN_WEBSPACES_VIEW,
+        Permissions::ADMIN_DNS_HOSTS_VIEW,
     );
 
     App::getInstance(true)->registerAdminRoute(
@@ -45,7 +45,7 @@ return function (RouteCollection $routes): void {
 
             return (new DnsHostsController())->show($request, (int) $id);
         },
-        Permissions::ADMIN_WEBSPACES_VIEW,
+        Permissions::ADMIN_DNS_HOSTS_VIEW,
     );
 
     App::getInstance(true)->registerAdminRoute(
@@ -55,7 +55,7 @@ return function (RouteCollection $routes): void {
         function (Request $request) {
             return (new DnsHostsController())->create($request);
         },
-        Permissions::ADMIN_WEBSPACES_CREATE,
+        Permissions::ADMIN_DNS_HOSTS_CREATE,
         ['PUT']
     );
 
@@ -71,7 +71,7 @@ return function (RouteCollection $routes): void {
 
             return (new DnsHostsController())->update($request, (int) $id);
         },
-        Permissions::ADMIN_WEBSPACES_EDIT,
+        Permissions::ADMIN_DNS_HOSTS_EDIT,
         ['PATCH']
     );
 
@@ -87,7 +87,7 @@ return function (RouteCollection $routes): void {
 
             return (new DnsHostsController())->delete($request, (int) $id);
         },
-        Permissions::ADMIN_WEBSPACES_DELETE,
+        Permissions::ADMIN_DNS_HOSTS_DELETE,
         ['DELETE']
     );
 
@@ -103,7 +103,7 @@ return function (RouteCollection $routes): void {
 
             return (new DnsHostsController())->test($request, (int) $id);
         },
-        Permissions::ADMIN_WEBSPACES_VIEW,
+        Permissions::ADMIN_DNS_HOSTS_VIEW,
         ['POST']
     );
 };

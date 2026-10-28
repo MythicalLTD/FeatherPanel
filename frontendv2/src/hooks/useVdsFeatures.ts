@@ -35,6 +35,9 @@ export interface VdsFeatures {
         enabled: boolean;
         mode: 'provider' | 'provider_user' | 'disabled';
         user_isos: boolean;
+        /** Present when user_isos is false: mode not provider_user, or user ISO storage unset. */
+        user_isos_blocker?: 'mode' | 'storage' | null;
+        user_storage_configured?: boolean;
         upload_enabled: boolean;
         url_enabled: boolean;
         max_size_mb: number;

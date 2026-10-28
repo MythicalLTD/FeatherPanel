@@ -89,6 +89,9 @@ export interface VdsNodeForm {
     storage_tpm: string;
     storage_efi: string;
     storage_backups: string;
+    storage_iso_user: string;
+    storage_iso_allowed: string;
+    rescue_iso: string;
     /** Direct PVE host for panel VNC proxy (bypass Cloudflare / Access on the API FQDN). Empty = use fqdn. */
     vnc_upstream_host: string;
     vnc_upstream_port: number;
@@ -116,6 +119,9 @@ export default function EditVdsNodePage() {
         storage_tpm: '',
         storage_efi: '',
         storage_backups: '',
+        storage_iso_user: '',
+        storage_iso_allowed: '',
+        rescue_iso: '',
         vnc_upstream_host: '',
         vnc_upstream_port: 8006,
         vnc_upstream_scheme: '',
@@ -231,6 +237,9 @@ export default function EditVdsNodePage() {
                     storage_tpm: node.storage_tpm ?? '',
                     storage_efi: node.storage_efi ?? '',
                     storage_backups: node.storage_backups ?? '',
+                    storage_iso_user: node.storage_iso_user ?? '',
+                    storage_iso_allowed: node.storage_iso_allowed ?? '',
+                    rescue_iso: node.rescue_iso ?? '',
                     vnc_upstream_host: vncHost,
                     vnc_upstream_port: vncPort,
                     vnc_upstream_scheme: vncScheme,
@@ -486,7 +495,7 @@ export default function EditVdsNodePage() {
                         </TabsContent>
 
                         <TabsContent value='firewall' className='mt-0 focus-visible:ring-0 focus-visible:outline-none'>
-                            <FirewallTab />
+                            <FirewallTab nodeId={id} />
                         </TabsContent>
 
                         <TabsContent value='templates' className='mt-0 focus-visible:ring-0 focus-visible:outline-none'>

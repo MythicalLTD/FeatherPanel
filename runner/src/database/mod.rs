@@ -92,6 +92,10 @@ pub async fn get_user(pool: &MySqlPool, user_uuid: &str) -> Result<Option<UserEn
 
 pub async fn get_smtp_config(_pool: &MySqlPool) -> Result<SmtpConfig> {
     Ok(SmtpConfig {
+        transport: crate::settings::get_setting("mail_transport")
+            .await
+            .unwrap_or_else(|| "smtp".to_string())
+            .to_ascii_lowercase(),
         host: crate::settings::get_setting("smtp_host").await.unwrap_or_default(),
         port: crate::settings::get_setting("smtp_port")
             .await
@@ -110,6 +114,15 @@ pub async fn get_smtp_config(_pool: &MySqlPool) -> Result<SmtpConfig> {
             .await
             .map(|s| s == "true")
             .unwrap_or(false),
+        api_key: crate::settings::get_setting("mail_api_key")
+            .await
+            .unwrap_or_default(),
+        api_domain: crate::settings::get_setting("mail_api_domain")
+            .await
+            .unwrap_or_default(),
+        api_region: crate::settings::get_setting("mail_api_region")
+            .await
+            .unwrap_or_else(|| "us".to_string()),
     })
 }
 

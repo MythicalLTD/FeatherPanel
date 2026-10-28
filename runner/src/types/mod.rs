@@ -16,7 +16,9 @@ pub struct SettingsReloadNotification {
 }
 
 #[derive(Clone, Debug)]
-pub struct SmtpConfig {
+pub struct MailConfig {
+    /// smtp | resend | sendgrid | mailgun | postmark | brevo | mailersend | sparkpost | ses
+    pub transport: String,
     pub host: String,
     pub port: u16,
     pub user: String,
@@ -25,7 +27,13 @@ pub struct SmtpConfig {
     pub from_name: String,
     pub encryption: String,
     pub enabled: bool,
+    pub api_key: String,
+    pub api_domain: String,
+    pub api_region: String,
 }
+
+/// Backward-compatible alias used by older call sites.
+pub type SmtpConfig = MailConfig;
 
 #[derive(Debug)]
 pub struct MailQueueEntry {

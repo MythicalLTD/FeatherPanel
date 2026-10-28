@@ -35,7 +35,7 @@ return function (RouteCollection $routes): void {
             function (Request $request) use ($method) {
                 return (new AuditLogController())->{$method}($request);
             },
-            Permissions::ADMIN_USERS_VIEW,
+            Permissions::ADMIN_AUDIT_LOG_VIEW,
             ['GET']
         );
     }

@@ -14,8 +14,17 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 */
 
 import type { LucideIcon } from 'lucide-react';
+import { iconNames } from 'lucide-react/dynamic';
 
 export type IconLibrary = 'lucide' | 'tabler' | 'mdi' | 'phosphor';
+
+const KNOWN_LUCIDE_NAMES = new Set<string>(iconNames as readonly string[]);
+
+/** True when `name` is a valid Lucide DynamicIcon slug (avoids console errors on unknown names). */
+export function isKnownLucideName(name: string | null | undefined): boolean {
+    if (!name) return false;
+    return KNOWN_LUCIDE_NAMES.has(name);
+}
 
 export const ICON_LIBRARY_PREFIX: Record<IconLibrary, string> = {
     lucide: 'lucide',

@@ -75,7 +75,7 @@ class VmUserExtrasController
                 'brand_logo' => self::brandLogo(),
             ],
             'iso' => self::isoFeatures($request, $id, $vmInstance, $isQemu),
-            'rescue' => ['enabled' => $isQemu && self::rescueIso() !== null],
+            'rescue' => ['enabled' => $isQemu && self::rescueIso(IsoLibrary::nodeForInstance($vmInstance)) !== null],
             'snapshots' => [
                 'enabled' => self::flag(ConfigInterface::VDS_SNAPSHOTS_ENABLED, 'true'),
                 'limit' => self::snapshotLimit($vmInstance),
@@ -147,16 +147,17 @@ class VmUserExtrasController
             return $ctx;
         }
         $mine = [];
-        $userIsos = IsoLibrary::userIsosAllowed($ctx['instance']);
+        $userIsos = IsoLibrary::userIsosAllowed($ctx['instance'], $ctx['vm_node'] ?? null);
         $userId = (int) ($ctx['user']['id'] ?? 0);
         if ($userIsos) {
             $rows = IsoLibrary::refreshUserIsos($ctx['client'], VmIso::userIsosForNode($userId, (int) $ctx['instance']['vm_node_id'], $ctx['node']));
             $mine = array_map([IsoLibrary::class, 'serializeUserIso'], $rows);
         }
         $rules = IsoLibrary::userRules();
+        $rescue = self::rescueIso($ctx['vm_node'] ?? null);
 
         return ApiResponse::success([
-            'isos' => IsoLibrary::providerIsos($ctx['client'], $ctx['node'], $ctx['instance'], self::rescueIso()),
+            'isos' => IsoLibrary::providerIsos($ctx['client'], $ctx['node'], $ctx['instance'], $rescue),
             'my_isos' => $mine,
             'user_isos' => $userIsos,
             'quota' => ['used' => $userIsos ? VmIso::countUserQuota($userId) : 0, 'max' => $rules['max_per_user']],
@@ -354,7 +355,9 @@ class VmUserExtrasController
             return $ctx;
         }
 
-        return ApiResponse::success(['active' => $this->rescueActive($ctx), 'iso' => basename((string) self::rescueIso())], 'Rescue state fetched', 200);
+        $rescue = self::rescueIso($ctx['vm_node'] ?? null);
+
+        return ApiResponse::success(['active' => $this->rescueActive($ctx), 'iso' => basename((string) $rescue)], 'Rescue state fetched', 200);
     }
 
     #[OA\Post(
@@ -379,7 +382,7 @@ class VmUserExtrasController
         }
 
         if ($action === 'enter') {
-            $err = $this->attachIso($ctx, (string) self::rescueIso());
+            $err = $this->attachIso($ctx, (string) self::rescueIso($ctx['vm_node'] ?? null));
             if ($err !== null) {
                 return ApiResponse::error($err, 'PROXMOX_UPDATE_FAILED', 503);
             }
@@ -511,6 +514,81 @@ class VmUserExtrasController
         return $this->snapshotAction($request, $id, $name, 'delete');
     }
 
+    #[OA\Get(
+        path: '/api/user/vm-instances/{id}/boot-order',
+        summary: 'Get QEMU boot order',
+        description: 'Lists bootable disks, CD-ROMs and NICs with the current Proxmox boot=order sequence. Cloud-init drives are excluded.',
+        tags: ['User - VM Instances'],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        responses: [new OA\Response(response: 200, description: 'Boot order')]
+    )]
+    public function getBootOrder(Request $request, int $id): Response
+    {
+        $ctx = $this->bootContext($request, $id);
+        if ($ctx instanceof Response) {
+            return $ctx;
+        }
+        $cfgRes = $ctx['client']->getVmConfig($ctx['node'], $ctx['vmid'], 'qemu');
+        if (!$cfgRes['ok'] || !is_array($cfgRes['config'] ?? null)) {
+            return ApiResponse::error('Failed to fetch VM config', 'PROXMOX_ERROR', 503);
+        }
+
+        return ApiResponse::success($this->describeBootOrder($cfgRes['config']), 'Boot order fetched', 200);
+    }
+
+    #[OA\Put(
+        path: '/api/user/vm-instances/{id}/boot-order',
+        summary: 'Set QEMU boot order',
+        description: 'Writes boot=order=… for an ordered list of existing bootable devices. A full stop/start may be needed for Proxmox to apply it.',
+        tags: ['User - VM Instances'],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(properties: [new OA\Property(property: 'order', type: 'array', items: new OA\Items(type: 'string'))])),
+        responses: [new OA\Response(response: 200, description: 'Updated')]
+    )]
+    public function setBootOrder(Request $request, int $id): Response
+    {
+        $ctx = $this->bootContext($request, $id);
+        if ($ctx instanceof Response) {
+            return $ctx;
+        }
+        $body = json_decode($request->getContent(), true);
+        $order = is_array($body) && is_array($body['order'] ?? null) ? $body['order'] : null;
+        if ($order === null) {
+            return ApiResponse::error('order must be an array of device ids', 'VALIDATION_FAILED', 400);
+        }
+        $clean = [];
+        foreach ($order as $dev) {
+            if (!is_string($dev) || $dev === '') {
+                return ApiResponse::error('Each boot device id must be a non-empty string', 'VALIDATION_FAILED', 400);
+            }
+            if (!in_array($dev, $clean, true)) {
+                $clean[] = $dev;
+            }
+        }
+        $cfgRes = $ctx['client']->getVmConfig($ctx['node'], $ctx['vmid'], 'qemu');
+        if (!$cfgRes['ok'] || !is_array($cfgRes['config'] ?? null)) {
+            return ApiResponse::error('Failed to fetch VM config', 'PROXMOX_ERROR', 503);
+        }
+        $allowed = array_column($this->bootableDevices($cfgRes['config']), 'id');
+        foreach ($clean as $dev) {
+            if (!in_array($dev, $allowed, true)) {
+                return ApiResponse::error('Unknown or disallowed boot device: ' . $dev, 'INVALID_BOOT_DEVICE', 400);
+            }
+        }
+        if ($clean === []) {
+            return ApiResponse::error('At least one boot device is required', 'VALIDATION_FAILED', 400);
+        }
+        $set = $ctx['client']->setVmConfig($ctx['node'], $ctx['vmid'], 'qemu', ['boot' => 'order=' . implode(';', $clean)], []);
+        if (!$set['ok']) {
+            return ApiResponse::error('Proxmox rejected the boot order update', 'PROXMOX_UPDATE_FAILED', 503);
+        }
+        $this->activity($ctx, 'vm:boot.order', ['order' => $clean]);
+        $fresh = $ctx['client']->getVmConfig($ctx['node'], $ctx['vmid'], 'qemu');
+        $cfg = ($fresh['ok'] && is_array($fresh['config'] ?? null)) ? $fresh['config'] : array_merge($cfgRes['config'], ['boot' => 'order=' . implode(';', $clean)]);
+
+        return ApiResponse::success($this->describeBootOrder($cfg), 'Boot order updated', 200);
+    }
+
     public static function snapshotLimit(array $vmInstance): int
     {
         $own = $vmInstance['snapshot_limit'] ?? null;
@@ -553,6 +631,7 @@ class VmUserExtrasController
         return [
             'user' => $user,
             'instance' => $vmInstance,
+            'vm_node' => $vmNode,
             'client' => $client,
             'node' => $node,
             'vmid' => (int) $vmInstance['vmid'],
@@ -705,6 +784,94 @@ class VmUserExtrasController
         return $ctx;
     }
 
+    private function bootContext(Request $request, int $id): array | Response
+    {
+        $ctx = $this->context($request, $id, 'settings');
+        if (!$ctx instanceof Response && $ctx['type'] !== 'qemu') {
+            return ApiResponse::error('Boot order is only supported for QEMU VMs', 'BOOT_NOT_SUPPORTED', 400);
+        }
+
+        return $ctx;
+    }
+
+    /**
+     * @return array{order: string[], devices: array<int, array{id: string, type: string, label: string, enabled: bool}>}
+     */
+    private function describeBootOrder(array $cfg): array
+    {
+        $devices = $this->bootableDevices($cfg);
+        $byId = [];
+        foreach ($devices as $d) {
+            $byId[$d['id']] = $d;
+        }
+        $order = [];
+        if (is_string($cfg['boot'] ?? null) && preg_match('/order=([^,]+)/', (string) $cfg['boot'], $m)) {
+            foreach (array_map('trim', explode(';', (string) $m[1])) as $id) {
+                if ($id !== '' && isset($byId[$id]) && !in_array($id, $order, true)) {
+                    $order[] = $id;
+                }
+            }
+        }
+        // Legacy c|d|n|a flags with no order= — fall back to disks then nets.
+        if ($order === [] && is_string($cfg['boot'] ?? null) && !str_contains((string) $cfg['boot'], 'order=')) {
+            foreach ($devices as $d) {
+                if ($d['type'] === 'disk') {
+                    $order[] = $d['id'];
+                }
+            }
+        }
+        $out = [];
+        foreach ($devices as $d) {
+            $out[] = [
+                'id' => $d['id'],
+                'type' => $d['type'],
+                'label' => $d['label'],
+                'enabled' => in_array($d['id'], $order, true),
+            ];
+        }
+
+        return ['order' => $order, 'devices' => $out];
+    }
+
+    /**
+     * Bootable QEMU devices on this VM (disks, CD-ROMs, NICs). Excludes cloud-init, EFI and TPM.
+     *
+     * @return array<int, array{id: string, type: string, label: string}>
+     */
+    private function bootableDevices(array $cfg): array
+    {
+        $out = [];
+        foreach ($cfg as $key => $value) {
+            if (!is_string($key) || !is_string($value)) {
+                continue;
+            }
+            if (preg_match('/^(scsi|virtio|sata|ide)\d+$/', $key)) {
+                if (str_contains($value, 'cloudinit') || str_starts_with($key, 'efidisk') || str_starts_with($key, 'tpmstate')) {
+                    continue;
+                }
+                $type = str_contains($value, 'media=cdrom') ? 'cdrom' : 'disk';
+                $file = IsoLibrary::fileName(explode(',', $value)[0]);
+                $out[] = [
+                    'id' => $key,
+                    'type' => $type,
+                    'label' => $type === 'cdrom'
+                        ? ($file !== '' ? $file : $key)
+                        : ($file !== '' ? $key . ' · ' . $file : $key),
+                ];
+                continue;
+            }
+            if (preg_match('/^net\d+$/', $key)) {
+                $out[] = [
+                    'id' => $key,
+                    'type' => 'net',
+                    'label' => $key,
+                ];
+            }
+        }
+
+        return $out;
+    }
+
     /** Context for adding user ISOs: mode, storage, quota and the iso.upload permission. */
     private function userIsoContext(Request $request, int $id, string $source): array | Response
     {
@@ -712,7 +879,7 @@ class VmUserExtrasController
         if ($ctx instanceof Response) {
             return $ctx;
         }
-        if (!IsoLibrary::userIsosAllowed($ctx['instance'])) {
+        if (!IsoLibrary::userIsosAllowed($ctx['instance'], $ctx['vm_node'] ?? null)) {
             return ApiResponse::error('Custom ISOs are not allowed for this VDS', 'USER_ISOS_DISABLED', 403);
         }
         $rules = IsoLibrary::userRules();
@@ -724,7 +891,7 @@ class VmUserExtrasController
             return ApiResponse::error('You reached the maximum number of custom ISOs (' . $rules['max_per_user'] . '). Delete one first.', 'ISO_QUOTA_REACHED', 409);
         }
         $ctx['rules'] = $rules;
-        $ctx['storage'] = IsoLibrary::userStorage();
+        $ctx['storage'] = IsoLibrary::userStorage($ctx['vm_node'] ?? null);
 
         return $ctx;
     }
@@ -734,12 +901,25 @@ class VmUserExtrasController
         $mode = IsoLibrary::mode($vmInstance);
         $rules = IsoLibrary::userRules();
         $user = $request->attributes->get('user');
-        $userIsos = $isQemu && IsoLibrary::userIsosAllowed($vmInstance);
+        $vmNode = IsoLibrary::nodeForInstance($vmInstance);
+        $storageConfigured = IsoLibrary::userStorage($vmNode) !== '';
+        $userIsos = $isQemu && $mode === 'provider_user' && $storageConfigured;
+        // Why custom ISOs are off — so the UI can show a precise guide instead of a generic message.
+        $userIsosBlocker = null;
+        if ($isQemu && !$userIsos) {
+            if ($mode !== 'provider_user') {
+                $userIsosBlocker = 'mode';
+            } elseif (!$storageConfigured) {
+                $userIsosBlocker = 'storage';
+            }
+        }
 
         return [
             'enabled' => $isQemu && $mode !== 'disabled',
             'mode' => $mode,
             'user_isos' => $userIsos,
+            'user_storage_configured' => $storageConfigured,
+            'user_isos_blocker' => $userIsosBlocker,
             'upload_enabled' => $userIsos && $rules['upload_enabled'],
             'url_enabled' => $userIsos && $rules['url_enabled'],
             'max_size_mb' => $rules['max_size_mb'],
@@ -753,8 +933,9 @@ class VmUserExtrasController
     /** Volids this VDS may mount: provider ISOs plus the user's own ready and approved ISOs. */
     private function mountableVolids(array $ctx): array
     {
-        $volids = array_column(IsoLibrary::providerIsos($ctx['client'], $ctx['node'], $ctx['instance'], self::rescueIso()), 'volid');
-        if (IsoLibrary::userIsosAllowed($ctx['instance'])) {
+        $rescue = self::rescueIso($ctx['vm_node'] ?? null);
+        $volids = array_column(IsoLibrary::providerIsos($ctx['client'], $ctx['node'], $ctx['instance'], $rescue), 'volid');
+        if (IsoLibrary::userIsosAllowed($ctx['instance'], $ctx['vm_node'] ?? null)) {
             foreach (VmIso::userIsosForNode((int) $ctx['user']['id'], (int) $ctx['instance']['vm_node_id'], $ctx['node']) as $row) {
                 if (IsoLibrary::isMountable($row)) {
                     $volids[] = (string) $row['volid'];
@@ -767,11 +948,14 @@ class VmUserExtrasController
 
     private function rescueContext(Request $request, int $id): array | Response
     {
-        if (self::rescueIso() === null) {
+        $ctx = $this->context($request, $id, 'power');
+        if ($ctx instanceof Response) {
+            return $ctx;
+        }
+        if (self::rescueIso($ctx['vm_node'] ?? null) === null) {
             return ApiResponse::error('Rescue mode is disabled', 'FEATURE_DISABLED', 403);
         }
-        $ctx = $this->context($request, $id, 'power');
-        if (!$ctx instanceof Response && $ctx['type'] !== 'qemu') {
+        if ($ctx['type'] !== 'qemu') {
             return ApiResponse::error('Rescue mode is only supported for QEMU VMs', 'RESCUE_NOT_SUPPORTED', 400);
         }
 
@@ -815,15 +999,17 @@ class VmUserExtrasController
         $cfgRes = $ctx['client']->getVmConfig($ctx['node'], $ctx['vmid'], 'qemu');
         $ide2 = is_array($cfgRes['config'] ?? null) ? (string) ($cfgRes['config']['ide2'] ?? '') : '';
 
-        return $ide2 !== '' && str_starts_with($ide2, (string) self::rescueIso() . ',');
+        $rescue = self::rescueIso($ctx['vm_node'] ?? null);
+
+        return $rescue !== null && $ide2 !== '' && str_starts_with($ide2, $rescue . ',');
     }
 
-    private static function rescueIso(): ?string
+    private static function rescueIso(?array $vmNode = null): ?string
     {
         if (!self::flag(ConfigInterface::VDS_RESCUE_ENABLED, 'false')) {
             return null;
         }
-        $iso = trim(self::setting(ConfigInterface::VDS_RESCUE_ISO, ''));
+        $iso = IsoLibrary::rescueIso($vmNode);
 
         return $iso === '' ? null : $iso;
     }

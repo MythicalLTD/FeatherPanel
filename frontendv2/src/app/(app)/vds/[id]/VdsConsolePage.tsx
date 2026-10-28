@@ -109,6 +109,13 @@ export default function VdsConsolePage() {
     const [copied, setCopied] = useState(false);
     const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const statusInFlightRef = useRef(false);
+    /** User had (or wants) an embedded console — reconnect after reboot/start. */
+    const wantVncRef = useRef(false);
+    const vncReconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const vncReconnectAttemptsRef = useRef(0);
+    /** Skip auto-reconnect on the disconnect that follows an intentional session teardown. */
+    const suppressVncDisconnectReconnectRef = useRef(false);
+    const poweringRef = useRef<string | null>(null);
 
     const [cpuData, setCpuData] = useState<{ timestamp: number; value: number }[]>([]);
     const [memoryData, setMemoryData] = useState<{ timestamp: number; value: number }[]>([]);
@@ -215,20 +222,89 @@ export default function VdsConsolePage() {
         fetchWidgets();
     }, [fetchWidgets]);
 
+    const clearVncSession = useCallback(() => {
+        setVncUrl(null);
+        setVncPassword(null);
+    }, []);
+
+    /**
+     * Requests a VNC ticket and opens the console.
+     *
+     * Panel-proxied mode (`wss_url`) embeds noVNC in-page; the legacy
+     * `pve_redirect_url` mode still opens Proxmox in a new tab.
+     */
+    const openVnc = useCallback(async () => {
+        if (!id) return;
+        setVncLoading(true);
+        try {
+            const { data } = await axios.get(`/api/user/vm-instances/${id}/vnc-ticket`);
+            if (data.success) {
+                const payload = data.data;
+                if (payload.pve_redirect_url) {
+                    window.open(payload.pve_redirect_url, '_blank', 'noopener,noreferrer');
+                    wantVncRef.current = false;
+                } else if (payload.wss_url) {
+                    wantVncRef.current = true;
+                    vncReconnectAttemptsRef.current = 0;
+                    setVncPassword(typeof payload.ticket === 'string' ? payload.ticket : null);
+                    setVncUrl(payload.wss_url);
+                }
+            } else {
+                toast.error(getApiErrorMessageFromPayload(data, t, 'vds.console.toast.vnc_failed'));
+            }
+        } catch (err) {
+            toast.error(getApiErrorMessage(err, t, 'vds.console.toast.vnc_failed'));
+        } finally {
+            setVncLoading(false);
+        }
+    }, [id, t]);
+
+    const scheduleVncReconnect = useCallback(() => {
+        if (!wantVncRef.current) return;
+        if (vncReconnectTimerRef.current) clearTimeout(vncReconnectTimerRef.current);
+        // QEMU VNC is often not ready the instant the power task flips to completed.
+        vncReconnectTimerRef.current = setTimeout(() => {
+            vncReconnectTimerRef.current = null;
+            if (!wantVncRef.current) return;
+            void openVnc();
+        }, 2000);
+    }, [openVnc]);
+
+    useEffect(() => {
+        return () => {
+            if (vncReconnectTimerRef.current) clearTimeout(vncReconnectTimerRef.current);
+        };
+    }, []);
+
     const handlePower = async (action: 'start' | 'stop' | 'reboot') => {
         if (!id) return;
+        // Reboot/stop kills the VNC websocket; drop the dead ticket so we are not stuck on
+        // "Disconnected" with a single-use URL that can never recover.
+        poweringRef.current = action;
         setPowering(action);
+        if (action === 'reboot' || action === 'stop') {
+            if (vncUrl) wantVncRef.current = true;
+            suppressVncDisconnectReconnectRef.current = true;
+            clearVncSession();
+        }
         try {
             const res = await axios.post(`/api/user/vm-instances/${id}/power`, { action });
             const taskId = res.data?.data?.task_id as string | undefined;
 
+            const onPowerDone = (ok: boolean) => {
+                poweringRef.current = null;
+                setPowering(null);
+                if (!ok) return;
+                refreshInstance();
+                fetchStatus();
+                if ((action === 'reboot' || action === 'start') && wantVncRef.current) {
+                    scheduleVncReconnect();
+                }
+            };
+
             if (!taskId) {
                 toast.success(t('vds.console.toast.power_completed', { action }));
-                setTimeout(() => {
-                    refreshInstance();
-                    fetchStatus();
-                    setPowering(null);
-                }, 2000);
+                setTimeout(() => onPowerDone(true), 2000);
                 return;
             }
 
@@ -239,7 +315,7 @@ export default function VdsConsolePage() {
             const poll = async () => {
                 if (polls >= MAX_POLLS) {
                     toast.error(t('vds.console.toast.power_timeout'));
-                    setPowering(null);
+                    onPowerDone(false);
                     return;
                 }
                 polls++;
@@ -248,9 +324,7 @@ export default function VdsConsolePage() {
                     const s = statusRes.data?.data;
                     if (s?.status === 'completed') {
                         toast.success(t('vds.console.toast.power_completed', { action }));
-                        refreshInstance();
-                        fetchStatus();
-                        setPowering(null);
+                        onPowerDone(true);
                         return;
                     }
                     if (s?.status === 'failed') {
@@ -261,7 +335,7 @@ export default function VdsConsolePage() {
                                 'vds.console.toast.power_failed',
                             ),
                         );
-                        setPowering(null);
+                        onPowerDone(false);
                         return;
                     }
                 } catch {
@@ -274,38 +348,24 @@ export default function VdsConsolePage() {
             void poll();
         } catch (err) {
             toast.error(getApiErrorMessage(err, t, 'vds.console.toast.power_failed'));
+            poweringRef.current = null;
             setPowering(null);
         }
     };
 
-    /**
-     * Requests a VNC ticket and opens the console.
-     *
-     * Panel-proxied mode (`wss_url`) embeds noVNC in-page; the legacy
-     * `pve_redirect_url` mode still opens Proxmox in a new tab.
-     */
-    const openVnc = async () => {
-        if (!id) return;
-        setVncLoading(true);
-        try {
-            const { data } = await axios.get(`/api/user/vm-instances/${id}/vnc-ticket`);
-            if (data.success) {
-                const payload = data.data;
-                if (payload.pve_redirect_url) {
-                    window.open(payload.pve_redirect_url, '_blank', 'noopener,noreferrer');
-                } else if (payload.wss_url) {
-                    setVncPassword(typeof payload.ticket === 'string' ? payload.ticket : null);
-                    setVncUrl(payload.wss_url);
-                }
-            } else {
-                toast.error(getApiErrorMessageFromPayload(data, t, 'vds.console.toast.vnc_failed'));
-            }
-        } catch (err) {
-            toast.error(getApiErrorMessage(err, t, 'vds.console.toast.vnc_failed'));
-        } finally {
-            setVncLoading(false);
+    /** Socket died (guest reboot, proxy drop). Drop the ticket and retry while we still want VNC. */
+    const handleVncDisconnect = useCallback(() => {
+        if (suppressVncDisconnectReconnectRef.current) {
+            suppressVncDisconnectReconnectRef.current = false;
+            clearVncSession();
+            return;
         }
-    };
+        clearVncSession();
+        if (!wantVncRef.current || poweringRef.current !== null) return;
+        if (vncReconnectAttemptsRef.current >= 5) return;
+        vncReconnectAttemptsRef.current += 1;
+        scheduleVncReconnect();
+    }, [clearVncSession, scheduleVncReconnect]);
 
     if (instanceLoading) {
         return <VdsPageLoading label={t('vds.console.loading')} />;
@@ -454,15 +514,23 @@ export default function VdsConsolePage() {
                         vncUrl={vncUrl}
                         vncPassword={vncPassword}
                         vncLoading={vncLoading}
-                        onConnect={openVnc}
+                        onConnect={() => {
+                            void openVnc();
+                        }}
+                        onDisconnect={handleVncDisconnect}
                         vmId={instance.id}
                         hostname={instance.hostname ?? undefined}
                         features={features}
                         canPower={canPower}
                         canSettings={hasPermission('settings')}
                         onClose={() => {
-                            setVncUrl(null);
-                            setVncPassword(null);
+                            wantVncRef.current = false;
+                            vncReconnectAttemptsRef.current = 0;
+                            if (vncReconnectTimerRef.current) {
+                                clearTimeout(vncReconnectTimerRef.current);
+                                vncReconnectTimerRef.current = null;
+                            }
+                            clearVncSession();
                         }}
                         className='h-[calc(75vw+6.5rem)] max-h-[70dvh] min-h-[18rem] sm:h-[min(70dvh,40rem)] sm:max-h-none sm:min-h-[22rem] xl:h-auto xl:min-h-[max(32rem,calc(100dvh-22rem))] xl:flex-1'
                     />

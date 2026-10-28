@@ -116,7 +116,7 @@ interface ConfigInterface
     public const FRIENDLY_CAPTCHA_SITE_KEY = 'friendly_captcha_site_key';
     public const FRIENDLY_CAPTCHA_SECRET_KEY = 'friendly_captcha_secret_key';
     /**
-     * SMTP.
+     * SMTP / panel outbound mail.
      */
     public const SMTP_ENABLED = 'smtp_enabled';
     public const SMTP_HOST = 'smtp_host';
@@ -125,6 +125,15 @@ interface ConfigInterface
     public const SMTP_PASS = 'smtp_pass';
     public const SMTP_FROM = 'smtp_from';
     public const SMTP_ENCRYPTION = 'smtp_encryption';
+    /** smtp | resend | sendgrid | mailgun | postmark | brevo | mailersend | sparkpost | ses */
+    public const MAIL_TRANSPORT = 'mail_transport';
+    public const MAIL_API_KEY = 'mail_api_key';
+    /** Mailgun sending domain; unused by most other API transports. */
+    public const MAIL_API_DOMAIN = 'mail_api_domain';
+    /** Region/endpoint hint: us|eu, SES region (us-east-1), SparkPost host, etc. */
+    public const MAIL_API_REGION = 'mail_api_region';
+    /** UI-only preset id restored in admin settings (not read by async-runner). */
+    public const MAIL_PROVIDER_PRESET = 'mail_provider_preset';
     /**
      * Legal Values.
      */

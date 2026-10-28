@@ -3826,10 +3826,12 @@
             "wingsBackups": "Wings Backups",
             "mailHosts": "Mail",
             "dnsHosts": "DNS hosts",
+            "hostingPackages": "Hosting packages",
             "auditLog": "Audit log",
             "securityCenter": "Security center",
             "health": "System health",
             "snapshots": "Snapshots",
+            "boot": "Boot",
             "vdsIsos": "VDS ISO Library"
         }
     },
@@ -7902,6 +7904,15 @@
                 "tpm_storage_help": "Proxmox storage used for `tpmstate0` when TPM is enabled on VM instances.",
                 "backup_storage": "Backup Storage",
                 "backup_storage_help": "Proxmox storage used for vzdump backups (node default).",
+                "iso_user_storage": "User ISO storage",
+                "iso_user_storage_none": "Not configured",
+                "iso_user_storage_help": "Proxmox storage (must allow ISO content) that receives user-uploaded or URL-downloaded ISOs. Required when ISO mode is provider_user.",
+                "iso_allowed_storages": "Allowed ISO storages",
+                "iso_allowed_storages_help": "Storages users may mount provider ISOs from. Leave none selected to allow every ISO-capable storage on this node.",
+                "iso_allowed_storages_empty": "No ISO-capable storages were returned from Proxmox.",
+                "rescue_iso": "Rescue ISO",
+                "rescue_iso_none": "None (rescue stays hidden)",
+                "rescue_iso_help": "Proxmox volid used when users enter rescue mode (also requires Rescue enabled in Admin → Settings → VDS).",
                 "search_location": "Search VPS locations...",
                 "search_locations": "Search VPS locations...",
                 "no_locations": "No VPS locations found. Create a location of type VPS first.",
@@ -7984,10 +7995,13 @@
             },
             "storage": {
                 "fetch_failed": "Failed to fetch storages",
+                "loading": "Loading storages…",
                 "image_storages_title": "Image Storages",
                 "image_storages_description": "Configure where VM disk images are stored",
                 "backup_storage_title": "Backup Storage",
-                "backup_storage_description": "Configure where VM backups are stored"
+                "backup_storage_description": "Configure where VM backups are stored",
+                "iso_title": "ISO & rescue",
+                "iso_description": "Where user ISOs land, which storages users may mount from, and the rescue boot image for this node."
             },
             "dhcp": {
                 "title": "DHCP Agent",
@@ -8004,18 +8018,49 @@
                 "footer_description": "DHCP Agent is still in development. When it ships, you will manage VM networking through DHCP from this page."
             },
             "firewall_tab": {
-                "title": "Firewall Rules",
-                "blank_title": "Firewall coming soon",
-                "blank_description": "Control inbound and outbound traffic for your VMs",
-                "cards": {
-                    "inbound_title": "Inbound Rules",
-                    "inbound_description": "Allow or deny traffic reaching your VMs and the services they expose.",
-                    "outbound_title": "Outbound Rules",
-                    "outbound_description": "Limit which external hosts and ports your VMs can contact.",
-                    "advanced_title": "Advanced Rule Sets",
-                    "advanced_description": "Stateful rules, per-protocol filters, rate limits, and optional threat-feed matches."
-                },
-                "footer_description": "Firewall management is still in development. When it ships, you will set allow/deny rules for VMs from this page."
+                "title": "Host firewall",
+                "description": "Proxmox host firewall for this node. Guest/VM firewalls are managed per VDS by users.",
+                "pve_node": "Proxmox node",
+                "unavailable": "Firewall unavailable",
+                "fetch_failed": "Failed to load node firewall",
+                "updated": "Firewall options updated",
+                "update_failed": "Failed to update firewall options",
+                "enabled": "Enable host firewall",
+                "enabled_hint": "Applies rules and default policies to this Proxmox host.",
+                "policy_in": "Inbound policy",
+                "policy_in_hint": "Default action for inbound traffic that matches no rule.",
+                "policy_out": "Outbound policy",
+                "policy_out_hint": "Default action for outbound traffic that matches no rule.",
+                "host_warning": "A DROP inbound policy without an allow rule for SSH/API (22/8006) can lock you out of this host.",
+                "cluster_disabled_hint": "Datacenter (cluster) firewall is disabled in Proxmox. Enable it there or host/guest rules may not apply.",
+                "rules_title": "Rules",
+                "rules_description": "{{count}} rules on {{node}}",
+                "empty_title": "No rules yet",
+                "empty_description": "Add allow/deny rules for this Proxmox host.",
+                "add_rule": "Add rule",
+                "add_rule_description": "Create an inbound or outbound rule for this host.",
+                "delete_rule": "Delete rule",
+                "delete_confirm": "Remove this firewall rule from the Proxmox host?",
+                "rule_added": "Rule added",
+                "rule_add_failed": "Failed to add rule",
+                "rule_deleted": "Rule deleted",
+                "rule_delete_failed": "Failed to delete rule",
+                "direction": "Direction",
+                "action": "Action",
+                "protocol": "Protocol",
+                "ports": "Ports",
+                "source": "Source",
+                "source_placeholder": "Any, or e.g. 203.0.113.0/24",
+                "comment": "Comment",
+                "in": "In",
+                "out": "Out",
+                "any": "any",
+                "anywhere": "anywhere",
+                "actions": {
+                    "accept": "ACCEPT",
+                    "drop": "DROP",
+                    "reject": "REJECT"
+                }
             },
             "messages": {
                 "fetch_failed": "Failed to fetch VDS nodes",
@@ -11915,13 +11960,42 @@
             },
             "email_test": {
                 "title": "Test Email Configuration",
-                "description": "Send a test email to your account to verify SMTP settings are working correctly. Required by some providers like SendGrid.",
+                "description": "Send a test email to your account to verify SMTP or HTTP API mail settings are working correctly.",
                 "button": "Send Test Email",
                 "sending": "Sending test email...",
                 "success": "Test email sent successfully! Please check your inbox.",
                 "failed_short": "Failed to send test email",
-                "failed": "Failed to send test email. Please check your SMTP settings.",
+                "failed": "Failed to send test email. Please check your email settings.",
                 "troubleshooting": "If emails aren't being sent, check the async_runner logs on your server: cd /var/www/featherpanel && docker compose logs async-runner -f"
+            },
+            "mail_providers": {
+                "free_tier": "Free tier",
+                "api_mode": "HTTP API",
+                "smtp_mode": "SMTP",
+                "docs": "Provider docs",
+                "notes": {
+                    "custom": "Enter your own SMTP host, port and credentials.",
+                    "resend": "Paste your Resend API key. Verify your From domain in the Resend dashboard.",
+                    "resend_smtp": "SMTP username is usually “resend”; password is your API key.",
+                    "brevo": "Use a Brevo API key (v3). Verify the sender address or domain.",
+                    "brevo_smtp": "Use smtp-relay.brevo.com with STARTTLS on port 587.",
+                    "sendgrid": "Create an API key with Mail Send permission. Verify your From address.",
+                    "sendgrid_smtp": "SMTP username is “apikey”; password is your SendGrid API key.",
+                    "mailgun": "Requires API key, sending domain and region (us or eu).",
+                    "mailgun_smtp": "Use your Mailgun SMTP credentials for the sending domain.",
+                    "postmark": "Use a Postmark Server API token.",
+                    "postmark_smtp": "SMTP username and password are both your Server API token.",
+                    "mailersend": "Paste your MailerSend API token. Verify your domain.",
+                    "mailersend_smtp": "Use MailerSend SMTP credentials from the dashboard.",
+                    "sparkpost": "API key plus region us or eu.",
+                    "sparkpost_smtp": "SMTP username is usually SMTP_Injection; password is your API key.",
+                    "ses": "Set region (e.g. us-east-1) and API key as ACCESS_KEY:SECRET_KEY. Verify identities in SES.",
+                    "ses_smtp": "Use the SES SMTP endpoint for your region and SMTP credentials from the SES console.",
+                    "gmail": "Enable 2FA and create an App Password. From must match the Gmail account.",
+                    "outlook": "Use smtp.office365.com with your Microsoft account or app password.",
+                    "mailtrap": "Sandbox only — great for testing; messages stay in Mailtrap.",
+                    "smtp2go": "Use mail.smtp2go.com with your SMTP2GO credentials."
+                }
             },
             "docker_update": {
                 "button": "Update Docker Deployment",
@@ -12117,6 +12191,34 @@
                     "label": "Allow API Key Creation",
                     "description": "Allow non-admin users to create their own API keys."
                 },
+                "smtp_enabled": {
+                    "label": "Email enabled",
+                    "description": "Enable outbound panel email (SMTP or HTTP API providers)",
+                    "options": {
+                        "true": "Enabled",
+                        "false": "Disabled"
+                    }
+                },
+                "smtp_host": {
+                    "label": "SMTP host",
+                    "description": "SMTP hostname (used when mail transport is SMTP)"
+                },
+                "smtp_port": {
+                    "label": "SMTP port",
+                    "description": "SMTP port (used when mail transport is SMTP)"
+                },
+                "smtp_user": {
+                    "label": "SMTP username",
+                    "description": "SMTP username (used when mail transport is SMTP)"
+                },
+                "smtp_pass": {
+                    "label": "SMTP password",
+                    "description": "SMTP password or app password"
+                },
+                "smtp_from": {
+                    "label": "From address",
+                    "description": "From address for all outbound panel mail (must be verified with your provider)"
+                },
                 "smtp_encryption": {
                     "label": "SMTP Encryption",
                     "description": "Use STARTTLS for providers like Brevo on port 587. Use SSL for SMTPS on port 465. Use None only for unencrypted SMTP.",
@@ -12126,6 +12228,60 @@
                         "ssl": "SSL / SMTPS (port 465)",
                         "none": "None (no encryption)"
                     }
+                },
+                "mail_provider_preset": {
+                    "label": "Email provider",
+                    "description": "Preset that autofills transport and SMTP defaults. Pick Custom SMTP for a manual host.",
+                    "options": {
+                        "custom": "Custom SMTP",
+                        "resend": "Resend (API)",
+                        "resend_smtp": "Resend (SMTP)",
+                        "brevo": "Brevo (API)",
+                        "brevo_smtp": "Brevo (SMTP)",
+                        "sendgrid": "SendGrid (API)",
+                        "sendgrid_smtp": "SendGrid (SMTP)",
+                        "mailgun": "Mailgun (API)",
+                        "mailgun_smtp": "Mailgun (SMTP)",
+                        "postmark": "Postmark (API)",
+                        "postmark_smtp": "Postmark (SMTP)",
+                        "mailersend": "MailerSend (API)",
+                        "mailersend_smtp": "MailerSend (SMTP)",
+                        "sparkpost": "SparkPost (API)",
+                        "sparkpost_smtp": "SparkPost (SMTP)",
+                        "ses": "Amazon SES (API)",
+                        "ses_smtp": "Amazon SES (SMTP)",
+                        "gmail": "Gmail (SMTP)",
+                        "outlook": "Outlook / Microsoft 365 (SMTP)",
+                        "mailtrap": "Mailtrap (SMTP sandbox)",
+                        "smtp2go": "SMTP2GO (SMTP)"
+                    }
+                },
+                "mail_transport": {
+                    "label": "Mail transport",
+                    "description": "Delivery method used by the async mail runner",
+                    "options": {
+                        "smtp": "SMTP",
+                        "resend": "Resend API",
+                        "sendgrid": "SendGrid API",
+                        "mailgun": "Mailgun API",
+                        "postmark": "Postmark API",
+                        "brevo": "Brevo API",
+                        "mailersend": "MailerSend API",
+                        "sparkpost": "SparkPost API",
+                        "ses": "Amazon SES API"
+                    }
+                },
+                "mail_api_key": {
+                    "label": "API key",
+                    "description": "API key for HTTP mail providers. For Amazon SES use ACCESS_KEY:SECRET_KEY"
+                },
+                "mail_api_domain": {
+                    "label": "API domain",
+                    "description": "Mailgun sending domain (required for Mailgun API)"
+                },
+                "mail_api_region": {
+                    "label": "API region",
+                    "description": "us/eu for Mailgun or SparkPost, or AWS SES region (e.g. us-east-1)"
                 },
                 "module_game_enabled": {
                     "label": "Game servers",
@@ -12147,6 +12303,258 @@
                         "always": "Always show",
                         "hidden": "Hidden"
                     }
+                },
+                "vnc_proxy_via_panel": {
+                    "label": "Proxy VNC via panel",
+                    "description": "Proxy VNC through the panel (wss://panel/vnc-proxy/{token}). Requires async-runner and reverse-proxy forwarding /vnc-proxy* to it. Hides Proxmox from the browser."
+                },
+                "vnc_use_pve_redirect": {
+                    "label": "Open Proxmox noVNC in new tab",
+                    "description": "Open Proxmox noVNC in a new tab (creates a short-lived PVE console user). Takes priority over the panel VNC proxy when enabled."
+                },
+                "vds_graphs_enabled": {
+                    "label": "Resource graphs",
+                    "description": "Show resource history graphs (Proxmox RRD data) on the VDS console."
+                },
+                "vds_graphs_max_timeframe": {
+                    "label": "Graphs max timeframe",
+                    "description": "Longest time range users can pick in the VDS resource graphs.",
+                    "options": {
+                        "hour": "Hour",
+                        "day": "Day",
+                        "week": "Week",
+                        "month": "Month",
+                        "year": "Year"
+                    }
+                },
+                "vds_console_paste_enabled": {
+                    "label": "Console paste",
+                    "description": "Allow typing text and pasting the clipboard into the VDS console (sent as key presses over VNC)."
+                },
+                "vds_console_paste_max_chars": {
+                    "label": "Paste max characters",
+                    "description": "Maximum number of characters a single paste may send to the VDS console."
+                },
+                "vds_console_screenshot_enabled": {
+                    "label": "Console screenshots",
+                    "description": "Show the screenshot button on the VDS console (captured in the browser as PNG)."
+                },
+                "vds_ctrl_alt_del_enabled": {
+                    "label": "Ctrl+Alt+Del",
+                    "description": "Allow sending Ctrl+Alt+Del from the VDS console actions menu."
+                },
+                "vds_iso_mode": {
+                    "label": "ISO mode",
+                    "description": "Who can supply ISOs for VDS users: provider = only ISOs from the admin library / allowed storages, provider_user = users may also upload or download their own ISOs, disabled = no ISO mounting for users. Can be overridden per VDS.",
+                    "options": {
+                        "provider": "Provider only",
+                        "provider_user": "Provider + user ISOs",
+                        "disabled": "Disabled"
+                    }
+                },
+                "vds_iso_allowed_isos": {
+                    "label": "Allowed ISO filenames",
+                    "description": "Comma or newline separated ISO file names or volids (wildcards * allowed) users may mount. Empty = all ISOs on the allowed storages."
+                },
+                "vds_iso_library_only": {
+                    "label": "Library only",
+                    "description": "Default on: only offer provider ISOs registered in Admin → VDS ISO library. Set to false to also list unregistered ISO files on the allowed storages (advanced)."
+                },
+                "vds_iso_user_upload_enabled": {
+                    "label": "User ISO uploads",
+                    "description": "Let users upload an ISO file from their computer (when the ISO mode allows user ISOs)."
+                },
+                "vds_iso_user_url_enabled": {
+                    "label": "User ISO URL downloads",
+                    "description": "Let users have Proxmox download an ISO from a URL (when the ISO mode allows user ISOs)."
+                },
+                "vds_iso_user_max_size_mb": {
+                    "label": "User ISO max size (MB)",
+                    "description": "Maximum size of a user ISO in MB."
+                },
+                "vds_iso_user_max_per_user": {
+                    "label": "User ISO quota",
+                    "description": "Maximum number of ISOs a single user may keep (across all VDS)."
+                },
+                "vds_iso_user_url_domains": {
+                    "label": "Allowed ISO download domains",
+                    "description": "Comma or newline separated domains users may download ISOs from (subdomains included, e.g. debian.org). Empty = any public host."
+                },
+                "vds_iso_user_require_approval": {
+                    "label": "Require ISO approval",
+                    "description": "New user ISOs stay pending until an admin approves them in the VDS ISO library."
+                },
+                "vds_rescue_enabled": {
+                    "label": "Rescue mode",
+                    "description": "Allow users to reboot their VDS into a rescue ISO from the console actions menu (QEMU only)."
+                },
+                "vds_snapshots_enabled": {
+                    "label": "Snapshots",
+                    "description": "Enable the VDS snapshots tab (Proxmox snapshots: list, create, rollback, delete)."
+                },
+                "vds_snapshots_default_limit": {
+                    "label": "Default snapshot limit",
+                    "description": "Default number of snapshots per VDS. Can be overridden per VDS in the admin instance editor. 0 disables creating snapshots."
+                },
+                "vds_snapshots_include_ram": {
+                    "label": "Include RAM in snapshots",
+                    "description": "Let users include the RAM state when creating a snapshot of a running QEMU VDS (uses more storage)."
+                },
+                "vds_monitor_enabled": {
+                    "label": "VDS monitor",
+                    "description": "Run the VDS monitor cron that powers the down, high CPU and backup failed notifications."
+                },
+                "vds_monitor_interval_minutes": {
+                    "label": "Monitor interval (minutes)",
+                    "description": "How often (minutes) the VDS monitor checks Proxmox."
+                },
+                "vds_notify_down_enabled": {
+                    "label": "Notify on unexpected stop",
+                    "description": "Notify users when their VDS stops unexpectedly (not through a panel power action)."
+                },
+                "vds_notify_high_cpu_enabled": {
+                    "label": "Notify on high CPU",
+                    "description": "Notify users when their VDS stays above the CPU threshold."
+                },
+                "vds_high_cpu_threshold": {
+                    "label": "High CPU threshold (%)",
+                    "description": "CPU usage (percent of all vCPUs) that counts as high for VDS notifications."
+                },
+                "vds_high_cpu_duration_minutes": {
+                    "label": "High CPU duration (minutes)",
+                    "description": "How long (minutes) CPU must stay above the threshold before users are notified."
+                },
+                "vds_notify_backup_failed_enabled": {
+                    "label": "Notify on backup failure",
+                    "description": "Notify users when a VDS backup fails."
+                },
+                "vds_notify_cooldown_hours": {
+                    "label": "Notification cooldown (hours)",
+                    "description": "Minimum hours between two notifications of the same kind for the same VDS and user."
+                },
+                "vds_suspend_show_reason": {
+                    "label": "Show suspension reason",
+                    "description": "Show the suspension reason to the VDS owner on the suspended screen."
+                },
+                "vds_suspend_message": {
+                    "label": "Suspension message",
+                    "description": "Custom message shown to users on a suspended VDS (e.g. how to contact billing). Empty = default text."
+                },
+                "vds_expiry_warn_days": {
+                    "label": "Expiry warning (days)",
+                    "description": "Notify the owner this many days before a VDS expires (0 = no warning)."
+                },
+                "vds_expiry_stop_vm": {
+                    "label": "Stop expired VDS",
+                    "description": "Also power off a VDS when it is auto-suspended because it expired."
+                },
+                "vds_placement_strategy": {
+                    "label": "Placement strategy",
+                    "description": "How the recommended node for new VDS is picked in the node capacity overview and the create form.",
+                    "options": {
+                        "most_free_memory": "Most free memory",
+                        "most_free_disk": "Most free disk",
+                        "fewest_instances": "Fewest instances"
+                    }
+                },
+                "vds_placement_overcommit_percent": {
+                    "label": "Memory overcommit (%)",
+                    "description": "Memory that may be allocated per node, as a percentage of its physical RAM (100 = no overcommit). Full nodes are never recommended."
+                },
+                "vds_migration_enabled": {
+                    "label": "Live migration",
+                    "description": "Allow admins to live-migrate a VDS to another Proxmox node of the same cluster (needs shared or migratable storage)."
+                },
+                "vds_console_brand_name": {
+                    "label": "Console brand name",
+                    "description": "White-label name shown on the VDS console screen header. Empty = default."
+                },
+                "vds_console_brand_logo": {
+                    "label": "Console brand logo URL",
+                    "description": "White-label logo URL (https) shown on the VDS console screen header. Empty = none."
+                },
+                "vds_reauth_mode": {
+                    "label": "Re-authentication mode",
+                    "description": "Ask users to re-confirm dangerous VDS actions: off, password = account password, 2fa_or_password = 2FA code when the user has 2FA enabled, otherwise the password.",
+                    "options": {
+                        "off": "Off",
+                        "password": "Password",
+                        "2fa_or_password": "2FA or password"
+                    }
+                },
+                "vds_reauth_actions": {
+                    "label": "Re-authentication actions",
+                    "description": "Comma separated actions that need re-confirmation: reinstall, rollback (snapshot), restore (backup), firewall_policy."
+                },
+                "vds_bandwidth_enabled": {
+                    "label": "Bandwidth accounting",
+                    "description": "Count monthly VDS traffic (sampled by the VDS monitor cron, which must be enabled)."
+                },
+                "vds_bandwidth_limit_gb": {
+                    "label": "Monthly bandwidth limit (GB)",
+                    "description": "Default monthly traffic limit per VDS in GB. 0 = unlimited. Can be overridden per VDS."
+                },
+                "vds_bandwidth_count": {
+                    "label": "Bandwidth direction",
+                    "description": "Which traffic counts towards the limit: both directions, outbound only or inbound only.",
+                    "options": {
+                        "both": "Both directions",
+                        "out": "Outbound only",
+                        "in": "Inbound only"
+                    }
+                },
+                "vds_bandwidth_action": {
+                    "label": "Over-limit action",
+                    "description": "What happens when a VDS exceeds its monthly limit: notify only, throttle the network interfaces, or suspend the VDS. Throttle/suspend are lifted automatically when the next month starts.",
+                    "options": {
+                        "notify": "Notify only",
+                        "throttle": "Throttle network",
+                        "suspend": "Suspend VDS"
+                    }
+                },
+                "vds_bandwidth_throttle_mbit": {
+                    "label": "Throttle speed (Mbit/s)",
+                    "description": "Network speed (Mbit/s) applied to every interface of a throttled VDS."
+                },
+                "vds_bandwidth_warn_percent": {
+                    "label": "Bandwidth warning (%)",
+                    "description": "Notify users when this percentage of the monthly limit is used. 0 = no early warning."
+                },
+                "vds_firewall_enabled": {
+                    "label": "User firewall",
+                    "description": "Let VDS users manage their own Proxmox VM firewall (rules, presets, inbound policy). Requires the Proxmox datacenter firewall to be enabled. Off by default."
+                },
+                "vds_firewall_max_rules": {
+                    "label": "Firewall max rules",
+                    "description": "Maximum firewall rules per VDS."
+                },
+                "vds_firewall_allow_policy": {
+                    "label": "Allow firewall policy changes",
+                    "description": "Allow users to change the default inbound policy (ACCEPT / DROP / REJECT) of their VDS firewall."
+                },
+                "vds_firewall_presets": {
+                    "label": "Firewall presets",
+                    "description": "Comma separated rule presets offered to users: ssh, web, rdp, mail, dns, ping, ftp, mysql, minecraft. Empty = no presets."
+                },
+                "vds_schedules_enabled": {
+                    "label": "Schedules",
+                    "description": "Let VDS users create scheduled tasks (auto reboot, auto snapshot with rotation) executed by the panel cron."
+                },
+                "vds_schedules_max_per_vds": {
+                    "label": "Schedules per VDS",
+                    "description": "Maximum scheduled tasks per VDS."
+                },
+                "vds_schedules_actions": {
+                    "label": "Schedule actions",
+                    "description": "Comma separated schedule actions users may pick: reboot, snapshot."
+                },
+                "vds_schedules_allow_hourly": {
+                    "label": "Allow hourly schedules",
+                    "description": "Allow hourly schedules (otherwise only daily and weekly)."
+                },
+                "vds_schedules_max_keep": {
+                    "label": "Schedule snapshot keep",
+                    "description": "Maximum automatic snapshots a snapshot schedule may keep (still limited by the VDS snapshot limit)."
                 }
             },
             "category_select": "Settings category",
@@ -12172,7 +12580,9 @@
                 },
                 "iso": {
                     "title": "ISO & rescue",
-                    "description": "Who may mount which ISOs, user uploads and the rescue boot image."
+                    "description": "Who may mount which ISOs, user uploads and rescue mode. Storage and the rescue ISO volid are set per VDS node.",
+                    "node_callout": "User ISO storage, allowed ISO storages and the rescue ISO volid are configured on each VDS node’s Storage tab — not here.",
+                    "node_link": "Open VDS nodes"
                 },
                 "snapshots": {
                     "title": "Snapshots",
@@ -16041,6 +16451,29 @@
         "redirect": {}
     },
     "vds": {
+        "boot": {
+            "title": "Boot",
+            "description": "Boot order, host ISO library, and your own ISO images for this VDS.",
+            "loading": "Loading boot settings…",
+            "lxc_unsupported": "Boot order and ISO mounting are only available for QEMU virtual machines.",
+            "back_to_settings": "Back to settings",
+            "order": {
+                "title": "Boot order",
+                "description": "Choose which disks, CD-ROMs and network interfaces Proxmox tries first. Disabled devices are skipped.",
+                "loading": "Loading boot order…",
+                "empty": "No bootable devices were found on this VM.",
+                "enable": "Use for boot",
+                "disabled": "Not in boot order",
+                "move_up": "Move up",
+                "move_down": "Move down",
+                "apply": "Apply boot order",
+                "apply_hint": "A full stop and start may be required for Proxmox to apply a new boot order (a guest reboot alone is not enough).",
+                "at_least_one": "Enable at least one boot device.",
+                "fetch_failed": "Failed to load boot order",
+                "save_failed": "Failed to update boot order",
+                "saved": "Boot order updated"
+            }
+        },
         "activities": {
             "description": "All power, subuser and console actions for this VDS instance.",
             "fetch_failed": "Failed to fetch activity log",
@@ -16147,6 +16580,54 @@
                     "disconnected": "Disconnected"
                 }
             },
+            "extra_keys": {
+                "toggle": "Keys",
+                "modifiers": "Hold",
+                "keys": "Keys",
+                "function": "Fn",
+                "hint": "Sticky Ctrl/Alt/Shift/Win stay held until you tap them again — then type or click a key. Combos fire as a full shortcut.",
+                "ctrl": "Ctrl",
+                "alt": "Alt",
+                "shift": "Shift",
+                "meta": "Win",
+                "esc": "Esc",
+                "tab": "Tab",
+                "enter": "Enter",
+                "backspace": "Bksp",
+                "delete": "Del",
+                "insert": "Ins",
+                "home": "Home",
+                "end": "End",
+                "page_up": "PgUp",
+                "page_down": "PgDn",
+                "up": "↑",
+                "down": "↓",
+                "left": "←",
+                "right": "→",
+                "f1": "F1",
+                "f2": "F2",
+                "f3": "F3",
+                "f4": "F4",
+                "f5": "F5",
+                "f6": "F6",
+                "f7": "F7",
+                "f8": "F8",
+                "f9": "F9",
+                "f10": "F10",
+                "f11": "F11",
+                "f12": "F12",
+                "ctrl_alt_del": "Ctrl+Alt+Del",
+                "ctrl_alt_esc": "Ctrl+Alt+Esc",
+                "ctrl_alt_backspace": "Ctrl+Alt+Bksp",
+                "ctrl_alt_f1": "Ctrl+Alt+F1",
+                "ctrl_alt_f2": "Ctrl+Alt+F2",
+                "ctrl_alt_f3": "Ctrl+Alt+F3",
+                "ctrl_alt_f7": "Ctrl+Alt+F7",
+                "alt_f4": "Alt+F4",
+                "alt_tab": "Alt+Tab",
+                "win": "Win",
+                "print_screen": "PrtSc"
+            },
             "stats_unavailable_title": "Live status unavailable",
             "stats_unavailable_description": "The panel could not reach the hypervisor for this server. Stats and status will update automatically once it responds again.",
             "actions": {
@@ -16178,8 +16659,8 @@
                 "paste_layout_hint": "Keys are sent as US-layout scancodes. Set the guest keyboard layout to US (English) or some characters will come out wrong.",
                 "paste_send": "Type into VM",
                 "iso_title": "Mount ISO",
-                "iso_description": "Attach an installer or tools image as a virtual CD-ROM. It boots first on the next reboot.",
-                "iso_empty": "No ISO images are available.",
+                "iso_description": "Choose an image provided by your host. It attaches as a virtual CD-ROM and boots first on the next reboot.",
+                "iso_empty": "No host ISO images are available.",
                 "iso_mount_one": "Mount",
                 "rescue_exit_confirm": "The rescue ISO will be detached and the VM restarted from its disk.",
                 "rescue_enter_confirm": "The VM will be stopped and restarted from the rescue ISO. Unsaved work inside the VM is lost."
@@ -16345,9 +16826,11 @@
                 "apply_success": "Hardware updated successfully.",
                 "apply_failed": "Failed to update hardware."
             },
+            "boot_link": "Open Boot settings",
+            "boot_link_description": "Boot order, host ISO library, and your own ISO images live on the Boot page.",
             "iso": {
                 "title": "ISO Mount",
-                "description": "Mount an ISO from the provider library or one of your own ISOs (if allowed), then boot this VM from it.",
+                "description": "Mount an installer or tools image from the host library, then reboot this VM to boot from it.",
                 "loading": "Loading…",
                 "mode_upload": "Upload ISO",
                 "mode_url": "ISO URL",
@@ -16480,9 +16963,10 @@
             "latest": "Latest"
         },
         "iso": {
-            "provider_section": "Provider ISOs",
+            "provider_section": "Host library",
             "my_section": "My ISOs",
-            "my_empty": "You have no custom ISOs yet.",
+            "my_description": "Upload an ISO from your computer or give a download URL. Files go onto the host’s Proxmox storage and can be mounted like library images.",
+            "my_empty": "You have no custom ISOs yet. Upload a file or paste a download URL below.",
             "quota": "{used} / {max} used",
             "upload": "Upload ISO",
             "from_url": "Download from URL",
@@ -16502,7 +16986,11 @@
             "source_url": "Downloaded from URL",
             "source_upload": "Uploaded",
             "no_upload_permission": "You do not have permission to add custom ISOs on this VDS.",
-            "library_hint": "Pick an ISO from the library to mount it.",
+            "guide_disabled": "Custom ISOs are not enabled for this VDS. Ask your host to set ISO mode to provider_user and configure a user ISO storage.",
+            "guide_disabled_mode": "Custom ISOs need ISO mode set to provider_user (Admin → Settings → VDS, or this VDS’s ISO mode override).",
+            "guide_disabled_storage": "ISO mode allows custom ISOs, but the host has not set a User ISO storage yet. Ask them to set Admin → Settings → VDS → User ISO storage to a Proxmox storage that accepts ISO content (for example local).",
+            "guide_methods_off": "Your host has turned off both file upload and URL download for custom ISOs.",
+            "library_hint": "Pick an image from the host library to mount it.",
             "status": {
                 "downloading": "Downloading",
                 "failed": "Failed",
@@ -16556,7 +17044,15 @@
             "source": "Source",
             "anywhere": "anywhere",
             "source_placeholder": "Any, or e.g. 203.0.113.0/24",
-            "comment": "Comment"
+            "comment": "Comment",
+            "options_title": "Options",
+            "options_description": "Turn filtering on and choose what happens to unmatched inbound traffic.",
+            "presets_hint": "Adds common allow rules at the top of the list.",
+            "actions": {
+                "accept": "Accept",
+                "drop": "Drop",
+                "reject": "Reject"
+            }
         },
         "schedules": {
             "title": "Scheduled tasks",
@@ -17756,19 +18252,23 @@
             "use_browser": "Use my timezone ({zone})"
         },
         "mail": {
-            "enable_title": "Send mail over SMTP",
-            "enable_body": "Turn this on to send password resets, verification codes and notifications.",
+            "enable_title": "Send panel email",
+            "enable_body": "Turn this on to send password resets, verification codes and notifications via SMTP or an HTTP API provider.",
+            "provider": "Email provider",
             "host": "SMTP host",
             "port": "Port",
             "encryption": "Encryption",
             "user": "Username",
             "password": "Password",
             "from": "From address",
+            "api_key": "API key",
+            "api_domain": "Sending domain",
+            "api_region": "Region",
             "send_test": "Save and send test mail",
             "test_sent": "Test mail sent to your account email",
             "test_failed": "Could not send the test mail",
             "later_title": "You can set this up later",
-            "later_body": "Without mail, users cannot reset passwords by email. Configure it any time under Settings, Mail."
+            "later_body": "Without mail, users cannot reset passwords by email. Configure it any time under Settings, Email."
         },
         "modules": {
             "game_title": "Game servers",

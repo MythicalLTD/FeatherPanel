@@ -24,6 +24,7 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { cn } from '@/lib/utils';
 import type { VncConsoleHandle, VncStatus } from '@/components/vds/VncConsole';
 import { VdsConsoleActions } from '@/components/vds/VdsConsoleActions';
+import { VdsVncExtraKeys } from '@/components/vds/VdsVncExtraKeys';
 import type { VdsFeatures } from '@/hooks/useVdsFeatures';
 
 const VncConsole = dynamic(() => import('@/components/vds/VncConsole').then((m) => m.VncConsole), {
@@ -44,6 +45,8 @@ interface VdsScreenProps {
     vncLoading: boolean;
     onConnect: () => void;
     onClose: () => void;
+    /** Fired when the noVNC socket drops (guest reboot, proxy timeout, …). */
+    onDisconnect?: () => void;
     className?: string;
     vmId: number;
     hostname?: string;
@@ -65,6 +68,7 @@ export function VdsScreen({
     vncLoading,
     onConnect,
     onClose,
+    onDisconnect,
     className,
     vmId,
     hostname,
@@ -78,9 +82,14 @@ export function VdsScreen({
     const [vncStatus, setVncStatus] = useState<VncStatus | null>(null);
     const [input, setInput] = useState('');
     const [isFullscreen, setIsFullscreen] = useState(false);
+    const [extraKeysOpen, setExtraKeysOpen] = useState(false);
 
     const running = status === 'running';
     const connected = Boolean(vncUrl) && vncStatus === 'connected';
+
+    useEffect(() => {
+        if (!connected) setExtraKeysOpen(false);
+    }, [connected]);
 
     useEffect(() => {
         const onChange = () => setIsFullscreen(document.fullscreenElement === cardRef.current);
@@ -189,18 +198,19 @@ export function VdsScreen({
                         )}
                     </h3>
                     <div className='flex shrink-0 items-center gap-0.5'>
-                        {vncUrl && (features?.console.ctrl_alt_del_enabled ?? true) && (
+                        {vncUrl && (
                             <Button
                                 type='button'
-                                variant='ghost'
+                                variant={extraKeysOpen ? 'secondary' : 'ghost'}
                                 size='sm'
-                                className='hidden h-8 rounded-lg px-2 text-xs md:inline-flex'
-                                onClick={() => vncRef.current?.sendCtrlAltDel()}
+                                className='h-8 rounded-lg px-2 text-xs'
+                                onClick={() => setExtraKeysOpen((o) => !o)}
                                 disabled={!connected}
-                                title={t('vds.console.screen.ctrl_alt_del')}
+                                title={t('vds.console.extra_keys.toggle')}
+                                aria-pressed={extraKeysOpen}
                             >
-                                <Keyboard className='mr-1.5 h-3.5 w-3.5' />
-                                {t('vds.console.screen.ctrl_alt_del')}
+                                <Keyboard className='h-3.5 w-3.5 sm:mr-1.5' />
+                                <span className='hidden sm:inline'>{t('vds.console.extra_keys.toggle')}</span>
                             </Button>
                         )}
                         <VdsConsoleActions
@@ -256,11 +266,14 @@ export function VdsScreen({
                         fillContainer
                         handleRef={vncRef}
                         onStatusChange={setVncStatus}
+                        onDisconnect={onDisconnect}
                     />
                 ) : (
                     placeholder
                 )}
             </CardContent>
+
+            {vncUrl && extraKeysOpen && <VdsVncExtraKeys vncRef={vncRef} connected={connected} />}
 
             <CardFooter className='border-border/50 flex w-full min-w-0 shrink-0 flex-col items-stretch gap-1.5 border-t px-3 py-2 sm:px-4 sm:py-2.5'>
                 <form

@@ -23,6 +23,12 @@ reqwest = { version = "0.12", features = ["json", "rustls-tls-native-roots"], de
 urlencoding = "2.1"
 regex = "1.11"
 chrono = "0.4"
+resend-rs = { version = "0.35", default-features = false, features = ["rustls-tls"] }
+sendgrid = "0.27"
+postmark = { version = "2", default-features = false, features = ["reqwest-rustls-tls"] }
+aws-config = { version = "1", features = ["behavior-version-latest"] }
+aws-sdk-sesv2 = "1"
+aws-credential-types = { version = "1", features = ["hardcoded-credentials"] }
 axum = { version = "0.7", features = ["ws"] }
 tokio-tungstenite = { version = "0.24", features = ["native-tls"] }
 native-tls = "0.2"

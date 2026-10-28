@@ -40,6 +40,8 @@ return function (RouteCollection $routes): void {
     $register('user-vm-instance-rrd', '/api/user/vm-instances/{id}/rrd', static fn (Request $r, int $id) => $c()->getRrd($r, $id), ['GET'], Rate::perMinute(60));
     $register('user-vm-instance-isos', '/api/user/vm-instances/{id}/isos', static fn (Request $r, int $id) => $c()->listIsos($r, $id), ['GET'], Rate::perMinute(20));
     $register('user-vm-instance-iso-mount', '/api/user/vm-instances/{id}/iso-mount', static fn (Request $r, int $id) => $c()->mountIso($r, $id), ['POST'], Rate::perMinute(5));
+    $register('user-vm-instance-boot-order-get', '/api/user/vm-instances/{id}/boot-order', static fn (Request $r, int $id) => $c()->getBootOrder($r, $id), ['GET'], Rate::perMinute(30));
+    $register('user-vm-instance-boot-order-set', '/api/user/vm-instances/{id}/boot-order', static fn (Request $r, int $id) => $c()->setBootOrder($r, $id), ['PUT'], Rate::perMinute(10));
     $register('user-vm-instance-isos-upload', '/api/user/vm-instances/{id}/isos/upload', static fn (Request $r, int $id) => $c()->uploadUserIso($r, $id), ['POST'], Rate::perMinute(2));
     $register('user-vm-instance-isos-url', '/api/user/vm-instances/{id}/isos/url', static fn (Request $r, int $id) => $c()->fetchUserIso($r, $id), ['POST'], Rate::perMinute(3));
     $register('user-vm-instance-isos-delete', '/api/user/vm-instances/{id}/isos/{isoId}', static fn (Request $r, int $id, array $a) => $c()->deleteUserIso($r, $id, (int) ($a['isoId'] ?? 0)), ['DELETE'], Rate::perMinute(10));

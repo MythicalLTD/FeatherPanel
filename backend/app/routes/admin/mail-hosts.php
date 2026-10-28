@@ -30,7 +30,7 @@ return function (RouteCollection $routes): void {
         function (Request $request) {
             return (new MailHostsController())->index($request);
         },
-        Permissions::ADMIN_WEBSPACES_VIEW,
+        Permissions::ADMIN_MAIL_HOSTS_VIEW,
     );
 
     App::getInstance(true)->registerAdminRoute(
@@ -45,7 +45,7 @@ return function (RouteCollection $routes): void {
 
             return (new MailHostsController())->show($request, (int) $id);
         },
-        Permissions::ADMIN_WEBSPACES_VIEW,
+        Permissions::ADMIN_MAIL_HOSTS_VIEW,
     );
 
     App::getInstance(true)->registerAdminRoute(
@@ -60,7 +60,7 @@ return function (RouteCollection $routes): void {
 
             return (new MailHostsController())->ensureNode($request, (int) $webNodeId);
         },
-        Permissions::ADMIN_WEBSPACES_EDIT,
+        Permissions::ADMIN_MAIL_HOSTS_EDIT,
         ['POST']
     );
 
@@ -71,7 +71,7 @@ return function (RouteCollection $routes): void {
         function (Request $request) {
             return (new MailHostsController())->create($request);
         },
-        Permissions::ADMIN_WEBSPACES_CREATE,
+        Permissions::ADMIN_MAIL_HOSTS_CREATE,
         ['PUT']
     );
 
@@ -87,7 +87,7 @@ return function (RouteCollection $routes): void {
 
             return (new MailHostsController())->update($request, (int) $id);
         },
-        Permissions::ADMIN_WEBSPACES_EDIT,
+        Permissions::ADMIN_MAIL_HOSTS_EDIT,
         ['PATCH']
     );
 
@@ -103,7 +103,7 @@ return function (RouteCollection $routes): void {
 
             return (new MailHostsController())->delete($request, (int) $id);
         },
-        Permissions::ADMIN_WEBSPACES_DELETE,
+        Permissions::ADMIN_MAIL_HOSTS_DELETE,
         ['DELETE']
     );
 };

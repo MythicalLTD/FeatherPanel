@@ -26,7 +26,8 @@ import { Button } from '@/components/featherui/Button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/featherui/Input';
 import { toast } from 'sonner';
-import { RefreshCw, AlertTriangle, Loader2, RotateCcw, Lock, Server, Eye, EyeOff } from 'lucide-react';
+import Link from 'next/link';
+import { RefreshCw, AlertTriangle, Loader2, RotateCcw, Lock, HardDrive, Server, Eye, EyeOff } from 'lucide-react';
 import { Dialog, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
@@ -35,20 +36,10 @@ import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-err
 import { isReauthCancelled, useVdsReauth } from '@/components/vds/VdsReauth';
 import { UnsavedChangesBar } from '@/components/featherui/UnsavedChangesBar';
 import { useFormBaseline } from '@/hooks/useFormBaseline';
-import { useVdsFeatures } from '@/hooks/useVdsFeatures';
-import { VdsIsoDialog } from '@/components/vds/VdsIsoDialog';
-
 interface ReinstallTemplate {
     id: number;
     name: string;
     os?: string;
-}
-
-interface MountedIso {
-    slot?: string;
-    volid: string;
-    storage: string | null;
-    filename: string | null;
 }
 
 export default function VdsSettingsPage() {
@@ -87,13 +78,6 @@ export default function VdsSettingsPage() {
         restore: restoreHardware,
     } = useFormBaseline({ biosMode, efiEnabled, tpmEnabled, serial0Enabled });
 
-    // ISO mount/unmount (QEMU only, mounted as ide2 cdrom)
-    const [isoCurrentLoading, setIsoCurrentLoading] = React.useState(false);
-    const [mountedIso, setMountedIso] = React.useState<MountedIso | null>(null);
-    const [isoDialogOpen, setIsoDialogOpen] = React.useState(false);
-    const vdsFeatures = useVdsFeatures(Number(id));
-    const [isoUninstalling, setIsoUninstalling] = React.useState(false);
-
     const fetchQemuHardware = React.useCallback(async () => {
         if (!id || !isQemu) return;
         setQemuHardwareLoading(true);
@@ -121,28 +105,6 @@ export default function VdsSettingsPage() {
             void fetchQemuHardware();
         }
     }, [instanceLoading, instance, isQemu, fetchQemuHardware]);
-
-    const fetchIsoCurrent = React.useCallback(async () => {
-        if (!id || !isQemu) return;
-        setIsoCurrentLoading(true);
-        try {
-            const { data } = await axios.get(`/api/user/vm-instances/${id}/iso-current`);
-            if (data?.success) {
-                const current = data.data?.mounted_iso ?? null;
-                setMountedIso(current);
-            }
-        } catch {
-            // Ignore: transient errors.
-        } finally {
-            setIsoCurrentLoading(false);
-        }
-    }, [id, isQemu]);
-
-    React.useEffect(() => {
-        if (!instanceLoading && instance && isQemu) {
-            void fetchIsoCurrent();
-        }
-    }, [instanceLoading, instance, isQemu, fetchIsoCurrent]);
 
     const fetchTemplates = React.useCallback(async () => {
         if (!id) return;
@@ -275,27 +237,6 @@ export default function VdsSettingsPage() {
             toast.error(getApiErrorMessage(err, t, 'vds.settings.hardware.apply_failed'));
         } finally {
             setQemuHardwareSaving(false);
-        }
-    };
-
-    const handleUnmountIso = async () => {
-        if (!mountedIso) return;
-
-        setIsoUninstalling(true);
-        try {
-            const { data } = await axios.post(`/api/user/vm-instances/${id}/iso-unmount`);
-            if (!data?.success) {
-                toast.error(getApiErrorMessageFromPayload(data, t, 'vds.settings.iso.toast_unmount_failed'));
-                return;
-            }
-
-            toast.success(t('vds.settings.iso.toast_unmounted'));
-            await fetchIsoCurrent();
-            await refreshInstance();
-        } catch (err) {
-            toast.error(getApiErrorMessage(err, t, 'vds.settings.iso.toast_unmount_failed'));
-        } finally {
-            setIsoUninstalling(false);
         }
     };
 
@@ -514,71 +455,21 @@ export default function VdsSettingsPage() {
                 </Card>
             )}
 
-            {/* ISO Mount (upload + mount ide2 cdrom) */}
-            {isQemu && vdsFeatures?.iso.enabled !== false && (
+            {isQemu && (
                 <Card>
                     <CardHeader>
                         <CardTitle className='flex items-center gap-2 text-base font-semibold tracking-tight'>
-                            <Server className='text-primary h-4 w-4' />
-                            {t('vds.settings.iso.title')}
+                            <HardDrive className='text-primary h-4 w-4' />
+                            {t('vds.boot.title')}
                         </CardTitle>
                         <CardDescription className='text-muted-foreground'>
-                            {t('vds.settings.iso.description')}
+                            {t('vds.settings.boot_link_description')}
                         </CardDescription>
                     </CardHeader>
-                    <CardContent className='space-y-5'>
-                        <div className='space-y-2'>
-                            <div className='text-muted-foreground text-xs font-semibold'>
-                                {t('vds.settings.iso.current_label')}
-                            </div>
-                            {isoCurrentLoading ? (
-                                <div className='text-muted-foreground flex items-center gap-2'>
-                                    <Loader2 className='h-4 w-4 animate-spin' />
-                                    {t('vds.settings.iso.loading')}
-                                </div>
-                            ) : mountedIso ? (
-                                <div className='border-border/50 bg-muted/20 flex flex-col gap-1 rounded-xl border px-3 py-2'>
-                                    <div className='truncate font-mono text-sm font-bold'>
-                                        {mountedIso.filename ?? mountedIso.volid}
-                                    </div>
-                                    <div className='text-muted-foreground text-xs'>
-                                        {t('vds.settings.iso.mounted_as')}{' '}
-                                        <span className='font-mono'>{mountedIso.slot ?? 'ide2'}</span>
-                                    </div>
-                                </div>
-                            ) : (
-                                <p className='text-muted-foreground text-sm italic'>{t('vds.settings.iso.none')}</p>
-                            )}
-
-                            <div className='flex justify-end pt-3'>
-                                <Button
-                                    variant='default'
-                                    disabled={!mountedIso || isoUninstalling || !canSettings}
-                                    onClick={handleUnmountIso}
-                                >
-                                    {isoUninstalling && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
-                                    {t('vds.settings.iso.unmount_button')}
-                                </Button>
-                            </div>
-                        </div>
-
-                        <div className='border-border/50 flex flex-wrap items-center justify-between gap-3 border-t pt-4'>
-                            <p className='text-muted-foreground text-sm'>{t('vds.iso.library_hint')}</p>
-                            <Button
-                                variant='outline'
-                                disabled={!canSettings || !vdsFeatures?.iso.enabled}
-                                onClick={() => setIsoDialogOpen(true)}
-                            >
-                                {t('vds.console.actions.iso_mount')}
-                            </Button>
-                        </div>
-                        <VdsIsoDialog
-                            vmId={Number(id)}
-                            features={vdsFeatures}
-                            open={isoDialogOpen}
-                            onOpenChange={setIsoDialogOpen}
-                            onMounted={() => void fetchIsoCurrent()}
-                        />
+                    <CardContent>
+                        <Button variant='outline' asChild>
+                            <Link href={`/vds/${id}/boot`}>{t('vds.settings.boot_link')}</Link>
+                        </Button>
                     </CardContent>
                 </Card>
             )}

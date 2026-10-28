@@ -1,23 +1,19 @@
 <?php
 
 /*
- * This file is part of FeatherPanel.
+ * This file is part of App.
+ * Please view the LICENSE file that was distributed with this source code.
  *
- * Copyright (C) 2025 MythicalSystems Studios
- * Copyright (C) 2025 FeatherPanel Contributors
- * Copyright (C) 2025 Cassian Gherman (aka NaysKutzu)
+ * # MythicalSystems License v2.0
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as published
- * by the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * ## Copyright (c) 2021–2025 MythicalSystems and Cassian Gherman
  *
- * See the LICENSE file or <https://www.gnu.org/licenses/>.
+ * Breaking any of the following rules will result in a permanent ban from the MythicalSystems community and all of its services.
  */
 
 /**
  * Permission Nodes Constants
- * Auto-generated from permission_nodes.fpperm.
+ * Auto-generated from permission_nodes.fpperm
  */
 
 /**
@@ -90,14 +86,24 @@ class Permissions
     public const ADMIN_SPELLS_DELETE = 'admin.spells.delete';
 
     // Admin Nodes Permissions
-    /** View nodes */
+    /** View Wings/game nodes */
     public const ADMIN_NODES_VIEW = 'admin.nodes.view';
-    /** Create new nodes */
+    /** Create new Wings/game nodes */
     public const ADMIN_NODES_CREATE = 'admin.nodes.create';
-    /** Edit existing nodes */
+    /** Edit existing Wings/game nodes */
     public const ADMIN_NODES_EDIT = 'admin.nodes.edit';
-    /** Delete nodes */
+    /** Delete Wings/game nodes */
     public const ADMIN_NODES_DELETE = 'admin.nodes.delete';
+
+    // Admin Web Nodes Permissions
+    /** View web hosting nodes */
+    public const ADMIN_WEB_NODES_VIEW = 'admin.web_nodes.view';
+    /** Create web hosting nodes */
+    public const ADMIN_WEB_NODES_CREATE = 'admin.web_nodes.create';
+    /** Edit web hosting nodes (token, packages, self-update) */
+    public const ADMIN_WEB_NODES_EDIT = 'admin.web_nodes.edit';
+    /** Delete web hosting nodes */
+    public const ADMIN_WEB_NODES_DELETE = 'admin.web_nodes.delete';
 
     // Admin Roles Permissions
     /** View roles */
@@ -355,9 +361,21 @@ class Permissions
     /** Manage ticket messages */
     public const ADMIN_TICKET_MESSAGES_MANAGE = 'admin.ticket_messages.manage';
 
+    // Admin VM Nodes Permissions
+    /** View VDS/Proxmox nodes */
+    public const ADMIN_VM_NODES_VIEW = 'admin.vm_nodes.view';
+    /** Create VDS/Proxmox nodes */
+    public const ADMIN_VM_NODES_CREATE = 'admin.vm_nodes.create';
+    /** Edit VDS/Proxmox nodes (storage, firewall, ISOs, templates) */
+    public const ADMIN_VM_NODES_EDIT = 'admin.vm_nodes.edit';
+    /** Delete VDS/Proxmox nodes */
+    public const ADMIN_VM_NODES_DELETE = 'admin.vm_nodes.delete';
+
     // Admin VM Instances Permissions
     /** View VM instances */
     public const ADMIN_VM_INSTANCES_VIEW = 'admin.vm_instances.view';
+    /** Create VM instances */
+    public const ADMIN_VM_INSTANCES_CREATE = 'admin.vm_instances.create';
     /** Edit existing VM instances */
     public const ADMIN_VM_INSTANCES_EDIT = 'admin.vm_instances.edit';
     /** Delete VM instances */
@@ -383,6 +401,46 @@ class Permissions
     /** Delete webspaces */
     public const ADMIN_WEBSPACES_DELETE = 'admin.webspaces.delete';
 
+    // Admin Mail Hosts Permissions
+    /** View mail hosts */
+    public const ADMIN_MAIL_HOSTS_VIEW = 'admin.mail_hosts.view';
+    /** Create mail hosts */
+    public const ADMIN_MAIL_HOSTS_CREATE = 'admin.mail_hosts.create';
+    /** Edit mail hosts */
+    public const ADMIN_MAIL_HOSTS_EDIT = 'admin.mail_hosts.edit';
+    /** Delete mail hosts */
+    public const ADMIN_MAIL_HOSTS_DELETE = 'admin.mail_hosts.delete';
+
+    // Admin DNS Hosts Permissions
+    /** View DNS hosts */
+    public const ADMIN_DNS_HOSTS_VIEW = 'admin.dns_hosts.view';
+    /** Create DNS hosts */
+    public const ADMIN_DNS_HOSTS_CREATE = 'admin.dns_hosts.create';
+    /** Edit DNS hosts */
+    public const ADMIN_DNS_HOSTS_EDIT = 'admin.dns_hosts.edit';
+    /** Delete DNS hosts */
+    public const ADMIN_DNS_HOSTS_DELETE = 'admin.dns_hosts.delete';
+
+    // Admin Hosting Packages Permissions
+    /** View hosting packages */
+    public const ADMIN_HOSTING_PACKAGES_VIEW = 'admin.hosting_packages.view';
+    /** Create hosting packages */
+    public const ADMIN_HOSTING_PACKAGES_CREATE = 'admin.hosting_packages.create';
+    /** Edit hosting packages */
+    public const ADMIN_HOSTING_PACKAGES_EDIT = 'admin.hosting_packages.edit';
+    /** Delete hosting packages */
+    public const ADMIN_HOSTING_PACKAGES_DELETE = 'admin.hosting_packages.delete';
+
+    // Admin AbuseIPDB Permissions
+    /** View AbuseIPDB status and lookups */
+    public const ADMIN_ABUSEIPDB_VIEW = 'admin.abuseipdb.view';
+    /** Run AbuseIPDB scans and actions */
+    public const ADMIN_ABUSEIPDB_MANAGE = 'admin.abuseipdb.manage';
+
+    // Admin Audit Log Permissions
+    /** View the admin audit log */
+    public const ADMIN_AUDIT_LOG_VIEW = 'admin.audit_log.view';
+
     // Admin Wings Backups Permissions
     /** View Wings backups */
     public const ADMIN_WINGS_BACKUPS_VIEW = 'admin.wings_backups.view';
@@ -393,6 +451,7 @@ class Permissions
 
     /**
      * Returns all permission nodes with metadata.
+     * @return array
      */
     public static function getAll(): array
     {
@@ -401,841 +460,985 @@ class Permissions
                 'constant' => 'ADMIN_ROOT',
                 'value' => self::ADMIN_ROOT,
                 'category' => 'Admin Root',
-                'description' => 'Full access to everything',
+                'description' => 'Full access to everything'
             ],
             [
                 'constant' => 'ADMIN_DASHBOARD_VIEW',
                 'value' => self::ADMIN_DASHBOARD_VIEW,
                 'category' => 'Admin Dashboard View',
-                'description' => 'Access to view the admin dashboard',
+                'description' => 'Access to view the admin dashboard'
             ],
             [
                 'constant' => 'ADMIN_USERS_VIEW',
                 'value' => self::ADMIN_USERS_VIEW,
                 'category' => 'Admin Users',
-                'description' => 'View the users',
+                'description' => 'View the users'
             ],
             [
                 'constant' => 'ADMIN_USERS_CREATE',
                 'value' => self::ADMIN_USERS_CREATE,
                 'category' => 'Admin Users',
-                'description' => 'Create new users',
+                'description' => 'Create new users'
             ],
             [
                 'constant' => 'ADMIN_USERS_EDIT',
                 'value' => self::ADMIN_USERS_EDIT,
                 'category' => 'Admin Users',
-                'description' => 'Edit existing users',
+                'description' => 'Edit existing users'
             ],
             [
                 'constant' => 'ADMIN_USERS_DELETE',
                 'value' => self::ADMIN_USERS_DELETE,
                 'category' => 'Admin Users',
-                'description' => 'Delete users',
+                'description' => 'Delete users'
             ],
             [
                 'constant' => 'ADMIN_USERS_IMPERSONATE',
                 'value' => self::ADMIN_USERS_IMPERSONATE,
                 'category' => 'Admin Users',
-                'description' => 'View the panel as another user (audit logged)',
+                'description' => 'View the panel as another user (audit logged)'
             ],
             [
                 'constant' => 'ADMIN_BLOCKED_IPS_VIEW',
                 'value' => self::ADMIN_BLOCKED_IPS_VIEW,
                 'category' => 'Admin Banned IPs',
-                'description' => 'View banned panel IPs',
+                'description' => 'View banned panel IPs'
             ],
             [
                 'constant' => 'ADMIN_BLOCKED_IPS_CREATE',
                 'value' => self::ADMIN_BLOCKED_IPS_CREATE,
                 'category' => 'Admin Banned IPs',
-                'description' => 'Ban IPs from panel registration',
+                'description' => 'Ban IPs from panel registration'
             ],
             [
                 'constant' => 'ADMIN_BLOCKED_IPS_DELETE',
                 'value' => self::ADMIN_BLOCKED_IPS_DELETE,
                 'category' => 'Admin Banned IPs',
-                'description' => 'Remove panel IP bans',
+                'description' => 'Remove panel IP bans'
             ],
             [
                 'constant' => 'ADMIN_LOCATIONS_VIEW',
                 'value' => self::ADMIN_LOCATIONS_VIEW,
                 'category' => 'Admin Locations',
-                'description' => 'View locations',
+                'description' => 'View locations'
             ],
             [
                 'constant' => 'ADMIN_LOCATIONS_CREATE',
                 'value' => self::ADMIN_LOCATIONS_CREATE,
                 'category' => 'Admin Locations',
-                'description' => 'Create new locations',
+                'description' => 'Create new locations'
             ],
             [
                 'constant' => 'ADMIN_LOCATIONS_EDIT',
                 'value' => self::ADMIN_LOCATIONS_EDIT,
                 'category' => 'Admin Locations',
-                'description' => 'Edit existing locations',
+                'description' => 'Edit existing locations'
             ],
             [
                 'constant' => 'ADMIN_LOCATIONS_DELETE',
                 'value' => self::ADMIN_LOCATIONS_DELETE,
                 'category' => 'Admin Locations',
-                'description' => 'Delete locations',
+                'description' => 'Delete locations'
             ],
             [
                 'constant' => 'ADMIN_REALMS_VIEW',
                 'value' => self::ADMIN_REALMS_VIEW,
                 'category' => 'Admin Realms',
-                'description' => 'View realms',
+                'description' => 'View realms'
             ],
             [
                 'constant' => 'ADMIN_REALMS_CREATE',
                 'value' => self::ADMIN_REALMS_CREATE,
                 'category' => 'Admin Realms',
-                'description' => 'Create new realms',
+                'description' => 'Create new realms'
             ],
             [
                 'constant' => 'ADMIN_REALMS_EDIT',
                 'value' => self::ADMIN_REALMS_EDIT,
                 'category' => 'Admin Realms',
-                'description' => 'Edit existing realms',
+                'description' => 'Edit existing realms'
             ],
             [
                 'constant' => 'ADMIN_REALMS_DELETE',
                 'value' => self::ADMIN_REALMS_DELETE,
                 'category' => 'Admin Realms',
-                'description' => 'Delete realms',
+                'description' => 'Delete realms'
             ],
             [
                 'constant' => 'ADMIN_SPELLS_VIEW',
                 'value' => self::ADMIN_SPELLS_VIEW,
                 'category' => 'Admin Spells',
-                'description' => 'View spells',
+                'description' => 'View spells'
             ],
             [
                 'constant' => 'ADMIN_SPELLS_CREATE',
                 'value' => self::ADMIN_SPELLS_CREATE,
                 'category' => 'Admin Spells',
-                'description' => 'Create new spells',
+                'description' => 'Create new spells'
             ],
             [
                 'constant' => 'ADMIN_SPELLS_EDIT',
                 'value' => self::ADMIN_SPELLS_EDIT,
                 'category' => 'Admin Spells',
-                'description' => 'Edit existing spells',
+                'description' => 'Edit existing spells'
             ],
             [
                 'constant' => 'ADMIN_SPELLS_DELETE',
                 'value' => self::ADMIN_SPELLS_DELETE,
                 'category' => 'Admin Spells',
-                'description' => 'Delete spells',
+                'description' => 'Delete spells'
             ],
             [
                 'constant' => 'ADMIN_NODES_VIEW',
                 'value' => self::ADMIN_NODES_VIEW,
                 'category' => 'Admin Nodes',
-                'description' => 'View nodes',
+                'description' => 'View Wings/game nodes'
             ],
             [
                 'constant' => 'ADMIN_NODES_CREATE',
                 'value' => self::ADMIN_NODES_CREATE,
                 'category' => 'Admin Nodes',
-                'description' => 'Create new nodes',
+                'description' => 'Create new Wings/game nodes'
             ],
             [
                 'constant' => 'ADMIN_NODES_EDIT',
                 'value' => self::ADMIN_NODES_EDIT,
                 'category' => 'Admin Nodes',
-                'description' => 'Edit existing nodes',
+                'description' => 'Edit existing Wings/game nodes'
             ],
             [
                 'constant' => 'ADMIN_NODES_DELETE',
                 'value' => self::ADMIN_NODES_DELETE,
                 'category' => 'Admin Nodes',
-                'description' => 'Delete nodes',
+                'description' => 'Delete Wings/game nodes'
+            ],
+            [
+                'constant' => 'ADMIN_WEB_NODES_VIEW',
+                'value' => self::ADMIN_WEB_NODES_VIEW,
+                'category' => 'Admin Web Nodes',
+                'description' => 'View web hosting nodes'
+            ],
+            [
+                'constant' => 'ADMIN_WEB_NODES_CREATE',
+                'value' => self::ADMIN_WEB_NODES_CREATE,
+                'category' => 'Admin Web Nodes',
+                'description' => 'Create web hosting nodes'
+            ],
+            [
+                'constant' => 'ADMIN_WEB_NODES_EDIT',
+                'value' => self::ADMIN_WEB_NODES_EDIT,
+                'category' => 'Admin Web Nodes',
+                'description' => 'Edit web hosting nodes (token, packages, self-update)'
+            ],
+            [
+                'constant' => 'ADMIN_WEB_NODES_DELETE',
+                'value' => self::ADMIN_WEB_NODES_DELETE,
+                'category' => 'Admin Web Nodes',
+                'description' => 'Delete web hosting nodes'
             ],
             [
                 'constant' => 'ADMIN_ROLES_VIEW',
                 'value' => self::ADMIN_ROLES_VIEW,
                 'category' => 'Admin Roles',
-                'description' => 'View roles',
+                'description' => 'View roles'
             ],
             [
                 'constant' => 'ADMIN_ROLES_CREATE',
                 'value' => self::ADMIN_ROLES_CREATE,
                 'category' => 'Admin Roles',
-                'description' => 'Create new roles',
+                'description' => 'Create new roles'
             ],
             [
                 'constant' => 'ADMIN_ROLES_EDIT',
                 'value' => self::ADMIN_ROLES_EDIT,
                 'category' => 'Admin Roles',
-                'description' => 'Edit existing roles',
+                'description' => 'Edit existing roles'
             ],
             [
                 'constant' => 'ADMIN_ROLES_DELETE',
                 'value' => self::ADMIN_ROLES_DELETE,
                 'category' => 'Admin Roles',
-                'description' => 'Delete roles',
+                'description' => 'Delete roles'
             ],
             [
                 'constant' => 'ADMIN_DATABASES_VIEW',
                 'value' => self::ADMIN_DATABASES_VIEW,
                 'category' => 'Admin Databases',
-                'description' => 'View databases',
+                'description' => 'View databases'
             ],
             [
                 'constant' => 'ADMIN_DATABASES_CREATE',
                 'value' => self::ADMIN_DATABASES_CREATE,
                 'category' => 'Admin Databases',
-                'description' => 'Create new databases',
+                'description' => 'Create new databases'
             ],
             [
                 'constant' => 'ADMIN_DATABASES_EDIT',
                 'value' => self::ADMIN_DATABASES_EDIT,
                 'category' => 'Admin Databases',
-                'description' => 'Edit existing databases',
+                'description' => 'Edit existing databases'
             ],
             [
                 'constant' => 'ADMIN_DATABASES_DELETE',
                 'value' => self::ADMIN_DATABASES_DELETE,
                 'category' => 'Admin Databases',
-                'description' => 'Delete databases',
+                'description' => 'Delete databases'
             ],
             [
                 'constant' => 'ADMIN_ROLES_PERMISSIONS_VIEW',
                 'value' => self::ADMIN_ROLES_PERMISSIONS_VIEW,
                 'category' => 'Admin Role Permissions',
-                'description' => 'View role permissions',
+                'description' => 'View role permissions'
             ],
             [
                 'constant' => 'ADMIN_ROLES_PERMISSIONS_CREATE',
                 'value' => self::ADMIN_ROLES_PERMISSIONS_CREATE,
                 'category' => 'Admin Role Permissions',
-                'description' => 'Create new role permissions',
+                'description' => 'Create new role permissions'
             ],
             [
                 'constant' => 'ADMIN_ROLES_PERMISSIONS_EDIT',
                 'value' => self::ADMIN_ROLES_PERMISSIONS_EDIT,
                 'category' => 'Admin Role Permissions',
-                'description' => 'Edit existing role permissions',
+                'description' => 'Edit existing role permissions'
             ],
             [
                 'constant' => 'ADMIN_ROLES_PERMISSIONS_DELETE',
                 'value' => self::ADMIN_ROLES_PERMISSIONS_DELETE,
                 'category' => 'Admin Role Permissions',
-                'description' => 'Delete role permissions',
+                'description' => 'Delete role permissions'
             ],
             [
                 'constant' => 'ADMIN_SETTINGS_VIEW',
                 'value' => self::ADMIN_SETTINGS_VIEW,
                 'category' => 'Admin Settings',
-                'description' => 'View settings',
+                'description' => 'View settings'
             ],
             [
                 'constant' => 'ADMIN_SETTINGS_EDIT',
                 'value' => self::ADMIN_SETTINGS_EDIT,
                 'category' => 'Admin Settings',
-                'description' => 'Edit and manage settings',
+                'description' => 'Edit and manage settings'
             ],
             [
                 'constant' => 'ADMIN_STORAGE_SENSE_VIEW',
                 'value' => self::ADMIN_STORAGE_SENSE_VIEW,
                 'category' => 'Admin Storage Sense',
-                'description' => 'View Storage Sense insights and cleanup candidates',
+                'description' => 'View Storage Sense insights and cleanup candidates'
             ],
             [
                 'constant' => 'ADMIN_STORAGE_SENSE_MANAGE',
                 'value' => self::ADMIN_STORAGE_SENSE_MANAGE,
                 'category' => 'Admin Storage Sense',
-                'description' => 'Run Storage Sense cleanup actions',
+                'description' => 'Run Storage Sense cleanup actions'
             ],
             [
                 'constant' => 'ADMIN_ALLOCATIONS_VIEW',
                 'value' => self::ADMIN_ALLOCATIONS_VIEW,
                 'category' => 'Admin Allocations',
-                'description' => 'View allocations',
+                'description' => 'View allocations'
             ],
             [
                 'constant' => 'ADMIN_ALLOCATIONS_CREATE',
                 'value' => self::ADMIN_ALLOCATIONS_CREATE,
                 'category' => 'Admin Allocations',
-                'description' => 'Create new allocations',
+                'description' => 'Create new allocations'
             ],
             [
                 'constant' => 'ADMIN_ALLOCATIONS_EDIT',
                 'value' => self::ADMIN_ALLOCATIONS_EDIT,
                 'category' => 'Admin Allocations',
-                'description' => 'Edit existing allocations',
+                'description' => 'Edit existing allocations'
             ],
             [
                 'constant' => 'ADMIN_ALLOCATIONS_DELETE',
                 'value' => self::ADMIN_ALLOCATIONS_DELETE,
                 'category' => 'Admin Allocations',
-                'description' => 'Delete allocations',
+                'description' => 'Delete allocations'
             ],
             [
                 'constant' => 'ADMIN_SERVERS_VIEW',
                 'value' => self::ADMIN_SERVERS_VIEW,
                 'category' => 'Admin Servers',
-                'description' => 'View all servers',
+                'description' => 'View all servers'
             ],
             [
                 'constant' => 'ADMIN_SERVERS_CREATE',
                 'value' => self::ADMIN_SERVERS_CREATE,
                 'category' => 'Admin Servers',
-                'description' => 'Create new servers',
+                'description' => 'Create new servers'
             ],
             [
                 'constant' => 'ADMIN_SERVERS_EDIT',
                 'value' => self::ADMIN_SERVERS_EDIT,
                 'category' => 'Admin Servers',
-                'description' => 'Edit existing servers',
+                'description' => 'Edit existing servers'
             ],
             [
                 'constant' => 'ADMIN_SERVERS_DELETE',
                 'value' => self::ADMIN_SERVERS_DELETE,
                 'category' => 'Admin Servers',
-                'description' => 'Delete servers',
+                'description' => 'Delete servers'
             ],
             [
                 'constant' => 'ADMIN_SERVERS_INSTALL',
                 'value' => self::ADMIN_SERVERS_INSTALL,
                 'category' => 'Admin Servers',
-                'description' => 'Install servers',
+                'description' => 'Install servers'
             ],
             [
                 'constant' => 'ADMIN_SERVERS_REINSTALL',
                 'value' => self::ADMIN_SERVERS_REINSTALL,
                 'category' => 'Admin Servers',
-                'description' => 'Reinstall servers',
+                'description' => 'Reinstall servers'
             ],
             [
                 'constant' => 'ADMIN_SERVERS_SUSPEND',
                 'value' => self::ADMIN_SERVERS_SUSPEND,
                 'category' => 'Admin Servers',
-                'description' => 'Suspend servers',
+                'description' => 'Suspend servers'
             ],
             [
                 'constant' => 'ADMIN_SERVERS_UNSUSPEND',
                 'value' => self::ADMIN_SERVERS_UNSUSPEND,
                 'category' => 'Admin Servers',
-                'description' => 'Unsuspend servers',
+                'description' => 'Unsuspend servers'
             ],
             [
                 'constant' => 'ADMIN_TEMPLATE_EMAIL_VIEW',
                 'value' => self::ADMIN_TEMPLATE_EMAIL_VIEW,
                 'category' => 'Admin Email Templates',
-                'description' => 'View email templates',
+                'description' => 'View email templates'
             ],
             [
                 'constant' => 'ADMIN_TEMPLATE_EMAIL_CREATE',
                 'value' => self::ADMIN_TEMPLATE_EMAIL_CREATE,
                 'category' => 'Admin Email Templates',
-                'description' => 'Create new email templates',
+                'description' => 'Create new email templates'
             ],
             [
                 'constant' => 'ADMIN_TEMPLATE_EMAIL_EDIT',
                 'value' => self::ADMIN_TEMPLATE_EMAIL_EDIT,
                 'category' => 'Admin Email Templates',
-                'description' => 'Edit existing email templates',
+                'description' => 'Edit existing email templates'
             ],
             [
                 'constant' => 'ADMIN_TEMPLATE_EMAIL_DELETE',
                 'value' => self::ADMIN_TEMPLATE_EMAIL_DELETE,
                 'category' => 'Admin Email Templates',
-                'description' => 'Delete email templates',
+                'description' => 'Delete email templates'
             ],
             [
                 'constant' => 'ADMIN_IMAGES_VIEW',
                 'value' => self::ADMIN_IMAGES_VIEW,
                 'category' => 'Admin Images',
-                'description' => 'View images',
+                'description' => 'View images'
             ],
             [
                 'constant' => 'ADMIN_IMAGES_CREATE',
                 'value' => self::ADMIN_IMAGES_CREATE,
                 'category' => 'Admin Images',
-                'description' => 'Create new images',
+                'description' => 'Create new images'
             ],
             [
                 'constant' => 'ADMIN_IMAGES_EDIT',
                 'value' => self::ADMIN_IMAGES_EDIT,
                 'category' => 'Admin Images',
-                'description' => 'Edit existing images',
+                'description' => 'Edit existing images'
             ],
             [
                 'constant' => 'ADMIN_IMAGES_DELETE',
                 'value' => self::ADMIN_IMAGES_DELETE,
                 'category' => 'Admin Images',
-                'description' => 'Delete images',
+                'description' => 'Delete images'
             ],
             [
                 'constant' => 'ADMIN_REDIRECT_LINKS_VIEW',
                 'value' => self::ADMIN_REDIRECT_LINKS_VIEW,
                 'category' => 'Admin Redirect Links',
-                'description' => 'View redirect links',
+                'description' => 'View redirect links'
             ],
             [
                 'constant' => 'ADMIN_REDIRECT_LINKS_CREATE',
                 'value' => self::ADMIN_REDIRECT_LINKS_CREATE,
                 'category' => 'Admin Redirect Links',
-                'description' => 'Create new redirect links',
+                'description' => 'Create new redirect links'
             ],
             [
                 'constant' => 'ADMIN_REDIRECT_LINKS_EDIT',
                 'value' => self::ADMIN_REDIRECT_LINKS_EDIT,
                 'category' => 'Admin Redirect Links',
-                'description' => 'Edit existing redirect links',
+                'description' => 'Edit existing redirect links'
             ],
             [
                 'constant' => 'ADMIN_REDIRECT_LINKS_DELETE',
                 'value' => self::ADMIN_REDIRECT_LINKS_DELETE,
                 'category' => 'Admin Redirect Links',
-                'description' => 'Delete redirect links',
+                'description' => 'Delete redirect links'
             ],
             [
                 'constant' => 'ADMIN_PLUGINS_VIEW',
                 'value' => self::ADMIN_PLUGINS_VIEW,
                 'category' => 'Admin Plugins',
-                'description' => 'View plugins',
+                'description' => 'View plugins'
             ],
             [
                 'constant' => 'ADMIN_PLUGINS_INSTALL',
                 'value' => self::ADMIN_PLUGINS_INSTALL,
                 'category' => 'Admin Plugins',
-                'description' => 'Install plugins',
+                'description' => 'Install plugins'
             ],
             [
                 'constant' => 'ADMIN_PLUGINS_UNINSTALL',
                 'value' => self::ADMIN_PLUGINS_UNINSTALL,
                 'category' => 'Admin Plugins',
-                'description' => 'Uninstall plugins',
+                'description' => 'Uninstall plugins'
             ],
             [
                 'constant' => 'ADMIN_PLUGINS_MANAGE',
                 'value' => self::ADMIN_PLUGINS_MANAGE,
                 'category' => 'Admin Plugins',
-                'description' => 'Manage plugins',
+                'description' => 'Manage plugins'
             ],
             [
                 'constant' => 'ADMIN_DATABASES_MANAGE',
                 'value' => self::ADMIN_DATABASES_MANAGE,
                 'category' => 'Admin Databases',
-                'description' => 'Manage database',
+                'description' => 'Manage database'
             ],
             [
                 'constant' => 'ADMIN_STATISTICS_VIEW',
                 'value' => self::ADMIN_STATISTICS_VIEW,
                 'category' => 'Admin Statistics',
-                'description' => 'View statistics',
+                'description' => 'View statistics'
             ],
             [
                 'constant' => 'ADMIN_SUBDOMAINS_VIEW',
                 'value' => self::ADMIN_SUBDOMAINS_VIEW,
                 'category' => 'Admin Subdomains',
-                'description' => 'View subdomains',
+                'description' => 'View subdomains'
             ],
             [
                 'constant' => 'ADMIN_SUBDOMAINS_CREATE',
                 'value' => self::ADMIN_SUBDOMAINS_CREATE,
                 'category' => 'Admin Subdomains',
-                'description' => 'Create new subdomains',
+                'description' => 'Create new subdomains'
             ],
             [
                 'constant' => 'ADMIN_SUBDOMAINS_EDIT',
                 'value' => self::ADMIN_SUBDOMAINS_EDIT,
                 'category' => 'Admin Subdomains',
-                'description' => 'Edit subdomains',
+                'description' => 'Edit subdomains'
             ],
             [
                 'constant' => 'ADMIN_SUBDOMAINS_DELETE',
                 'value' => self::ADMIN_SUBDOMAINS_DELETE,
                 'category' => 'Admin Subdomains',
-                'description' => 'Delete subdomains',
+                'description' => 'Delete subdomains'
             ],
             [
                 'constant' => 'ADMIN_FEATHERZEROTRUST_VIEW',
                 'value' => self::ADMIN_FEATHERZEROTRUST_VIEW,
                 'category' => 'Admin FeatherZeroTrust',
-                'description' => 'View FeatherZeroTrust scanner',
+                'description' => 'View FeatherZeroTrust scanner'
             ],
             [
                 'constant' => 'ADMIN_FEATHERZEROTRUST_SCAN',
                 'value' => self::ADMIN_FEATHERZEROTRUST_SCAN,
                 'category' => 'Admin FeatherZeroTrust',
-                'description' => 'Run scans with FeatherZeroTrust',
+                'description' => 'Run scans with FeatherZeroTrust'
             ],
             [
                 'constant' => 'ADMIN_FEATHERZEROTRUST_CONFIGURE',
                 'value' => self::ADMIN_FEATHERZEROTRUST_CONFIGURE,
                 'category' => 'Admin FeatherZeroTrust',
-                'description' => 'Configure FeatherZeroTrust settings',
+                'description' => 'Configure FeatherZeroTrust settings'
             ],
             [
                 'constant' => 'ADMIN_FEATHERZEROTRUST_MANAGE',
                 'value' => self::ADMIN_FEATHERZEROTRUST_MANAGE,
                 'category' => 'Admin FeatherZeroTrust',
-                'description' => 'Manage FeatherZeroTrust',
+                'description' => 'Manage FeatherZeroTrust'
             ],
             [
                 'constant' => 'ADMIN_NOTIFICATIONS_VIEW',
                 'value' => self::ADMIN_NOTIFICATIONS_VIEW,
                 'category' => 'Admin Notifications',
-                'description' => 'View notifications',
+                'description' => 'View notifications'
             ],
             [
                 'constant' => 'ADMIN_NOTIFICATIONS_CREATE',
                 'value' => self::ADMIN_NOTIFICATIONS_CREATE,
                 'category' => 'Admin Notifications',
-                'description' => 'Create new notifications',
+                'description' => 'Create new notifications'
             ],
             [
                 'constant' => 'ADMIN_NOTIFICATIONS_EDIT',
                 'value' => self::ADMIN_NOTIFICATIONS_EDIT,
                 'category' => 'Admin Notifications',
-                'description' => 'Edit existing notifications',
+                'description' => 'Edit existing notifications'
             ],
             [
                 'constant' => 'ADMIN_NOTIFICATIONS_DELETE',
                 'value' => self::ADMIN_NOTIFICATIONS_DELETE,
                 'category' => 'Admin Notifications',
-                'description' => 'Delete notifications',
+                'description' => 'Delete notifications'
             ],
             [
                 'constant' => 'ADMIN_BACKUPS_VIEW',
                 'value' => self::ADMIN_BACKUPS_VIEW,
                 'category' => 'Admin Database Snapshots',
-                'description' => 'View database snapshots',
+                'description' => 'View database snapshots'
             ],
             [
                 'constant' => 'ADMIN_BACKUPS_CREATE',
                 'value' => self::ADMIN_BACKUPS_CREATE,
                 'category' => 'Admin Database Snapshots',
-                'description' => 'Create database snapshots',
+                'description' => 'Create database snapshots'
             ],
             [
                 'constant' => 'ADMIN_BACKUPS_DELETE',
                 'value' => self::ADMIN_BACKUPS_DELETE,
                 'category' => 'Admin Database Snapshots',
-                'description' => 'Delete database snapshots',
+                'description' => 'Delete database snapshots'
             ],
             [
                 'constant' => 'ADMIN_BACKUPS_RESTORE',
                 'value' => self::ADMIN_BACKUPS_RESTORE,
                 'category' => 'Admin Database Snapshots',
-                'description' => 'Restore database from snapshot',
+                'description' => 'Restore database from snapshot'
             ],
             [
                 'constant' => 'ADMIN_BACKUPS_DOWNLOAD',
                 'value' => self::ADMIN_BACKUPS_DOWNLOAD,
                 'category' => 'Admin Database Snapshots',
-                'description' => 'Download database snapshots',
+                'description' => 'Download database snapshots'
             ],
             [
                 'constant' => 'ADMIN_BACKUP_SCHEDULES_VIEW',
                 'value' => self::ADMIN_BACKUP_SCHEDULES_VIEW,
                 'category' => 'Admin Backup Schedules',
-                'description' => 'View server backup schedules',
+                'description' => 'View server backup schedules'
             ],
             [
                 'constant' => 'ADMIN_BACKUP_SCHEDULES_CREATE',
                 'value' => self::ADMIN_BACKUP_SCHEDULES_CREATE,
                 'category' => 'Admin Backup Schedules',
-                'description' => 'Create server backup schedules',
+                'description' => 'Create server backup schedules'
             ],
             [
                 'constant' => 'ADMIN_BACKUP_SCHEDULES_EDIT',
                 'value' => self::ADMIN_BACKUP_SCHEDULES_EDIT,
                 'category' => 'Admin Backup Schedules',
-                'description' => 'Edit server backup schedules',
+                'description' => 'Edit server backup schedules'
             ],
             [
                 'constant' => 'ADMIN_BACKUP_SCHEDULES_DELETE',
                 'value' => self::ADMIN_BACKUP_SCHEDULES_DELETE,
                 'category' => 'Admin Backup Schedules',
-                'description' => 'Delete server backup schedules',
+                'description' => 'Delete server backup schedules'
             ],
             [
                 'constant' => 'ADMIN_BACKUP_SCHEDULES_RUN',
                 'value' => self::ADMIN_BACKUP_SCHEDULES_RUN,
                 'category' => 'Admin Backup Schedules',
-                'description' => 'Manually run server backup schedules',
+                'description' => 'Manually run server backup schedules'
             ],
             [
                 'constant' => 'ADMIN_KNOWLEDGEBASE_CATEGORIES_VIEW',
                 'value' => self::ADMIN_KNOWLEDGEBASE_CATEGORIES_VIEW,
                 'category' => 'Admin Knowledgebase Categories',
-                'description' => 'View knowledgebase categories',
+                'description' => 'View knowledgebase categories'
             ],
             [
                 'constant' => 'ADMIN_KNOWLEDGEBASE_CATEGORIES_CREATE',
                 'value' => self::ADMIN_KNOWLEDGEBASE_CATEGORIES_CREATE,
                 'category' => 'Admin Knowledgebase Categories',
-                'description' => 'Create new knowledgebase categories',
+                'description' => 'Create new knowledgebase categories'
             ],
             [
                 'constant' => 'ADMIN_KNOWLEDGEBASE_CATEGORIES_EDIT',
                 'value' => self::ADMIN_KNOWLEDGEBASE_CATEGORIES_EDIT,
                 'category' => 'Admin Knowledgebase Categories',
-                'description' => 'Edit existing knowledgebase categories',
+                'description' => 'Edit existing knowledgebase categories'
             ],
             [
                 'constant' => 'ADMIN_KNOWLEDGEBASE_CATEGORIES_DELETE',
                 'value' => self::ADMIN_KNOWLEDGEBASE_CATEGORIES_DELETE,
                 'category' => 'Admin Knowledgebase Categories',
-                'description' => 'Delete knowledgebase categories',
+                'description' => 'Delete knowledgebase categories'
             ],
             [
                 'constant' => 'ADMIN_KNOWLEDGEBASE_ARTICLES_VIEW',
                 'value' => self::ADMIN_KNOWLEDGEBASE_ARTICLES_VIEW,
                 'category' => 'Admin Knowledgebase Articles',
-                'description' => 'View knowledgebase articles',
+                'description' => 'View knowledgebase articles'
             ],
             [
                 'constant' => 'ADMIN_KNOWLEDGEBASE_ARTICLES_CREATE',
                 'value' => self::ADMIN_KNOWLEDGEBASE_ARTICLES_CREATE,
                 'category' => 'Admin Knowledgebase Articles',
-                'description' => 'Create new knowledgebase articles',
+                'description' => 'Create new knowledgebase articles'
             ],
             [
                 'constant' => 'ADMIN_KNOWLEDGEBASE_ARTICLES_EDIT',
                 'value' => self::ADMIN_KNOWLEDGEBASE_ARTICLES_EDIT,
                 'category' => 'Admin Knowledgebase Articles',
-                'description' => 'Edit existing knowledgebase articles',
+                'description' => 'Edit existing knowledgebase articles'
             ],
             [
                 'constant' => 'ADMIN_KNOWLEDGEBASE_ARTICLES_DELETE',
                 'value' => self::ADMIN_KNOWLEDGEBASE_ARTICLES_DELETE,
                 'category' => 'Admin Knowledgebase Articles',
-                'description' => 'Delete knowledgebase articles',
+                'description' => 'Delete knowledgebase articles'
             ],
             [
                 'constant' => 'ADMIN_API_BYPASS_RESTRICTIONS',
                 'value' => self::ADMIN_API_BYPASS_RESTRICTIONS,
                 'category' => 'Admin API',
-                'description' => 'Bypass API rate limits and restrictions',
+                'description' => 'Bypass API rate limits and restrictions'
             ],
             [
                 'constant' => 'USER_API_KEYS_CREATE',
                 'value' => self::USER_API_KEYS_CREATE,
                 'category' => 'User API',
-                'description' => 'Create personal API keys even when user API key creation is disabled panel-wide',
+                'description' => 'Create personal API keys even when user API key creation is disabled panel-wide'
             ],
             [
                 'constant' => 'USER_SERVERS_BYPASS_SUBDOMAIN_REQUIREMENT',
                 'value' => self::USER_SERVERS_BYPASS_SUBDOMAIN_REQUIREMENT,
                 'category' => 'User Servers',
-                'description' => 'Use servers without a panel subdomain when subdomain is required panel-wide',
+                'description' => 'Use servers without a panel subdomain when subdomain is required panel-wide'
             ],
             [
                 'constant' => 'ADMIN_TICKETS_VIEW',
                 'value' => self::ADMIN_TICKETS_VIEW,
                 'category' => 'Admin Tickets',
-                'description' => 'View support tickets',
+                'description' => 'View support tickets'
             ],
             [
                 'constant' => 'ADMIN_TICKETS_CREATE',
                 'value' => self::ADMIN_TICKETS_CREATE,
                 'category' => 'Admin Tickets',
-                'description' => 'Create support tickets',
+                'description' => 'Create support tickets'
             ],
             [
                 'constant' => 'ADMIN_TICKETS_EDIT',
                 'value' => self::ADMIN_TICKETS_EDIT,
                 'category' => 'Admin Tickets',
-                'description' => 'Edit support tickets',
+                'description' => 'Edit support tickets'
             ],
             [
                 'constant' => 'ADMIN_TICKETS_DELETE',
                 'value' => self::ADMIN_TICKETS_DELETE,
                 'category' => 'Admin Tickets',
-                'description' => 'Delete support tickets',
+                'description' => 'Delete support tickets'
             ],
             [
                 'constant' => 'ADMIN_TICKETS_MANAGE',
                 'value' => self::ADMIN_TICKETS_MANAGE,
                 'category' => 'Admin Tickets',
-                'description' => 'Manage all aspects of support tickets',
+                'description' => 'Manage all aspects of support tickets'
             ],
             [
                 'constant' => 'ADMIN_TICKET_CATEGORIES_VIEW',
                 'value' => self::ADMIN_TICKET_CATEGORIES_VIEW,
                 'category' => 'Admin Ticket Categories',
-                'description' => 'View ticket categories',
+                'description' => 'View ticket categories'
             ],
             [
                 'constant' => 'ADMIN_TICKET_CATEGORIES_CREATE',
                 'value' => self::ADMIN_TICKET_CATEGORIES_CREATE,
                 'category' => 'Admin Ticket Categories',
-                'description' => 'Create ticket categories',
+                'description' => 'Create ticket categories'
             ],
             [
                 'constant' => 'ADMIN_TICKET_CATEGORIES_EDIT',
                 'value' => self::ADMIN_TICKET_CATEGORIES_EDIT,
                 'category' => 'Admin Ticket Categories',
-                'description' => 'Edit ticket categories',
+                'description' => 'Edit ticket categories'
             ],
             [
                 'constant' => 'ADMIN_TICKET_CATEGORIES_DELETE',
                 'value' => self::ADMIN_TICKET_CATEGORIES_DELETE,
                 'category' => 'Admin Ticket Categories',
-                'description' => 'Delete ticket categories',
+                'description' => 'Delete ticket categories'
             ],
             [
                 'constant' => 'ADMIN_TICKET_PRIORITIES_VIEW',
                 'value' => self::ADMIN_TICKET_PRIORITIES_VIEW,
                 'category' => 'Admin Ticket Priorities',
-                'description' => 'View ticket priorities',
+                'description' => 'View ticket priorities'
             ],
             [
                 'constant' => 'ADMIN_TICKET_PRIORITIES_CREATE',
                 'value' => self::ADMIN_TICKET_PRIORITIES_CREATE,
                 'category' => 'Admin Ticket Priorities',
-                'description' => 'Create ticket priorities',
+                'description' => 'Create ticket priorities'
             ],
             [
                 'constant' => 'ADMIN_TICKET_PRIORITIES_EDIT',
                 'value' => self::ADMIN_TICKET_PRIORITIES_EDIT,
                 'category' => 'Admin Ticket Priorities',
-                'description' => 'Edit ticket priorities',
+                'description' => 'Edit ticket priorities'
             ],
             [
                 'constant' => 'ADMIN_TICKET_PRIORITIES_DELETE',
                 'value' => self::ADMIN_TICKET_PRIORITIES_DELETE,
                 'category' => 'Admin Ticket Priorities',
-                'description' => 'Delete ticket priorities',
+                'description' => 'Delete ticket priorities'
             ],
             [
                 'constant' => 'ADMIN_TICKET_STATUSES_VIEW',
                 'value' => self::ADMIN_TICKET_STATUSES_VIEW,
                 'category' => 'Admin Ticket Statuses',
-                'description' => 'View ticket statuses',
+                'description' => 'View ticket statuses'
             ],
             [
                 'constant' => 'ADMIN_TICKET_STATUSES_CREATE',
                 'value' => self::ADMIN_TICKET_STATUSES_CREATE,
                 'category' => 'Admin Ticket Statuses',
-                'description' => 'Create ticket statuses',
+                'description' => 'Create ticket statuses'
             ],
             [
                 'constant' => 'ADMIN_TICKET_STATUSES_EDIT',
                 'value' => self::ADMIN_TICKET_STATUSES_EDIT,
                 'category' => 'Admin Ticket Statuses',
-                'description' => 'Edit ticket statuses',
+                'description' => 'Edit ticket statuses'
             ],
             [
                 'constant' => 'ADMIN_TICKET_STATUSES_DELETE',
                 'value' => self::ADMIN_TICKET_STATUSES_DELETE,
                 'category' => 'Admin Ticket Statuses',
-                'description' => 'Delete ticket statuses',
+                'description' => 'Delete ticket statuses'
             ],
             [
                 'constant' => 'ADMIN_TICKET_ATTACHMENTS_VIEW',
                 'value' => self::ADMIN_TICKET_ATTACHMENTS_VIEW,
                 'category' => 'Admin Ticket Attachments',
-                'description' => 'View ticket attachments',
+                'description' => 'View ticket attachments'
             ],
             [
                 'constant' => 'ADMIN_TICKET_ATTACHMENTS_MANAGE',
                 'value' => self::ADMIN_TICKET_ATTACHMENTS_MANAGE,
                 'category' => 'Admin Ticket Attachments',
-                'description' => 'Manage ticket attachments',
+                'description' => 'Manage ticket attachments'
             ],
             [
                 'constant' => 'ADMIN_TICKET_MESSAGES_VIEW',
                 'value' => self::ADMIN_TICKET_MESSAGES_VIEW,
                 'category' => 'Admin Ticket Messages',
-                'description' => 'View ticket messages',
+                'description' => 'View ticket messages'
             ],
             [
                 'constant' => 'ADMIN_TICKET_MESSAGES_MANAGE',
                 'value' => self::ADMIN_TICKET_MESSAGES_MANAGE,
                 'category' => 'Admin Ticket Messages',
-                'description' => 'Manage ticket messages',
+                'description' => 'Manage ticket messages'
+            ],
+            [
+                'constant' => 'ADMIN_VM_NODES_VIEW',
+                'value' => self::ADMIN_VM_NODES_VIEW,
+                'category' => 'Admin VM Nodes',
+                'description' => 'View VDS/Proxmox nodes'
+            ],
+            [
+                'constant' => 'ADMIN_VM_NODES_CREATE',
+                'value' => self::ADMIN_VM_NODES_CREATE,
+                'category' => 'Admin VM Nodes',
+                'description' => 'Create VDS/Proxmox nodes'
+            ],
+            [
+                'constant' => 'ADMIN_VM_NODES_EDIT',
+                'value' => self::ADMIN_VM_NODES_EDIT,
+                'category' => 'Admin VM Nodes',
+                'description' => 'Edit VDS/Proxmox nodes (storage, firewall, ISOs, templates)'
+            ],
+            [
+                'constant' => 'ADMIN_VM_NODES_DELETE',
+                'value' => self::ADMIN_VM_NODES_DELETE,
+                'category' => 'Admin VM Nodes',
+                'description' => 'Delete VDS/Proxmox nodes'
             ],
             [
                 'constant' => 'ADMIN_VM_INSTANCES_VIEW',
                 'value' => self::ADMIN_VM_INSTANCES_VIEW,
                 'category' => 'Admin VM Instances',
-                'description' => 'View VM instances',
+                'description' => 'View VM instances'
+            ],
+            [
+                'constant' => 'ADMIN_VM_INSTANCES_CREATE',
+                'value' => self::ADMIN_VM_INSTANCES_CREATE,
+                'category' => 'Admin VM Instances',
+                'description' => 'Create VM instances'
             ],
             [
                 'constant' => 'ADMIN_VM_INSTANCES_EDIT',
                 'value' => self::ADMIN_VM_INSTANCES_EDIT,
                 'category' => 'Admin VM Instances',
-                'description' => 'Edit existing VM instances',
+                'description' => 'Edit existing VM instances'
             ],
             [
                 'constant' => 'ADMIN_VM_INSTANCES_DELETE',
                 'value' => self::ADMIN_VM_INSTANCES_DELETE,
                 'category' => 'Admin VM Instances',
-                'description' => 'Delete VM instances',
+                'description' => 'Delete VM instances'
             ],
             [
                 'constant' => 'ADMIN_WEBPLATES_VIEW',
                 'value' => self::ADMIN_WEBPLATES_VIEW,
                 'category' => 'Admin WebPlates',
-                'description' => 'View webplates',
+                'description' => 'View webplates'
             ],
             [
                 'constant' => 'ADMIN_WEBPLATES_CREATE',
                 'value' => self::ADMIN_WEBPLATES_CREATE,
                 'category' => 'Admin WebPlates',
-                'description' => 'Create new webplates',
+                'description' => 'Create new webplates'
             ],
             [
                 'constant' => 'ADMIN_WEBPLATES_EDIT',
                 'value' => self::ADMIN_WEBPLATES_EDIT,
                 'category' => 'Admin WebPlates',
-                'description' => 'Edit existing webplates',
+                'description' => 'Edit existing webplates'
             ],
             [
                 'constant' => 'ADMIN_WEBPLATES_DELETE',
                 'value' => self::ADMIN_WEBPLATES_DELETE,
                 'category' => 'Admin WebPlates',
-                'description' => 'Delete webplates',
+                'description' => 'Delete webplates'
             ],
             [
                 'constant' => 'ADMIN_WEBSPACES_VIEW',
                 'value' => self::ADMIN_WEBSPACES_VIEW,
                 'category' => 'Admin WebSpaces',
-                'description' => 'View webspaces',
+                'description' => 'View webspaces'
             ],
             [
                 'constant' => 'ADMIN_WEBSPACES_CREATE',
                 'value' => self::ADMIN_WEBSPACES_CREATE,
                 'category' => 'Admin WebSpaces',
-                'description' => 'Create new webspaces',
+                'description' => 'Create new webspaces'
             ],
             [
                 'constant' => 'ADMIN_WEBSPACES_EDIT',
                 'value' => self::ADMIN_WEBSPACES_EDIT,
                 'category' => 'Admin WebSpaces',
-                'description' => 'Edit existing webspaces',
+                'description' => 'Edit existing webspaces'
             ],
             [
                 'constant' => 'ADMIN_WEBSPACES_DELETE',
                 'value' => self::ADMIN_WEBSPACES_DELETE,
                 'category' => 'Admin WebSpaces',
-                'description' => 'Delete webspaces',
+                'description' => 'Delete webspaces'
+            ],
+            [
+                'constant' => 'ADMIN_MAIL_HOSTS_VIEW',
+                'value' => self::ADMIN_MAIL_HOSTS_VIEW,
+                'category' => 'Admin Mail Hosts',
+                'description' => 'View mail hosts'
+            ],
+            [
+                'constant' => 'ADMIN_MAIL_HOSTS_CREATE',
+                'value' => self::ADMIN_MAIL_HOSTS_CREATE,
+                'category' => 'Admin Mail Hosts',
+                'description' => 'Create mail hosts'
+            ],
+            [
+                'constant' => 'ADMIN_MAIL_HOSTS_EDIT',
+                'value' => self::ADMIN_MAIL_HOSTS_EDIT,
+                'category' => 'Admin Mail Hosts',
+                'description' => 'Edit mail hosts'
+            ],
+            [
+                'constant' => 'ADMIN_MAIL_HOSTS_DELETE',
+                'value' => self::ADMIN_MAIL_HOSTS_DELETE,
+                'category' => 'Admin Mail Hosts',
+                'description' => 'Delete mail hosts'
+            ],
+            [
+                'constant' => 'ADMIN_DNS_HOSTS_VIEW',
+                'value' => self::ADMIN_DNS_HOSTS_VIEW,
+                'category' => 'Admin DNS Hosts',
+                'description' => 'View DNS hosts'
+            ],
+            [
+                'constant' => 'ADMIN_DNS_HOSTS_CREATE',
+                'value' => self::ADMIN_DNS_HOSTS_CREATE,
+                'category' => 'Admin DNS Hosts',
+                'description' => 'Create DNS hosts'
+            ],
+            [
+                'constant' => 'ADMIN_DNS_HOSTS_EDIT',
+                'value' => self::ADMIN_DNS_HOSTS_EDIT,
+                'category' => 'Admin DNS Hosts',
+                'description' => 'Edit DNS hosts'
+            ],
+            [
+                'constant' => 'ADMIN_DNS_HOSTS_DELETE',
+                'value' => self::ADMIN_DNS_HOSTS_DELETE,
+                'category' => 'Admin DNS Hosts',
+                'description' => 'Delete DNS hosts'
+            ],
+            [
+                'constant' => 'ADMIN_HOSTING_PACKAGES_VIEW',
+                'value' => self::ADMIN_HOSTING_PACKAGES_VIEW,
+                'category' => 'Admin Hosting Packages',
+                'description' => 'View hosting packages'
+            ],
+            [
+                'constant' => 'ADMIN_HOSTING_PACKAGES_CREATE',
+                'value' => self::ADMIN_HOSTING_PACKAGES_CREATE,
+                'category' => 'Admin Hosting Packages',
+                'description' => 'Create hosting packages'
+            ],
+            [
+                'constant' => 'ADMIN_HOSTING_PACKAGES_EDIT',
+                'value' => self::ADMIN_HOSTING_PACKAGES_EDIT,
+                'category' => 'Admin Hosting Packages',
+                'description' => 'Edit hosting packages'
+            ],
+            [
+                'constant' => 'ADMIN_HOSTING_PACKAGES_DELETE',
+                'value' => self::ADMIN_HOSTING_PACKAGES_DELETE,
+                'category' => 'Admin Hosting Packages',
+                'description' => 'Delete hosting packages'
+            ],
+            [
+                'constant' => 'ADMIN_ABUSEIPDB_VIEW',
+                'value' => self::ADMIN_ABUSEIPDB_VIEW,
+                'category' => 'Admin AbuseIPDB',
+                'description' => 'View AbuseIPDB status and lookups'
+            ],
+            [
+                'constant' => 'ADMIN_ABUSEIPDB_MANAGE',
+                'value' => self::ADMIN_ABUSEIPDB_MANAGE,
+                'category' => 'Admin AbuseIPDB',
+                'description' => 'Run AbuseIPDB scans and actions'
+            ],
+            [
+                'constant' => 'ADMIN_AUDIT_LOG_VIEW',
+                'value' => self::ADMIN_AUDIT_LOG_VIEW,
+                'category' => 'Admin Audit Log',
+                'description' => 'View the admin audit log'
             ],
             [
                 'constant' => 'ADMIN_WINGS_BACKUPS_VIEW',
                 'value' => self::ADMIN_WINGS_BACKUPS_VIEW,
                 'category' => 'Admin Wings Backups',
-                'description' => 'View Wings backups',
+                'description' => 'View Wings backups'
             ],
             [
                 'constant' => 'ADMIN_WINGS_BACKUPS_MANAGE',
                 'value' => self::ADMIN_WINGS_BACKUPS_MANAGE,
                 'category' => 'Admin Wings Backups',
-                'description' => 'Manage Wings backup settings',
+                'description' => 'Manage Wings backup settings'
             ],
             [
                 'constant' => 'ADMIN_WINGS_BACKUPS_RUN',
                 'value' => self::ADMIN_WINGS_BACKUPS_RUN,
                 'category' => 'Admin Wings Backups',
-                'description' => 'Run or trigger Wings backups',
+                'description' => 'Run or trigger Wings backups'
             ],
         ];
     }

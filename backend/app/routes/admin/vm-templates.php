@@ -35,7 +35,7 @@ return function (RouteCollection $routes): void {
 
             return (new VmNodesController())->updateTemplate($request, (int) $id);
         },
-        Permissions::ADMIN_NODES_EDIT,
+        Permissions::ADMIN_VM_NODES_EDIT,
         ['PATCH']
     );
 
@@ -51,7 +51,7 @@ return function (RouteCollection $routes): void {
 
             return (new VmNodesController())->deleteTemplate($request, (int) $id);
         },
-        Permissions::ADMIN_NODES_DELETE,
+        Permissions::ADMIN_VM_NODES_DELETE,
         ['DELETE']
     );
 };

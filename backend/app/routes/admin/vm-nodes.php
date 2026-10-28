@@ -30,7 +30,7 @@ return function (RouteCollection $routes): void {
         function (Request $request) {
             return (new VmNodesController())->index($request);
         },
-        Permissions::ADMIN_NODES_VIEW,
+        Permissions::ADMIN_VM_NODES_VIEW,
     );
 
     App::getInstance(true)->registerAdminRoute(
@@ -45,7 +45,7 @@ return function (RouteCollection $routes): void {
 
             return (new VmNodesController())->show($request, (int) $id);
         },
-        Permissions::ADMIN_NODES_VIEW,
+        Permissions::ADMIN_VM_NODES_VIEW,
     );
 
     App::getInstance(true)->registerAdminRoute(
@@ -55,7 +55,7 @@ return function (RouteCollection $routes): void {
         function (Request $request) {
             return (new VmNodesController())->create($request);
         },
-        Permissions::ADMIN_NODES_CREATE,
+        Permissions::ADMIN_VM_NODES_CREATE,
         ['PUT']
     );
 
@@ -71,7 +71,7 @@ return function (RouteCollection $routes): void {
 
             return (new VmNodesController())->update($request, (int) $id);
         },
-        Permissions::ADMIN_NODES_EDIT,
+        Permissions::ADMIN_VM_NODES_EDIT,
         ['PATCH']
     );
 
@@ -87,7 +87,7 @@ return function (RouteCollection $routes): void {
 
             return (new VmNodesController())->delete($request, (int) $id);
         },
-        Permissions::ADMIN_NODES_DELETE,
+        Permissions::ADMIN_VM_NODES_DELETE,
         ['DELETE']
     );
 
@@ -103,7 +103,7 @@ return function (RouteCollection $routes): void {
 
             return (new VmNodesController())->testConnection($request, (int) $id);
         },
-        Permissions::ADMIN_NODES_VIEW,
+        Permissions::ADMIN_VM_NODES_VIEW,
         ['GET', 'POST']
     );
 
@@ -119,7 +119,7 @@ return function (RouteCollection $routes): void {
 
             return (new VmNodesController())->getInfo($request, (int) $id);
         },
-        Permissions::ADMIN_NODES_VIEW,
+        Permissions::ADMIN_VM_NODES_VIEW,
         ['GET']
     );
 
@@ -135,7 +135,7 @@ return function (RouteCollection $routes): void {
 
             return (new VmNodesController())->listIps($request, (int) $id);
         },
-        Permissions::ADMIN_NODES_VIEW,
+        Permissions::ADMIN_VM_NODES_VIEW,
         ['GET']
     );
 
@@ -151,7 +151,7 @@ return function (RouteCollection $routes): void {
 
             return (new VmNodesController())->createIp($request, (int) $id);
         },
-        Permissions::ADMIN_NODES_EDIT,
+        Permissions::ADMIN_VM_NODES_EDIT,
         ['PUT']
     );
 
@@ -168,7 +168,7 @@ return function (RouteCollection $routes): void {
 
             return (new VmNodesController())->updateIp($request, (int) $id, (int) $ipId);
         },
-        Permissions::ADMIN_NODES_EDIT,
+        Permissions::ADMIN_VM_NODES_EDIT,
         ['PATCH']
     );
 
@@ -185,7 +185,7 @@ return function (RouteCollection $routes): void {
 
             return (new VmNodesController())->deleteIp($request, (int) $id, (int) $ipId);
         },
-        Permissions::ADMIN_NODES_EDIT,
+        Permissions::ADMIN_VM_NODES_EDIT,
         ['DELETE']
     );
 
@@ -202,7 +202,7 @@ return function (RouteCollection $routes): void {
 
             return (new VmNodesController())->setPrimaryIp($request, (int) $id, (int) $ipId);
         },
-        Permissions::ADMIN_NODES_EDIT,
+        Permissions::ADMIN_VM_NODES_EDIT,
         ['POST']
     );
 
@@ -218,7 +218,7 @@ return function (RouteCollection $routes): void {
 
             return (new VmNodesController())->freeIps($request, (int) $id);
         },
-        Permissions::ADMIN_NODES_VIEW,
+        Permissions::ADMIN_VM_NODES_VIEW,
         ['GET']
     );
 
@@ -234,7 +234,7 @@ return function (RouteCollection $routes): void {
 
             return (new VmNodesController())->proxmoxVms($request, (int) $id);
         },
-        Permissions::ADMIN_NODES_VIEW,
+        Permissions::ADMIN_VM_NODES_VIEW,
         ['GET']
     );
 
@@ -250,7 +250,7 @@ return function (RouteCollection $routes): void {
 
             return (new VmNodesController())->clusterNodes($request, (int) $id);
         },
-        Permissions::ADMIN_NODES_VIEW,
+        Permissions::ADMIN_VM_NODES_VIEW,
         ['GET']
     );
 
@@ -266,7 +266,7 @@ return function (RouteCollection $routes): void {
 
             return (new VmNodesController())->bridges($request, (int) $id);
         },
-        Permissions::ADMIN_NODES_VIEW,
+        Permissions::ADMIN_VM_NODES_VIEW,
         ['GET']
     );
 
@@ -282,7 +282,7 @@ return function (RouteCollection $routes): void {
 
             return (new VmNodesController())->storage($request, (int) $id);
         },
-        Permissions::ADMIN_NODES_VIEW,
+        Permissions::ADMIN_VM_NODES_VIEW,
         ['GET']
     );
 
@@ -298,7 +298,23 @@ return function (RouteCollection $routes): void {
 
             return (new VmNodesController())->backupStorage($request, (int) $id);
         },
-        Permissions::ADMIN_NODES_VIEW,
+        Permissions::ADMIN_VM_NODES_VIEW,
+        ['GET']
+    );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-vm-nodes-iso-storage',
+        '/api/admin/vm-nodes/{id}/iso-storage',
+        function (Request $request, array $args) {
+            $id = $args['id'] ?? null;
+            if (!$id || !is_numeric($id)) {
+                return ApiResponse::error('Missing or invalid ID', 'INVALID_ID', 400);
+            }
+
+            return (new VmNodesController())->isoStorage($request, (int) $id);
+        },
+        Permissions::ADMIN_VM_NODES_VIEW,
         ['GET']
     );
 
@@ -314,7 +330,7 @@ return function (RouteCollection $routes): void {
 
             return (new VmNodesController())->templates($request, (int) $id);
         },
-        Permissions::ADMIN_NODES_VIEW,
+        Permissions::ADMIN_VM_NODES_VIEW,
         ['GET']
     );
 
@@ -330,7 +346,75 @@ return function (RouteCollection $routes): void {
 
             return (new VmNodesController())->createTemplate($request, (int) $id);
         },
-        Permissions::ADMIN_NODES_EDIT,
+        Permissions::ADMIN_VM_NODES_EDIT,
         ['POST']
+    );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-vm-nodes-firewall',
+        '/api/admin/vm-nodes/{id}/firewall',
+        function (Request $request, array $args) {
+            $id = $args['id'] ?? null;
+            if (!$id || !is_numeric($id)) {
+                return ApiResponse::error('Missing or invalid ID', 'INVALID_ID', 400);
+            }
+
+            return (new VmNodesController())->getFirewall($request, (int) $id);
+        },
+        Permissions::ADMIN_VM_NODES_VIEW,
+        ['GET']
+    );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-vm-nodes-firewall-options',
+        '/api/admin/vm-nodes/{id}/firewall/options',
+        function (Request $request, array $args) {
+            $id = $args['id'] ?? null;
+            if (!$id || !is_numeric($id)) {
+                return ApiResponse::error('Missing or invalid ID', 'INVALID_ID', 400);
+            }
+
+            return (new VmNodesController())->setFirewallOptions($request, (int) $id);
+        },
+        Permissions::ADMIN_VM_NODES_EDIT,
+        ['PUT']
+    );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-vm-nodes-firewall-rules-create',
+        '/api/admin/vm-nodes/{id}/firewall/rules',
+        function (Request $request, array $args) {
+            $id = $args['id'] ?? null;
+            if (!$id || !is_numeric($id)) {
+                return ApiResponse::error('Missing or invalid ID', 'INVALID_ID', 400);
+            }
+
+            return (new VmNodesController())->addFirewallRule($request, (int) $id);
+        },
+        Permissions::ADMIN_VM_NODES_EDIT,
+        ['POST']
+    );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-vm-nodes-firewall-rules-delete',
+        '/api/admin/vm-nodes/{id}/firewall/rules/{pos}',
+        function (Request $request, array $args) {
+            $id = $args['id'] ?? null;
+            $pos = $args['pos'] ?? null;
+            if (!$id || !is_numeric($id)) {
+                return ApiResponse::error('Missing or invalid ID', 'INVALID_ID', 400);
+            }
+            if ($pos === null || !is_numeric($pos)) {
+                return ApiResponse::error('Missing or invalid rule position', 'INVALID_POS', 400);
+            }
+
+            return (new VmNodesController())->deleteFirewallRule($request, (int) $id, (int) $pos);
+        },
+        Permissions::ADMIN_VM_NODES_EDIT,
+        ['DELETE']
     );
 };

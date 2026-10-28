@@ -30,7 +30,7 @@ return function (RouteCollection $routes): void {
         function (Request $request) {
             return (new WebNodesController())->index($request);
         },
-        Permissions::ADMIN_NODES_VIEW,
+        Permissions::ADMIN_WEB_NODES_VIEW,
     );
 
     App::getInstance(true)->registerAdminRoute(
@@ -45,7 +45,7 @@ return function (RouteCollection $routes): void {
 
             return (new WebNodesController())->show($request, (int) $id);
         },
-        Permissions::ADMIN_NODES_VIEW,
+        Permissions::ADMIN_WEB_NODES_VIEW,
     );
 
     App::getInstance(true)->registerAdminRoute(
@@ -55,7 +55,7 @@ return function (RouteCollection $routes): void {
         function (Request $request) {
             return (new WebNodesController())->create($request);
         },
-        Permissions::ADMIN_NODES_CREATE,
+        Permissions::ADMIN_WEB_NODES_CREATE,
         ['PUT']
     );
 
@@ -71,7 +71,7 @@ return function (RouteCollection $routes): void {
 
             return (new WebNodesController())->update($request, (int) $id);
         },
-        Permissions::ADMIN_NODES_EDIT,
+        Permissions::ADMIN_WEB_NODES_EDIT,
         ['PATCH']
     );
 
@@ -87,7 +87,7 @@ return function (RouteCollection $routes): void {
 
             return (new WebNodesController())->delete($request, (int) $id);
         },
-        Permissions::ADMIN_NODES_DELETE,
+        Permissions::ADMIN_WEB_NODES_DELETE,
         ['DELETE']
     );
 
@@ -103,7 +103,7 @@ return function (RouteCollection $routes): void {
 
             return (new WebNodesController())->resetToken($request, (int) $id);
         },
-        Permissions::ADMIN_NODES_EDIT,
+        Permissions::ADMIN_WEB_NODES_EDIT,
         ['POST']
     );
 
@@ -119,7 +119,7 @@ return function (RouteCollection $routes): void {
 
             return (new WebNodesController())->getSetupCommand($request, (int) $id);
         },
-        Permissions::ADMIN_NODES_EDIT, // reveals the daemon token
+        Permissions::ADMIN_WEB_NODES_EDIT, // reveals the daemon token
     );
 
     App::getInstance(true)->registerAdminRoute(
@@ -134,7 +134,7 @@ return function (RouteCollection $routes): void {
 
             return (new WebNodesController())->getConfig($request, (int) $id);
         },
-        Permissions::ADMIN_NODES_EDIT, // reveals the daemon token
+        Permissions::ADMIN_WEB_NODES_EDIT, // reveals the daemon token
     );
 
     App::getInstance(true)->registerAdminRoute(
@@ -149,7 +149,7 @@ return function (RouteCollection $routes): void {
 
             return (new WebNodesController())->healthCheck($request, (int) $id);
         },
-        Permissions::ADMIN_NODES_VIEW,
+        Permissions::ADMIN_WEB_NODES_VIEW,
     );
 
     App::getInstance(true)->registerAdminRoute(
@@ -164,7 +164,7 @@ return function (RouteCollection $routes): void {
 
             return (new WebNodesController())->systemInfo($request, (int) $id);
         },
-        Permissions::ADMIN_NODES_VIEW,
+        Permissions::ADMIN_WEB_NODES_VIEW,
     );
 
     App::getInstance(true)->registerAdminRoute(
@@ -179,7 +179,7 @@ return function (RouteCollection $routes): void {
 
             return (new WebNodesController())->utilization($request, (int) $id);
         },
-        Permissions::ADMIN_NODES_VIEW,
+        Permissions::ADMIN_WEB_NODES_VIEW,
     );
 
     App::getInstance(true)->registerAdminRoute(
@@ -194,7 +194,7 @@ return function (RouteCollection $routes): void {
 
             return (new WebNodesController())->diagnostics($request, (int) $id);
         },
-        Permissions::ADMIN_NODES_VIEW,
+        Permissions::ADMIN_WEB_NODES_VIEW,
     );
 
     App::getInstance(true)->registerAdminRoute(
@@ -209,7 +209,7 @@ return function (RouteCollection $routes): void {
 
             return (new WebNodesController())->systemLogs($request, (int) $id);
         },
-        Permissions::ADMIN_NODES_VIEW,
+        Permissions::ADMIN_WEB_NODES_VIEW,
     );
 
     App::getInstance(true)->registerAdminRoute(
@@ -228,7 +228,7 @@ return function (RouteCollection $routes): void {
 
             return (new WebNodesController())->systemLogFile($request, (int) $id, $file);
         },
-        Permissions::ADMIN_NODES_VIEW,
+        Permissions::ADMIN_WEB_NODES_VIEW,
     );
 
     App::getInstance(true)->registerAdminRoute(
@@ -243,7 +243,7 @@ return function (RouteCollection $routes): void {
 
             return (new WebNodesController())->packages($request, (int) $id);
         },
-        Permissions::ADMIN_NODES_VIEW,
+        Permissions::ADMIN_WEB_NODES_VIEW,
     );
 
     App::getInstance(true)->registerAdminRoute(
@@ -258,7 +258,7 @@ return function (RouteCollection $routes): void {
 
             return (new WebNodesController())->packageSocket($request, (int) $id);
         },
-        Permissions::ADMIN_NODES_VIEW,
+        Permissions::ADMIN_WEB_NODES_VIEW,
     );
 
     App::getInstance(true)->registerAdminRoute(
@@ -277,7 +277,7 @@ return function (RouteCollection $routes): void {
 
             return (new WebNodesController())->installPackage($request, (int) $id, $packageId);
         },
-        Permissions::ADMIN_NODES_EDIT,
+        Permissions::ADMIN_WEB_NODES_EDIT,
         ['POST']
     );
 
@@ -297,7 +297,7 @@ return function (RouteCollection $routes): void {
 
             return (new WebNodesController())->removePackage($request, (int) $id, $packageId);
         },
-        Permissions::ADMIN_NODES_EDIT,
+        Permissions::ADMIN_WEB_NODES_EDIT,
         ['POST']
     );
 
@@ -313,7 +313,7 @@ return function (RouteCollection $routes): void {
 
             return (new WebNodesController())->versionStatus($request, (int) $id);
         },
-        Permissions::ADMIN_NODES_VIEW,
+        Permissions::ADMIN_WEB_NODES_VIEW,
     );
 
     App::getInstance(true)->registerAdminRoute(
@@ -328,7 +328,7 @@ return function (RouteCollection $routes): void {
 
             return (new WebNodesController())->triggerSelfUpdate($request, (int) $id);
         },
-        Permissions::ADMIN_NODES_EDIT,
+        Permissions::ADMIN_WEB_NODES_EDIT,
         ['POST']
     );
 };

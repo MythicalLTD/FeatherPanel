@@ -41,7 +41,7 @@ export function CreateServerAction({ compact = false }: { compact?: boolean }) {
             id: 'vds',
             href: '/admin/vm-instances/create',
             icon: Monitor,
-            permission: Permissions.ADMIN_NODES_CREATE,
+            permission: Permissions.ADMIN_VM_INSTANCES_CREATE,
             title: t('admin.dashboard.create_server.vds_title'),
             description: t('admin.dashboard.create_server.vds_description'),
         },

@@ -83,6 +83,14 @@ const ROLE_PRESETS: Array<{ id: string; match: (value: string) => boolean }> = [
                 'admin.users.impersonate',
                 'admin.servers.view',
                 'admin.nodes.view',
+                'admin.vm_nodes.view',
+                'admin.vm_instances.view',
+                'admin.web_nodes.view',
+                'admin.webspaces.view',
+                'admin.mail_hosts.view',
+                'admin.dns_hosts.view',
+                'admin.hosting_packages.view',
+                'admin.audit_log.view',
                 'admin.knowledgebase.articles.view',
             ].includes(v) ||
             v.startsWith('admin.tickets.') ||
@@ -102,6 +110,7 @@ const ROLE_PRESETS: Array<{ id: string; match: (value: string) => boolean }> = [
                 'admin.blocked_ips.view',
                 'admin.blocked_ips.create',
                 'admin.blocked_ips.delete',
+                'admin.abuseipdb.view',
                 'admin.tickets.view',
                 'admin.tickets.edit',
                 'admin.ticket_messages.view',
@@ -113,7 +122,7 @@ const ROLE_PRESETS: Array<{ id: string; match: (value: string) => boolean }> = [
         match: (v) =>
             v === 'admin.dashboard.view' ||
             v === 'admin.users.list' ||
-            /^admin\.(servers|nodes|allocations|locations|realms|spells|databases|backups|backup_schedules|subdomains)\./.test(
+            /^admin\.(servers|nodes|vm_nodes|vm_instances|web_nodes|webspaces|webplates|mail_hosts|dns_hosts|hosting_packages|allocations|locations|realms|spells|databases|backups|backup_schedules|subdomains)\./.test(
                 v,
             ),
     },

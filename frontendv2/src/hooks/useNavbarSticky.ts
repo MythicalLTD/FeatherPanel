@@ -15,9 +15,10 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { useCallback, useEffect, useLayoutEffect, useState } from 'react';
+import { useCallback, useSyncExternalStore } from 'react';
 
 const STORAGE_KEY = 'featherpanel_navbar_sticky';
+const DEFAULT_STICKY = true;
 
 const listeners = new Set<() => void>();
 
@@ -26,39 +27,31 @@ function notifyListeners() {
 }
 
 function readEnabled(): boolean {
-    if (typeof window === 'undefined') return true;
     try {
         const raw = localStorage.getItem(STORAGE_KEY);
-        if (raw == null) return true;
+        if (raw == null) return DEFAULT_STICKY;
         return raw === 'true';
     } catch {
-        return true;
+        return DEFAULT_STICKY;
     }
 }
 
+function subscribe(onStoreChange: () => void) {
+    listeners.add(onStoreChange);
+    const onStorage = (e: StorageEvent) => {
+        if (e.key === STORAGE_KEY) onStoreChange();
+    };
+    window.addEventListener('storage', onStorage);
+    return () => {
+        listeners.delete(onStoreChange);
+        window.removeEventListener('storage', onStorage);
+    };
+}
+
 export function useNavbarSticky() {
-    const [navbarSticky, setNavbarStickyState] = useState<boolean>(() =>
-        typeof window === 'undefined' ? true : readEnabled(),
-    );
-
-    useLayoutEffect(() => {
-        const sync = () => setNavbarStickyState(readEnabled());
-        listeners.add(sync);
-        sync();
-        return () => {
-            listeners.delete(sync);
-        };
-    }, []);
-
-    useEffect(() => {
-        const onStorage = (e: StorageEvent) => {
-            if (e.key === STORAGE_KEY) {
-                notifyListeners();
-            }
-        };
-        window.addEventListener('storage', onStorage);
-        return () => window.removeEventListener('storage', onStorage);
-    }, []);
+    // getServerSnapshot must match the first client render so hydration stays clean;
+    // localStorage is applied after hydrate via useSyncExternalStore.
+    const navbarSticky = useSyncExternalStore(subscribe, readEnabled, () => DEFAULT_STICKY);
 
     const setNavbarSticky = useCallback((next: boolean) => {
         try {

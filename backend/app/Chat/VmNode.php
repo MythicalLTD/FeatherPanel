@@ -55,6 +55,9 @@ class VmNode
         'storage_tpm',
         'storage_efi',
         'storage_backups',
+        'storage_iso_user',
+        'storage_iso_allowed',
+        'rescue_iso',
     ];
 
     /**

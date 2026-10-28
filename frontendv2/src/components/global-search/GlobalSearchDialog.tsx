@@ -28,7 +28,7 @@ import { usePanelDebug } from '@/contexts/PanelDebugContext';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useGlobalSearchItems } from '@/hooks/useGlobalSearchItems';
 import { groupGlobalSearchResults, type GlobalSearchCategory, type GlobalSearchResult } from '@/lib/global-search';
-import { isReactIconComponent } from '@/lib/iconLibrary';
+import { isKnownLucideName, isReactIconComponent } from '@/lib/iconLibrary';
 import type { GlobalSearchEntityContext } from '@/lib/global-search-context';
 import { cn } from '@/lib/utils';
 import { ModuleBadge } from '@/components/ui/module-badge';
@@ -63,7 +63,7 @@ function ResultIcon({ result }: { result: GlobalSearchResult }) {
     if (Icon) {
         return <Icon className='h-4 w-4 shrink-0' aria-hidden />;
     }
-    if (result.lucideIcon) {
+    if (result.lucideIcon && isKnownLucideName(result.lucideIcon)) {
         return <DynamicIcon name={result.lucideIcon as never} className='h-4 w-4 shrink-0' aria-hidden />;
     }
     if (result.panelIcon) {

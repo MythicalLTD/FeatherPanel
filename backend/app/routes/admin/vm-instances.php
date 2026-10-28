@@ -32,7 +32,7 @@ return function (RouteCollection $routes): void {
         function (Request $request) {
             return (new VmInstancesController())->index($request);
         },
-        Permissions::ADMIN_NODES_VIEW,
+        Permissions::ADMIN_VM_INSTANCES_VIEW,
         ['GET']
     );
 
@@ -44,7 +44,7 @@ return function (RouteCollection $routes): void {
         function (Request $request) {
             return (new VmInstancesController())->create($request);
         },
-        Permissions::ADMIN_NODES_CREATE,
+        Permissions::ADMIN_VM_INSTANCES_CREATE,
         ['PUT']
     );
 
@@ -58,7 +58,7 @@ return function (RouteCollection $routes): void {
 
             return (new VmInstancesController())->creationStatus($request, $creationId);
         },
-        Permissions::ADMIN_NODES_VIEW,
+        Permissions::ADMIN_VM_INSTANCES_VIEW,
         ['GET']
     );
 
@@ -72,7 +72,7 @@ return function (RouteCollection $routes): void {
 
             return (new VmInstancesController())->taskStatus($request, $taskId);
         },
-        Permissions::ADMIN_NODES_VIEW,
+        Permissions::ADMIN_VM_INSTANCES_VIEW,
         ['GET']
     );
 
@@ -89,7 +89,7 @@ return function (RouteCollection $routes): void {
 
             return (new VmInstancesController())->show($request, (int) $id);
         },
-        Permissions::ADMIN_NODES_VIEW,
+        Permissions::ADMIN_VM_INSTANCES_VIEW,
         ['GET']
     );
 
@@ -106,7 +106,7 @@ return function (RouteCollection $routes): void {
 
             return (new VmInstancesController())->update($request, (int) $id);
         },
-        Permissions::ADMIN_NODES_EDIT,
+        Permissions::ADMIN_VM_INSTANCES_EDIT,
         ['PATCH']
     );
 
@@ -123,7 +123,7 @@ return function (RouteCollection $routes): void {
 
             return (new VmInstancesController())->activities($request, (int) $id);
         },
-        Permissions::ADMIN_NODES_VIEW,
+        Permissions::ADMIN_VM_INSTANCES_VIEW,
         ['GET']
     );
 
@@ -140,7 +140,7 @@ return function (RouteCollection $routes): void {
 
             return (new VmInstancesController())->getConfig($request, (int) $id);
         },
-        Permissions::ADMIN_NODES_VIEW,
+        Permissions::ADMIN_VM_INSTANCES_VIEW,
         ['GET']
     );
 
@@ -157,7 +157,7 @@ return function (RouteCollection $routes): void {
 
             return (new VmInstancesController())->getStatus($request, (int) $id);
         },
-        Permissions::ADMIN_NODES_VIEW,
+        Permissions::ADMIN_VM_INSTANCES_VIEW,
         ['GET']
     );
 
@@ -174,7 +174,7 @@ return function (RouteCollection $routes): void {
 
             return (new VmInstancesController())->vncTicket($request, (int) $id);
         },
-        Permissions::ADMIN_NODES_VIEW,
+        Permissions::ADMIN_VM_INSTANCES_VIEW,
         ['GET']
     );
 
@@ -191,7 +191,7 @@ return function (RouteCollection $routes): void {
 
             return (new VmInstancesController())->resizeDisk($request, (int) $id);
         },
-        Permissions::ADMIN_NODES_EDIT,
+        Permissions::ADMIN_VM_INSTANCES_EDIT,
         ['POST']
     );
 
@@ -208,7 +208,7 @@ return function (RouteCollection $routes): void {
 
             return (new VmInstancesController())->createDisk($request, (int) $id);
         },
-        Permissions::ADMIN_NODES_EDIT,
+        Permissions::ADMIN_VM_INSTANCES_EDIT,
         ['POST']
     );
 
@@ -226,7 +226,7 @@ return function (RouteCollection $routes): void {
 
             return (new VmInstancesController())->deleteDisk($request, (int) $id, $key);
         },
-        Permissions::ADMIN_NODES_EDIT,
+        Permissions::ADMIN_VM_INSTANCES_EDIT,
         ['DELETE']
     );
 
@@ -243,7 +243,7 @@ return function (RouteCollection $routes): void {
 
             return (new VmInstancesController())->power($request, (int) $id);
         },
-        Permissions::ADMIN_NODES_EDIT,
+        Permissions::ADMIN_VM_INSTANCES_EDIT,
         ['POST']
     );
 
@@ -260,7 +260,7 @@ return function (RouteCollection $routes): void {
 
             return (new VmInstancesController())->reinstall($request, (int) $id);
         },
-        Permissions::ADMIN_NODES_EDIT,
+        Permissions::ADMIN_VM_INSTANCES_EDIT,
         ['POST']
     );
 
@@ -277,7 +277,7 @@ return function (RouteCollection $routes): void {
 
             return (new VmInstancesController())->reinstallStatus($request, (string) $reinstallId);
         },
-        Permissions::ADMIN_NODES_VIEW,
+        Permissions::ADMIN_VM_INSTANCES_VIEW,
         ['GET']
     );
 
@@ -294,7 +294,7 @@ return function (RouteCollection $routes): void {
 
             return (new VmInstancesController())->listBackups($request, (int) $id);
         },
-        Permissions::ADMIN_NODES_VIEW,
+        Permissions::ADMIN_VM_INSTANCES_VIEW,
         ['GET']
     );
 
@@ -305,7 +305,7 @@ return function (RouteCollection $routes): void {
         function (Request $request, array $args) {
             return (new VmInstancesController())->recoverBackup($request, (int) ($args['id'] ?? 0), (int) ($args['backupId'] ?? 0));
         },
-        Permissions::ADMIN_NODES_EDIT,
+        Permissions::ADMIN_VM_INSTANCES_EDIT,
         ['POST']
     );
 
@@ -322,7 +322,7 @@ return function (RouteCollection $routes): void {
 
             return (new VmInstancesController())->createBackup($request, (int) $id);
         },
-        Permissions::ADMIN_NODES_EDIT,
+        Permissions::ADMIN_VM_INSTANCES_EDIT,
         ['POST']
     );
 
@@ -339,7 +339,7 @@ return function (RouteCollection $routes): void {
 
             return (new VmInstancesController())->backupStatus($request, (string) $backupId);
         },
-        Permissions::ADMIN_NODES_VIEW,
+        Permissions::ADMIN_VM_INSTANCES_VIEW,
         ['GET']
     );
 
@@ -356,7 +356,7 @@ return function (RouteCollection $routes): void {
 
             return (new VmInstancesController())->deleteBackupVolume($request, (int) $id);
         },
-        Permissions::ADMIN_NODES_EDIT,
+        Permissions::ADMIN_VM_INSTANCES_EDIT,
         ['DELETE']
     );
 
@@ -373,7 +373,7 @@ return function (RouteCollection $routes): void {
 
             return (new VmInstancesController())->restoreBackup($request, (int) $id);
         },
-        Permissions::ADMIN_NODES_EDIT,
+        Permissions::ADMIN_VM_INSTANCES_EDIT,
         ['POST']
     );
 
@@ -390,7 +390,7 @@ return function (RouteCollection $routes): void {
 
             return (new VmInstancesController())->restoreBackupStatus($request, (string) $restoreId);
         },
-        Permissions::ADMIN_NODES_VIEW,
+        Permissions::ADMIN_VM_INSTANCES_VIEW,
         ['GET']
     );
 
@@ -407,7 +407,7 @@ return function (RouteCollection $routes): void {
 
             return (new VmInstancesController())->setBackupLimit($request, (int) $id);
         },
-        Permissions::ADMIN_NODES_EDIT,
+        Permissions::ADMIN_VM_INSTANCES_EDIT,
         ['PATCH']
     );
 
@@ -424,7 +424,7 @@ return function (RouteCollection $routes): void {
 
             return (new VmInstancesController())->suspend($request, (int) $id);
         },
-        Permissions::ADMIN_NODES_EDIT,
+        Permissions::ADMIN_VM_INSTANCES_EDIT,
         ['POST']
     );
 
@@ -441,7 +441,7 @@ return function (RouteCollection $routes): void {
 
             return (new VmInstancesController())->unsuspend($request, (int) $id);
         },
-        Permissions::ADMIN_NODES_EDIT,
+        Permissions::ADMIN_VM_INSTANCES_EDIT,
         ['POST']
     );
 
@@ -458,7 +458,7 @@ return function (RouteCollection $routes): void {
 
             return (new VmInstancesController())->delete($request, (int) $id);
         },
-        Permissions::ADMIN_NODES_DELETE,
+        Permissions::ADMIN_VM_INSTANCES_DELETE,
         ['DELETE']
     );
 
@@ -474,7 +474,7 @@ return function (RouteCollection $routes): void {
 
             return (new VmInstancesController())->hardDelete($request, (int) $id);
         },
-        Permissions::ADMIN_NODES_DELETE,
+        Permissions::ADMIN_VM_INSTANCES_DELETE,
         ['DELETE']
     );
     // Node capacity overview + recommended node for new VDS placement.
@@ -483,7 +483,7 @@ return function (RouteCollection $routes): void {
         'admin-vm-capacity',
         '/api/admin/vm-capacity',
         static fn (Request $request) => (new VmCapacityController())->capacity($request),
-        Permissions::ADMIN_NODES_VIEW,
+        Permissions::ADMIN_VM_INSTANCES_VIEW,
     );
 
     // Live migration within a Proxmox cluster (setting vds_migration_enabled, off by default).
@@ -501,7 +501,7 @@ return function (RouteCollection $routes): void {
                 ? (new VmCapacityController())->migrate($request, (int) $id)
                 : (new VmCapacityController())->migrationStatus($request, (int) $id);
         },
-        Permissions::ADMIN_NODES_EDIT,
+        Permissions::ADMIN_VM_INSTANCES_EDIT,
         ['GET', 'POST']
     );
 };

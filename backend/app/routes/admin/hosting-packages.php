@@ -30,7 +30,7 @@ return function (RouteCollection $routes): void {
         function (Request $request) {
             return (new HostingPackagesController())->index($request);
         },
-        Permissions::ADMIN_WEBSPACES_VIEW,
+        Permissions::ADMIN_HOSTING_PACKAGES_VIEW,
     );
 
     App::getInstance(true)->registerAdminRoute(
@@ -45,7 +45,7 @@ return function (RouteCollection $routes): void {
 
             return (new HostingPackagesController())->show($request, (int) $id);
         },
-        Permissions::ADMIN_WEBSPACES_VIEW,
+        Permissions::ADMIN_HOSTING_PACKAGES_VIEW,
     );
 
     App::getInstance(true)->registerAdminRoute(
@@ -55,7 +55,7 @@ return function (RouteCollection $routes): void {
         function (Request $request) {
             return (new HostingPackagesController())->create($request);
         },
-        Permissions::ADMIN_WEBSPACES_CREATE,
+        Permissions::ADMIN_HOSTING_PACKAGES_CREATE,
         ['PUT']
     );
 
@@ -71,7 +71,7 @@ return function (RouteCollection $routes): void {
 
             return (new HostingPackagesController())->update($request, (int) $id);
         },
-        Permissions::ADMIN_WEBSPACES_EDIT,
+        Permissions::ADMIN_HOSTING_PACKAGES_EDIT,
         ['PATCH']
     );
 
@@ -87,7 +87,7 @@ return function (RouteCollection $routes): void {
 
             return (new HostingPackagesController())->delete($request, (int) $id);
         },
-        Permissions::ADMIN_WEBSPACES_DELETE,
+        Permissions::ADMIN_HOSTING_PACKAGES_DELETE,
         ['DELETE']
     );
 };

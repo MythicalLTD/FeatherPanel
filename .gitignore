@@ -57,3 +57,4 @@ Untitled
 .env
 .env.*
 !.env.example
+FeatherTail/

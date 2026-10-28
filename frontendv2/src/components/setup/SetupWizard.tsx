@@ -7,7 +7,7 @@ Copyright (C) 2025 Cassian Gherman (aka NaysKutzu)
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as published
-    40|by the Free Software Foundation, either version 3 of the License, or
+by the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
 See the LICENSE file or <https://www.gnu.org/licenses/>.
@@ -58,6 +58,12 @@ import { completeSetup, setSetupDeferred, SETUP_STEP_KEY } from '@/lib/setup-wiz
 import { cn } from '@/lib/utils';
 import { FEATHERPANEL_DONATE_URL } from '@/lib/premium-links';
 import { usePremiumInactive } from '@/components/admin/DonationNudge';
+import { EmailProviderHint } from '@/components/admin/EmailProviderHint';
+import {
+    applyMailProviderPreset,
+    isApiMailTransport,
+    MAIL_PROVIDER_PRESETS,
+} from '@/lib/mail-providers';
 
 type StepId = 'welcome' | 'locale' | 'mail' | 'modules' | 'security' | 'infrastructure' | 'done';
 
@@ -95,7 +101,20 @@ const STEP_DESCRIPTIONS: Record<StepId, string> = {
 const STEP_KEYS: Partial<Record<StepId, string[]>> = {
     welcome: ['app_url', 'app_name', 'app_logo_dark', 'app_logo_white'],
     locale: ['app_timezone', 'app_locale_default'],
-    mail: ['smtp_enabled', 'smtp_host', 'smtp_port', 'smtp_user', 'smtp_pass', 'smtp_from', 'smtp_encryption'],
+    mail: [
+        'smtp_enabled',
+        'mail_provider_preset',
+        'mail_transport',
+        'smtp_host',
+        'smtp_port',
+        'smtp_user',
+        'smtp_pass',
+        'smtp_from',
+        'smtp_encryption',
+        'mail_api_key',
+        'mail_api_domain',
+        'mail_api_region',
+    ],
     modules: [
         'module_game_enabled',
         'module_web_enabled',
@@ -258,7 +277,11 @@ export function SetupWizard() {
         for (const key of keys) {
             const value = values[key] ?? '';
             if (value === (initial[key] ?? '')) continue;
-            if ((key === 'smtp_pass' || key === 'turnstile_key_priv') && value === '') continue;
+            if (
+                (key === 'smtp_pass' || key === 'mail_api_key' || key === 'turnstile_key_priv') &&
+                value === ''
+            )
+                continue;
             changed[key] = value;
         }
         if (Object.keys(changed).length === 0) return true;
@@ -284,11 +307,21 @@ export function SetupWizard() {
             if (!values.app_name?.trim()) e.app_name = 'setup_wizard.welcome.name_required';
         }
         if (step.id === 'mail' && values.smtp_enabled === 'true') {
-            if (!values.smtp_host?.trim()) e.smtp_host = 'setup_wizard.validation.host_required';
-            const port = Number(values.smtp_port || 0);
-            if (!port || port < 1 || port > 65535) e.smtp_port = 'setup_wizard.validation.port_invalid';
             if (values.smtp_from && !/^[^\s@]+@[^\s@]+$/.test(values.smtp_from))
                 e.smtp_from = 'setup_wizard.validation.email_invalid';
+            if (!values.smtp_from?.trim()) e.smtp_from = 'setup_wizard.validation.email_invalid';
+            if (isApiMailTransport(values.mail_transport)) {
+                if (!values.mail_api_key?.trim() && !initial.mail_api_key)
+                    e.mail_api_key = 'setup_wizard.validation.key_required';
+                if (values.mail_transport === 'mailgun' && !values.mail_api_domain?.trim())
+                    e.mail_api_domain = 'setup_wizard.validation.host_required';
+                if (values.mail_transport === 'ses' && !values.mail_api_region?.trim())
+                    e.mail_api_region = 'setup_wizard.validation.host_required';
+            } else {
+                if (!values.smtp_host?.trim()) e.smtp_host = 'setup_wizard.validation.host_required';
+                const port = Number(values.smtp_port || 0);
+                if (!port || port < 1 || port > 65535) e.smtp_port = 'setup_wizard.validation.port_invalid';
+            }
         }
         if (step.id === 'security' && values.turnstile_enabled === 'true') {
             if (!values.turnstile_key_pub?.trim()) e.turnstile_key_pub = 'setup_wizard.validation.key_required';
@@ -296,7 +329,7 @@ export function SetupWizard() {
                 e.turnstile_key_priv = 'setup_wizard.validation.key_required';
         }
         return e;
-    }, [step.id, url.error, values, initial.turnstile_key_priv]);
+    }, [step.id, url.error, values, initial.turnstile_key_priv, initial.mail_api_key]);
 
     const goTo = (index: number) => {
         const target = Math.max(0, Math.min(STEPS.length - 1, index));
@@ -700,44 +733,25 @@ export function SetupWizard() {
                                 />
                                 {bool('smtp_enabled', false) ? (
                                     <div className='grid gap-4 sm:grid-cols-2'>
-                                        <Input
-                                            label={t('setup_wizard.mail.host')}
-                                            value={values.smtp_host || ''}
-                                            onChange={(e) => set('smtp_host', e.target.value.trim())}
-                                            error={showErrors && errors.smtp_host ? t(errors.smtp_host) : undefined}
-                                        />
-                                        <div className='grid grid-cols-2 gap-4'>
-                                            <Input
-                                                label={t('setup_wizard.mail.port')}
-                                                value={values.smtp_port || ''}
-                                                onChange={(e) => set('smtp_port', e.target.value.replace(/\D/g, ''))}
-                                                error={showErrors && errors.smtp_port ? t(errors.smtp_port) : undefined}
-                                                inputMode='numeric'
-                                            />
+                                        <div className='sm:col-span-2'>
                                             <HeadlessSelect
-                                                label={t('setup_wizard.mail.encryption')}
-                                                value={values.smtp_encryption || 'tls'}
-                                                onChange={(v) => set('smtp_encryption', String(v))}
-                                                options={(options.smtp_encryption ?? ['tls']).map((o) => ({
-                                                    id: o,
-                                                    name: o,
+                                                label={t('setup_wizard.mail.provider')}
+                                                value={values.mail_provider_preset || 'custom'}
+                                                onChange={(v) => {
+                                                    applyMailProviderPreset(String(v), set);
+                                                }}
+                                                options={MAIL_PROVIDER_PRESETS.map((p) => ({
+                                                    id: p.id,
+                                                    name: p.label,
                                                 }))}
                                             />
                                         </div>
-                                        <Input
-                                            label={t('setup_wizard.mail.user')}
-                                            value={values.smtp_user || ''}
-                                            onChange={(e) => set('smtp_user', e.target.value.trim())}
-                                            autoComplete='off'
-                                        />
-                                        <Input
-                                            label={t('setup_wizard.mail.password')}
-                                            type='password'
-                                            value={values.smtp_pass === '••••••••' ? '' : values.smtp_pass || ''}
-                                            placeholder={initial.smtp_pass ? '••••••••' : ''}
-                                            onChange={(e) => set('smtp_pass', e.target.value)}
-                                            autoComplete='new-password'
-                                        />
+                                        <div className='sm:col-span-2'>
+                                            <EmailProviderHint
+                                                presetId={values.mail_provider_preset || 'custom'}
+                                                t={t}
+                                            />
+                                        </div>
                                         <Input
                                             label={t('setup_wizard.mail.from')}
                                             value={values.smtp_from || ''}
@@ -745,6 +759,117 @@ export function SetupWizard() {
                                             error={showErrors && errors.smtp_from ? t(errors.smtp_from) : undefined}
                                             className='sm:col-span-2'
                                         />
+                                        {isApiMailTransport(values.mail_transport) ? (
+                                            <>
+                                                <Input
+                                                    label={t('setup_wizard.mail.api_key')}
+                                                    type='password'
+                                                    value={
+                                                        values.mail_api_key === '••••••••'
+                                                            ? ''
+                                                            : values.mail_api_key || ''
+                                                    }
+                                                    placeholder={initial.mail_api_key ? '••••••••' : ''}
+                                                    onChange={(e) => set('mail_api_key', e.target.value)}
+                                                    error={
+                                                        showErrors && errors.mail_api_key
+                                                            ? t(errors.mail_api_key)
+                                                            : undefined
+                                                    }
+                                                    autoComplete='new-password'
+                                                    className='sm:col-span-2'
+                                                />
+                                                {values.mail_transport === 'mailgun' ? (
+                                                    <Input
+                                                        label={t('setup_wizard.mail.api_domain')}
+                                                        value={values.mail_api_domain || ''}
+                                                        onChange={(e) =>
+                                                            set('mail_api_domain', e.target.value.trim())
+                                                        }
+                                                        error={
+                                                            showErrors && errors.mail_api_domain
+                                                                ? t(errors.mail_api_domain)
+                                                                : undefined
+                                                        }
+                                                        className='sm:col-span-2'
+                                                    />
+                                                ) : null}
+                                                {values.mail_transport === 'mailgun' ||
+                                                values.mail_transport === 'sparkpost' ||
+                                                values.mail_transport === 'ses' ? (
+                                                    <Input
+                                                        label={t('setup_wizard.mail.api_region')}
+                                                        value={values.mail_api_region || ''}
+                                                        onChange={(e) =>
+                                                            set('mail_api_region', e.target.value.trim())
+                                                        }
+                                                        error={
+                                                            showErrors && errors.mail_api_region
+                                                                ? t(errors.mail_api_region)
+                                                                : undefined
+                                                        }
+                                                        className='sm:col-span-2'
+                                                    />
+                                                ) : null}
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Input
+                                                    label={t('setup_wizard.mail.host')}
+                                                    value={values.smtp_host || ''}
+                                                    onChange={(e) => set('smtp_host', e.target.value.trim())}
+                                                    error={
+                                                        showErrors && errors.smtp_host
+                                                            ? t(errors.smtp_host)
+                                                            : undefined
+                                                    }
+                                                />
+                                                <div className='grid grid-cols-2 gap-4'>
+                                                    <Input
+                                                        label={t('setup_wizard.mail.port')}
+                                                        value={values.smtp_port || ''}
+                                                        onChange={(e) =>
+                                                            set('smtp_port', e.target.value.replace(/\D/g, ''))
+                                                        }
+                                                        error={
+                                                            showErrors && errors.smtp_port
+                                                                ? t(errors.smtp_port)
+                                                                : undefined
+                                                        }
+                                                        inputMode='numeric'
+                                                    />
+                                                    <HeadlessSelect
+                                                        label={t('setup_wizard.mail.encryption')}
+                                                        value={values.smtp_encryption || 'tls'}
+                                                        onChange={(v) => set('smtp_encryption', String(v))}
+                                                        options={(options.smtp_encryption ?? ['tls']).map(
+                                                            (o) => ({
+                                                                id: o,
+                                                                name: o,
+                                                            }),
+                                                        )}
+                                                    />
+                                                </div>
+                                                <Input
+                                                    label={t('setup_wizard.mail.user')}
+                                                    value={values.smtp_user || ''}
+                                                    onChange={(e) => set('smtp_user', e.target.value.trim())}
+                                                    autoComplete='off'
+                                                />
+                                                <Input
+                                                    label={t('setup_wizard.mail.password')}
+                                                    type='password'
+                                                    value={
+                                                        values.smtp_pass === '••••••••'
+                                                            ? ''
+                                                            : values.smtp_pass || ''
+                                                    }
+                                                    placeholder={initial.smtp_pass ? '••••••••' : ''}
+                                                    onChange={(e) => set('smtp_pass', e.target.value)}
+                                                    autoComplete='new-password'
+                                                />
+                                            </>
+                                        )}
                                         <div className='sm:col-span-2'>
                                             <Button
                                                 variant='outline'

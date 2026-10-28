@@ -87,6 +87,11 @@ while [[ $# -gt 0 ]]; do
 		FP_QUILLD_SKIP_CONFIGURE=true
 		shift
 		;;
+	--feathertail-install-only | --proxmox-install-only)
+		FP_COMPONENT=feathertail
+		FP_ACTION=install
+		shift
+		;;
 	featherquilld | quilld)
 		# Positional shorthand for panel-generated / documented quick install (step 1 only).
 		FP_COMPONENT=featherquilld
@@ -94,24 +99,33 @@ while [[ $# -gt 0 ]]; do
 		FP_QUILLD_SKIP_CONFIGURE=true
 		shift
 		;;
+	feathertail | proxmox | tail)
+		FP_COMPONENT=feathertail
+		FP_ACTION=install
+		shift
+		;;
 	--help | -h)
 		echo "FeatherPanel Installer"
 		echo ""
-		echo "Usage: $0 [OPTIONS] [featherquilld|quilld]"
+		echo "Usage: $0 [OPTIONS] [featherquilld|quilld|feathertail|proxmox]"
 		echo ""
 		echo "Options:"
 		echo "  --skip-os-check        Skip OS version compatibility checks"
 		echo "  --force-arm            Bypass ARM architecture warnings and checks"
 		echo "  --skip-install-check   Skip check for existing installation"
 		echo "  --skip-virt-check      Skip virtualization compatibility checks"
-		echo "  --skip-system-update   Skip apt update and essential package installation"
+		echo "  --skip-system-update   Skip the optional apt update/upgrade prompt and essentials bootstrap"
 		echo "  --system-cleanup       Opt-in apt purge + autoremove after essentials (risky on production hosts)"
 		echo "  --refresh-docker-updater-only  Rewrite /etc/featherpanel host updater scripts only (no full install)"
 		echo "  --wings-install-only   Install FeatherWings only (no setup wizard; for panel quick-setup step 1)"
 		echo "  --quilld-install-only  Install FeatherQuilld only (no setup wizard; for panel quick-setup step 1)"
+		echo "  --feathertail-install-only  Install FeatherTail only (APT on Proxmox node)"
 		echo "  featherquilld|quilld   Same as --quilld-install-only"
+		echo "  feathertail|proxmox    Same as --feathertail-install-only"
 		echo "  Env for daemons:       FP_WINGS_METHOD = apt|direct  FP_WINGS_CHANNEL = stable|nightly"
 		echo "                         FP_QUILLD_CHANNEL = stable|nightly  (FeatherQuilld is APT-only)"
+		echo "                         FP_TAIL_CHANNEL = stable|nightly  (FeatherTail is APT-only)"
+		echo "                         FP_SYSTEM_UPGRADE = yes|no  (optional full apt upgrade at start; default: ask / no if non-interactive)"
 		echo "                         FP_COMPONENT=featherquilld FP_ACTION=install FP_QUILLD_SKIP_CONFIGURE=true"
 		echo "  --dev                  Use latest dev release images"
 		echo "  --dev-branch BRANCH    Use dev images for specific branch (e.g., develop, main)"
@@ -1736,7 +1750,7 @@ show_main_menu() {
 	echo -e "  ${CYAN}${BOLD}[3]${NC} ${BOLD}CLI${NC} ${CYAN}Migration & Server Management${NC}"
 	echo -e "  ${YELLOW}${BOLD}[4]${NC} ${BOLD}SSL Certificates${NC} ${CYAN}Let's Encrypt Tools${NC}"
 	echo -e "  ${MAGENTA}${BOLD}[5]${NC} ${BOLD}Databases${NC} ${CYAN}Remote MySQL/MariaDB Hosts${NC}"
-	echo -e "  ${RED}${BOLD}[6]${NC} ${BOLD}Proxmox VNC Agent${NC} ${CYAN}Install on Proxmox Node${NC}"
+	echo -e "  ${RED}${BOLD}[6]${NC} ${BOLD}FeatherTail${NC} ${CYAN}Proxmox Host Agent (APT)${NC}"
 	echo -e "  ${MAGENTA}${BOLD}[7]${NC} ${BOLD}FeatherQuilld Daemon${NC} ${CYAN}WebHosting Daemon${NC}"
 	echo -e "  ${GREEN}${BOLD}[8]${NC} ${BOLD}Configuration${NC} ${CYAN}Settings & Preferences${NC}"
 	echo ""
@@ -2647,27 +2661,75 @@ show_access_method_menu() {
 	draw_hr
 }
 
-# Ensure system is ready: update packages, upgrade, install sudo/curl and essentials
-# Uses apt-get directly (we run as root); run early after OS check passes
+# Ensure system is ready: optional full apt upgrade (prompted), then essentials.
+# Uses apt-get directly (we run as root); run early after OS check passes.
+# Never force a full upgrade — ask first (Docker package updates can restart services / drop the host briefly).
 ensure_system_ready() {
 	if [ "$SKIP_SYSTEM_UPDATE" = true ]; then
 		log_warn "System update skipped via --skip-system-update flag"
 		return 0
 	fi
 
-	log_info "Updating package lists and ensuring essential packages (sudo, curl) are installed..."
-
-	# Avoid any interactive prompts (can hang when script is piped or in CI)
+	# Avoid interactive apt prompts during install/upgrade (can hang when piped or in CI)
 	export DEBIAN_FRONTEND=noninteractive
 	export APT_LISTCHANGES_FRONTEND=none
 
-	# We run as root - use apt-get directly (may not exist on minimal systems)
-	if ! apt-get update -qq >>"$LOG_FILE" 2>&1; then
-		log_error "Failed to update package lists. Check $LOG_FILE for details."
-		return 1
+	local run_full_upgrade="no"
+	local env_upgrade
+	env_upgrade="$(printf '%s' "${FP_SYSTEM_UPGRADE:-}" | tr '[:upper:]' '[:lower:]')"
+
+	case "$env_upgrade" in
+	yes | y | true | 1) run_full_upgrade="yes" ;;
+	no | n | false | 0) run_full_upgrade="no" ;;
+	*)
+		if [ -t 0 ] && [ -t 1 ]; then
+			echo ""
+			draw_hr
+			echo -e "${BOLD}${CYAN}System packages${NC}"
+			draw_hr
+			echo -e "${BLUE}FeatherPanel usually likes to update your system before you install or update anything.${NC}"
+			echo ""
+			echo -e "${YELLOW}${BOLD}Warning:${NC} ${YELLOW}If a Docker (or kernel/systemd) release came out recently,${NC}"
+			echo -e "${YELLOW}running a full upgrade may restart Docker/containers or briefly take the server down.${NC}"
+			echo -e "${YELLOW}Be careful on production hosts.${NC}"
+			echo ""
+			echo -e "${CYAN}Suggested command:${NC} ${BOLD}apt update && apt upgrade -y${NC}"
+			echo ""
+			upgrade_choice=""
+			prompt "${BOLD}Run apt update && apt upgrade -y now?${NC} ${BLUE}(y/N)${NC}: " upgrade_choice
+			if [[ "$upgrade_choice" =~ ^[yY]$ ]]; then
+				run_full_upgrade="yes"
+			else
+				run_full_upgrade="no"
+			fi
+		else
+			# Non-interactive / piped: do not force a full upgrade down anyone's throat.
+			log_info "Non-interactive session — skipping full apt upgrade (set FP_SYSTEM_UPGRADE=yes to enable)."
+			run_full_upgrade="no"
+		fi
+		;;
+	esac
+
+	if [ "$run_full_upgrade" = "yes" ]; then
+		log_step "Running apt update && apt upgrade -y (optional system update)..."
+		if ! apt-get update >>"$LOG_FILE" 2>&1; then
+			log_error "Failed to update package lists. Check $LOG_FILE for details."
+			return 1
+		fi
+		if ! apt-get upgrade -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" >>"$LOG_FILE" 2>&1; then
+			log_warn "Full apt upgrade reported issues — check $LOG_FILE. Continuing with essentials..."
+		else
+			log_success "System packages updated (apt upgrade)."
+		fi
+	else
+		log_info "Skipping full apt upgrade. Refreshing package lists only..."
+		if ! apt-get update -qq >>"$LOG_FILE" 2>&1; then
+			log_error "Failed to update package lists. Check $LOG_FILE for details."
+			return 1
+		fi
 	fi
 
-	# Install essential packages only (no full upgrade - upgrade can hang on prompts or take extremely long)
+	log_info "Ensuring essential packages (curl, ca-certificates, gnupg) are installed..."
 	ESSENTIAL_PACKAGES="curl ca-certificates apt-transport-https gnupg"
 	for pkg in $ESSENTIAL_PACKAGES; do
 		if ! dpkg -s "$pkg" >/dev/null 2>&1; then
@@ -2677,8 +2739,7 @@ ensure_system_ready() {
 		fi
 	done
 
-	log_success "Package lists updated and essential packages ready."
-	log_info "To upgrade all system packages later (optional): apt update && DEBIAN_FRONTEND=noninteractive apt upgrade -y"
+	log_success "Package lists ready and essential packages installed."
 
 	if [ "$SYSTEM_CLEANUP" = true ]; then
 		log_warn "Running opt-in system cleanup (apt purge + autoremove)..."
@@ -3213,7 +3274,7 @@ setup_cloudflare_tunnel_client() {
 	fi
 }
 
-# MythicalSystems APT repository (FeatherWings / FeatherQuilld packages)
+# MythicalSystems APT repository (FeatherWings / FeatherQuilld / FeatherTail packages)
 mythicalsystems_apt_supported() {
 	command -v apt-get >/dev/null 2>&1 && command -v dpkg >/dev/null 2>&1
 }
@@ -4246,62 +4307,199 @@ update_featherquilld() {
 	log_success "FeatherQuilld daemon updated successfully (APT: ${apt_pkg})."
 }
 
-install_proxmox_vnc_agent() {
-	log_step "Installing Proxmox VNC Agent files..."
+show_feathertail_menu() {
+	if [ -t 1 ]; then clear; fi
+	print_banner
+	draw_hr
+	print_centered "FeatherTail (Proxmox Host Agent)" "$CYAN"
+	draw_hr
+	echo ""
+	echo -e "  ${GREEN}${BOLD}[1]${NC} ${BOLD}Install FeatherTail${NC}"
+	echo -e "     ${GREEN}→ ${BOLD}APT only${NC}${GREEN} via MythicalSystems repo (stable or nightly)${NC}"
+	echo -e "     ${BLUE}→ Requires Proxmox VE (${BOLD}pve-manager${NC}${BLUE}) — run on the Proxmox node${NC}"
+	echo -e "     ${BLUE}→ DHCP + Proxmox API agent; installs noVNC helper assets on start${NC}"
+	echo ""
+	echo -e "  ${RED}${BOLD}[2]${NC} ${BOLD}Uninstall FeatherTail${NC}"
+	echo -e "     ${YELLOW}⚠️  WARNING: This will remove FeatherTail and optionally its configuration${NC}"
+	echo ""
+	echo -e "  ${YELLOW}${BOLD}[3]${NC} ${BOLD}Update FeatherTail${NC}"
+	echo -e "     ${GREEN}→ ${BOLD}apt upgrade${NC}${GREEN} — supports stable ↔ nightly switches${NC}"
+	echo ""
+	draw_hr
+}
+
+feathertail_apt_package_name() {
+	if mythicalsystems_apt_package_installed feathertail-dev; then
+		echo "feathertail-dev"
+	elif mythicalsystems_apt_package_installed feathertail; then
+		echo "feathertail"
+	else
+		echo ""
+	fi
+}
+
+feathertail_is_installed() {
+	[ -x /usr/local/bin/feathertail ] ||
+		command -v feathertail >/dev/null 2>&1 ||
+		[ -n "$(feathertail_apt_package_name)" ]
+}
+
+feathertail_require_proxmox_host() {
+	if [ -d /etc/pve ] && { [ -x /usr/bin/pvesh ] || [ -x /bin/pvesh ] || command -v pveversion >/dev/null 2>&1; }; then
+		return 0
+	fi
+	if mythicalsystems_apt_supported && dpkg-query -W -f='${Status}' pve-manager 2>/dev/null | grep -q "install ok installed"; then
+		return 0
+	fi
+	log_error "FeatherTail must be installed on a Proxmox VE node (pve-manager / /etc/pve missing)."
+	log_info "Run this installer on the Proxmox host itself, not inside a guest VM."
+	return 1
+}
+
+install_feathertail_apt() {
+	local pkg="feathertail"
+	if [ "${DAEMON_APT_CHANNEL:-stable}" = "nightly" ]; then
+		pkg="feathertail-dev"
+	fi
+
+	if ! setup_mythicalsystems_apt_repo; then
+		return 1
+	fi
+
+	systemctl stop feathertail >/dev/null 2>&1 || true
+	rm -f /etc/systemd/system/feathertail.service
+	systemctl daemon-reload >/dev/null 2>&1 || true
+
+	mkdir -p /etc/feathertail /var/lib/feathertail
+
+	log_info "Installing APT package: ${pkg}"
+	if ! apt-get install -y "$pkg" >>"$LOG_FILE" 2>&1; then
+		log_error "Failed to install ${pkg} from MythicalSystems APT repository."
+		log_info "FeatherTail Depends on pve-manager — confirm Proxmox apt repos are enabled on this host."
+		return 1
+	fi
+
+	systemctl enable feathertail >/dev/null 2>&1 || true
+	systemctl restart feathertail >/dev/null 2>&1 || systemctl start feathertail >/dev/null 2>&1 || true
+	log_success "Installed ${pkg} via APT."
+}
+
+install_feathertail() {
+	log_step "Installing FeatherTail Proxmox host agent..."
 
 	if [ -t 1 ]; then clear; fi
 	print_banner
 	draw_hr
-	echo -e "${BOLD}${CYAN}Proxmox VNC Agent Installation${NC}"
+	echo -e "${BOLD}${CYAN}FeatherTail Installation${NC}"
 	draw_hr
 	echo ""
-	echo -e "${YELLOW}This installer should be run on the Proxmox node you want to integrate with FeatherPanel.${NC}"
+	echo -e "${YELLOW}This must be run on the Proxmox node you want to integrate with FeatherPanel.${NC}"
+	echo -e "${BLUE}Install method: ${BOLD}APT only${NC}${BLUE} (package Depends on pve-manager).${NC}"
 	echo ""
 	confirm_node=""
-	prompt "${BOLD}Are you on the proxmox node right now that you want to setup FeatherPanel with?${NC} ${BLUE}(This will add additional vnc files for PVE token forwarding, it is completely safe) (y/n)${NC}: " confirm_node
-
+	prompt "${BOLD}Are you on the Proxmox node right now?${NC} ${BLUE}(y/n)${NC}: " confirm_node
 	if [[ ! "$confirm_node" =~ ^[yY]$ ]]; then
 		log_warn "Installation cancelled. Please run this on your Proxmox node when ready."
 		return 0
 	fi
 
-	if [ ! -d /usr/share/novnc-pve ]; then
-		log_warn "Proxmox noVNC path /usr/share/novnc-pve was not found."
-		log_warn "This does not look like a standard Proxmox node, continuing anyway by request."
-	fi
-
-	install_packages curl unzip
-
-	local tmp_zip="/tmp/featherpanel-vnc-agent.zip"
-	local tmp_dir="/tmp/FeatherPanel-VNC-main"
-
-	if ! run_with_spinner "Downloading Proxmox VNC agent package" "Proxmox VNC agent package downloaded." \
-		curl -fsSL -o "$tmp_zip" "https://github.com/MythicalLTD/FeatherPanel-VNC/archive/refs/heads/main.zip"; then
+	if ! feathertail_require_proxmox_host; then
 		return 1
 	fi
 
-	rm -rf "$tmp_dir"
-	if ! run_with_spinner "Extracting Proxmox VNC agent package" "Proxmox VNC agent package extracted." \
-		unzip -o "$tmp_zip" -d /tmp; then
+	# FeatherTail is APT-only (no direct GitHub binary installs).
+	if ! prompt_daemon_install_method "FeatherTail" "FP_TAIL_METHOD" "FP_TAIL_CHANNEL" "apt_only"; then
 		return 1
 	fi
 
-	if [ ! -d "$tmp_dir/usr/share/novnc-pve" ]; then
-		log_error "Expected files not found in extracted package: $tmp_dir/usr/share/novnc-pve"
+	if ! install_feathertail_apt; then
 		return 1
 	fi
 
-	mkdir -p /usr/share/novnc-pve
-	if ! run_with_spinner "Installing Proxmox VNC forwarding files" "Proxmox VNC forwarding files installed." \
-		bash -c "cp -r '$tmp_dir/usr/share/novnc-pve/'* /usr/share/novnc-pve/"; then
+	log_success "FeatherTail installed successfully."
+	log_info "Edit /etc/feathertail/feathertail.toml (set api_token), then:"
+	log_info "  systemctl status feathertail"
+	log_info "  journalctl -u feathertail -f"
+}
+
+uninstall_feathertail() {
+	log_step "Uninstalling FeatherTail..."
+
+	local apt_pkg
+	apt_pkg="$(feathertail_apt_package_name)"
+
+	systemctl stop feathertail >/dev/null 2>&1 || true
+	systemctl disable feathertail >/dev/null 2>&1 || true
+
+	if [ -n "$apt_pkg" ]; then
+		log_info "Removing APT package: ${apt_pkg}"
+		apt-get remove -y "$apt_pkg" >>"$LOG_FILE" 2>&1 || true
+		apt-get purge -y "$apt_pkg" >>"$LOG_FILE" 2>&1 || true
+	fi
+
+	rm -f /etc/systemd/system/feathertail.service
+	systemctl daemon-reload
+	rm -f /usr/local/bin/feathertail
+
+	remove_config="n"
+	prompt "Remove FeatherTail configuration (/etc/feathertail)? (y/n): " remove_config
+	if [[ "$remove_config" =~ ^[yY]$ ]]; then
+		rm -rf /etc/feathertail
+	fi
+
+	remove_data="n"
+	prompt "Remove FeatherTail data (/var/lib/feathertail)? (y/n): " remove_data
+	if [[ "$remove_data" =~ ^[yY]$ ]]; then
+		rm -rf /var/lib/feathertail
+	fi
+
+	log_success "FeatherTail uninstalled successfully."
+}
+
+update_feathertail() {
+	log_step "Updating FeatherTail..."
+	if ! feathertail_is_installed; then
+		log_error "FeatherTail is not installed. Please install it first."
 		return 1
 	fi
 
-	rm -f "$tmp_zip"
-	rm -rf "$tmp_dir"
+	if ! mythicalsystems_apt_supported; then
+		log_error "FeatherTail updates are APT-only and require Debian/Ubuntu with apt-get."
+		return 1
+	fi
 
-	log_success "Proxmox VNC agent installation completed."
-	log_info "If your Proxmox web UI is open, refresh the page to load updated noVNC assets."
+	if ! feathertail_require_proxmox_host; then
+		return 1
+	fi
+
+	local apt_pkg
+	apt_pkg="$(feathertail_apt_package_name)"
+
+	if [ -z "$apt_pkg" ]; then
+		log_warn "Legacy/direct binary install detected. Migrating to the APT package..."
+		DAEMON_APT_CHANNEL="stable"
+		if [ "${PREFER_DEV:-no}" = "yes" ]; then
+			DAEMON_APT_CHANNEL="nightly"
+		fi
+		if ! install_feathertail_apt; then
+			return 1
+		fi
+		log_success "FeatherTail migrated to APT and updated successfully."
+		return 0
+	fi
+
+	log_info "Updating via APT package: ${apt_pkg}"
+	if ! setup_mythicalsystems_apt_repo; then
+		return 1
+	fi
+	if ! apt-get install --only-upgrade -y "$apt_pkg" >>"$LOG_FILE" 2>&1; then
+		apt-get install -y "$apt_pkg" >>"$LOG_FILE" 2>&1 || {
+			log_error "Failed to upgrade ${apt_pkg}."
+			return 1
+		}
+	fi
+	systemctl restart feathertail >/dev/null 2>&1 || systemctl start feathertail >/dev/null 2>&1 || true
+	log_success "FeatherTail updated successfully (APT: ${apt_pkg})."
 }
 
 # CLI installation functions
@@ -7346,7 +7544,7 @@ if [ -f /etc/os-release ]; then
 	cli) COMPONENT_TYPE="3" ;;
 	ssl) COMPONENT_TYPE="4" ;;
 	db | databases) COMPONENT_TYPE="5" ;;
-	proxmox) COMPONENT_TYPE="6" ;;
+	proxmox | feathertail | tail) COMPONENT_TYPE="6" ;;
 	featherquilld) COMPONENT_TYPE="7" ;;
 	config | configuration) COMPONENT_TYPE="8" ;;
 	*) ;;
@@ -7518,6 +7716,38 @@ if [ -f /etc/os-release ]; then
 				sleep 2
 			fi
 		done
+	elif [ "$COMPONENT_TYPE" = "6" ]; then
+		while [[ ! "$INST_TYPE" =~ ^[1-3]$ ]]; do
+			show_feathertail_menu
+			echo ""
+			prompt "${BOLD}${CYAN}Select operation${NC} ${BLUE}(1/2/3)${NC}: " INST_TYPE
+			if [[ ! "$INST_TYPE" =~ ^[1-3]$ ]]; then
+				echo ""
+				echo -e "${RED}${BOLD}✗ Invalid input!${NC}"
+				echo -e "${YELLOW}Please enter ${BOLD}1${NC} (Install), ${BOLD}2${NC} (Uninstall), or ${BOLD}3${NC} (Update)${NC}"
+				echo ""
+				sleep 2
+			fi
+		done
+
+		if [ "$INST_TYPE" = "2" ]; then
+			echo ""
+			draw_hr
+			echo -e "${RED}${BOLD}⚠️  WARNING: Uninstall Operation${NC}"
+			draw_hr
+			echo -e "${YELLOW}This will permanently delete:${NC}"
+			echo -e "  ${RED}•${NC} FeatherTail systemd service"
+			echo -e "  ${RED}•${NC} FeatherTail binary / APT package"
+			echo -e "  ${RED}•${NC} Configuration and data (optional)"
+			echo ""
+			draw_hr
+			confirm_uninstall=""
+			prompt "${BOLD}${RED}Are you absolutely sure you want to uninstall?${NC} ${BLUE}(type 'yes' to confirm)${NC}: " confirm_uninstall
+			if [ "$confirm_uninstall" != "yes" ]; then
+				echo -e "${GREEN}Uninstallation cancelled.${NC}"
+				exit 0
+			fi
+		fi
 	elif [ "$COMPONENT_TYPE" = "7" ]; then
 		while [[ ! "$INST_TYPE" =~ ^[1-3]$ ]]; do
 			show_featherquilld_menu
@@ -9068,12 +9298,41 @@ if [ -f /etc/os-release ]; then
 			log_error "Remote Database host setup failed. See log at $LOG_FILE"
 			exit 1
 		fi
-	elif [ "$COMPONENT_TYPE" = "6" ]; then
-		# Proxmox VNC Agent install
-		if install_proxmox_vnc_agent; then
-			log_success "Proxmox VNC agent install finished. See log at $LOG_FILE"
+	elif [ "$COMPONENT_TYPE" = "6" ] && [ "$INST_TYPE" = "1" ]; then
+		if feathertail_is_installed; then
+			reinstall=""
+			prompt "FeatherTail appears to be already installed. Reinstall? (y/n): " reinstall
+			if [[ ! "$reinstall" =~ ^[yY]$ ]]; then
+				echo "Exiting installation."
+				exit 0
+			fi
+		fi
+		if install_feathertail; then
+			log_success "FeatherTail install finished. See log at $LOG_FILE"
 		else
-			log_error "Proxmox VNC agent install failed. See log at $LOG_FILE"
+			log_error "FeatherTail install failed. See log at $LOG_FILE"
+			exit 1
+		fi
+	elif [ "$COMPONENT_TYPE" = "6" ] && [ "$INST_TYPE" = "2" ]; then
+		if ! feathertail_is_installed; then
+			echo "FeatherTail does not appear to be installed. Nothing to uninstall."
+			exit 0
+		fi
+		if uninstall_feathertail; then
+			log_success "FeatherTail uninstall finished. See log at $LOG_FILE"
+		else
+			log_error "FeatherTail uninstall failed. See log at $LOG_FILE"
+			exit 1
+		fi
+	elif [ "$COMPONENT_TYPE" = "6" ] && [ "$INST_TYPE" = "3" ]; then
+		if ! feathertail_is_installed; then
+			echo "FeatherTail does not appear to be installed. Nothing to update."
+			exit 0
+		fi
+		if update_feathertail; then
+			log_success "FeatherTail update finished. See log at $LOG_FILE"
+		else
+			log_error "FeatherTail update failed. See log at $LOG_FILE"
 			exit 1
 		fi
 	elif [ "$COMPONENT_TYPE" = "7" ] && [ "$INST_TYPE" = "1" ]; then

@@ -21,6 +21,12 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { cn } from '@/lib/utils';
 import type RFB from '@novnc/novnc';
 import { XK_SHIFT_L, normalizeTypedText, strokeFor } from '@/lib/vnc/usKeymap';
+import {
+    STICKY_MODIFIERS,
+    type ExtraKeyAction,
+    type StickyModifier,
+    type VncKeySpec,
+} from '@/lib/vnc/extraKeys';
 
 /** noVNC logs (does not throw) if disconnect() runs after the socket is already gone. */
 function disconnectRfb(rfb: RFB): void {
@@ -56,6 +62,10 @@ export type VncStatus = 'connecting' | 'connected' | 'disconnected';
 /** Imperative actions the console toolbar / text input can trigger on the live session. */
 export interface VncConsoleHandle {
     sendCtrlAltDel: () => void;
+    /** Hold or release a sticky modifier in the guest (Ctrl / Alt / Shift / Win). */
+    setStickyModifier: (mod: StickyModifier, down: boolean) => void;
+    /** Fire a one-shot extra-key action (nav, F-keys, Ctrl+Alt+Del, …). */
+    sendExtraAction: (action: ExtraKeyAction) => void;
     /**
      * Types text into the guest as physical key presses (US layout scancodes + explicit Shift),
      * in small chunks so QEMU's input queue does not drop keys. `\n` presses Enter.
@@ -100,6 +110,12 @@ export function VncConsole({
     const containerRef = useRef<HTMLDivElement>(null);
     const rfbRef = useRef<RFB | null>(null);
     const typingRunRef = useRef(0);
+    const stickyRef = useRef<Record<StickyModifier, boolean>>({
+        ctrl: false,
+        alt: false,
+        shift: false,
+        meta: false,
+    });
     const [status, setStatus] = useState<VncStatus>('connecting');
     const onStatusChangeRef = useRef(onStatusChange);
     useEffect(() => {
@@ -109,11 +125,54 @@ export function VncConsole({
         onStatusChangeRef.current?.(status);
     }, [status]);
 
+    const tapKey = (rfb: RFB, key: VncKeySpec) => {
+        rfb.sendKey(key.keysym, key.code, true);
+        rfb.sendKey(key.keysym, key.code, false);
+    };
+
+    const releaseAllSticky = (rfb: RFB | null) => {
+        if (!rfb) return;
+        (Object.keys(stickyRef.current) as StickyModifier[]).forEach((mod) => {
+            if (!stickyRef.current[mod]) return;
+            const spec = STICKY_MODIFIERS[mod];
+            rfb.sendKey(spec.keysym, spec.code, false);
+            stickyRef.current[mod] = false;
+        });
+    };
+
     useImperativeHandle(
         handleRef,
         () => ({
             sendCtrlAltDel: () => {
                 rfbRef.current?.sendCtrlAltDel();
+            },
+            setStickyModifier: (mod, down) => {
+                const rfb = rfbRef.current;
+                if (!rfb || status !== 'connected') return;
+                if (stickyRef.current[mod] === down) return;
+                const spec = STICKY_MODIFIERS[mod];
+                rfb.sendKey(spec.keysym, spec.code, down);
+                stickyRef.current[mod] = down;
+            },
+            sendExtraAction: (action) => {
+                const rfb = rfbRef.current;
+                if (!rfb || status !== 'connected') return;
+                if (action.cad) {
+                    rfb.sendCtrlAltDel();
+                    return;
+                }
+                const tempMods = (action.mods ?? []).filter((m) => !stickyRef.current[m]);
+                for (const mod of tempMods) {
+                    const spec = STICKY_MODIFIERS[mod];
+                    rfb.sendKey(spec.keysym, spec.code, true);
+                }
+                for (const key of action.keys) {
+                    tapKey(rfb, key);
+                }
+                for (const mod of [...tempMods].reverse()) {
+                    const spec = STICKY_MODIFIERS[mod];
+                    rfb.sendKey(spec.keysym, spec.code, false);
+                }
             },
             typeText: async (text: string, onProgress?: (done: number, total: number) => void) => {
                 const rfb = rfbRef.current;
@@ -180,6 +239,7 @@ export function VncConsole({
                 });
                 rfb.addEventListener('disconnect', () => {
                     if (disposed) return;
+                    releaseAllSticky(rfb);
                     setStatus('disconnected');
                     onDisconnectRef.current?.();
                 });
@@ -207,6 +267,7 @@ export function VncConsole({
             disposed = true;
             window.clearTimeout(timer);
             if (rfb) {
+                releaseAllSticky(rfb);
                 disconnectRfb(rfb);
                 rfb = null;
             }

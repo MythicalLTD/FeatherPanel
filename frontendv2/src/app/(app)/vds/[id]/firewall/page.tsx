@@ -16,7 +16,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import { VdsUsagePill } from '@/components/vds/VdsUsagePill';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { useParams } from 'next/navigation';
 import axios from 'axios';
 import { toast } from 'sonner';
@@ -30,7 +30,6 @@ import {
     Shield,
     ShieldCheck,
     Trash2,
-    Zap,
 } from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useVmInstance } from '@/contexts/VmInstanceContext';
@@ -40,12 +39,12 @@ import { isReauthCancelled, useVdsReauth } from '@/components/vds/VdsReauth';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { EmptyState } from '@/components/featherui/EmptyState';
+import { PageCard } from '@/components/featherui/PageCard';
 import { ResourceCard } from '@/components/featherui/ResourceCard';
 import { VdsPageHeader } from '@/components/vds/VdsPageHeader';
 import { VdsPageLoading } from '@/components/vds/VdsPageLoading';
 import { Dialog, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
-import { Select } from '@/components/ui/select-native';
 import { Switch } from '@/components/ui/switch';
 
 interface Rule {
@@ -66,12 +65,81 @@ interface FirewallState {
     features: { enabled: boolean; max_rules: number; allow_policy: boolean; presets: string[] };
 }
 
-const EMPTY_RULE = { type: 'in', action: 'ACCEPT', proto: 'tcp', dport: '', source: '', comment: '' };
+type Policy = 'ACCEPT' | 'DROP' | 'REJECT';
+
+const EMPTY_RULE = { type: 'in' as const, action: 'ACCEPT' as Policy, proto: 'tcp', dport: '', source: '', comment: '' };
+
 const ACTION_STYLE: Record<string, string> = {
-    ACCEPT: 'bg-green-500/10 text-green-600 dark:text-green-400',
-    DROP: 'bg-red-500/10 text-red-600 dark:text-red-400',
-    REJECT: 'bg-orange-500/10 text-orange-600 dark:text-orange-400',
+    ACCEPT: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400',
+    DROP: 'bg-red-500/10 text-red-700 dark:text-red-400',
+    REJECT: 'bg-amber-500/10 text-amber-800 dark:text-amber-400',
 };
+
+function Segmented<T extends string>({
+    value,
+    options,
+    onChange,
+    label,
+    disabled,
+    className,
+}: {
+    value: T;
+    options: { value: T; label: string }[];
+    onChange: (value: T) => void;
+    label: string;
+    disabled?: boolean;
+    className?: string;
+}) {
+    return (
+        <div
+            role='radiogroup'
+            aria-label={label}
+            className={cn('bg-muted/50 inline-flex max-w-full flex-wrap rounded-lg p-0.5', className)}
+        >
+            {options.map((o) => {
+                const active = value === o.value;
+                return (
+                    <button
+                        key={o.value}
+                        type='button'
+                        role='radio'
+                        aria-checked={active}
+                        disabled={disabled}
+                        onClick={() => onChange(o.value)}
+                        className={cn(
+                            'rounded-md px-3 py-1.5 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50',
+                            active
+                                ? 'bg-background text-foreground shadow-sm'
+                                : 'text-muted-foreground hover:text-foreground',
+                        )}
+                    >
+                        {o.label}
+                    </button>
+                );
+            })}
+        </div>
+    );
+}
+
+function OptionRow({
+    title,
+    hint,
+    children,
+}: {
+    title: string;
+    hint: string;
+    children: ReactNode;
+}) {
+    return (
+        <div className='fp-surface-inset flex flex-col gap-3 rounded-xl border p-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6'>
+            <div className='min-w-0 space-y-0.5'>
+                <p className='text-sm font-medium'>{title}</p>
+                <p className='text-muted-foreground text-sm'>{hint}</p>
+            </div>
+            <div className='shrink-0'>{children}</div>
+        </div>
+    );
+}
 
 export default function VdsFirewallPage() {
     const { id } = useParams() as { id: string };
@@ -86,6 +154,12 @@ export default function VdsFirewallPage() {
     const [rule, setRule] = useState(EMPTY_RULE);
     const [remove, setRemove] = useState<Rule | null>(null);
     const canManage = hasPermission('firewall');
+
+    const policyOptions: { value: Policy; label: string }[] = [
+        { value: 'ACCEPT', label: t('vds.firewall.actions.accept') },
+        { value: 'DROP', label: t('vds.firewall.actions.drop') },
+        { value: 'REJECT', label: t('vds.firewall.actions.reject') },
+    ];
 
     const load = useCallback(async () => {
         setLoading(true);
@@ -141,6 +215,7 @@ export default function VdsFirewallPage() {
     }
 
     const limitReached = state.rules.length >= state.features.max_rules;
+    const policy = (['ACCEPT', 'DROP', 'REJECT'].includes(state.policy_in) ? state.policy_in : 'ACCEPT') as Policy;
 
     return (
         <div className='space-y-6 pb-12'>
@@ -166,67 +241,62 @@ export default function VdsFirewallPage() {
                 }
             />
 
-            <div className='border-border/50 bg-card/50 grid gap-4 rounded-2xl border p-5 md:grid-cols-2'>
-                <div className='flex items-start justify-between gap-4'>
-                    <div>
-                        <p className='flex items-center gap-2 font-semibold'>
-                            <ShieldCheck className={cn('h-4 w-4', state.enabled ? 'text-green-500' : 'opacity-50')} />
-                            {t('vds.firewall.enabled')}
-                        </p>
-                        <p className='text-muted-foreground text-sm'>{t('vds.firewall.enabled_hint')}</p>
-                    </div>
-                    <Switch
-                        checked={state.enabled}
-                        disabled={!canManage || busy}
-                        onCheckedChange={(v) => void setOptions({ enabled: v })}
-                    />
-                </div>
-                <div className='flex items-start justify-between gap-4'>
-                    <div>
-                        <p className='font-semibold'>{t('vds.firewall.policy_in')}</p>
-                        <p className='text-muted-foreground text-sm'>{t('vds.firewall.policy_hint')}</p>
-                    </div>
-                    <Select
-                        className='h-10 w-36'
-                        value={state.policy_in}
-                        disabled={!canManage || busy || !state.features.allow_policy}
-                        onChange={(e) => void setOptions({ policy_in: e.target.value })}
-                    >
-                        {['ACCEPT', 'DROP', 'REJECT'].map((p) => (
-                            <option key={p} value={p}>
-                                {p}
-                            </option>
-                        ))}
-                    </Select>
-                </div>
-                {state.features.presets.length > 0 && (
-                    <div className='md:col-span-2'>
-                        <p className='mb-2 flex items-center gap-2 text-sm font-semibold'>
-                            <Zap className='h-4 w-4' />
-                            {t('vds.firewall.presets')}
-                        </p>
-                        <div className='flex flex-wrap gap-2'>
-                            {state.features.presets.map((p) => (
-                                <Button
-                                    key={p}
-                                    variant='outline'
-                                    size='sm'
-                                    disabled={!canManage || busy}
-                                    onClick={() =>
-                                        void run(
-                                            () => axios.post(`/api/user/vm-instances/${id}/firewall/presets/${p}`),
-                                            'vds.firewall.preset_applied',
-                                            'vds.firewall.preset_failed',
-                                        )
-                                    }
-                                >
-                                    {t(`vds.firewall.preset.${p}`)}
-                                </Button>
-                            ))}
+            <PageCard
+                title={t('vds.firewall.options_title')}
+                description={t('vds.firewall.options_description')}
+                icon={ShieldCheck}
+            >
+                <div className='space-y-3'>
+                    <OptionRow title={t('vds.firewall.enabled')} hint={t('vds.firewall.enabled_hint')}>
+                        <Switch
+                            checked={state.enabled}
+                            disabled={!canManage || busy}
+                            onCheckedChange={(v) => void setOptions({ enabled: v })}
+                        />
+                    </OptionRow>
+
+                    <OptionRow title={t('vds.firewall.policy_in')} hint={t('vds.firewall.policy_hint')}>
+                        <Segmented
+                            label={t('vds.firewall.policy_in')}
+                            value={policy}
+                            options={policyOptions}
+                            disabled={!canManage || busy || !state.features.allow_policy}
+                            onChange={(v) => void setOptions({ policy_in: v })}
+                        />
+                    </OptionRow>
+
+                    {state.features.presets.length > 0 && (
+                        <div className='fp-surface-inset space-y-3 rounded-xl border p-4'>
+                            <div>
+                                <p className='text-sm font-medium'>{t('vds.firewall.presets')}</p>
+                                <p className='text-muted-foreground text-sm'>{t('vds.firewall.presets_hint')}</p>
+                            </div>
+                            <div className='flex flex-wrap gap-2'>
+                                {state.features.presets.map((p) => (
+                                    <Button
+                                        key={p}
+                                        variant='outline'
+                                        size='sm'
+                                        disabled={!canManage || busy}
+                                        onClick={() =>
+                                            void run(
+                                                () =>
+                                                    axios.post(
+                                                        `/api/user/vm-instances/${id}/firewall/presets/${p}`,
+                                                    ),
+                                                'vds.firewall.preset_applied',
+                                                'vds.firewall.preset_failed',
+                                            )
+                                        }
+                                    >
+                                        {t(`vds.firewall.preset.${p}`)}
+                                    </Button>
+                                ))}
+                            </div>
                         </div>
-                    </div>
-                )}
-            </div>
+                    )}
+                </div>
+            </PageCard>
 
             {state.rules.length === 0 ? (
                 <EmptyState
@@ -253,11 +323,11 @@ export default function VdsFirewallPage() {
                             badges={
                                 <span
                                     className={cn(
-                                        'rounded-full px-2.5 py-0.5 text-xs font-semibold',
+                                        'rounded-md px-2 py-0.5 text-xs font-semibold tracking-wide',
                                         ACTION_STYLE[r.action],
                                     )}
                                 >
-                                    {r.action}
+                                    {t(`vds.firewall.actions.${r.action.toLowerCase()}`)}
                                 </span>
                             }
                             actions={
@@ -282,58 +352,78 @@ export default function VdsFirewallPage() {
                     <DialogTitle>{t('vds.firewall.add_rule')}</DialogTitle>
                     <DialogDescription>{t('vds.firewall.add_rule_description')}</DialogDescription>
                 </DialogHeader>
-                <div className='grid grid-cols-2 gap-3'>
-                    <Select
-                        label={t('vds.firewall.direction')}
-                        value={rule.type}
-                        onChange={(e) => setRule({ ...rule, type: e.target.value })}
-                    >
-                        <option value='in'>{t('vds.firewall.in')}</option>
-                        <option value='out'>{t('vds.firewall.out')}</option>
-                    </Select>
-                    <Select
-                        label={t('vds.firewall.action')}
-                        value={rule.action}
-                        onChange={(e) => setRule({ ...rule, action: e.target.value })}
-                    >
-                        {['ACCEPT', 'DROP', 'REJECT'].map((a) => (
-                            <option key={a} value={a}>
-                                {a}
-                            </option>
-                        ))}
-                    </Select>
-                    <Select
-                        label={t('vds.firewall.protocol')}
-                        value={rule.proto}
-                        onChange={(e) => setRule({ ...rule, proto: e.target.value })}
-                    >
-                        <option value=''>{t('vds.firewall.any')}</option>
-                        {['tcp', 'udp', 'icmp', 'ipv6-icmp'].map((p) => (
-                            <option key={p} value={p}>
-                                {p.toUpperCase()}
-                            </option>
-                        ))}
-                    </Select>
+                <div className='space-y-4'>
+                    <div className='space-y-2'>
+                        <p className='text-sm font-medium'>{t('vds.firewall.direction')}</p>
+                        <Segmented
+                            label={t('vds.firewall.direction')}
+                            value={rule.type}
+                            options={[
+                                { value: 'in', label: t('vds.firewall.in') },
+                                { value: 'out', label: t('vds.firewall.out') },
+                            ]}
+                            onChange={(type) => setRule({ ...rule, type })}
+                        />
+                    </div>
+                    <div className='space-y-2'>
+                        <p className='text-sm font-medium'>{t('vds.firewall.action')}</p>
+                        <Segmented
+                            label={t('vds.firewall.action')}
+                            value={rule.action}
+                            options={policyOptions}
+                            onChange={(action) => setRule({ ...rule, action })}
+                        />
+                    </div>
+                    <div className='space-y-2'>
+                        <p className='text-sm font-medium'>{t('vds.firewall.protocol')}</p>
+                        <Segmented
+                            label={t('vds.firewall.protocol')}
+                            value={rule.proto || ''}
+                            options={[
+                                { value: '', label: t('vds.firewall.any') },
+                                { value: 'tcp', label: 'TCP' },
+                                { value: 'udp', label: 'UDP' },
+                                { value: 'icmp', label: 'ICMP' },
+                                { value: 'ipv6-icmp', label: 'ICMPv6' },
+                            ]}
+                            onChange={(proto) =>
+                                setRule({
+                                    ...rule,
+                                    proto,
+                                    dport: ['tcp', 'udp'].includes(proto) ? rule.dport : '',
+                                })
+                            }
+                        />
+                    </div>
                     <div className='space-y-1.5'>
-                        <label className='text-sm font-semibold'>{t('vds.firewall.ports')}</label>
+                        <label className='text-sm font-medium' htmlFor='fw-ports'>
+                            {t('vds.firewall.ports')}
+                        </label>
                         <Input
+                            id='fw-ports'
                             value={rule.dport}
                             placeholder='80,443'
                             disabled={!['tcp', 'udp'].includes(rule.proto)}
                             onChange={(e) => setRule({ ...rule, dport: e.target.value })}
                         />
                     </div>
-                    <div className='col-span-2 space-y-1.5'>
-                        <label className='text-sm font-semibold'>{t('vds.firewall.source')}</label>
+                    <div className='space-y-1.5'>
+                        <label className='text-sm font-medium' htmlFor='fw-source'>
+                            {t('vds.firewall.source')}
+                        </label>
                         <Input
+                            id='fw-source'
                             value={rule.source}
                             placeholder={t('vds.firewall.source_placeholder')}
                             onChange={(e) => setRule({ ...rule, source: e.target.value })}
                         />
                     </div>
-                    <div className='col-span-2 space-y-1.5'>
-                        <label className='text-sm font-semibold'>{t('vds.firewall.comment')}</label>
+                    <div className='space-y-1.5'>
+                        <label className='text-sm font-medium' htmlFor='fw-comment'>
+                            {t('vds.firewall.comment')}
+                        </label>
                         <Input
+                            id='fw-comment'
                             value={rule.comment}
                             maxLength={80}
                             onChange={(e) => setRule({ ...rule, comment: e.target.value })}

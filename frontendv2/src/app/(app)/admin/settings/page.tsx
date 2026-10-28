@@ -16,8 +16,10 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import { AdminPageTips } from '@/components/admin/AdminPageTips';
+import { EmailProviderHint } from '@/components/admin/EmailProviderHint';
 import { VdsSettingsSections } from '@/components/admin/VdsSettingsSections';
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { applyMailProviderPreset, shouldShowMailSetting } from '@/lib/mail-providers';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { adminSettingsApi, OrganizedSettings, Setting } from '@/lib/admin-settings-api';
@@ -62,6 +64,11 @@ import {
 import { reopenSetup } from '@/lib/setup-wizard';
 import { copyToClipboard, cn } from '@/lib/utils';
 import { ImageAttachmentField } from '@/components/featherui/ImageAttachmentField';
+import {
+    matchesAdminSettingQuery,
+    resolveAdminSettingLabel,
+    vdsGroupSearchText,
+} from '@/lib/admin-settings-search';
 
 interface LogData {
     success: boolean;
@@ -113,35 +120,26 @@ function formatSettingName(name: string, key: string) {
         .join(' ');
 }
 
-function settingValueAsSearchText(setting: Setting): string {
-    if (setting.type === 'password') return '';
-    const v = setting.value;
-    if (v === null || v === undefined) return '';
-    return String(v);
-}
-
 function matchesSettingsQuery(
     query: string,
     settingKey: string,
     currentSetting: Setting,
     categoryKey: string,
     categoryName: string,
+    t: (key: string) => string,
 ): boolean {
-    const trimmed = query.trim().toLowerCase();
-    if (!trimmed) return true;
-    const haystack = [
+    const { title, description } = resolveAdminSettingLabel(settingKey, currentSetting, t);
+    const extra = categoryKey === 'vds' ? vdsGroupSearchText(settingKey, t) : '';
+    return matchesAdminSettingQuery(
+        query,
         settingKey,
-        formatSettingName(currentSetting.name, settingKey),
-        currentSetting.description,
-        currentSetting.placeholder,
-        settingValueAsSearchText(currentSetting),
+        currentSetting,
         categoryKey,
         categoryName,
-    ]
-        .join('\n')
-        .toLowerCase();
-    const terms = trimmed.split(/\s+/).filter(Boolean);
-    return terms.every((term) => haystack.includes(term));
+        title,
+        description,
+        extra,
+    );
 }
 
 function SettingFieldRow({
@@ -334,14 +332,14 @@ export default function SettingsPage() {
             let n = 0;
             for (const [settingKey, setting] of Object.entries(data.settings)) {
                 const currentSetting = settings[settingKey] || setting;
-                if (matchesSettingsQuery(searchTrimmed, settingKey, currentSetting, catKey, data.category.name)) {
+                if (matchesSettingsQuery(searchTrimmed, settingKey, currentSetting, catKey, data.category.name, t)) {
                     n += 1;
                 }
             }
             counts[catKey] = n;
         }
         return counts;
-    }, [organizedSettings, settings, searchTrimmed]);
+    }, [organizedSettings, settings, searchTrimmed, t]);
 
     const anySearchMatch = useMemo(
         () => !searchTrimmed || Object.values(categoryMatchCounts).some((c) => c > 0),
@@ -425,7 +423,7 @@ export default function SettingsPage() {
             let n = 0;
             for (const [settingKey, setting] of Object.entries(data.settings)) {
                 const currentSetting = settings[settingKey] || setting;
-                if (matchesSettingsQuery(searchTrimmed, settingKey, currentSetting, catKey, data.category.name)) {
+                if (matchesSettingsQuery(searchTrimmed, settingKey, currentSetting, catKey, data.category.name, t)) {
                     n += 1;
                 }
             }
@@ -442,9 +440,44 @@ export default function SettingsPage() {
         if (firstWithMatches !== resolvedTab) {
             router.replace(`${pathname}?category=${encodeURIComponent(firstWithMatches)}`);
         }
-    }, [organizedSettings, categoryKeys, settings, searchTrimmed, urlCategory, pathname, router]);
+    }, [organizedSettings, categoryKeys, settings, searchTrimmed, urlCategory, pathname, router, t]);
 
     const handleSettingChange = (key: string, value: string | number | boolean) => {
+        if (key === 'mail_provider_preset') {
+            const next: Record<string, string> = {};
+            applyMailProviderPreset(String(value), (k, v) => {
+                next[k] = v;
+            });
+            setSettings((prev) => {
+                const updated = { ...prev };
+                for (const [k, v] of Object.entries(next)) {
+                    if (!updated[k]) continue;
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    updated[k] = { ...updated[k], value: v as any };
+                }
+                return updated;
+            });
+            return;
+        }
+
+        if (key === 'mail_api_region') {
+            const region = String(value).trim();
+            const presetId = String(settings.mail_provider_preset?.value ?? '');
+            setSettings((prev) => {
+                const updated = {
+                    ...prev,
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    [key]: { ...prev[key], value: value as any },
+                };
+                if (presetId === 'ses_smtp' && region && updated.smtp_host) {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    updated.smtp_host = { ...updated.smtp_host, value: `email-smtp.${region}.amazonaws.com` as any };
+                }
+                return updated;
+            });
+            return;
+        }
+
         setSettings((prev) => ({
             ...prev,
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -740,7 +773,15 @@ export default function SettingsPage() {
 
                     <div className='min-w-0 flex-1 space-y-6'>
                         {Object.entries(organizedSettings).map(([key, data]) => {
+                            const mailTransport = String(settings.mail_transport?.value ?? 'smtp');
+                            const mailPresetId = String(settings.mail_provider_preset?.value ?? 'custom');
                             const filteredEntries = Object.entries(data.settings).filter(([settingKey, setting]) => {
+                                if (
+                                    key === 'email' &&
+                                    !shouldShowMailSetting(settingKey, mailTransport, mailPresetId)
+                                ) {
+                                    return false;
+                                }
                                 const currentSetting = settings[settingKey] || setting;
                                 return matchesSettingsQuery(
                                     searchTrimmed,
@@ -748,6 +789,7 @@ export default function SettingsPage() {
                                     currentSetting,
                                     key,
                                     data.category.name,
+                                    t,
                                 );
                             });
                             const totalInCategory = Object.keys(data.settings).length;
@@ -856,6 +898,12 @@ export default function SettingsPage() {
                                                 )}
                                                 {key === 'email' && (
                                                     <div className='space-y-4'>
+                                                        <EmailProviderHint
+                                                            presetId={String(
+                                                                settings.mail_provider_preset?.value ?? 'custom',
+                                                            )}
+                                                            t={t}
+                                                        />
                                                         <div className='border-border/50 rounded-2xl border p-6'>
                                                             <div className='flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center'>
                                                                 <div className='space-y-1'>
@@ -900,13 +948,20 @@ export default function SettingsPage() {
                                                         settings={settings}
                                                         searching={searchTrimmed !== ''}
                                                         renderField={(settingKey, currentSetting) => (
-                                                            <SettingFieldRow
-                                                                settingKey={settingKey}
-                                                                currentSetting={currentSetting}
-                                                                onSettingChange={handleSettingChange}
-                                                                t={t}
-                                                                switchBooleans
-                                                            />
+                                                            <div
+                                                                className={cn(
+                                                                    'fp-setting-row',
+                                                                    dirtyKeys.has(settingKey) && 'fp-setting-dirty',
+                                                                )}
+                                                            >
+                                                                <SettingFieldRow
+                                                                    settingKey={settingKey}
+                                                                    currentSetting={currentSetting}
+                                                                    onSettingChange={handleSettingChange}
+                                                                    t={t}
+                                                                    switchBooleans
+                                                                />
+                                                            </div>
                                                         )}
                                                     />
                                                 ) : (

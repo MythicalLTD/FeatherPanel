@@ -4,6 +4,13 @@
 
 ### Added
 
+- Multi-provider panel outbound mail: provider presets (Resend, Brevo, SendGrid, Mailgun, Postmark, MailerSend, SparkPost, Amazon SES, Gmail, Outlook, Mailtrap, SMTP2GO, custom SMTP) plus HTTP API transports in the async-runner (`mail_transport`, `mail_api_key`, `mail_api_domain`, `mail_api_region`). Delivery uses official/mature SDKs where available (`resend-rs`, `sendgrid`, `postmark`, `aws-sdk-sesv2`) and thin HTTP for the rest; SMTP stays on lettre. Admin Email settings and the setup wizard show or hide SMTP vs API fields from the selected preset. by @nayskutzu
+- VDS Boot page (`/vds/{id}/boot`, sidebar for QEMU VMs): boot order editor (disks, CD-ROMs, NICs via `GET/PUT /api/user/vm-instances/{id}/boot-order`), host library ISO mount/unmount, and My ISOs (upload, URL fetch, quota, mount) moved off the old Settings ISO block. by @nayskutzu
+- Per-node VDS ISO and rescue settings on Admin → VDS nodes → Storage: user ISO storage, allowed ISO storages, and rescue ISO volid. New columns on `featherpanel_vm_nodes` are seeded from the former global `vds_iso_*` / `vds_rescue_iso` settings; `GET /api/admin/vm-nodes/{id}/iso-storage` lists storages and ISO files from Proxmox. by @nayskutzu
+- Admin Proxmox host firewall on the VDS node edit Firewall tab: enable/disable, inbound/outbound policy, rule list, add/delete rules, optional PVE node selector, cluster firewall status, and audit-logged APIs under `/api/admin/vm-nodes/{id}/firewall*`. by @nayskutzu
+- VNC extra keys on the embedded VDS console: sticky Ctrl/Alt/Shift/Win, navigation and F-keys, and shortcuts (Ctrl+Alt+Del, Ctrl+Alt+Esc/F1–F7, Alt+F4, Alt+Tab, Print Screen) via noVNC `sendKey`. by @nayskutzu
+- Granular admin permissions: separate nodes for Wings (`admin.nodes.*`), web hosting (`admin.web_nodes.*`), VDS/Proxmox (`admin.vm_nodes.*`, `admin.vm_instances.*` including create), mail/DNS hosts, hosting packages, AbuseIPDB, and audit log. Role editor, admin sidebar and create-server actions gate on the matching permission. Migrations copy existing grants so upgrades keep access. by @nayskutzu
+- Source installer: FeatherTail / Proxmox host agent path (`--feathertail-install-only`, `feathertail|proxmox` aliases), optional full `apt upgrade` with an interactive warning and `FP_SYSTEM_UPGRADE`, and `FeatherTail/` ignored in git. by @nayskutzu
 - Bring your own backup storage: users can add their own S3 compatible buckets (Account, Backup storage) and pick one when creating a backup, in full server backups and in backup schedule tasks. Keys are stored encrypted, endpoints must be https and resolve to public addresses (checked when saved and again on every use, with DNS pinned), and each destination can be tested. Admins turn it on with `backup_byo_enabled` and set allowed providers (`backup_byo_providers`) and a per-user limit (`backup_byo_max_per_user`). Backups on user storage still count toward the server backup limit; the backup list shows where each backup lives, and removing a destination marks its backups as orphaned. by @nayskutzu
 - Backups on your own storage no longer count toward the server backup limit (by count or size); only backups on the host's storage do. This applies to manual backups, full server backups, schedules, the chatbot, and the "X / Y" counters, and the storage picker now says these backups do not use the host's quota. FIFO rotation only removes backups from the same storage pool as the new backup (host storage, or that one destination), so a host backup never deletes a backup on your storage and the other way round. Admins can make them count again with `backup_byo_count_toward_limit` (default off); a limit of 0 still disables all backups. by @nayskutzu
 - Backups on S3 compatible storage now really work: the panel creates the multipart upload, gives Wings short-lived SigV4 presigned part URLs (part size `backup_upload_part_size_mb`, parallel parts `backup_max_concurrent_uploads`), completes or aborts the upload, and serves downloads and restores through presigned GET links that expire (`backup_presign_ttl_minutes`). Admin, Settings, Backup Storage holds the S3 endpoint, bucket and keys (stored encrypted, never sent to nodes) with a Test connection button. Deleting a backup also deletes the object. Restore no longer accepts a download URL from the browser. by @nayskutzu
@@ -30,6 +37,12 @@
 
 ### Improved
 
+- VDS ISO flow: rescue and user ISO storage resolve per VM node (legacy global settings still fall back); admin VDS ISO list aggregates node storages; Mount ISO is host-library only; Settings points to Boot; admin VDS settings ISO group links to VDS nodes; `vds_iso_library_only` defaults to true. by @nayskutzu
+- Embedded VDS console VNC reconnects after stop/reboot/start and unexpected disconnects (clears stale tickets, retries with backoff) so noVNC is not stuck on a dead session. by @nayskutzu
+- User and admin VDS firewall pages: segmented controls, clearer option rows and a shared card layout. by @nayskutzu
+- Email settings UX: provider preset hint card (docs, free-tier badge, API vs SMTP) and server-side validation before saving mail settings (`mail_transport`, API key, Mailgun domain, SES region). by @nayskutzu
+- Admin settings search indexes VDS settings by section group; VDS features expose why custom ISOs are blocked (`mode` vs missing node storage). by @nayskutzu
+- Sticky navbar preference reads consistently via `useSyncExternalStore`; PanelIcon and the command palette skip unknown Lucide names instead of breaking. by @nayskutzu
 - No more glow on hover anywhere: removed colored and lifted hover shadows (inputs, textareas, selects, cards, plugin buttons, spell picker, node modules, setup wizard, account settings links, FeatherOS theme cards, `.fp-lift`), the hover ring on step indicators and the hover brightening halo on admin quick stats. Focus rings are unchanged. by @nayskutzu
 - The floating top navbar now has the same width, side margins and edges as the page column under it (server, admin and dashboard pages, all sidebar modes, phone and desktop). by @nayskutzu
 - Memory use of the Docker image is bounded. `FRANKENPHP_MAX_THREADS=auto` is now sized from the container memory, pool defaults are lower and workers recycle when their heap grows. New and changed environment variables: `PHP_MEMORY_LIMIT` (512M), `PHP_CLI_MEMORY_LIMIT` (1024M, was unlimited), `FEATHERPANEL_WORKER_MAX_MEMORY` (256M), `FEATHERPANEL_WORKER_MAX_REQUESTS` (500, was 1000), `FEATHERPANEL_WORKERS`, `FEATHERPANEL_WORKER_MAX_THREADS` (3 x CPU, max 32), `FEATHERPANEL_SLOW_WORKERS` (2), `FEATHERPANEL_SLOW_MAX_THREADS` (4, was 16) and `CRON_TIMEOUT` (900s). Under load the backend now stays flat at around 160 to 175 MiB. (#338) by @nayskutzu
@@ -76,6 +89,8 @@
 - FeatherOS follows the panel light/dark preference instead of switching the panel to the light theme; FeatherOS can still override the theme temporarily without locking the panel setting. by @nayskutzu
 - Plugins: plugin CLI commands are found from `APP_ADDONS_DIR` instead of the working directory, Cron intervals are stored in seconds so the `S` unit works, mixins register before plugins load, and the generated starter Cron example uses the addon namespace. (#365) by @nayskutzu
 - Real working VNC proxy. Now it fully works with any kind of setup by @nayskutzu!
+- Embedded VNC no longer stays disconnected after a guest reboot or power cycle when the console is still open. by @nayskutzu
+- Invalid or missing Lucide icon names in navigation or global search no longer break PanelIcon. by @nayskutzu
 
 ### Security
 
@@ -90,6 +105,8 @@
 ### Notes
 
 - Breaking: lifecycle hooks and server-mode API client callbacks now need public URLs, and server-mode callbacks must use https. Hooks or callbacks that point at internal addresses, or server-mode callbacks over http, are rejected.
+- Breaking (custom roles): Wings `admin.nodes.*` no longer covers VDS nodes/instances, web nodes, mail/DNS hosts, hosting packages, AbuseIPDB or audit log; each area has its own permissions. Upgrade migrations copy matching grants from the old nodes (`admin.nodes.*` → `admin.vm_nodes.*` / `admin.vm_instances.*` / `admin.web_nodes.*`; webspaces → mail/DNS/hosting packages; `admin.users.list` → AbuseIPDB/audit log). Creating a VDS from the admin dashboard now needs `admin.vm_instances.create`.
+- Breaking (multi-node VDS): ISO and rescue configuration moves from global Admin → Settings → VDS to each VDS node. Existing global values are seeded onto node rows once; multi-node setups need per-node edits afterwards.
 
 ## v1.5.2 STABLE
 

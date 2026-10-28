@@ -19,6 +19,7 @@ namespace App\Services\Vm;
 
 use App\App;
 use App\Chat\VmIso;
+use App\Chat\VmNode;
 use App\Config\ConfigInterface;
 use App\Services\Proxmox\Proxmox;
 
@@ -49,15 +50,74 @@ class IsoLibrary
         return in_array($global, self::MODES, true) ? $global : 'provider';
     }
 
-    public static function userStorage(): string
+    /**
+     * Proxmox storage that receives user ISOs for a node.
+     * Prefers the node column; falls back to the legacy global setting.
+     *
+     * @param array<string, mixed>|null $vmNode
+     */
+    public static function userStorage(?array $vmNode = null): string
     {
+        $fromNode = is_array($vmNode) ? trim((string) ($vmNode['storage_iso_user'] ?? '')) : '';
+        if ($fromNode !== '') {
+            return $fromNode;
+        }
+
         return trim(self::setting(ConfigInterface::VDS_ISO_USER_STORAGE, ''));
     }
 
-    /** True when the VDS may receive user supplied ISOs (mode allows it and a storage is configured). */
-    public static function userIsosAllowed(array $vmInstance): bool
+    /**
+     * Resolve the VM node row for an instance (cached only for the caller's convenience).
+     *
+     * @param array<string, mixed> $vmInstance
+     *
+     * @return array<string, mixed>|null
+     */
+    public static function nodeForInstance(array $vmInstance): ?array
     {
-        return self::mode($vmInstance) === 'provider_user' && self::userStorage() !== '';
+        $id = (int) ($vmInstance['vm_node_id'] ?? 0);
+
+        return $id > 0 ? VmNode::getVmNodeById($id) : null;
+    }
+
+    /**
+     * Comma-separated allowlist of ISO storages for a node (empty = all ISO storages).
+     *
+     * @param array<string, mixed>|null $vmNode
+     *
+     * @return string[]
+     */
+    public static function allowedStorages(?array $vmNode = null): array
+    {
+        $fromNode = is_array($vmNode) ? trim((string) ($vmNode['storage_iso_allowed'] ?? '')) : '';
+        if ($fromNode !== '') {
+            return self::csv($fromNode);
+        }
+
+        return self::csv(self::setting(ConfigInterface::VDS_ISO_ALLOWED_STORAGES, ''));
+    }
+
+    /**
+     * Rescue ISO volid for a node (empty = rescue unavailable even when globally enabled).
+     *
+     * @param array<string, mixed>|null $vmNode
+     */
+    public static function rescueIso(?array $vmNode = null): string
+    {
+        $fromNode = is_array($vmNode) ? trim((string) ($vmNode['rescue_iso'] ?? '')) : '';
+        if ($fromNode !== '') {
+            return $fromNode;
+        }
+
+        return trim(self::setting(ConfigInterface::VDS_RESCUE_ISO, ''));
+    }
+
+    /** True when the VDS may receive user supplied ISOs (mode allows it and a storage is configured). */
+    public static function userIsosAllowed(array $vmInstance, ?array $vmNode = null): bool
+    {
+        $node = $vmNode ?? self::nodeForInstance($vmInstance);
+
+        return self::mode($vmInstance) === 'provider_user' && self::userStorage($node) !== '';
     }
 
     /** @return array{upload_enabled: bool, url_enabled: bool, max_size_mb: int, max_per_user: int, require_approval: bool, url_domains: string[]} */
@@ -74,9 +134,9 @@ class IsoLibrary
     }
 
     /**
-     * Provider ISOs a VDS may mount: files on the admin-allowed storages filtered by the allowlist,
-     * enriched with library metadata. Hidden library entries are removed; with "library only" just
-     * registered entries are offered. User ISO files are never included.
+     * Provider ISOs a VDS may mount. Default (library only): visible Admin → VDS ISO library
+     * entries that exist on the node. With library only off: scan allowed storages, enrich with
+     * library metadata, and apply the allowlist. User ISO files are never included.
      *
      * @return array<int, array<string, mixed>>
      */
@@ -89,40 +149,71 @@ class IsoLibrary
                 $library[$row['volid']] = $row;
             }
         }
-        $libraryOnly = self::setting(ConfigInterface::VDS_ISO_LIBRARY_ONLY, 'false') === 'true';
+        $libraryOnly = self::setting(ConfigInterface::VDS_ISO_LIBRARY_ONLY, 'true') === 'true';
 
         $storagesRes = $client->getIsoStorages($node);
         $storages = $storagesRes['ok'] ? $storagesRes['storage'] : [];
-        $allowedStorages = self::csv(self::setting(ConfigInterface::VDS_ISO_ALLOWED_STORAGES, ''));
+        $vmNode = self::nodeForInstance($vmInstance);
+        $allowedStorages = self::allowedStorages($vmNode);
         if ($allowedStorages !== []) {
             $storages = array_values(array_intersect($storages, $allowedStorages));
         }
-        $patterns = self::csv(self::setting(ConfigInterface::VDS_ISO_ALLOWED_ISOS, ''));
+
+        $onStorage = [];
+        foreach (self::storageIsos($client, $node, $storages) as $item) {
+            if (str_starts_with($item['name'], self::USER_FILE_PREFIX)) {
+                continue;
+            }
+            $onStorage[$item['volid']] = $item;
+        }
 
         $isos = [];
-        foreach (self::storageIsos($client, $node, $storages) as $item) {
-            $volid = $item['volid'];
-            if ($volid === $excludeVolid || str_starts_with($item['name'], self::USER_FILE_PREFIX)) {
-                continue;
+        if ($libraryOnly) {
+            foreach ($library as $volid => $entry) {
+                if ((int) $entry['visible'] !== 1 || $volid === $excludeVolid) {
+                    continue;
+                }
+                $item = $onStorage[$volid] ?? null;
+                if ($item === null) {
+                    continue;
+                }
+                $isos[] = [
+                    'volid' => $volid,
+                    'name' => (string) $entry['name'],
+                    'file' => $item['name'],
+                    'storage' => $item['storage'],
+                    'size' => $item['size'],
+                    'description' => $entry['description'] ?? null,
+                    'category' => $entry['category'] ?? self::guessCategory($item['name']),
+                    'sort' => (int) $entry['sort_order'],
+                    'source' => 'provider',
+                ];
             }
-            $entry = $library[$volid] ?? null;
-            if ($entry !== null && (int) $entry['visible'] !== 1) {
-                continue;
+        } else {
+            $patterns = self::csv(self::setting(ConfigInterface::VDS_ISO_ALLOWED_ISOS, ''));
+            foreach ($onStorage as $volid => $item) {
+                if ($volid === $excludeVolid) {
+                    continue;
+                }
+                $entry = $library[$volid] ?? null;
+                if ($entry !== null && (int) $entry['visible'] !== 1) {
+                    continue;
+                }
+                if ($entry === null && $patterns !== [] && !self::matchesAny($patterns, $volid, $item['name'])) {
+                    continue;
+                }
+                $isos[] = [
+                    'volid' => $volid,
+                    'name' => $entry ? (string) $entry['name'] : $item['name'],
+                    'file' => $item['name'],
+                    'storage' => $item['storage'],
+                    'size' => $item['size'],
+                    'description' => $entry['description'] ?? null,
+                    'category' => $entry['category'] ?? self::guessCategory($item['name']),
+                    'sort' => $entry ? (int) $entry['sort_order'] : 1000,
+                    'source' => 'provider',
+                ];
             }
-            if ($entry === null && ($libraryOnly || ($patterns !== [] && !self::matchesAny($patterns, $volid, $item['name'])))) {
-                continue;
-            }
-            $isos[] = [
-                'volid' => $volid,
-                'name' => $entry ? (string) $entry['name'] : $item['name'],
-                'file' => $item['name'],
-                'storage' => $item['storage'],
-                'size' => $item['size'],
-                'description' => $entry['description'] ?? null,
-                'category' => $entry['category'] ?? self::guessCategory($item['name']),
-                'sort' => $entry ? (int) $entry['sort_order'] : 1000,
-                'source' => 'provider',
-            ];
         }
         usort($isos, static fn ($a, $b) => [$a['sort'], strtolower($a['name'])] <=> [$b['sort'], strtolower($b['name'])]);
 

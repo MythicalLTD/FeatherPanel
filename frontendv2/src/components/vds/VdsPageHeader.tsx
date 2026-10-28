@@ -22,6 +22,7 @@ import {
     CalendarClock,
     Camera,
     Clock,
+    HardDrive,
     Network,
     Settings,
     Shield,
@@ -42,6 +43,7 @@ const SECTION_ICONS: Record<string, LucideIcon> = {
     schedules: CalendarClock,
     users: Users,
     network: Network,
+    boot: HardDrive,
     settings: Settings,
 };
 

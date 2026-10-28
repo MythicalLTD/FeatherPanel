@@ -190,6 +190,7 @@ class SettingsController
     private $settings;
     private $sensitiveSettings = [
         ConfigInterface::SMTP_PASS,
+        ConfigInterface::MAIL_API_KEY,
         ConfigInterface::TURNSTILE_KEY_PRIV,
         ConfigInterface::CHATBOT_GOOGLE_AI_API_KEY,
         ConfigInterface::CHATBOT_OPENROUTER_API_KEY,
@@ -271,10 +272,8 @@ class SettingsController
                 ConfigInterface::VDS_CONSOLE_SCREENSHOT_ENABLED,
                 ConfigInterface::VDS_CTRL_ALT_DEL_ENABLED,
                 ConfigInterface::VDS_ISO_MODE,
-                ConfigInterface::VDS_ISO_ALLOWED_STORAGES,
                 ConfigInterface::VDS_ISO_ALLOWED_ISOS,
                 ConfigInterface::VDS_ISO_LIBRARY_ONLY,
-                ConfigInterface::VDS_ISO_USER_STORAGE,
                 ConfigInterface::VDS_ISO_USER_UPLOAD_ENABLED,
                 ConfigInterface::VDS_ISO_USER_URL_ENABLED,
                 ConfigInterface::VDS_ISO_USER_MAX_SIZE_MB,
@@ -282,7 +281,6 @@ class SettingsController
                 ConfigInterface::VDS_ISO_USER_URL_DOMAINS,
                 ConfigInterface::VDS_ISO_USER_REQUIRE_APPROVAL,
                 ConfigInterface::VDS_RESCUE_ENABLED,
-                ConfigInterface::VDS_RESCUE_ISO,
                 ConfigInterface::VDS_SNAPSHOTS_ENABLED,
                 ConfigInterface::VDS_SNAPSHOTS_DEFAULT_LIMIT,
                 ConfigInterface::VDS_SNAPSHOTS_INCLUDE_RAM,
@@ -427,12 +425,17 @@ class SettingsController
             'icon' => 'mail',
             'settings' => [
                 ConfigInterface::SMTP_ENABLED,
+                ConfigInterface::MAIL_PROVIDER_PRESET,
+                ConfigInterface::MAIL_TRANSPORT,
+                ConfigInterface::SMTP_FROM,
                 ConfigInterface::SMTP_HOST,
                 ConfigInterface::SMTP_PORT,
                 ConfigInterface::SMTP_USER,
                 ConfigInterface::SMTP_PASS,
-                ConfigInterface::SMTP_FROM,
                 ConfigInterface::SMTP_ENCRYPTION,
+                ConfigInterface::MAIL_API_KEY,
+                ConfigInterface::MAIL_API_DOMAIN,
+                ConfigInterface::MAIL_API_REGION,
             ],
         ],
         'status_page' => [
@@ -1060,11 +1063,11 @@ class SettingsController
             ],
             ConfigInterface::VDS_ISO_LIBRARY_ONLY => [
                 'name' => ConfigInterface::VDS_ISO_LIBRARY_ONLY,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::VDS_ISO_LIBRARY_ONLY, 'false'),
-                'description' => 'Only offer provider ISOs that are registered in Admin → VDS ISO library (unregistered files on the allowed storages are hidden).',
+                'value' => $this->app->getConfig()->getSetting(ConfigInterface::VDS_ISO_LIBRARY_ONLY, 'true'),
+                'description' => 'Default on: only offer provider ISOs registered in Admin → VDS ISO library. Set to false to also list unregistered ISO files on the allowed storages (advanced).',
                 'type' => 'select',
                 'required' => true,
-                'placeholder' => 'false',
+                'placeholder' => 'true',
                 'validation' => 'required|string|in:true,false',
                 'options' => ['true', 'false'],
                 'category' => 'vds',
@@ -1944,7 +1947,7 @@ class SettingsController
                 'value' => $this->app
                     ->getConfig()
                     ->getSetting(ConfigInterface::SMTP_ENABLED, 'false'),
-                'description' => 'The SMTP enabled of the application',
+                'description' => 'Enable outbound panel email (SMTP or HTTP API providers)',
                 'type' => 'select',
                 'required' => true,
                 'placeholder' => 'false',
@@ -1952,16 +1955,74 @@ class SettingsController
                 'options' => ['true', 'false'],
                 'category' => 'email',
             ],
+            ConfigInterface::MAIL_PROVIDER_PRESET => [
+                'name' => ConfigInterface::MAIL_PROVIDER_PRESET,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::MAIL_PROVIDER_PRESET, 'custom'),
+                'description' => 'UI provider preset (autofills transport and SMTP defaults; not used by the mail runner)',
+                'type' => 'select',
+                'required' => true,
+                'placeholder' => 'custom',
+                'validation' => 'required|string|max:64',
+                'options' => [
+                    'custom',
+                    'resend',
+                    'resend_smtp',
+                    'brevo',
+                    'brevo_smtp',
+                    'sendgrid',
+                    'sendgrid_smtp',
+                    'mailgun',
+                    'mailgun_smtp',
+                    'postmark',
+                    'postmark_smtp',
+                    'mailersend',
+                    'mailersend_smtp',
+                    'sparkpost',
+                    'sparkpost_smtp',
+                    'ses',
+                    'ses_smtp',
+                    'gmail',
+                    'outlook',
+                    'mailtrap',
+                    'smtp2go',
+                ],
+                'category' => 'email',
+            ],
+            ConfigInterface::MAIL_TRANSPORT => [
+                'name' => ConfigInterface::MAIL_TRANSPORT,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::MAIL_TRANSPORT, 'smtp'),
+                'description' => 'Delivery method: smtp (lettre) or an HTTP API provider',
+                'type' => 'select',
+                'required' => true,
+                'placeholder' => 'smtp',
+                'validation' => 'required|string|in:smtp,resend,sendgrid,mailgun,postmark,brevo,mailersend,sparkpost,ses',
+                'options' => [
+                    'smtp',
+                    'resend',
+                    'sendgrid',
+                    'mailgun',
+                    'postmark',
+                    'brevo',
+                    'mailersend',
+                    'sparkpost',
+                    'ses',
+                ],
+                'category' => 'email',
+            ],
             ConfigInterface::SMTP_HOST => [
                 'name' => ConfigInterface::SMTP_HOST,
                 'value' => $this->app
                     ->getConfig()
                     ->getSetting(ConfigInterface::SMTP_HOST, 'localhost'),
-                'description' => 'The SMTP host of the application',
+                'description' => 'SMTP hostname (used when mail transport is smtp)',
                 'type' => 'text',
-                'required' => true,
+                'required' => false,
                 'placeholder' => 'localhost',
-                'validation' => 'required|string|max:255',
+                'validation' => 'string|max:255',
                 'options' => [],
                 'category' => 'email',
             ],
@@ -1970,11 +2031,11 @@ class SettingsController
                 'value' => $this->app
                     ->getConfig()
                     ->getSetting(ConfigInterface::SMTP_PORT, '587'),
-                'description' => 'The SMTP port of the application',
+                'description' => 'SMTP port (used when mail transport is smtp)',
                 'type' => 'number',
-                'required' => true,
+                'required' => false,
                 'placeholder' => '587',
-                'validation' => 'required|integer|min:1|max:65535',
+                'validation' => 'integer|min:1|max:65535',
                 'options' => [],
                 'category' => 'email',
             ],
@@ -1986,11 +2047,11 @@ class SettingsController
                         ConfigInterface::SMTP_USER,
                         'example@example.com',
                     ),
-                'description' => 'The SMTP user of the application',
+                'description' => 'SMTP username (used when mail transport is smtp)',
                 'type' => 'text',
-                'required' => true,
+                'required' => false,
                 'placeholder' => 'example@example.com',
-                'validation' => 'required|string|max:255',
+                'validation' => 'string|max:255',
                 'options' => [],
                 'category' => 'email',
             ],
@@ -2000,9 +2061,9 @@ class SettingsController
                     ConfigInterface::SMTP_PASS,
                     'password',
                 ),
-                'description' => 'The SMTP password of the application',
+                'description' => 'SMTP password or app password (used when mail transport is smtp)',
                 'type' => 'password',
-                'required' => true,
+                'required' => false,
                 'placeholder' => 'Enter password to change',
                 'validation' => 'string|max:255',
                 'options' => [],
@@ -2017,7 +2078,7 @@ class SettingsController
                         ConfigInterface::SMTP_FROM,
                         'noreply@featherpanel.com',
                     ),
-                'description' => 'The SMTP from of the application',
+                'description' => 'From address for all outbound panel mail (must be verified with your provider)',
                 'type' => 'text',
                 'required' => true,
                 'placeholder' => 'noreply@featherpanel.com',
@@ -2030,12 +2091,54 @@ class SettingsController
                 'value' => $this->app
                     ->getConfig()
                     ->getSetting(ConfigInterface::SMTP_ENCRYPTION, 'tls'),
-                'description' => 'SMTP encryption: starttls/tls for port 587 (e.g. Brevo), ssl for port 465 SMTPS, none for plain SMTP',
+                'description' => 'SMTP encryption: starttls/tls for port 587, ssl for port 465 SMTPS, none for plain SMTP',
                 'type' => 'select',
-                'required' => true,
+                'required' => false,
                 'placeholder' => 'starttls',
-                'validation' => 'required|string|in:starttls,tls,ssl,none',
+                'validation' => 'string|in:starttls,tls,ssl,none',
                 'options' => ['starttls', 'tls', 'ssl', 'none'],
+                'category' => 'email',
+            ],
+            ConfigInterface::MAIL_API_KEY => [
+                'name' => ConfigInterface::MAIL_API_KEY,
+                'value' => $this->maskSensitiveSetting(
+                    ConfigInterface::MAIL_API_KEY,
+                    '',
+                ),
+                'description' => 'API key for HTTP mail providers. For Amazon SES use ACCESS_KEY:SECRET_KEY',
+                'type' => 'password',
+                'required' => false,
+                'placeholder' => 'Enter API key to change',
+                'validation' => 'string|max:512',
+                'options' => [],
+                'category' => 'email',
+                'sensitive' => true,
+                'max_length' => 512,
+            ],
+            ConfigInterface::MAIL_API_DOMAIN => [
+                'name' => ConfigInterface::MAIL_API_DOMAIN,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::MAIL_API_DOMAIN, ''),
+                'description' => 'Mailgun sending domain (required for Mailgun API)',
+                'type' => 'text',
+                'required' => false,
+                'placeholder' => 'mg.example.com',
+                'validation' => 'string|max:255',
+                'options' => [],
+                'category' => 'email',
+            ],
+            ConfigInterface::MAIL_API_REGION => [
+                'name' => ConfigInterface::MAIL_API_REGION,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::MAIL_API_REGION, 'us'),
+                'description' => 'Provider region: us/eu (Mailgun, SparkPost), or AWS SES region (e.g. us-east-1)',
+                'type' => 'text',
+                'required' => false,
+                'placeholder' => 'us',
+                'validation' => 'string|max:64',
+                'options' => [],
                 'category' => 'email',
             ],
             ConfigInterface::CAPTCHA_PROVIDER => [
@@ -4614,6 +4717,11 @@ class SettingsController
         $app = App::getInstance(true);
         $updatedSettings = [];
 
+        $mailValidationError = $this->validateMailSettingsBeforeUpdate($data);
+        if ($mailValidationError !== null) {
+            return $mailValidationError;
+        }
+
         // Validate and update each setting
         foreach ($data as $setting => $value) {
             if (!is_string($setting) || !isset($this->settings[$setting])) {
@@ -4910,7 +5018,7 @@ class SettingsController
     #[OA\Post(
         path: '/api/admin/settings/email/test',
         summary: 'Send test email to current user',
-        description: 'Send a test email to the currently authenticated user to verify SMTP configuration. This is useful for testing email settings, especially with providers like SendGrid that require email verification.',
+        description: 'Send a test email to the currently authenticated user to verify email configuration (SMTP or HTTP API providers).',
         tags: ['Admin - Settings'],
         responses: [
             new OA\Response(
@@ -4933,7 +5041,7 @@ class SettingsController
             ),
             new OA\Response(
                 response: 400,
-                description: 'Bad request - SMTP not enabled or user has no email',
+                description: 'Bad request - email not enabled or user has no email',
             ),
             new OA\Response(response: 401, description: 'Unauthorized'),
             new OA\Response(
@@ -4961,13 +5069,13 @@ class SettingsController
             );
         }
 
-        // Check if SMTP is enabled
+        // Check if outbound mail is enabled
         $smtpEnabled = $this->app
             ->getConfig()
             ->getSetting(ConfigInterface::SMTP_ENABLED, 'false');
         if ($smtpEnabled !== 'true') {
             return ApiResponse::error(
-                'SMTP is not enabled. Please enable and configure SMTP settings first.',
+                'Email is not enabled. Please enable and configure email settings first.',
                 'SMTP_NOT_ENABLED',
                 400,
             );
@@ -5009,7 +5117,7 @@ class SettingsController
                                         Hello <strong>{$user['username']}</strong>,
                                     </p>
                                     <p style="margin: 0 0 20px 0; color: #374151; font-size: 16px; line-height: 1.6;">
-                                        This is a test email from <strong>{$appName}</strong> to verify that your SMTP email configuration is working correctly.
+                                        This is a test email from <strong>{$appName}</strong> to verify that your email configuration is working correctly.
                                     </p>
                                     <div style="background-color: #f0fdf4; border-left: 4px solid #10b981; padding: 16px; margin: 20px 0; border-radius: 4px;">
                                         <p style="margin: 0; color: #065f46; font-size: 14px; line-height: 1.5;">
@@ -5057,7 +5165,7 @@ class SettingsController
 
         if ($queueId === true) {
             return ApiResponse::error(
-                'SMTP disabled skipping enqueue/send',
+                'Email disabled skipping enqueue/send',
                 'SMTP_DISABLED',
                 400,
             );
@@ -5328,6 +5436,142 @@ class SettingsController
         }
 
         return $organized;
+    }
+
+    /**
+     * Validate outbound mail settings using the merged request + existing config before writes.
+     *
+     * @param array<string,mixed> $data Keys submitted in this request
+     */
+    private function validateMailSettingsBeforeUpdate(array $data): ?Response
+    {
+        $mailKeys = [
+            ConfigInterface::SMTP_ENABLED,
+            ConfigInterface::MAIL_TRANSPORT,
+            ConfigInterface::SMTP_HOST,
+            ConfigInterface::SMTP_PORT,
+            ConfigInterface::SMTP_USER,
+            ConfigInterface::SMTP_FROM,
+            ConfigInterface::MAIL_API_KEY,
+            ConfigInterface::MAIL_API_DOMAIN,
+            ConfigInterface::MAIL_API_REGION,
+        ];
+        $touchedMail = false;
+        foreach ($mailKeys as $key) {
+            if (array_key_exists($key, $data)) {
+                $touchedMail = true;
+                break;
+            }
+        }
+        if (!$touchedMail) {
+            return null;
+        }
+
+        $config = $this->app->getConfig();
+        $resolve = function (string $key, string $default = '') use ($data, $config): string {
+            if (!array_key_exists($key, $data)) {
+                return (string) $config->getSetting($key, $default);
+            }
+            $value = $data[$key];
+            if ($this->isSensitiveSetting($key) && ($value === '••••••••' || $value === '' || $value === null)) {
+                return (string) $config->getSetting($key, $default);
+            }
+            if (is_bool($value)) {
+                return $value ? 'true' : 'false';
+            }
+            if (is_array($value) || is_object($value)) {
+                return $default;
+            }
+
+            return trim((string) $value);
+        };
+
+        $enabled = $resolve(ConfigInterface::SMTP_ENABLED, 'false') === 'true';
+        if (!$enabled) {
+            return null;
+        }
+
+        $transport = strtolower($resolve(ConfigInterface::MAIL_TRANSPORT, 'smtp'));
+        $from = $resolve(ConfigInterface::SMTP_FROM, '');
+        if ($from === '' || !filter_var($from, FILTER_VALIDATE_EMAIL)) {
+            return ApiResponse::error(
+                'A valid From address (smtp_from) is required when email is enabled',
+                'MAIL_FROM_REQUIRED',
+                400,
+            );
+        }
+
+        $apiTransports = [
+            'resend',
+            'sendgrid',
+            'mailgun',
+            'postmark',
+            'brevo',
+            'mailersend',
+            'sparkpost',
+            'ses',
+        ];
+
+        if ($transport === 'smtp') {
+            $host = $resolve(ConfigInterface::SMTP_HOST, '');
+            if ($host === '') {
+                return ApiResponse::error(
+                    'SMTP host is required when mail transport is smtp',
+                    'MAIL_SMTP_HOST_REQUIRED',
+                    400,
+                );
+            }
+
+            return null;
+        }
+
+        if (!in_array($transport, $apiTransports, true)) {
+            return ApiResponse::error(
+                'Invalid mail_transport value',
+                'INVALID_MAIL_TRANSPORT',
+                400,
+            );
+        }
+
+        $apiKey = $resolve(ConfigInterface::MAIL_API_KEY, '');
+        if ($apiKey === '') {
+            return ApiResponse::error(
+                'API key (mail_api_key) is required for HTTP mail providers',
+                'MAIL_API_KEY_REQUIRED',
+                400,
+            );
+        }
+
+        if ($transport === 'mailgun') {
+            $domain = $resolve(ConfigInterface::MAIL_API_DOMAIN, '');
+            if ($domain === '') {
+                return ApiResponse::error(
+                    'Mailgun sending domain (mail_api_domain) is required',
+                    'MAIL_API_DOMAIN_REQUIRED',
+                    400,
+                );
+            }
+        }
+
+        if ($transport === 'ses') {
+            $region = $resolve(ConfigInterface::MAIL_API_REGION, '');
+            if ($region === '') {
+                return ApiResponse::error(
+                    'AWS SES region (mail_api_region) is required (e.g. us-east-1)',
+                    'MAIL_API_REGION_REQUIRED',
+                    400,
+                );
+            }
+            if (!str_contains($apiKey, ':')) {
+                return ApiResponse::error(
+                    'Amazon SES API key must be ACCESS_KEY:SECRET_KEY',
+                    'MAIL_SES_KEY_FORMAT',
+                    400,
+                );
+            }
+        }
+
+        return null;
     }
 
     /**

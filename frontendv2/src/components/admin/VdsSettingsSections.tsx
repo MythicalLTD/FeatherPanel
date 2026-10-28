@@ -16,6 +16,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import { useMemo, useState, type ReactNode } from 'react';
+import Link from 'next/link';
 import {
     Bell,
     CalendarClock,
@@ -24,6 +25,7 @@ import {
     ChevronsUpDown,
     Camera,
     Disc3,
+    ExternalLink,
     LineChart,
     MonitorPlay,
     Network,
@@ -199,6 +201,20 @@ export function VdsSettingsSections({
                         </button>
                         {expanded && (
                             <div className='border-border/50 space-y-5 border-t px-4 py-5 sm:px-5'>
+                                {def.id === 'iso' && (
+                                    <div className='border-border/60 bg-muted/30 flex flex-col gap-2 rounded-xl border px-4 py-3 sm:flex-row sm:items-center sm:justify-between'>
+                                        <p className='text-muted-foreground text-sm'>
+                                            {t('admin.settings.vds_groups.iso.node_callout')}
+                                        </p>
+                                        <Link
+                                            href='/admin/vds-nodes'
+                                            className='text-primary inline-flex shrink-0 items-center gap-1.5 text-xs font-medium hover:underline'
+                                        >
+                                            {t('admin.settings.vds_groups.iso.node_link')}
+                                            <ExternalLink className='h-3.5 w-3.5' />
+                                        </Link>
+                                    </div>
+                                )}
                                 {items.map(([key, setting]) => (
                                     <div key={key}>{renderField(key, settings[key] || setting)}</div>
                                 ))}
