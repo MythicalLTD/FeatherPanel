@@ -1617,7 +1617,16 @@
             "CREDENTIALS_REQUIRED": "Access key and secret key are required",
             "DESTINATION_TEST_FAILED": "Storage test failed",
             "INVALID_DESTINATION_ID": "Invalid storage destination",
-            "DESTINATION_IN_USE": "This storage still holds backups, so its location cannot change. Add a new storage instead."
+            "DESTINATION_IN_USE": "This storage still holds backups, so its location cannot change. Add a new storage instead.",
+            "BOOT_NOT_SUPPORTED": "Boot order can only be changed on QEMU virtual machines.",
+            "INVALID_MAIL_TRANSPORT": "Invalid mail transport.",
+            "INVALID_POS": "The rule position is missing or invalid.",
+            "MAIL_API_DOMAIN_REQUIRED": "The Mailgun sending domain is required.",
+            "MAIL_API_KEY_REQUIRED": "An API key is required for HTTP mail providers.",
+            "MAIL_API_REGION_REQUIRED": "The Amazon SES region is required (for example us-east-1).",
+            "MAIL_FROM_REQUIRED": "A valid From address is required when email is enabled.",
+            "MAIL_SES_KEY_FORMAT": "The Amazon SES API key must be in the form ACCESS_KEY:SECRET_KEY.",
+            "MAIL_SMTP_HOST_REQUIRED": "An SMTP host is required when the mail transport is SMTP."
         },
         "global": {}
     },
