@@ -453,6 +453,33 @@ class WebSpace
         $updates = [];
         $params = ['uuid' => $uuid];
 
+        if (isset($fields['domains']) && !isset($fields['domain_routes']) && is_array($fields['domains'])) {
+            // A flat `domains` PATCH must update the authoritative routes table
+            // too - otherwise the JSON column and featherpanel_webspace_domains
+            // silently desync and the daemon never learns the new domains.
+            // Existing route metadata (type, redirect_target, document_root) is
+            // preserved; new domains become aliases.
+            $existing = self::getByUuid($uuid);
+            if (!$existing) {
+                return false;
+            }
+            $previousRoutes = [];
+            foreach (WebSpaceDomain::listForWebspaceId((int) ($existing['id'] ?? 0)) as $routeRow) {
+                $previousRoutes[strtolower((string) ($routeRow['domain'] ?? ''))] = $routeRow;
+            }
+            $fields['domain_routes'] = [];
+            foreach ($fields['domains'] as $index => $domain) {
+                $previous = $previousRoutes[strtolower(trim((string) $domain))] ?? null;
+                $fields['domain_routes'][] = [
+                    'domain' => (string) $domain,
+                    'type' => $previous['type'] ?? ($index === 0 ? 'primary' : 'alias'),
+                    'redirect_target' => $previous['redirect_target'] ?? null,
+                    'document_root' => $previous['document_root'] ?? '',
+                ];
+            }
+            unset($fields['domains']);
+        }
+
         if (isset($fields['domain_routes']) && is_array($fields['domain_routes'])) {
             $existing = self::getByUuid($uuid);
             if (!$existing) {
