@@ -24,7 +24,6 @@ use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Helpers\CaptchaHelper;
 use App\Config\ConfigInterface;
-use PragmaRX\Google2FA\Google2FA;
 use App\CloudFlare\CloudFlareRealIP;
 use App\Helpers\SessionCookieHelper;
 use App\Mail\templates\AccountDeletionOtp;
@@ -200,8 +199,7 @@ class AccountDeletionController
             if ($twoFaCode === '' || !preg_match('/^\d{6}$/', $twoFaCode)) {
                 return ApiResponse::error('A valid 2FA code is required', 'TWO_FA_CODE_REQUIRED', 400);
             }
-            $google2fa = new Google2FA();
-            if (!$google2fa->verifyKey($user['two_fa_key'], $twoFaCode)) {
+            if (!\App\Helpers\TotpVerifier::verify($user, $twoFaCode)) {
                 return ApiResponse::error('Invalid 2FA code', 'INVALID_TWO_FA_CODE', 400);
             }
         }

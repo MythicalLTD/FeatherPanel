@@ -116,6 +116,7 @@
 
 ### Security
 
+- 2FA codes can no longer be reused: a TOTP code accepted once (login, VDS confirmation, account deletion) is rejected if sent again, including two parallel requests with the same code. The last used timestep is stored per user (new column `two_fa_last_timestep`). by @nayskutzu
 - Server permissions: an account without a subuser entry on a server is no longer treated as its owner by the permission checker. Only the owner and staff with server admin rights (`admin.root`, `admin.servers.view/edit/delete`) get every permission; anyone else gets none. This closes paths such as the chatbot database tool showing database passwords to users without `database.view_password`. by @nayskutzu
 - Panel logs no longer contain node daemon tokens, database host passwords or other secrets: validation errors in nodes, web nodes, VDS nodes, database hosts, servers and spell variables now log the data with password, token, secret and key fields masked (new `LogRedactor`). by @nayskutzu
 - Security center: users the 2FA requirement applies to can no longer turn two-factor authentication off from their account settings (`TWO_FACTOR_REQUIRED_BY_POLICY`). by @nayskutzu
