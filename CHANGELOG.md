@@ -98,6 +98,7 @@
 - Real working VNC proxy. Now it fully works with any kind of setup by @nayskutzu!
 - Embedded VNC no longer stays disconnected after a guest reboot or power cycle when the console is still open. by @nayskutzu
 - Invalid or missing Lucide icon names in navigation or global search no longer break PanelIcon. by @nayskutzu
+- Admin WebSpace PATCH with a flat `domains` list now also updates the domain routes table (keeping each existing route's type, redirect target and document root, new domains become aliases), so the node learns the new domains instead of the two stores drifting apart. Domains already used by another WebSpace are now rejected on this path too. (#408) by @Devority
 
 ### Security
 
