@@ -37,7 +37,12 @@ type EventKey =
     | 'vds_backup_failed'
     | 'vds_bandwidth'
     | 'vds_expiring'
-    | 'storage_disconnected';
+    | 'storage_disconnected'
+    | 'webspace_install'
+    | 'webspace_backup_completed'
+    | 'webspace_backup_failed'
+    | 'webspace_limit'
+    | 'webspace_malware';
 
 interface NotificationSettings {
     email_enabled: boolean;
@@ -59,6 +64,11 @@ const EVENTS: EventKey[] = [
     'vds_bandwidth',
     'vds_expiring',
     'storage_disconnected',
+    'webspace_install',
+    'webspace_backup_completed',
+    'webspace_backup_failed',
+    'webspace_limit',
+    'webspace_malware',
 ];
 
 const DEFAULTS: NotificationSettings = {
@@ -78,6 +88,11 @@ const DEFAULTS: NotificationSettings = {
         vds_bandwidth: true,
         vds_expiring: true,
         storage_disconnected: true,
+        webspace_install: true,
+        webspace_backup_completed: true,
+        webspace_backup_failed: true,
+        webspace_limit: true,
+        webspace_malware: true,
     },
 };
 

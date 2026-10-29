@@ -15,12 +15,13 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { WebSpaceResourceGraphs } from '@/components/webspace/WebSpaceResourceGraphs';
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
 import axios from 'axios';
 import { Activity, AlertTriangle, BarChart3, Globe, Loader2, RefreshCw, TrendingUp } from 'lucide-react';
-import { PageHeader } from '@/components/featherui/PageHeader';
+import { WebSpacePageHeader as PageHeader } from '@/components/webspace/WebSpacePageHeader';
 import { HeadlessSelect } from '@/components/ui/headless-select';
 import { Button } from '@/components/featherui/Button';
 import { EmptyState } from '@/components/featherui/EmptyState';
@@ -316,6 +317,12 @@ export default function WebSpaceAnalyticsPage() {
                             </Button>
                         </div>
                     }
+                />
+
+                <WebSpaceResourceGraphs
+                    uuidShort={uuidShort}
+                    memoryLimitBytes={util?.memory_limit_bytes ?? 0}
+                    diskLimitBytes={util?.disk_limit_bytes ?? 0}
                 />
 
                 {loading ? (

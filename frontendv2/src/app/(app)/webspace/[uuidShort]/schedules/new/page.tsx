@@ -21,7 +21,7 @@ import axios from 'axios';
 import { toast } from 'sonner';
 import { Plus } from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';
-import { PageHeader } from '@/components/featherui/PageHeader';
+import { WebSpacePageHeader as PageHeader } from '@/components/webspace/WebSpacePageHeader';
 import { FormSection } from '@/components/featherui/FormSection';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';

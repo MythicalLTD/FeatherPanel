@@ -24,6 +24,7 @@ use App\Chat\WebPlate;
 use App\Chat\WebSpace;
 use App\Chat\HostingPackage;
 use App\Helpers\ApiResponse;
+use App\Helpers\WebSpaceWafRules;
 use OpenApi\Attributes as OA;
 use App\Chat\WebSpaceSchedule;
 use App\Helpers\DnsProvisioner;
@@ -182,7 +183,18 @@ class WebSpacesController
             $fields['waf_enabled'] = !empty($content['waf_enabled']) ? 1 : 0;
         }
         if (array_key_exists('waf_deny_ips', $content)) {
+            $badIp = WebSpaceWafRules::firstInvalidIp($content['waf_deny_ips']);
+            if ($badIp !== null) {
+                return ApiResponse::error('Invalid blocked IP or CIDR: ' . substr($badIp, 0, 64), 'INVALID_WAF_IP', 422);
+            }
             $fields['waf_deny_ips'] = $content['waf_deny_ips'];
+        }
+        if (array_key_exists('waf_deny_paths', $content)) {
+            $badPath = WebSpaceWafRules::firstInvalidPath($content['waf_deny_paths']);
+            if ($badPath !== null) {
+                return ApiResponse::error('Invalid blocked path: ' . substr($badPath, 0, 64), 'INVALID_WAF_PATH', 422);
+            }
+            $fields['waf_deny_paths'] = $content['waf_deny_paths'];
         }
         if (array_key_exists('database_limit', $content)) {
             $fields['database_limit'] = max(0, (int) $content['database_limit']);

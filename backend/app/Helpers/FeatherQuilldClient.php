@@ -665,6 +665,16 @@ class FeatherQuilldClient
      *
      * @return array{ok: bool, status: int, body: mixed, error: ?string}
      */
+    public static function getWebSpaceUtilizationHistory(array $webNode, string $uuid, int $minutes): array
+    {
+        return self::request($webNode, 'GET', '/api/webspaces/' . $uuid . '/utilization/history?minutes=' . max(1, min(1440, $minutes)), null, 15);
+    }
+
+    /**
+     * @param array<string, mixed> $webNode
+     *
+     * @return array{ok: bool, status: int, body: mixed, error: ?string}
+     */
     public static function listWebSpaceBackups(array $webNode, string $uuid): array
     {
         return self::request($webNode, 'GET', '/api/webspaces/' . $uuid . '/backups');

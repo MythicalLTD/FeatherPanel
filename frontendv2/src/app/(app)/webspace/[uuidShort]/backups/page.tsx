@@ -32,7 +32,11 @@ import {
     Calendar,
     FolderOpen,
 } from 'lucide-react';
-import { PageHeader } from '@/components/featherui/PageHeader';
+import { ResourceTable } from '@/components/featherui/ResourceCard';
+import { ListPagination } from '@/components/featherui/ListPagination';
+import { useClientPagination } from '@/hooks/useClientPagination';
+import { WebSpacePageHeader as PageHeader } from '@/components/webspace/WebSpacePageHeader';
+import { WebSpacePageTips } from '@/components/webspace/WebSpacePageTips';
 import { Button } from '@/components/featherui/Button';
 import { EmptyState } from '@/components/featherui/EmptyState';
 import { ResourceCard } from '@/components/featherui/ResourceCard';
@@ -245,6 +249,7 @@ export default function WebSpaceBackupsPage() {
         }
     };
 
+    const pageBackups = useClientPagination(backups);
     return (
         <WebSpacePageWidgets pageId='webspace-backups'>
             <div className='space-y-8 pb-12'>
@@ -292,6 +297,7 @@ export default function WebSpaceBackupsPage() {
                         </div>
                     }
                 />
+                <WebSpacePageTips page='backups' />
                 {busy && (
                     <p className='text-muted-foreground flex items-center gap-2 text-sm'>
                         <Loader2 className='h-4 w-4 animate-spin' />
@@ -333,105 +339,114 @@ export default function WebSpaceBackupsPage() {
                         }
                     />
                 ) : (
-                    <div className='grid grid-cols-1 gap-4'>
-                        {backups.map((b) => (
-                            <ResourceCard
-                                key={b.uuid}
-                                icon={Archive}
-                                title={b.uuid}
-                                titleClassName='font-mono text-base'
-                                description={
-                                    <>
-                                        {b.status === 'failed' && (
-                                            <span className='text-destructive text-sm'>
-                                                {t('serverBackups.failed')}
-                                            </span>
-                                        )}
-                                        {['pending', 'running', 'creating'].includes(b.status ?? '') && (
-                                            <span className='text-muted-foreground text-sm'>
-                                                {t('serverBackups.inProgress')}
-                                            </span>
-                                        )}
-                                        <div className='text-muted-foreground flex items-center gap-2'>
-                                            <HardDrive className='h-4 w-4 opacity-50' />
-                                            <span className='text-sm font-semibold'>
-                                                {b.bytes != null ? formatFileSize(b.bytes) : na}
-                                            </span>
-                                        </div>
-                                        {b.created_at && (
+                    <>
+                        <ResourceTable>
+                            {pageBackups.paged.map((b) => (
+                                <ResourceCard
+                                    key={b.uuid}
+                                    icon={Archive}
+                                    title={b.uuid}
+                                    titleClassName='font-mono text-base'
+                                    description={
+                                        <>
+                                            {b.status === 'failed' && (
+                                                <span className='text-destructive text-sm'>
+                                                    {t('serverBackups.failed')}
+                                                </span>
+                                            )}
+                                            {['pending', 'running', 'creating'].includes(b.status ?? '') && (
+                                                <span className='text-muted-foreground text-sm'>
+                                                    {t('serverBackups.inProgress')}
+                                                </span>
+                                            )}
                                             <div className='text-muted-foreground flex items-center gap-2'>
-                                                <Calendar className='h-4 w-4 opacity-50' />
-                                                <span className='text-sm font-semibold'>{b.created_at}</span>
+                                                <HardDrive className='h-4 w-4 opacity-50' />
+                                                <span className='text-sm font-semibold'>
+                                                    {b.bytes != null ? formatFileSize(b.bytes) : na}
+                                                </span>
                                             </div>
-                                        )}
-                                    </>
-                                }
-                                actions={
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger className='group-hover:bg-primary/10 flex h-12 w-12 items-center justify-center rounded-xl transition-colors outline-none'>
-                                            <MoreVertical className='text-muted-foreground group-hover:text-primary h-6 w-6 transition-colors' />
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent
-                                            align='end'
-                                            className='bg-card/90 border-border/40 w-56 rounded-2xl p-2 backdrop-blur-xl'
-                                        >
-                                            {canDownload &&
-                                                (!b.status || ['completed', 'successful'].includes(b.status)) && (
+                                            {b.created_at && (
+                                                <div className='text-muted-foreground flex items-center gap-2'>
+                                                    <Calendar className='h-4 w-4 opacity-50' />
+                                                    <span className='text-sm font-semibold'>{b.created_at}</span>
+                                                </div>
+                                            )}
+                                        </>
+                                    }
+                                    actions={
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger className='group-hover:bg-primary/10 flex h-12 w-12 items-center justify-center rounded-xl transition-colors outline-none'>
+                                                <MoreVertical className='text-muted-foreground group-hover:text-primary h-6 w-6 transition-colors' />
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent
+                                                align='end'
+                                                className='bg-card/90 border-border/40 w-56 rounded-2xl p-2'
+                                            >
+                                                {canDownload &&
+                                                    (!b.status || ['completed', 'successful'].includes(b.status)) && (
+                                                        <DropdownMenuItem
+                                                            onClick={() => download(b.uuid)}
+                                                            disabled={busy === b.uuid}
+                                                            className='flex cursor-pointer items-center gap-3 rounded-xl p-3'
+                                                        >
+                                                            <Download className='h-4 w-4 text-emerald-500' />
+                                                            <span className='font-bold'>
+                                                                {t('webSpaces.backups.download')}
+                                                            </span>
+                                                        </DropdownMenuItem>
+                                                    )}
+                                                {canRestore &&
+                                                    (!b.status || ['completed', 'successful'].includes(b.status)) && (
+                                                        <DropdownMenuItem
+                                                            onClick={() => void restore(b.uuid)}
+                                                            disabled={busy === b.uuid}
+                                                            className='flex cursor-pointer items-center gap-3 rounded-xl p-3'
+                                                        >
+                                                            <RotateCcw className='h-4 w-4 text-sky-500' />
+                                                            <span className='font-bold'>
+                                                                {t('webSpaces.backups.restore')}
+                                                            </span>
+                                                        </DropdownMenuItem>
+                                                    )}
+                                                {canRestore && (
                                                     <DropdownMenuItem
-                                                        onClick={() => download(b.uuid)}
+                                                        onClick={() => void openSelective(b.uuid)}
                                                         disabled={busy === b.uuid}
                                                         className='flex cursor-pointer items-center gap-3 rounded-xl p-3'
                                                     >
-                                                        <Download className='h-4 w-4 text-emerald-500' />
+                                                        <FolderOpen className='h-4 w-4 text-sky-500' />
                                                         <span className='font-bold'>
-                                                            {t('webSpaces.backups.download')}
+                                                            {t('webSpaces.backups.restoreSelected')}
                                                         </span>
                                                     </DropdownMenuItem>
                                                 )}
-                                            {canRestore &&
-                                                (!b.status || ['completed', 'successful'].includes(b.status)) && (
-                                                    <DropdownMenuItem
-                                                        onClick={() => void restore(b.uuid)}
-                                                        disabled={busy === b.uuid}
-                                                        className='flex cursor-pointer items-center gap-3 rounded-xl p-3'
-                                                    >
-                                                        <RotateCcw className='h-4 w-4 text-sky-500' />
-                                                        <span className='font-bold'>
-                                                            {t('webSpaces.backups.restore')}
-                                                        </span>
-                                                    </DropdownMenuItem>
+                                                {canDelete && (
+                                                    <>
+                                                        <DropdownMenuSeparator className='bg-border/40 my-1' />
+                                                        <DropdownMenuItem
+                                                            onClick={() => void remove(b.uuid)}
+                                                            disabled={busy === b.uuid}
+                                                            className='text-destructive focus:text-destructive focus:bg-destructive/10 flex cursor-pointer items-center gap-3 rounded-xl p-3'
+                                                        >
+                                                            <Trash2 className='h-4 w-4' />
+                                                            <span className='font-bold'>{t('common.delete')}</span>
+                                                        </DropdownMenuItem>
+                                                    </>
                                                 )}
-                                            {canRestore && (
-                                                <DropdownMenuItem
-                                                    onClick={() => void openSelective(b.uuid)}
-                                                    disabled={busy === b.uuid}
-                                                    className='flex cursor-pointer items-center gap-3 rounded-xl p-3'
-                                                >
-                                                    <FolderOpen className='h-4 w-4 text-sky-500' />
-                                                    <span className='font-bold'>
-                                                        {t('webSpaces.backups.restoreSelected')}
-                                                    </span>
-                                                </DropdownMenuItem>
-                                            )}
-                                            {canDelete && (
-                                                <>
-                                                    <DropdownMenuSeparator className='bg-border/40 my-1' />
-                                                    <DropdownMenuItem
-                                                        onClick={() => void remove(b.uuid)}
-                                                        disabled={busy === b.uuid}
-                                                        className='text-destructive focus:text-destructive focus:bg-destructive/10 flex cursor-pointer items-center gap-3 rounded-xl p-3'
-                                                    >
-                                                        <Trash2 className='h-4 w-4' />
-                                                        <span className='font-bold'>{t('common.delete')}</span>
-                                                    </DropdownMenuItem>
-                                                </>
-                                            )}
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
-                                }
-                            />
-                        ))}
-                    </div>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    }
+                                />
+                            ))}
+                        </ResourceTable>
+                        <ListPagination
+                            page={pageBackups.page}
+                            totalPages={pageBackups.totalPages}
+                            totalItems={pageBackups.totalItems}
+                            pageSize={pageBackups.pageSize}
+                            onPageChange={pageBackups.setPage}
+                        />
+                    </>
                 )}
                 {selectBackup && (
                     <div className='fp-surface-solid space-y-3 rounded-xl border p-4'>

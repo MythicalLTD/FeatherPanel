@@ -20,7 +20,8 @@ import { useParams } from 'next/navigation';
 import axios, { isAxiosError } from 'axios';
 import { Globe, Loader2, Save, Shield } from 'lucide-react';
 import { toast } from 'sonner';
-import { PageHeader } from '@/components/featherui/PageHeader';
+import { WebSpacePageHeader as PageHeader } from '@/components/webspace/WebSpacePageHeader';
+import { WebSpacePageTips } from '@/components/webspace/WebSpacePageTips';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
@@ -255,6 +256,7 @@ export default function WebSpaceDomainsPage() {
                     title={t('webSpaces.domainsPage.title')}
                     description={t('webSpaces.domainsPage.description')}
                 />
+                <WebSpacePageTips page='domains' />
 
                 <WebSpaceSslWizard
                     uuidShort={uuidShort}

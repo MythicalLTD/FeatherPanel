@@ -21,6 +21,7 @@ use App\Chat\WebNode;
 use App\Chat\WebPlate;
 use App\Chat\WebSpace;
 use App\Helpers\ApiResponse;
+use App\Helpers\WebSpaceWafRules;
 use App\Chat\WebSpaceSubuser;
 use OpenApi\Attributes as OA;
 use App\Helpers\WebSpaceLimits;
@@ -175,6 +176,37 @@ class WebSpacesController
         ], 'OK', 200);
     }
 
+    /** GET usage samples (one per minute, up to 24h) for the resource graphs. */
+    public function utilizationHistory(Request $request, string $uuidShort): Response
+    {
+        $resolved = $this->resolveAccessible($request, $uuidShort);
+        if ($resolved instanceof Response) {
+            return $resolved;
+        }
+
+        $space = $resolved['space'];
+        $webNode = WebNode::getWebNodeById((int) $space['web_node_id']);
+        if (!$webNode) {
+            return ApiResponse::error('Web node not found', 'WEB_NODE_NOT_FOUND', 404);
+        }
+
+        $minutes = (int) $request->query->get('minutes', 60);
+        $daemon = FeatherQuilldClient::getWebSpaceUtilizationHistory($webNode, (string) $space['uuid'], $minutes);
+        if (!$daemon['ok']) {
+            return ApiResponse::error(
+                $daemon['error'] ?? 'Daemon utilization failed',
+                'DAEMON_UTILIZATION_FAILED',
+                502,
+            );
+        }
+        $body = is_array($daemon['body']) ? $daemon['body'] : [];
+
+        return ApiResponse::success([
+            'minutes' => (int) ($body['minutes'] ?? $minutes),
+            'samples' => is_array($body['samples'] ?? null) ? array_values($body['samples']) : [],
+        ], 'OK', 200);
+    }
+
     public function backupJobStatus(Request $request, string $uuidShort, string $jobId): Response
     {
         $resolved = $this->resolveAccessible($request, $uuidShort);
@@ -286,9 +318,17 @@ class WebSpacesController
             $fields['waf_enabled'] = !empty($content['waf_enabled']) ? 1 : 0;
         }
         if (array_key_exists('waf_deny_ips', $content)) {
+            $badIp = WebSpaceWafRules::firstInvalidIp($content['waf_deny_ips']);
+            if ($badIp !== null) {
+                return ApiResponse::error('Invalid blocked IP or CIDR: ' . substr($badIp, 0, 64), 'INVALID_WAF_IP', 422);
+            }
             $fields['waf_deny_ips'] = $content['waf_deny_ips'];
         }
         if (array_key_exists('waf_deny_paths', $content)) {
+            $badPath = WebSpaceWafRules::firstInvalidPath($content['waf_deny_paths']);
+            if ($badPath !== null) {
+                return ApiResponse::error('Invalid blocked path: ' . substr($badPath, 0, 64), 'INVALID_WAF_PATH', 422);
+            }
             $fields['waf_deny_paths'] = $content['waf_deny_paths'];
         }
 
@@ -933,6 +973,10 @@ class WebSpacesController
         if ($resolved instanceof Response) {
             return $resolved;
         }
+        $denied = CheckWebSpacePermission::require($request, $resolved['space'], WebSpaceSubuserPermissions::CONSOLE_OUTPUT);
+        if ($denied instanceof Response) {
+            return $denied;
+        }
 
         $space = $resolved['space'];
         $webNode = WebNode::getWebNodeById((int) $space['web_node_id']);
@@ -971,6 +1015,10 @@ class WebSpacesController
         $resolved = $this->resolveAccessible($request, $uuidShort);
         if ($resolved instanceof Response) {
             return $resolved;
+        }
+        $denied = CheckWebSpacePermission::require($request, $resolved['space'], WebSpaceSubuserPermissions::CONSOLE_OUTPUT);
+        if ($denied instanceof Response) {
+            return $denied;
         }
 
         $space = $resolved['space'];
@@ -1144,6 +1192,10 @@ class WebSpacesController
         if ($resolved instanceof Response) {
             return $resolved;
         }
+        $denied = CheckWebSpacePermission::requireAny($request, $resolved['space'], [WebSpaceSubuserPermissions::DNS_READ, WebSpaceSubuserPermissions::SETTINGS_READ]);
+        if ($denied instanceof Response) {
+            return $denied;
+        }
 
         $space = $resolved['space'];
         $webNode = WebNode::getWebNodeById((int) $space['web_node_id']);
@@ -1190,6 +1242,10 @@ class WebSpacesController
         $resolved = $this->resolveAccessible($request, $uuidShort);
         if ($resolved instanceof Response) {
             return $resolved;
+        }
+        $denied = CheckWebSpacePermission::requireAny($request, $resolved['space'], [WebSpaceSubuserPermissions::DNS_READ, WebSpaceSubuserPermissions::SETTINGS_READ]);
+        if ($denied instanceof Response) {
+            return $denied;
         }
 
         // Reuse admin DNS logic via full UUID path on the same model.
@@ -1462,13 +1518,18 @@ class WebSpacesController
             return ApiResponse::error('Web node is missing fqdn', 'MISSING_FQDN', 500);
         }
 
+        $consolePermissions = self::consolePermissionsFor($resolved['user'], $space);
+        if ($consolePermissions === []) {
+            return ApiResponse::error('You do not have permission to perform this action', 'PERMISSION_DENIED', 403);
+        }
+
         try {
             $jwt = \App\Services\Quilld\QuilldConsoleJwt::create(
                 $uuid,
                 $tokenId,
                 $token,
                 \App\Services\Quilld\QuilldConsoleJwt::DEFAULT_TTL_SECONDS,
-                self::consolePermissionsFor($resolved['user'], $space),
+                $consolePermissions,
                 (string) ($resolved['user']['uuid'] ?? ''),
             );
             $socket = \App\Services\Quilld\QuilldConsoleJwt::buildSocketUrl($webNode, $uuid);
@@ -1566,7 +1627,7 @@ class WebSpacesController
             $perms[] = WebSpaceSubuserPermissions::CONSOLE_SEND;
         }
 
-        return $perms === [] ? [WebSpaceSubuserPermissions::CONSOLE_OUTPUT] : $perms;
+        return $perms;
     }
 
     /**

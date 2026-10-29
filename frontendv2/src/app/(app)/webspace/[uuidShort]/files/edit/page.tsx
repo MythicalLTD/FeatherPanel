@@ -30,7 +30,7 @@ import { getSaveShortcutLabel, useSaveShortcut } from '@/hooks/useSaveShortcut';
 import { EditorFileInfo } from '@/components/server/files/EditorFileInfo';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Button } from '@/components/featherui/Button';
-import { PageHeader } from '@/components/featherui/PageHeader';
+import { WebSpacePageHeader as PageHeader } from '@/components/webspace/WebSpacePageHeader';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { FileTextEditor } from '@/components/server/files/FileTextEditor';
 import { WebSpacePageWidgets } from '@/components/webspace/WebSpacePageWidgets';

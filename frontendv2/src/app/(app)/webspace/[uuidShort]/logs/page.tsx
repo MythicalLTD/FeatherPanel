@@ -20,7 +20,7 @@ import { useParams } from 'next/navigation';
 import axios from 'axios';
 import { Copy, Loader2, Play, RefreshCw, RotateCcw, Search, Square } from 'lucide-react';
 import { toast } from 'sonner';
-import { PageHeader } from '@/components/featherui/PageHeader';
+import { WebSpacePageHeader as PageHeader } from '@/components/webspace/WebSpacePageHeader';
 import { HeadlessSelect } from '@/components/ui/headless-select';
 import { Button } from '@/components/featherui/Button';
 import { Checkbox } from '@/components/ui/checkbox';

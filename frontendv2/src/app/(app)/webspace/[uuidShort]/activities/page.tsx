@@ -44,7 +44,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
-import { PageHeader } from '@/components/featherui/PageHeader';
+import { WebSpacePageHeader as PageHeader } from '@/components/webspace/WebSpacePageHeader';
 import { EmptyState } from '@/components/featherui/EmptyState';
 import { ResourceCard } from '@/components/featherui/ResourceCard';
 import { Dialog, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -306,7 +306,7 @@ export default function WebSpaceActivitiesPage() {
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent
                                             align='end'
-                                            className='bg-card/90 border-border/40 w-56 rounded-2xl p-2 backdrop-blur-xl'
+                                            className='bg-card/90 border-border/40 w-56 rounded-2xl p-2'
                                         >
                                             <DropdownMenuItem
                                                 onClick={() => {

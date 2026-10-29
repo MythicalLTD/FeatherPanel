@@ -143,6 +143,11 @@ class IpAddressMatcher
     private static function ipMatchesCidr(string $ip, string $cidr): bool
     {
         [$subnet, $maskStr] = explode('/', $cidr, 2);
+        // A non-numeric prefix must never match: (int) 'abc' is 0, which would
+        // otherwise turn a malformed rule into a match-everything /0.
+        if (!is_numeric($maskStr)) {
+            return false;
+        }
         $mask = (int) $maskStr;
         $ipIsV4 = filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) !== false;
         $subIsV4 = filter_var($subnet, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) !== false;

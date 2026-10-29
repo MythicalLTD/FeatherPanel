@@ -73,6 +73,23 @@ return function (RouteCollection $routes): void {
 
     App::getInstance(true)->registerAuthRoute(
         $routes,
+        'user-webspaces-utilization-history',
+        '/api/user/webspaces/{uuidShort}/utilization/history',
+        function (Request $request, array $args) {
+            $uuidShort = (string) ($args['uuidShort'] ?? '');
+            if ($uuidShort === '') {
+                return ApiResponse::error('Missing uuidShort', 'INVALID_UUID_SHORT', 400);
+            }
+
+            return (new WebSpacesController())->utilizationHistory($request, $uuidShort);
+        },
+        ['GET'],
+        Rate::perMinute(30),
+        'user-webspaces'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
         'user-webspaces-transfer-status',
         '/api/user/webspaces/{uuidShort}/transfer/status',
         function (Request $request, array $args) {

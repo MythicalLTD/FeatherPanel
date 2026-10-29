@@ -36,7 +36,11 @@ import {
     Users,
     Shield,
 } from 'lucide-react';
-import { PageHeader } from '@/components/featherui/PageHeader';
+import { ResourceTable } from '@/components/featherui/ResourceCard';
+import { ListPagination } from '@/components/featherui/ListPagination';
+import { useClientPagination } from '@/hooks/useClientPagination';
+import { WebSpacePageHeader as PageHeader } from '@/components/webspace/WebSpacePageHeader';
+import { WebSpacePageTips } from '@/components/webspace/WebSpacePageTips';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { EmptyState } from '@/components/featherui/EmptyState';
@@ -428,6 +432,9 @@ export default function WebSpaceEmailPage() {
         }
     };
 
+    const pageRows = useClientPagination(rows);
+    const pageForwarders = useClientPagination(forwarders);
+    const pageMailingLists = useClientPagination(mailingLists);
     if (loading || permissionsLoading) {
         return (
             <div className='flex flex-col items-center justify-center py-24'>
@@ -496,6 +503,7 @@ export default function WebSpaceEmailPage() {
                         </div>
                     }
                 />
+                <WebSpacePageTips page='email' />
 
                 {canCreate && atLimit && (
                     <p className='text-muted-foreground text-sm'>
@@ -527,157 +535,168 @@ export default function WebSpaceEmailPage() {
                         }
                     />
                 ) : (
-                    <div className='grid grid-cols-1 gap-4'>
-                        {rows.map((row) => {
-                            const email = row.email || `${row.local_part}@${row.domain}`;
-                            const enabled = row.enabled === 1 || row.enabled === true;
-                            const arOn = row.autorespond_enabled === 1 || row.autorespond_enabled === true;
-                            const spamOn =
-                                row.spam_filter_enabled === 1 ||
-                                row.spam_filter_enabled === true ||
-                                row.spam_filter_enabled === undefined;
-                            return (
-                                <ResourceCard
-                                    key={row.id}
-                                    icon={Mail}
-                                    title={email}
-                                    badges={
-                                        <>
-                                            {!enabled && (
-                                                <span className='bg-muted border-border/50 text-muted-foreground rounded-full border px-3 py-1 text-[10px] leading-none font-black tracking-widest uppercase'>
-                                                    {t('webSpaces.email.disabled')}
-                                                </span>
-                                            )}
-                                            {arOn && (
-                                                <span className='rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-[10px] leading-none font-black tracking-widest text-emerald-500 uppercase'>
-                                                    {t('webSpaces.email.autorespond')}
-                                                </span>
-                                            )}
-                                            {!spamOn && (
-                                                <span className='rounded-full border border-amber-500/20 bg-amber-500/10 px-3 py-1 text-[10px] leading-none font-black tracking-widest text-amber-600 uppercase'>
-                                                    {t('webSpaces.email.spamFilterOff')}
-                                                </span>
-                                            )}
-                                        </>
-                                    }
-                                    description={
-                                        <>
-                                            <div className='text-muted-foreground flex items-center gap-2'>
-                                                <ServerIcon className='h-4 w-4 opacity-50' />
-                                                <span className='text-sm font-semibold'>
-                                                    {row.mail_host_name || t('webSpaces.email.mailHost')}
-                                                    {row.quota_mb ? ` · ${row.quota_mb} ${t('common.mb')}` : ''}
-                                                </span>
-                                            </div>
-                                            {(row.imap_host || row.smtp_host) && (
-                                                <p className='text-muted-foreground font-mono text-xs'>
-                                                    {row.imap_host ? `IMAP ${row.imap_host}:${row.imap_port}` : ''}
-                                                    {row.imap_host && row.smtp_host ? ' · ' : ''}
-                                                    {row.smtp_host ? `SMTP ${row.smtp_host}:${row.smtp_port}` : ''}
-                                                </p>
-                                            )}
-                                        </>
-                                    }
-                                    actions={
-                                        (canViewPassword || canReset || canDelete) && (
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger className='group-hover:bg-primary/10 flex h-12 w-12 items-center justify-center rounded-xl transition-colors outline-none'>
-                                                    <MoreVertical className='text-muted-foreground group-hover:text-primary h-6 w-6 transition-colors' />
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent
-                                                    align='end'
-                                                    className='bg-card/90 border-border/40 w-56 rounded-2xl p-2 backdrop-blur-xl'
-                                                >
-                                                    {canViewPassword && (
-                                                        <DropdownMenuItem
-                                                            onClick={() => setViewingMailbox(row)}
-                                                            className='flex cursor-pointer items-center gap-3 rounded-xl p-3'
-                                                        >
-                                                            <Eye className='text-primary h-4 w-4' />
-                                                            <span className='font-bold'>
-                                                                {t('webSpaces.email.view')}
-                                                            </span>
-                                                        </DropdownMenuItem>
-                                                    )}
-                                                    {webmailInstalled && (
-                                                        <DropdownMenuItem
-                                                            onClick={() => void openWebmail(row.id)}
-                                                            className='flex cursor-pointer items-center gap-3 rounded-xl p-3'
-                                                        >
-                                                            <ExternalLink className='h-4 w-4 text-blue-500' />
-                                                            <span className='font-bold'>
-                                                                {t('webSpaces.email.webmail')}
-                                                            </span>
-                                                        </DropdownMenuItem>
-                                                    )}
-                                                    {canReset && (
-                                                        <DropdownMenuItem
-                                                            onClick={() => void toggleSpamFilter(row)}
-                                                            className='flex cursor-pointer items-center gap-3 rounded-xl p-3'
-                                                        >
-                                                            <Shield className='h-4 w-4 text-violet-500' />
-                                                            <span className='font-bold'>
-                                                                {spamOn
-                                                                    ? t('webSpaces.email.disableSpamFilter')
-                                                                    : t('webSpaces.email.enableSpamFilter')}
-                                                            </span>
-                                                        </DropdownMenuItem>
-                                                    )}
-                                                    {canReset && (
-                                                        <DropdownMenuItem
-                                                            onClick={() => openAutorespond(row)}
-                                                            className='flex cursor-pointer items-center gap-3 rounded-xl p-3'
-                                                        >
-                                                            <Reply className='h-4 w-4 text-sky-500' />
-                                                            <span className='font-bold'>
-                                                                {t('webSpaces.email.autorespondTitle')}
-                                                            </span>
-                                                        </DropdownMenuItem>
-                                                    )}
-                                                    {canReset && (
-                                                        <DropdownMenuItem
-                                                            onClick={() => void toggleEnabled(row)}
-                                                            className='flex cursor-pointer items-center gap-3 rounded-xl p-3'
-                                                        >
-                                                            <Power className='h-4 w-4 text-amber-500' />
-                                                            <span className='font-bold'>
-                                                                {enabled
-                                                                    ? t('webSpaces.email.disable')
-                                                                    : t('webSpaces.email.enable')}
-                                                            </span>
-                                                        </DropdownMenuItem>
-                                                    )}
-                                                    {canReset && (
-                                                        <DropdownMenuItem
-                                                            onClick={() => void resetPassword(row.id)}
-                                                            className='flex cursor-pointer items-center gap-3 rounded-xl p-3'
-                                                        >
-                                                            <KeyRound className='h-4 w-4 text-amber-500' />
-                                                            <span className='font-bold'>
-                                                                {t('webSpaces.email.resetPassword')}
-                                                            </span>
-                                                        </DropdownMenuItem>
-                                                    )}
-                                                    {canDelete && (
-                                                        <>
-                                                            <DropdownMenuSeparator className='bg-border/40 my-1' />
+                    <>
+                        <ResourceTable>
+                            {pageRows.paged.map((row) => {
+                                const email = row.email || `${row.local_part}@${row.domain}`;
+                                const enabled = row.enabled === 1 || row.enabled === true;
+                                const arOn = row.autorespond_enabled === 1 || row.autorespond_enabled === true;
+                                const spamOn =
+                                    row.spam_filter_enabled === 1 ||
+                                    row.spam_filter_enabled === true ||
+                                    row.spam_filter_enabled === undefined;
+                                return (
+                                    <ResourceCard
+                                        key={row.id}
+                                        icon={Mail}
+                                        title={email}
+                                        badges={
+                                            <>
+                                                {!enabled && (
+                                                    <span className='bg-muted border-border/50 text-muted-foreground rounded-full border px-3 py-1 text-[10px] leading-none font-black tracking-widest uppercase'>
+                                                        {t('webSpaces.email.disabled')}
+                                                    </span>
+                                                )}
+                                                {arOn && (
+                                                    <span className='rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-[10px] leading-none font-black tracking-widest text-emerald-500 uppercase'>
+                                                        {t('webSpaces.email.autorespond')}
+                                                    </span>
+                                                )}
+                                                {!spamOn && (
+                                                    <span className='rounded-full border border-amber-500/20 bg-amber-500/10 px-3 py-1 text-[10px] leading-none font-black tracking-widest text-amber-600 uppercase'>
+                                                        {t('webSpaces.email.spamFilterOff')}
+                                                    </span>
+                                                )}
+                                            </>
+                                        }
+                                        description={
+                                            <>
+                                                <div className='text-muted-foreground flex items-center gap-2'>
+                                                    <ServerIcon className='h-4 w-4 opacity-50' />
+                                                    <span className='text-sm font-semibold'>
+                                                        {row.mail_host_name || t('webSpaces.email.mailHost')}
+                                                        {row.quota_mb ? ` · ${row.quota_mb} ${t('common.mb')}` : ''}
+                                                    </span>
+                                                </div>
+                                                {(row.imap_host || row.smtp_host) && (
+                                                    <p className='text-muted-foreground font-mono text-xs'>
+                                                        {row.imap_host ? `IMAP ${row.imap_host}:${row.imap_port}` : ''}
+                                                        {row.imap_host && row.smtp_host ? ' · ' : ''}
+                                                        {row.smtp_host ? `SMTP ${row.smtp_host}:${row.smtp_port}` : ''}
+                                                    </p>
+                                                )}
+                                            </>
+                                        }
+                                        actions={
+                                            (canViewPassword || canReset || canDelete) && (
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger className='group-hover:bg-primary/10 flex h-12 w-12 items-center justify-center rounded-xl transition-colors outline-none'>
+                                                        <MoreVertical className='text-muted-foreground group-hover:text-primary h-6 w-6 transition-colors' />
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent
+                                                        align='end'
+                                                        className='bg-card/90 border-border/40 w-56 rounded-2xl p-2'
+                                                    >
+                                                        {canViewPassword && (
                                                             <DropdownMenuItem
-                                                                onClick={() => void removeMailbox(row.id)}
-                                                                className='text-destructive focus:text-destructive focus:bg-destructive/10 flex cursor-pointer items-center gap-3 rounded-xl p-3'
+                                                                onClick={() => setViewingMailbox(row)}
+                                                                className='flex cursor-pointer items-center gap-3 rounded-xl p-3'
                                                             >
-                                                                <Trash2 className='h-4 w-4' />
-                                                                <span className='font-bold'>{t('common.delete')}</span>
+                                                                <Eye className='text-primary h-4 w-4' />
+                                                                <span className='font-bold'>
+                                                                    {t('webSpaces.email.view')}
+                                                                </span>
                                                             </DropdownMenuItem>
-                                                        </>
-                                                    )}
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
-                                        )
-                                    }
-                                />
-                            );
-                        })}
-                    </div>
+                                                        )}
+                                                        {webmailInstalled && (
+                                                            <DropdownMenuItem
+                                                                onClick={() => void openWebmail(row.id)}
+                                                                className='flex cursor-pointer items-center gap-3 rounded-xl p-3'
+                                                            >
+                                                                <ExternalLink className='h-4 w-4 text-blue-500' />
+                                                                <span className='font-bold'>
+                                                                    {t('webSpaces.email.webmail')}
+                                                                </span>
+                                                            </DropdownMenuItem>
+                                                        )}
+                                                        {canReset && (
+                                                            <DropdownMenuItem
+                                                                onClick={() => void toggleSpamFilter(row)}
+                                                                className='flex cursor-pointer items-center gap-3 rounded-xl p-3'
+                                                            >
+                                                                <Shield className='h-4 w-4 text-violet-500' />
+                                                                <span className='font-bold'>
+                                                                    {spamOn
+                                                                        ? t('webSpaces.email.disableSpamFilter')
+                                                                        : t('webSpaces.email.enableSpamFilter')}
+                                                                </span>
+                                                            </DropdownMenuItem>
+                                                        )}
+                                                        {canReset && (
+                                                            <DropdownMenuItem
+                                                                onClick={() => openAutorespond(row)}
+                                                                className='flex cursor-pointer items-center gap-3 rounded-xl p-3'
+                                                            >
+                                                                <Reply className='h-4 w-4 text-sky-500' />
+                                                                <span className='font-bold'>
+                                                                    {t('webSpaces.email.autorespondTitle')}
+                                                                </span>
+                                                            </DropdownMenuItem>
+                                                        )}
+                                                        {canReset && (
+                                                            <DropdownMenuItem
+                                                                onClick={() => void toggleEnabled(row)}
+                                                                className='flex cursor-pointer items-center gap-3 rounded-xl p-3'
+                                                            >
+                                                                <Power className='h-4 w-4 text-amber-500' />
+                                                                <span className='font-bold'>
+                                                                    {enabled
+                                                                        ? t('webSpaces.email.disable')
+                                                                        : t('webSpaces.email.enable')}
+                                                                </span>
+                                                            </DropdownMenuItem>
+                                                        )}
+                                                        {canReset && (
+                                                            <DropdownMenuItem
+                                                                onClick={() => void resetPassword(row.id)}
+                                                                className='flex cursor-pointer items-center gap-3 rounded-xl p-3'
+                                                            >
+                                                                <KeyRound className='h-4 w-4 text-amber-500' />
+                                                                <span className='font-bold'>
+                                                                    {t('webSpaces.email.resetPassword')}
+                                                                </span>
+                                                            </DropdownMenuItem>
+                                                        )}
+                                                        {canDelete && (
+                                                            <>
+                                                                <DropdownMenuSeparator className='bg-border/40 my-1' />
+                                                                <DropdownMenuItem
+                                                                    onClick={() => void removeMailbox(row.id)}
+                                                                    className='text-destructive focus:text-destructive focus:bg-destructive/10 flex cursor-pointer items-center gap-3 rounded-xl p-3'
+                                                                >
+                                                                    <Trash2 className='h-4 w-4' />
+                                                                    <span className='font-bold'>
+                                                                        {t('common.delete')}
+                                                                    </span>
+                                                                </DropdownMenuItem>
+                                                            </>
+                                                        )}
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                            )
+                                        }
+                                    />
+                                );
+                            })}
+                        </ResourceTable>
+                        <ListPagination
+                            page={pageRows.page}
+                            totalPages={pageRows.totalPages}
+                            totalItems={pageRows.totalItems}
+                            pageSize={pageRows.pageSize}
+                            onPageChange={pageRows.setPage}
+                        />
+                    </>
                 )}
 
                 {(rows.length > 0 || forwarders.length > 0) && (
@@ -698,45 +717,54 @@ export default function WebSpaceEmailPage() {
                                 }
                             />
                         ) : (
-                            <div className='grid grid-cols-1 gap-4'>
-                                {forwarders.map((row) => {
-                                    const source = row.source || `${row.source_local}@${row.domain}`;
-                                    return (
-                                        <ResourceCard
-                                            key={row.id}
-                                            icon={Forward}
-                                            title={`${source} → ${row.destination}`}
-                                            badges={
-                                                (row.is_catch_all || row.source_local === '*') && (
-                                                    <span className='bg-primary/10 text-primary border-primary/20 rounded-full border px-3 py-1 text-[10px] leading-none font-black tracking-widest uppercase'>
-                                                        {t('webSpaces.email.catchAllBadge')}
-                                                    </span>
-                                                )
-                                            }
-                                            description={
-                                                <div className='text-muted-foreground flex items-center gap-2'>
-                                                    <ServerIcon className='h-4 w-4 opacity-50' />
-                                                    <span className='text-sm font-semibold'>
-                                                        {row.mail_host_name || t('webSpaces.email.mailHost')}
-                                                    </span>
-                                                </div>
-                                            }
-                                            actions={
-                                                canDelete && (
-                                                    <Button
-                                                        variant='ghost'
-                                                        size='sm'
-                                                        onClick={() => void removeForwarder(row.id)}
-                                                        className='h-8 w-8 p-0'
-                                                    >
-                                                        <Trash2 className='h-3.5 w-3.5' />
-                                                    </Button>
-                                                )
-                                            }
-                                        />
-                                    );
-                                })}
-                            </div>
+                            <>
+                                <ResourceTable>
+                                    {pageForwarders.paged.map((row) => {
+                                        const source = row.source || `${row.source_local}@${row.domain}`;
+                                        return (
+                                            <ResourceCard
+                                                key={row.id}
+                                                icon={Forward}
+                                                title={`${source} → ${row.destination}`}
+                                                badges={
+                                                    (row.is_catch_all || row.source_local === '*') && (
+                                                        <span className='bg-primary/10 text-primary border-primary/20 rounded-full border px-3 py-1 text-[10px] leading-none font-black tracking-widest uppercase'>
+                                                            {t('webSpaces.email.catchAllBadge')}
+                                                        </span>
+                                                    )
+                                                }
+                                                description={
+                                                    <div className='text-muted-foreground flex items-center gap-2'>
+                                                        <ServerIcon className='h-4 w-4 opacity-50' />
+                                                        <span className='text-sm font-semibold'>
+                                                            {row.mail_host_name || t('webSpaces.email.mailHost')}
+                                                        </span>
+                                                    </div>
+                                                }
+                                                actions={
+                                                    canDelete && (
+                                                        <Button
+                                                            variant='ghost'
+                                                            size='sm'
+                                                            onClick={() => void removeForwarder(row.id)}
+                                                            className='h-8 w-8 p-0'
+                                                        >
+                                                            <Trash2 className='h-3.5 w-3.5' />
+                                                        </Button>
+                                                    )
+                                                }
+                                            />
+                                        );
+                                    })}
+                                </ResourceTable>
+                                <ListPagination
+                                    page={pageForwarders.page}
+                                    totalPages={pageForwarders.totalPages}
+                                    totalItems={pageForwarders.totalItems}
+                                    pageSize={pageForwarders.pageSize}
+                                    onPageChange={pageForwarders.setPage}
+                                />
+                            </>
                         )}
                     </div>
                 )}
@@ -759,32 +787,41 @@ export default function WebSpaceEmailPage() {
                                 icon={Users}
                             />
                         ) : (
-                            <div className='grid grid-cols-1 gap-4'>
-                                {mailingLists.map((list) => (
-                                    <ResourceCard
-                                        key={list.address}
-                                        icon={Users}
-                                        title={list.address}
-                                        description={
-                                            <p className='text-muted-foreground text-sm'>
-                                                {list.members.map((m) => m.email).join(', ')}
-                                            </p>
-                                        }
-                                        actions={
-                                            canDelete && (
-                                                <Button
-                                                    variant='ghost'
-                                                    size='sm'
-                                                    onClick={() => void removeMailingList(list)}
-                                                    className='h-8 w-8 p-0'
-                                                >
-                                                    <Trash2 className='h-3.5 w-3.5' />
-                                                </Button>
-                                            )
-                                        }
-                                    />
-                                ))}
-                            </div>
+                            <>
+                                <ResourceTable>
+                                    {pageMailingLists.paged.map((list) => (
+                                        <ResourceCard
+                                            key={list.address}
+                                            icon={Users}
+                                            title={list.address}
+                                            description={
+                                                <p className='text-muted-foreground text-sm'>
+                                                    {list.members.map((m) => m.email).join(', ')}
+                                                </p>
+                                            }
+                                            actions={
+                                                canDelete && (
+                                                    <Button
+                                                        variant='ghost'
+                                                        size='sm'
+                                                        onClick={() => void removeMailingList(list)}
+                                                        className='h-8 w-8 p-0'
+                                                    >
+                                                        <Trash2 className='h-3.5 w-3.5' />
+                                                    </Button>
+                                                )
+                                            }
+                                        />
+                                    ))}
+                                </ResourceTable>
+                                <ListPagination
+                                    page={pageMailingLists.page}
+                                    totalPages={pageMailingLists.totalPages}
+                                    totalItems={pageMailingLists.totalItems}
+                                    pageSize={pageMailingLists.pageSize}
+                                    onPageChange={pageMailingLists.setPage}
+                                />
+                            </>
                         )}
                     </div>
                 )}
