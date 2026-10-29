@@ -18,7 +18,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import { reportPanelInteraction } from '@/lib/panel-analytics';
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { filesApi } from '@/lib/files-api';
+import { useFileManagerApi } from '@/contexts/FileManagerApiContext';
 import { filterFeatherTrashFiles, isHiddenServerEntry } from '@/lib/feather-trash';
 import { FileObject } from '@/types/server';
 import { toast } from 'sonner';
@@ -32,7 +32,20 @@ function sanitizeDirectoryPath(path: string | null): string | null {
     return normalized === '' ? '/' : normalized;
 }
 
-export function useFileManager(serverUuid: string) {
+export interface UseFileManagerOptions {
+    /** Skip loading (for example while permissions are still loading or missing). */
+    enabled?: boolean;
+    /** Poll remote download (pull) progress. Off when the daemon does not support it. */
+    pullProgress?: boolean;
+}
+
+/**
+ * Directory listing, selection, search and pull progress for a file manager. The API comes from
+ * FileManagerApiContext, so the same hook drives game server files and WebSpace files.
+ */
+export function useFileManager(serverUuid: string, options: UseFileManagerOptions = {}) {
+    const { enabled = true, pullProgress = true } = options;
+    const filesApi = useFileManagerApi();
     const router = useRouter();
     const searchParams = useSearchParams();
     const { t } = useTranslation();
@@ -98,7 +111,7 @@ export function useFileManager(serverUuid: string) {
     }, [refreshIgnored]);
 
     const refresh = useCallback(async () => {
-        if (!serverUuid) return;
+        if (!serverUuid || !enabled) return;
 
         setLoading(true);
         setError(null);
@@ -133,13 +146,13 @@ export function useFileManager(serverUuid: string) {
         } finally {
             setLoading(false);
         }
-    }, [serverUuid, currentDirectory, debouncedSearch, t]);
+    }, [serverUuid, enabled, filesApi, currentDirectory, debouncedSearch, t]);
 
     // Refresh when directory or server-side search changes
     useEffect(() => {
         refresh();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [serverUuid, currentDirectory, debouncedSearch]);
+    }, [serverUuid, enabled, currentDirectory, debouncedSearch]);
 
     // Filtering logic - name search is server-side; only apply local ignore rules here
     const filteredFiles = useMemo(() => {
@@ -197,10 +210,10 @@ export function useFileManager(serverUuid: string) {
     const [activePulls, setActivePulls] = useState<{ Identifier: string; Progress: number }[]>([]);
 
     const refreshPulls = useCallback(async () => {
-        if (!serverUuid) return;
+        if (!serverUuid || !enabled || !pullProgress) return;
         try {
             const pulls = await filesApi.getPullFiles(serverUuid);
-            setActivePulls(pulls);
+            setActivePulls(pulls.filter((p) => p.Progress < 100));
 
             // If any pull is active, refresh file list to see newly created files
             if (pulls.length > 0) {
@@ -208,9 +221,9 @@ export function useFileManager(serverUuid: string) {
                 // refresh();
             }
         } catch {
-            console.error('Failed to refresh pulls');
+            setActivePulls([]);
         }
-    }, [serverUuid]);
+    }, [serverUuid, enabled, pullProgress, filesApi]);
 
     useEffect(() => {
         refreshPulls();
@@ -255,6 +268,7 @@ export function useFileManager(serverUuid: string) {
         toggleSelect,
         selectAll,
         cancelPull,
+        refreshPulls,
     };
 }
 

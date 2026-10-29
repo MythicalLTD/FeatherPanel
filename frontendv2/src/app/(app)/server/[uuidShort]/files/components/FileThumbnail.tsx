@@ -16,7 +16,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { filesApi } from '@/lib/files-api';
+import { useFileManagerApi } from '@/contexts/FileManagerApiContext';
 
 /** Session cache of object URLs so tiles do not refetch while browsing. */
 const cache = new Map<string, string>();
@@ -34,6 +34,7 @@ export function FileThumbnail({
     size: number;
     fallback: React.ReactNode;
 }) {
+    const filesApi = useFileManagerApi();
     const key = `${serverUuid}:${path}`;
     const [src, setSrc] = useState<string | null>(cache.get(key) ?? null);
     const [failed, setFailed] = useState(false);
@@ -66,7 +67,7 @@ export function FileThumbnail({
             cancelled = true;
             io.disconnect();
         };
-    }, [src, failed, size, serverUuid, path, key]);
+    }, [src, failed, size, serverUuid, path, key, filesApi]);
 
     return (
         <div ref={ref} className='flex h-20 w-full items-center justify-center overflow-hidden rounded-lg'>
