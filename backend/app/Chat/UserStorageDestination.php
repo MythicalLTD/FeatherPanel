@@ -165,7 +165,7 @@ class UserStorageDestination
 
     public static function countBackups(int $id): int
     {
-        $stmt = Database::getPdoConnection()->prepare('SELECT COUNT(*) FROM featherpanel_server_backups WHERE destination_id = :id AND deleted_at IS NULL');
+        $stmt = Database::getPdoConnection()->prepare('SELECT COUNT(*) FROM featherpanel_server_backups WHERE destination_id = :id AND is_successful = 1 AND deleted_at IS NULL');
         $stmt->execute(['id' => $id]);
 
         return (int) $stmt->fetchColumn();

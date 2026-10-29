@@ -20,6 +20,7 @@ namespace App\Services\Storage;
 use App\Chat\Backup;
 use App\Chat\UserStorageDestination;
 use App\Services\Backup\BackupAdapterResolver;
+use App\Services\Storage\Providers\DropboxProvider;
 use App\Services\Storage\Providers\ProviderRegistry;
 use App\Services\Storage\Providers\StorageProviderInterface;
 
@@ -193,6 +194,10 @@ class BackupStorageService
                 return;
             }
             $ref = $provider->completeUpload($destination, $server, $backup, (int) ($body['size'] ?? -1), strtolower((string) ($body['checksum'] ?? '')));
+            if ($provider instanceof DropboxProvider) {
+                // FeatherWings with the Dropbox content_hash change reports it; older Wings only allow the size check.
+                $provider->verifyContentHash($destination, $server, $backup, strtolower(trim((string) ($body['content_hash'] ?? ''))));
+            }
             Backup::updateBackup((int) $backup['id'], ['remote_ref' => $ref]);
 
             return;

@@ -85,13 +85,35 @@ class DropboxProvider extends OAuthProvider
         if ($meta === null) {
             throw new StorageException('The uploaded file was not found on Dropbox', 'REMOTE_FILE_MISSING', 502);
         }
-        // Dropbox only exposes its own content_hash, so the size is what can be compared here.
+        // Dropbox exposes its own content_hash (not sha1): the size is compared here and
+        // verifyContentHash() compares the hash when Wings reports it.
         if ((int) ($meta['size'] ?? -1) !== $size) {
             $this->deletePath($dest, $path);
             throw new StorageException('The file on Dropbox does not match what Wings uploaded', 'REMOTE_CHECKSUM_MISMATCH', 502);
         }
 
         return (string) $meta['id'];
+    }
+
+    /**
+     * Compare Dropbox's content_hash of the committed file with the one Wings computed.
+     * An empty $expected (older FeatherWings) keeps the size-only check.
+     */
+    public function verifyContentHash(array $dest, array $server, array $backup, string $expected): void
+    {
+        if ($expected === '') {
+            return;
+        }
+        if (preg_match('/^[a-f0-9]{64}$/', $expected) !== 1) {
+            throw new StorageException('Wings reported an invalid Dropbox content hash', 'REMOTE_CHECKSUM_MISMATCH', 502);
+        }
+        $path = $this->path($dest, $server, $backup);
+        $meta = $this->metadata($dest, $path);
+        $actual = strtolower((string) ($meta['content_hash'] ?? ''));
+        if ($actual === '' || !hash_equals($actual, $expected)) {
+            $this->deletePath($dest, $path);
+            throw new StorageException('The file on Dropbox does not match what Wings uploaded', 'REMOTE_CHECKSUM_MISMATCH', 502);
+        }
     }
 
     public function abortUpload(array $dest, array $server, array $backup): void
