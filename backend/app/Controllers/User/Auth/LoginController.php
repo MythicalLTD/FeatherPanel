@@ -118,7 +118,7 @@ class LoginController
         // Handle Google / GitHub / OIDC sign-in handoff (same ban, deletion and 2FA rules as password login)
         $ssoLoginToken = $data['sso_login_token'] ?? null;
         if ($ssoLoginToken !== null) {
-            $handoff = is_string($ssoLoginToken) ? SsoController::consumeHandoff($ssoLoginToken) : null;
+            $handoff = is_string($ssoLoginToken) ? SsoController::consumeHandoff($ssoLoginToken, $request) : null;
             $userInfo = $handoff !== null ? User::getUserByUuid((string) $handoff['user_uuid']) : null;
             if ($userInfo === null) {
                 return ApiResponse::error('Invalid or expired sign-in token', 'INVALID_SSO_LOGIN_TOKEN', 400);
