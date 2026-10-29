@@ -743,6 +743,7 @@
             "INVALID_DATABASE_SUBDOMAIN": "database_subdomain must be a valid DNS hostname",
             "INVALID_DATA_LENGTH": "ID must be a positive integer",
             "INVALID_DATA_TYPE": "One or more fields have an invalid value.",
+            "LOGOUT_METHOD_NOT_ALLOWED": "Logging out requires a POST or DELETE request.",
             "INVALID_DATETIME_FORMAT": "Expires at must be in format YYYY-MM-DDTHH:MM",
             "INVALID_DAYS_PARAMETER": "Days must be between 1 and 90",
             "INVALID_DELETE_KEY": "delete_key must be at least 8 characters",
