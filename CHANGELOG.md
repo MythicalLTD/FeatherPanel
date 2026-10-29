@@ -119,6 +119,7 @@
 
 ### Security
 
+- `GET /api/user/auth/logout` no longer logs you out or rotates the session token, so a link, image or prefetch can't sign a user out. Logging out now uses `POST` (or `DELETE`, which the panel already sends); `GET` is kept as a deprecated path that changes nothing and answers `405 LOGOUT_METHOD_NOT_ALLOWED` with `Allow: POST, DELETE`. by @nayskutzu
 - 2FA codes can no longer be reused: a TOTP code accepted once (login, VDS confirmation, account deletion) is rejected if sent again, including two parallel requests with the same code. The last used timestep is stored per user (new column `two_fa_last_timestep`). by @nayskutzu
 - Server permissions: an account without a subuser entry on a server is no longer treated as its owner by the permission checker. Only the owner and staff with server admin rights (`admin.root`, `admin.servers.view/edit/delete`) get every permission; anyone else gets none. This closes paths such as the chatbot database tool showing database passwords to users without `database.view_password`. by @nayskutzu
 - Panel logs no longer contain node daemon tokens, database host passwords or other secrets: validation errors in nodes, web nodes, VDS nodes, database hosts, servers and spell variables now log the data with password, token, secret and key fields masked (new `LogRedactor`). by @nayskutzu

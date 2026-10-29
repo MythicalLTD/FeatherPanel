@@ -36,10 +36,10 @@ use Symfony\Component\HttpFoundation\Response;
 )]
 class AuthLogoutController
 {
-    #[OA\Get(
+    #[OA\Post(
         path: '/api/user/auth/logout',
         summary: 'Logout user',
-        description: 'Logout the authenticated user by clearing remember token cookie and updating user session. Blocks 2FA if enabled.',
+        description: 'Logout the authenticated user by clearing remember token cookie and updating user session. Blocks 2FA if enabled. DELETE is also accepted. GET is deprecated: it no longer changes any state and answers 405.',
         tags: ['User - Authentication'],
         responses: [
             new OA\Response(
@@ -53,6 +53,13 @@ class AuthLogoutController
     public function get(Request $request): Response
     {
         global $eventManager;
+        if (!in_array(strtoupper($request->getMethod()), ['POST', 'DELETE'], true)) {
+            // Deprecated: a GET must never end a session (prefetchers, <img src>, cross-site links).
+            $response = ApiResponse::error('Logging out requires a POST or DELETE request', 'LOGOUT_METHOD_NOT_ALLOWED', 405);
+            $response->headers->set('Allow', 'POST, DELETE');
+
+            return $response;
+        }
         if (!isset($_COOKIE['remember_token'])) {
             SessionCookieHelper::clear();
 
