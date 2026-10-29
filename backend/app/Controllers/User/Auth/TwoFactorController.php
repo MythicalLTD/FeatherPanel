@@ -316,8 +316,7 @@ class TwoFactorController
             );
         }
 
-        $google2fa = new Google2FA();
-        if (!$google2fa->verifyKey($userInfo['two_fa_key'], (string) $data['code'])) {
+        if (!\App\Helpers\TotpVerifier::verify($userInfo, (string) $data['code'])) {
             // Emit 2FA failed event
             global $eventManager;
             if (isset($eventManager) && $eventManager !== null) {

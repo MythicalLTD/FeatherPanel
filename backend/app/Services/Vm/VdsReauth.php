@@ -21,7 +21,6 @@ use App\App;
 use App\Chat\User;
 use App\Helpers\ApiResponse;
 use App\Config\ConfigInterface;
-use PragmaRX\Google2FA\Google2FA;
 use App\Helpers\AccountLockoutHelper;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -61,7 +60,7 @@ class VdsReauth
             return ApiResponse::error('Too many failed confirmations. Try again later.', 'ACCOUNT_LOCKED', 429, ['retry_after' => max(1, AccountLockoutHelper::getLockoutRemaining($lockId))]);
         }
         $ok = $method === '2fa'
-            ? (new Google2FA())->verifyKey((string) $user['two_fa_key'], preg_replace('/\D/', '', $value) ?? '')
+            ? \App\Helpers\TotpVerifier::verify($user, $value)
             : password_verify($value, (string) $user['password']);
         if (!$ok) {
             return ApiResponse::error($method === '2fa' ? 'Invalid 2FA code' : 'Invalid password', 'REAUTH_FAILED', 403, ['method' => $method, 'action' => $action]);
