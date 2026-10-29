@@ -86,6 +86,8 @@
 
 ### Fixed
 
+- Web hosting security: subusers without console permission no longer get console output through the websocket token, logs, install logs, SSL status and DNS check now need console or DNS/settings permissions, blocked IPs and paths in the WAF are strictly validated (IP/CIDR and a safe path character set) in the user and admin APIs, and PrestaShop/Magento installs check app support and the database limit before starting.
+
 - Production containers no longer grow to many GB and get OOM killed; cron no longer runs every job twice after a failed run. (#338) by @nayskutzu
 - Clearing a user's fingerprint in alt detection now also drops IP based alt links. (#342) by @nayskutzu
 - Missing setup wizard module step translations. (#339) by @nayskutzu
