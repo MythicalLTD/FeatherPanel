@@ -250,7 +250,7 @@ class SftpProvider extends RelayProvider
         }
         $fingerprint = 'SHA256:' . rtrim(base64_encode(hash('sha256', (string) base64_decode(explode(' ', $hostKey)[1] ?? '', true), true)), '=');
         if (!empty($config['host_key']) && !hash_equals((string) $config['host_key'], $fingerprint)) {
-            throw new StorageException('The SFTP server host key changed (expected ' . $config['host_key'] . ', got ' . $fingerprint . '). If this is expected, save the storage again to trust the new key.', 'SFTP_HOST_KEY_MISMATCH', 409);
+            throw new StorageException('The SFTP server host key changed (expected ' . $config['host_key'] . ', got ' . $fingerprint . '). If this is expected, edit the storage and turn on "Trust a new host key".', 'SFTP_HOST_KEY_MISMATCH', 409);
         }
         $credential = !empty($config['private_key'])
             ? PublicKeyLoader::load((string) $config['private_key'], !empty($config['password']) ? (string) $config['password'] : false)

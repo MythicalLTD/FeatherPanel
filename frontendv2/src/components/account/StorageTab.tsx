@@ -428,6 +428,16 @@ export default function StorageTab() {
                                             <p className='text-muted-foreground mt-1 truncate font-mono text-xs'>
                                                 {relayLocation(d)}
                                             </p>
+                                            {d.provider === 'sftp' && (d.config as RelayConfig).host_key ? (
+                                                <p
+                                                    className='text-muted-foreground mt-1 truncate font-mono text-xs'
+                                                    title={(d.config as RelayConfig).host_key}
+                                                >
+                                                    {t('account.storage.hostKeyPinned', {
+                                                        key: (d.config as RelayConfig).host_key ?? '',
+                                                    })}
+                                                </p>
+                                            ) : null}
                                             <p className='text-muted-foreground mt-1 text-xs'>
                                                 {t('account.storage.metaOauth', {
                                                     provider: t(`account.storage.providers.${d.provider}`),
@@ -764,6 +774,19 @@ export default function StorageTab() {
                             },
                         )}
                     </DialogDescription>
+                    {deleting?.provider === 'onedrive' ? (
+                        <p className='text-muted-foreground mt-2 text-xs'>
+                            {t('account.storage.removeOnedriveHint')}{' '}
+                            <a
+                                href='https://account.live.com/consent/Manage'
+                                target='_blank'
+                                rel='noopener noreferrer'
+                                className='text-primary underline underline-offset-2'
+                            >
+                                account.live.com/consent/Manage
+                            </a>
+                        </p>
+                    ) : null}
                 </DialogHeader>
                 <DialogFooter>
                     <Button onClick={remove} variant='destructive' className='flex-1' disabled={removing}>

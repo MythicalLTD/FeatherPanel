@@ -3012,10 +3012,12 @@
             "renameDescription": "The name is only shown in the panel.",
             "save": "Save",
             "metaOauth": "{provider} · {count} backups · {quota}",
+            "hostKeyPinned": "Host key {key}",
             "quota": "{used} of {total} used",
             "quotaUnlimited": "{used} used",
             "quotaUnknown": "quota not checked yet",
             "accountUnknown": "Account unknown",
+            "removeOnedriveHint": "Microsoft cannot revoke a single app token, so the panel only deletes its copy. To remove the app's access to your OneDrive too, open",
             "removeWarningOauth": "{count} backups use this storage. The panel gives up its access, so it can no longer download, restore or delete them (they show as orphaned). The files stay in your drive.",
             "providers": {
                 "s3": "S3",
