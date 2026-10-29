@@ -37,6 +37,9 @@ class SecurityPolicy
     {
         return [
             'require_2fa_role_ids' => [],
+            'require_2fa_admins' => false,
+            'require_2fa_grace_days' => 0,
+            'require_2fa_since' => null,
             'password_min_length' => 8,
             'password_require_upper' => false,
             'password_require_lower' => false,
@@ -66,6 +69,9 @@ class SecurityPolicy
 
         return [
             'require_2fa_role_ids' => $roles,
+            'require_2fa_admins' => (bool) ($input['require_2fa_admins'] ?? false),
+            'require_2fa_grace_days' => max(0, min(30, (int) ($input['require_2fa_grace_days'] ?? 0))),
+            'require_2fa_since' => is_string($input['require_2fa_since'] ?? null) && preg_match('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/', $input['require_2fa_since']) ? $input['require_2fa_since'] : null,
             'password_min_length' => max(8, min(128, (int) ($input['password_min_length'] ?? $d['password_min_length']))),
             'password_require_upper' => (bool) ($input['password_require_upper'] ?? false),
             'password_require_lower' => (bool) ($input['password_require_lower'] ?? false),
@@ -108,14 +114,85 @@ class SecurityPolicy
         return $problems === [] ? null : 'Password needs ' . implode(', ', $problems) . '.';
     }
 
+    /** Whether any 2FA requirement is switched on. */
+    public static function hasTwoFactorRequirement(?array $policy = null): bool
+    {
+        $p = $policy ?? self::get();
+
+        return $p['require_2fa_admins'] || $p['require_2fa_role_ids'] !== [];
+    }
+
+    /**
+     * Keep `require_2fa_since` in step with the requirement: stamped when it is first
+     * switched on (or widened), cleared when it is switched off. Starts the grace period.
+     */
+    public static function stampRequirement(array $new, array $old): array
+    {
+        if (!self::hasTwoFactorRequirement($new)) {
+            $new['require_2fa_since'] = null;
+
+            return $new;
+        }
+        $widened = ($new['require_2fa_admins'] && !$old['require_2fa_admins'])
+            || array_diff($new['require_2fa_role_ids'], $old['require_2fa_role_ids']) !== [];
+        if ($widened || empty($old['require_2fa_since'])) {
+            $new['require_2fa_since'] = gmdate('Y-m-d H:i:s');
+        } else {
+            $new['require_2fa_since'] = $old['require_2fa_since'];
+        }
+
+        return $new;
+    }
+
+    /** Whether the policy asks this user for 2FA (ignores the grace period and whether 2FA is on). */
+    public static function twoFactorApplies(array $user): bool
+    {
+        $p = self::get();
+        $roleId = (int) ($user['role_id'] ?? 0);
+        if ($roleId > 0 && in_array($roleId, $p['require_2fa_role_ids'], true)) {
+            return true;
+        }
+
+        return $p['require_2fa_admins'] && !empty($user['uuid'])
+            && \App\Helpers\PermissionHelper::hasPermission((string) $user['uuid'], \App\Permissions::ADMIN_DASHBOARD_VIEW);
+    }
+
+    /**
+     * End of this user's grace period as a unix time, or null when there is none.
+     * The grace starts when the requirement was switched on, or when the account was created if later.
+     */
+    public static function twoFactorGraceUntil(array $user): ?int
+    {
+        $p = self::get();
+        if ($p['require_2fa_grace_days'] <= 0) {
+            return null;
+        }
+        $since = $p['require_2fa_since'] !== null ? (strtotime($p['require_2fa_since'] . ' UTC') ?: time()) : time();
+        $created = !empty($user['first_seen']) ? (strtotime((string) $user['first_seen'] . ' UTC') ?: 0) : 0;
+
+        return max($since, $created) + $p['require_2fa_grace_days'] * 86400;
+    }
+
+    /** User still needs to set up 2FA but may keep working until this time; null when not in a grace period. */
+    public static function twoFactorGraceRemaining(array $user): ?int
+    {
+        if (($user['two_fa_enabled'] ?? 'false') === 'true' || !self::twoFactorApplies($user)) {
+            return null;
+        }
+        $until = self::twoFactorGraceUntil($user);
+
+        return $until !== null && $until > time() ? $until : null;
+    }
+
+    /** 2FA is required now: the policy applies, 2FA is off and any grace period is over. */
     public static function requiresTwoFactor(array $user): bool
     {
-        if (($user['two_fa_enabled'] ?? 'false') === 'true') {
+        if (($user['two_fa_enabled'] ?? 'false') === 'true' || !self::twoFactorApplies($user)) {
             return false;
         }
-        $roleId = (int) ($user['role_id'] ?? 0);
+        $until = self::twoFactorGraceUntil($user);
 
-        return $roleId > 0 && in_array($roleId, self::get()['require_2fa_role_ids'], true);
+        return $until === null || $until <= time();
     }
 
     /** Whether the IP allow list lets this user in from this IP. */

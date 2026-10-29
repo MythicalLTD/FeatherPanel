@@ -1694,7 +1694,10 @@
             "INACTIVE_CLEANUP_CONFIRM_REQUIRED": "Confirm this action before turning it on.",
             "INACTIVE_CLEANUP_PLAN_CHANGED": "The plan changed since your preview. Review it again before running.",
             "INACTIVE_CLEANUP_PREVIEW_REQUIRED": "Preview the run before starting it.",
-            "INACTIVE_CLEANUP_SAVE_FAILED": "Could not save the cleanup settings. Please try again."
+            "INACTIVE_CLEANUP_SAVE_FAILED": "Could not save the cleanup settings. Please try again.",
+            "TWO_FACTOR_SELF_LOCKOUT": "Enable two-factor authentication on your own account first, or set a grace period.",
+            "ADMIN_SESSION_NOT_FOUND": "That session no longer exists.",
+            "ADMIN_SESSIONS_SELF": "Manage your own sessions from your account page."
         },
         "global": {}
     },
@@ -11720,7 +11723,8 @@
                     "vds": "VDS",
                     "activities": "Activities",
                     "potential_alts": "Potential Alts",
-                    "mails": "Mails"
+                    "mails": "Mails",
+                    "sessions": "Sessions"
                 },
                 "form": {
                     "title": "User Details",
@@ -11844,6 +11848,26 @@
                     "access_hint": "Role, self-service limits and external references.",
                     "security": "Security",
                     "security_hint": "Set a new password only when the user needs one."
+                },
+                "sessions": {
+                    "title": "Active sessions",
+                    "description": "Devices currently signed in to this account.",
+                    "empty": "No active sessions.",
+                    "unknownDevice": "Unknown device",
+                    "meta": "IP {ip} · last seen {lastSeen} · signed in {created}",
+                    "revoke": "Sign out",
+                    "revokeAll": "Sign out everywhere",
+                    "revoked": "Session signed out",
+                    "revokedAll": "All sessions signed out",
+                    "revokeFailed": "Could not sign out the session",
+                    "loadFailed": "Could not load sessions",
+                    "confirmTitle": "Sign out this session?",
+                    "confirmDescription": "The device will have to sign in again.",
+                    "confirmAllTitle": "Sign out every session?",
+                    "confirmAllDescription": "All devices, remember-me cookies and sessions of this user are ended. They will have to sign in again.",
+                    "twoFaOn": "2FA enabled",
+                    "twoFaOff": "2FA not enabled",
+                    "twoFaRequired": "2FA required by policy"
                 }
             },
             "servers": {
@@ -19532,7 +19556,12 @@
             "title": "Require two-factor authentication",
             "description": "Users in the selected roles must set up 2FA before they can use the panel.",
             "adoption": "{count} of {total} users have 2FA enabled.",
-            "noRoles": "No roles found."
+            "noRoles": "No roles found.",
+            "requireAdmins": "Require 2FA for every admin (anyone who can open the admin area)",
+            "graceDays": "Grace period (days)",
+            "graceHint": "With 0 days, affected users must set up 2FA on their next request. Up to 30 days lets them keep working with a reminder banner.",
+            "graceSince": "The requirement started on {date}. Users without 2FA are reminded until the grace period ends.",
+            "rolesLabel": "Also require it for these roles"
         },
         "password": {
             "title": "Password policy",
@@ -19837,5 +19866,10 @@
             "usageUnlimited": "{used} used by servers, no limit",
             "enforceHint": "Checked when servers are created or their disk grows."
         }
+    },
+    "twoFactorGrace": {
+        "title": "Two-factor authentication will soon be required",
+        "description": "Set up 2FA before {date} to keep access to your account.",
+        "action": "Set up 2FA"
     }
 }

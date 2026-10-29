@@ -52,6 +52,7 @@ export interface UserInfo {
     two_fa_enabled: string;
     /** Security center: the user's role requires 2FA and it is not set up yet. */
     two_fa_required?: boolean;
+    two_fa_grace_until?: string | null;
     /** Set while a staff member is viewing the panel as this user. */
     impersonated_by?: { uuid: string; username: string } | null;
     last_seen: string;
