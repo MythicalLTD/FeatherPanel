@@ -69,3 +69,53 @@ export function resolvePreset(preset: SubuserPreset, available: string[]): strin
     }
     return preset.permissions.filter((p) => available.includes(p));
 }
+
+/** WebSpace subuser presets (same resolve rules as server presets). */
+export const WEBSPACE_SUBUSER_PRESETS: SubuserPreset[] = [
+    {
+        id: 'readOnly',
+        permissions: [
+            'file.read',
+            'file.read-content',
+            'console.output',
+            'backup.read',
+            'activity.read',
+            'settings.read',
+            'schedule.read',
+            'database.read',
+            'mail.read',
+            'dns.read',
+        ],
+    },
+    {
+        id: 'developer',
+        permissions: [
+            'file.read',
+            'file.read-content',
+            'file.create',
+            'file.update',
+            'file.delete',
+            'file.sftp',
+            'control.start',
+            'control.stop',
+            'control.restart',
+            'console.output',
+            'console.send',
+            'backup.read',
+            'backup.create',
+            'database.read',
+            'database.create',
+            'database.update',
+            'schedule.read',
+            'schedule.create',
+            'schedule.update',
+            'activity.read',
+            'settings.read',
+        ],
+    },
+    {
+        id: 'mail',
+        permissions: ['mail.read', 'mail.create', 'mail.update', 'mail.delete', 'dns.read'],
+    },
+    { id: 'manager', permissions: [] },
+];

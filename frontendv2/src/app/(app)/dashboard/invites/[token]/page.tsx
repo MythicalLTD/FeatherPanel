@@ -17,7 +17,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import * as React from 'react';
 import axios from 'axios';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import { Loader2, UserPlus } from 'lucide-react';
 import { Button } from '@/components/featherui/Button';
@@ -35,23 +35,25 @@ export default function SubuserInvitePage() {
     const { t } = useTranslation();
     const router = useRouter();
     const { token } = useParams() as { token: string };
+    const isWebSpace = useSearchParams()?.get('kind') === 'webspace';
+    const api = isWebSpace ? `/api/user/webspace-invites/${token}` : `/api/user/subuser-invites/${token}`;
     const [preview, setPreview] = React.useState<Preview | null>(null);
     const [error, setError] = React.useState<string | null>(null);
     const [accepting, setAccepting] = React.useState(false);
 
     React.useEffect(() => {
         axios
-            .get(`/api/user/subuser-invites/${token}`)
+            .get(api)
             .then(({ data }) => setPreview(data.data))
             .catch((err) => setError(getApiErrorMessage(err, t, 'serverSubusers.invites.invalid')));
-    }, [token, t]);
+    }, [api, t]);
 
     const accept = async () => {
         setAccepting(true);
         try {
-            const { data } = await axios.post(`/api/user/subuser-invites/${token}`);
+            const { data } = await axios.post(api);
             toast.success(t('serverSubusers.invites.joined'));
-            router.push(`/server/${data.data.server.uuidShort}`);
+            router.push(`/${isWebSpace ? 'webspace' : 'server'}/${data.data.server.uuidShort}`);
         } catch (err) {
             toast.error(getApiErrorMessage(err, t, 'serverSubusers.invites.invalid'));
             setAccepting(false);

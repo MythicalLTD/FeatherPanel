@@ -1697,7 +1697,10 @@
             "INACTIVE_CLEANUP_SAVE_FAILED": "Could not save the cleanup settings. Please try again.",
             "TWO_FACTOR_SELF_LOCKOUT": "Enable two-factor authentication on your own account first, or set a grace period.",
             "ADMIN_SESSION_NOT_FOUND": "That session no longer exists.",
-            "ADMIN_SESSIONS_SELF": "Manage your own sessions from your account page."
+            "ADMIN_SESSIONS_SELF": "Manage your own sessions from your account page.",
+            "INVITE_ALREADY_MEMBER": "You already have access to this.",
+            "DEPLOY_HOOK_NOT_FOUND": "Unknown deploy hook",
+            "WEBSPACE_UNAVAILABLE": "This WebSpace is not available right now."
         },
         "global": {}
     },
@@ -16062,7 +16065,25 @@
             "removed": "Subuser removed",
             "deleteFailed": "Delete failed",
             "permissionsUpdated": "Permissions updated",
-            "updateFailed": "Update failed"
+            "updateFailed": "Update failed",
+            "presets": {
+                "readOnly": {
+                    "name": "Read only",
+                    "description": "View files, logs, stats and backups without changing anything."
+                },
+                "developer": {
+                    "name": "Developer",
+                    "description": "Files, databases, schedules and logs for day to day development."
+                },
+                "mail": {
+                    "name": "Mail admin",
+                    "description": "Manage mailboxes, aliases and forwarders only."
+                },
+                "manager": {
+                    "name": "Manager",
+                    "description": "Everything except deleting the WebSpace or managing users."
+                }
+            }
         },
         "domains": {
             "domain": "Domain",
@@ -16519,6 +16540,28 @@
                 "whmcs": "WHMCS Cron (every 5 min)",
                 "laravel": "Laravel Scheduler (every minute)",
                 "nightly_backup": "Nightly Backup (03:00)"
+            },
+            "calendar": {
+                "title": "Upcoming runs (next 7 days)",
+                "none": "No runs",
+                "more": "+{count} more"
+            },
+            "retention": {
+                "label": "Keep last N backups",
+                "help": "After each scheduled backup, older backups beyond this number are deleted. Leave empty or 0 to keep all."
+            },
+            "deployHook": {
+                "button": "Deploy hook",
+                "title": "Push-to-deploy webhook",
+                "description": "POST to this URL from GitHub, GitLab or any CI to run this schedule, for example a git pull command.",
+                "onlyOnce": "Copy it now. The URL is shown only once; rotate it to get a new one.",
+                "active": "A deploy hook is active for this schedule.",
+                "inactive": "No deploy hook yet. Generate one to get a webhook URL.",
+                "generate": "Generate URL",
+                "rotate": "Rotate URL",
+                "revoke": "Revoke",
+                "revoked": "Deploy hook revoked",
+                "failed": "Failed to update the deploy hook"
             }
         },
         "access": {

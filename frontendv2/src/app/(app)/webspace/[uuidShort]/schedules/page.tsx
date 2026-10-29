@@ -49,6 +49,8 @@ import { formatDateTimeInTz } from '@/lib/dateUtils';
 import { useDateFormatOptions } from '@/contexts/PreferencesContext';
 import { isWebSpaceScheduleLocked } from '@/lib/webspace-schedules';
 import { getApiErrorMessage } from '@/lib/api-errors';
+import { WebSpaceScheduleCalendar } from '@/components/webspace/WebSpaceScheduleCalendar';
+import { WebSpaceDeployHookButton } from '@/components/webspace/WebSpaceDeployHookButton';
 
 interface WebSpaceSchedule {
     id: number;
@@ -63,6 +65,7 @@ interface WebSpaceSchedule {
     is_locked?: number | boolean | string;
     is_processing?: number | boolean;
     next_run_at?: string | null;
+    has_deploy_hook?: boolean;
     tasks?: { id?: number; action?: string; payload?: string }[];
 }
 
@@ -178,6 +181,7 @@ export default function WebSpaceSchedulesPage() {
                     }
                 />
                 <WebSpacePageTips page='schedules' />
+                {schedules.length > 0 && <WebSpaceScheduleCalendar schedules={schedules} />}
 
                 {schedules.length === 0 ? (
                     <EmptyState
@@ -277,6 +281,12 @@ export default function WebSpaceSchedulesPage() {
                                         ]}
                                         actions={
                                             <div className='flex flex-wrap items-center gap-2'>
+                                                <WebSpaceDeployHookButton
+                                                    uuidShort={uuidShort}
+                                                    scheduleId={schedule.id}
+                                                    enabled={!!schedule.has_deploy_hook}
+                                                    onChanged={() => void load()}
+                                                />
                                                 {!locked && (
                                                     <Button
                                                         variant='glass'

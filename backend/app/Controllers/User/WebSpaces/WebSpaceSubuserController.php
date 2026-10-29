@@ -21,7 +21,11 @@ use App\Chat\User;
 use App\Permissions;
 use App\Chat\WebNode;
 use App\Helpers\ApiResponse;
+use App\Chat\WebSpace;
 use App\Chat\WebSpaceSubuser;
+use App\Chat\WebSpaceSubuserInvite;
+use App\App;
+use App\Config\ConfigInterface;
 use OpenApi\Attributes as OA;
 use App\Helpers\WebSpaceGateway;
 use App\Helpers\PermissionHelper;
@@ -38,6 +42,166 @@ use Symfony\Component\HttpFoundation\Response;
  */
 class WebSpaceSubuserController
 {
+    private const INVITE_MAX_HOURS = 720;
+
+    private const INVITE_MAX_USES = 50;
+
+    #[OA\Get(path: '/api/user/webspaces/{uuidShort}/users/invites', summary: 'Active WebSpace invite links', tags: ['User - WebSpace Subusers'])]
+    public function invites(Request $request, string $uuidShort): Response
+    {
+        $resolved = $this->resolveOwnerOrPermission($request, $uuidShort, WebSpaceSubuserPermissions::USER_CREATE);
+        if ($resolved instanceof Response) {
+            return $resolved;
+        }
+
+        return ApiResponse::success(['invites' => WebSpaceSubuserInvite::activeForWebSpace((int) $resolved['space']['id'])], 'OK', 200);
+    }
+
+    #[OA\Post(path: '/api/user/webspaces/{uuidShort}/users/invites', summary: 'Create a WebSpace invite link', tags: ['User - WebSpace Subusers'])]
+    public function createInvite(Request $request, string $uuidShort): Response
+    {
+        $resolved = $this->resolveOwnerOrPermission($request, $uuidShort, WebSpaceSubuserPermissions::USER_CREATE);
+        if ($resolved instanceof Response) {
+            return $resolved;
+        }
+        $data = json_decode($request->getContent(), true);
+        if (!is_array($data) || !is_array($data['permissions'] ?? null)) {
+            return ApiResponse::error('Permissions array is required', 'INVALID_PERMISSIONS', 400);
+        }
+        $requested = array_values(array_unique(array_map('strval', $data['permissions'])));
+        $valid = WebSpaceSubuserPermissions::getAll();
+        if ($requested === [] || array_diff($requested, $valid) !== []) {
+            return ApiResponse::error('One or more permissions are invalid', 'INVALID_PERMISSIONS', 400);
+        }
+        $allowed = $this->assignablePermissions($resolved);
+        if ($allowed !== null && array_diff($requested, $allowed) !== []) {
+            return ApiResponse::error('You cannot assign permissions you do not have', 'PERMISSION_ESCALATION_DENIED', 403);
+        }
+        $hours = (int) ($data['expires_in_hours'] ?? 72);
+        $maxUses = (int) ($data['max_uses'] ?? 1);
+        if ($hours < 1 || $hours > self::INVITE_MAX_HOURS) {
+            return ApiResponse::error('Expiry must be between 1 and 720 hours', 'INVALID_INVITE_EXPIRY', 400);
+        }
+        if ($maxUses < 1 || $maxUses > self::INVITE_MAX_USES) {
+            return ApiResponse::error('Uses must be between 1 and 50', 'INVALID_INVITE_USES', 400);
+        }
+        $invite = WebSpaceSubuserInvite::create((int) $resolved['space']['id'], (int) $resolved['user']['id'], $requested, $hours * 3600, $maxUses);
+        if ($invite === null) {
+            return ApiResponse::error('Failed to create the invite', 'CREATE_FAILED', 500);
+        }
+        \App\Helpers\WebSpaceActivityLogger::log($resolved['space'], $resolved['user'], 'webspace.subuser.invite_created', [
+            'invite_id' => $invite['id'],
+            'max_uses' => $maxUses,
+            'expires_in_hours' => $hours,
+        ]);
+        $base = rtrim((string) App::getInstance(true)->getConfig()->getSetting(ConfigInterface::APP_URL, ''), '/');
+
+        return ApiResponse::success([
+            'id' => $invite['id'],
+            'token' => $invite['token'],
+            'url' => $base . '/dashboard/invites/' . $invite['token'] . '?kind=webspace',
+        ], 'Invite created', 201);
+    }
+
+    #[OA\Delete(path: '/api/user/webspaces/{uuidShort}/users/invites/{inviteId}', summary: 'Revoke a WebSpace invite link', tags: ['User - WebSpace Subusers'])]
+    public function revokeInvite(Request $request, string $uuidShort, int $inviteId): Response
+    {
+        $resolved = $this->resolveOwnerOrPermission($request, $uuidShort, WebSpaceSubuserPermissions::USER_CREATE);
+        if ($resolved instanceof Response) {
+            return $resolved;
+        }
+        if (!WebSpaceSubuserInvite::revoke($inviteId, (int) $resolved['space']['id'])) {
+            return ApiResponse::error('Invite not found', 'INVITE_NOT_FOUND', 404);
+        }
+        \App\Helpers\WebSpaceActivityLogger::log($resolved['space'], $resolved['user'], 'webspace.subuser.invite_revoked', ['invite_id' => $inviteId]);
+
+        return ApiResponse::success([], 'Invite revoked', 200);
+    }
+
+    #[OA\Get(path: '/api/user/webspace-invites/{token}', summary: 'Preview a WebSpace invite link', tags: ['User - WebSpace Subusers'])]
+    public function previewInvite(Request $request, string $token): Response
+    {
+        [$invite, $space, $error] = $this->usableInvite($request, $token);
+        if ($error) {
+            return $error;
+        }
+        $inviter = User::getUserById((int) $invite['created_by']);
+
+        return ApiResponse::success([
+            'server' => ['name' => $space['name'], 'uuidShort' => $space['uuidShort']],
+            'invited_by' => $inviter['username'] ?? null,
+            'permissions' => $invite['permissions'],
+            'expires_at' => date(DATE_ATOM, (int) strtotime((string) $invite['expires_at'])),
+        ], 'OK', 200);
+    }
+
+    #[OA\Post(path: '/api/user/webspace-invites/{token}', summary: 'Accept a WebSpace invite link', tags: ['User - WebSpace Subusers'])]
+    public function acceptInvite(Request $request, string $token): Response
+    {
+        [$invite, $space, $error] = $this->usableInvite($request, $token);
+        if ($error) {
+            return $error;
+        }
+        $user = $request->attributes->get('user');
+        // The inviter must still own the WebSpace or hold every permission in the invite.
+        $inviterId = (int) $invite['created_by'];
+        if ($inviterId !== (int) ($space['owner_id'] ?? 0)) {
+            $inviter = User::getUserById($inviterId);
+            $inviterUuid = (string) ($inviter['uuid'] ?? '');
+            $isAdmin = $inviterUuid !== '' && PermissionHelper::hasPermission($inviterUuid, Permissions::ADMIN_WEBSPACES_EDIT);
+            $held = WebSpaceSubuser::getPermissionsList($inviterId, (int) $space['id']);
+            if (!$isAdmin && (!in_array(WebSpaceSubuserPermissions::USER_CREATE, $held, true) || array_diff($invite['permissions'], $held) !== [])) {
+                return ApiResponse::error('This invite is no longer valid', 'INVITE_INVALID', 410);
+            }
+        }
+        if (WebSpaceSubuser::getByUserAndWebSpace((int) $user['id'], (int) $space['id'])) {
+            return ApiResponse::error('You already have access to this WebSpace', 'INVITE_ALREADY_MEMBER', 400);
+        }
+        if (!WebSpaceSubuserInvite::consume((int) $invite['id'])) {
+            return ApiResponse::error('This invite is no longer valid', 'INVITE_INVALID', 410);
+        }
+        $subuser = WebSpaceSubuser::create([
+            'user_id' => (int) $user['id'],
+            'webspace_id' => (int) $space['id'],
+            'permissions' => $invite['permissions'],
+        ]);
+        if (!$subuser) {
+            return ApiResponse::error('Failed to join the WebSpace', 'CREATE_FAILED', 500);
+        }
+        \App\Helpers\WebSpaceActivityLogger::log($space, $user, 'webspace.subuser.created', [
+            'subuser_id' => $subuser['id'] ?? null,
+            'invite_id' => (int) $invite['id'],
+        ]);
+        WebSpacePluginEvents::emit(WebSpaceEvent::onWebSpaceSubuserCreated(), WebSpacePluginEvents::basePayload(
+            $user['uuid'] ?? null,
+            $space,
+            [
+                'subuser_id' => (int) ($subuser['id'] ?? 0),
+                'context' => ['source' => 'invite'],
+            ],
+        ));
+
+        return ApiResponse::success(['server' => ['name' => $space['name'], 'uuidShort' => $space['uuidShort']]], 'Joined', 201);
+    }
+
+    /** @return array{0: ?array, 1: ?array, 2: ?Response} */
+    private function usableInvite(Request $request, string $token): array
+    {
+        $user = $request->attributes->get('user');
+        if (!$user) {
+            return [null, null, ApiResponse::error('User not authenticated', 'NOT_AUTHENTICATED', 401)];
+        }
+        $invite = WebSpaceSubuserInvite::findUsableByToken($token);
+        $space = $invite ? WebSpace::getById((int) $invite['webspace_id']) : null;
+        if (!$invite || !$space) {
+            return [null, null, ApiResponse::error('This invite link is invalid, expired or used up', 'INVITE_INVALID', 404)];
+        }
+        if ((int) ($space['owner_id'] ?? 0) === (int) $user['id']) {
+            return [null, null, ApiResponse::error('You already own this WebSpace', 'INVITE_OWN_SERVER', 400)];
+        }
+
+        return [$invite, $space, null];
+    }
     #[OA\Get(path: '/api/user/webspaces/{uuidShort}/users', summary: 'List WebSpace subusers', tags: ['User - WebSpace Subusers'])]
     public function index(Request $request, string $uuidShort): Response
     {

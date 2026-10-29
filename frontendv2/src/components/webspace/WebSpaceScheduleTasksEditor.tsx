@@ -124,6 +124,27 @@ export function WebSpaceScheduleTasksEditor({ tasks, onChange, disabled }: Props
                         </div>
                     )}
 
+                    {String(task.action).toLowerCase() === 'backup' && (
+                        <div className='space-y-2'>
+                            <Label className='text-muted-foreground text-xs font-bold tracking-wider uppercase'>
+                                {t('webSpaces.schedules.retention.label')}
+                            </Label>
+                            <Input
+                                type='number'
+                                min={0}
+                                max={100}
+                                value={(/keep=(\d+)/.exec(task.payload || '') || [])[1] || ''}
+                                onChange={(e) => {
+                                    const n = Math.max(0, Math.min(100, parseInt(e.target.value, 10) || 0));
+                                    updateTask(index, { payload: n > 0 ? `keep=${n}` : '' });
+                                }}
+                                placeholder='0'
+                                disabled={disabled}
+                            />
+                            <p className='text-muted-foreground text-xs'>{t('webSpaces.schedules.retention.help')}</p>
+                        </div>
+                    )}
+
                     <div className='grid grid-cols-1 gap-3 sm:grid-cols-2'>
                         <div className='space-y-2'>
                             <Label className='text-muted-foreground text-xs font-bold tracking-wider uppercase'>

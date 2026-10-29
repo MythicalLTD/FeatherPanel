@@ -17,21 +17,25 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { Button } from '@/components/featherui/Button';
 import { useTranslation } from '@/contexts/TranslationContext';
-import { SUBUSER_PRESETS, resolvePreset } from '@/lib/subuser-presets';
+import { SUBUSER_PRESETS, resolvePreset, type SubuserPreset } from '@/lib/subuser-presets';
 
 export function SubuserPresetPicker({
     available,
     onApply,
+    presets = SUBUSER_PRESETS,
+    i18nPrefix = 'serverSubusers.presets',
 }: {
     available: string[];
     onApply: (permissions: string[]) => void;
+    presets?: SubuserPreset[];
+    i18nPrefix?: string;
 }) {
     const { t } = useTranslation();
     return (
         <div className='space-y-2'>
             <p className='text-muted-foreground text-xs font-semibold'>{t('serverSubusers.presets.title')}</p>
             <div className='flex flex-wrap gap-2'>
-                {SUBUSER_PRESETS.map((preset) => {
+                {presets.map((preset) => {
                     const perms = resolvePreset(preset, available);
                     return (
                         <Button
@@ -41,9 +45,9 @@ export function SubuserPresetPicker({
                             size='sm'
                             disabled={perms.length === 0}
                             onClick={() => onApply(perms)}
-                            title={t(`serverSubusers.presets.${preset.id}.description`)}
+                            title={t(`${i18nPrefix}.${preset.id}.description`)}
                         >
-                            {t(`serverSubusers.presets.${preset.id}.name`)}
+                            {t(`${i18nPrefix}.${preset.id}.name`)}
                         </Button>
                     );
                 })}

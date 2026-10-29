@@ -4,6 +4,7 @@
 
 ### Added
 
+- WebSpaces: subuser invite links with permission presets, a 7 day schedule calendar, backup schedule retention (keep last N) and push-to-deploy webhooks that run a schedule from GitHub, GitLab or any CI.
 - Web hosting notifications: install results, backups, malware findings and disk, traffic or memory limit alerts (90%) now reach the inbox, email and Discord. Each one can be turned off under Account > Notifications. The Analytics page also shows CPU, memory and disk graphs for the last 1, 6 or 24 hours (needs FeatherQuilld with usage history).
 - Multi-provider panel outbound mail: provider presets (Resend, Brevo, SendGrid, Mailgun, Postmark, MailerSend, SparkPost, Amazon SES, Gmail, Outlook, Mailtrap, SMTP2GO, custom SMTP) plus HTTP API transports in the async-runner (`mail_transport`, `mail_api_key`, `mail_api_domain`, `mail_api_region`). Delivery uses official/mature SDKs where available (`resend-rs`, `sendgrid`, `postmark`, `aws-sdk-sesv2`) and thin HTTP for the rest; SMTP stays on lettre. Admin Email settings and the setup wizard show or hide SMTP vs API fields from the selected preset. by @nayskutzu
 - VDS Boot page (`/vds/{id}/boot`, sidebar for QEMU VMs): boot order editor (disks, CD-ROMs, NICs via `GET/PUT /api/user/vm-instances/{id}/boot-order`), host library ISO mount/unmount, and My ISOs (upload, URL fetch, quota, mount) moved off the old Settings ISO block. by @nayskutzu
