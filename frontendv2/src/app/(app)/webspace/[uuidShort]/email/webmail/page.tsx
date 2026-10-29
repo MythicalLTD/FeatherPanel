@@ -20,7 +20,7 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import axios from 'axios';
 import { Loader2 } from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';
-import { PageHeader } from '@/components/featherui/PageHeader';
+import { WebSpacePageHeader as PageHeader } from '@/components/webspace/WebSpacePageHeader';
 import { Select } from '@/components/ui/select-native';
 import { Button } from '@/components/featherui/Button';
 import { toast } from 'sonner';

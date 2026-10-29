@@ -35,7 +35,11 @@ import {
 } from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { WebSpacePageWidgets } from '@/components/webspace/WebSpacePageWidgets';
-import { PageHeader } from '@/components/featherui/PageHeader';
+import { ResourceTable } from '@/components/featherui/ResourceCard';
+import { ListPagination } from '@/components/featherui/ListPagination';
+import { useClientPagination } from '@/hooks/useClientPagination';
+import { WebSpacePageHeader as PageHeader } from '@/components/webspace/WebSpacePageHeader';
+import { WebSpacePageTips } from '@/components/webspace/WebSpacePageTips';
 import { Button } from '@/components/featherui/Button';
 import { ResourceCard } from '@/components/featherui/ResourceCard';
 import { EmptyState } from '@/components/featherui/EmptyState';
@@ -145,6 +149,7 @@ export default function WebSpaceSchedulesPage() {
         }
     };
 
+    const pageSchedules = useClientPagination(schedules);
     if (loading) {
         return <TableSkeleton count={4} />;
     }
@@ -172,6 +177,7 @@ export default function WebSpaceSchedulesPage() {
                         </div>
                     }
                 />
+                <WebSpacePageTips page='schedules' />
 
                 {schedules.length === 0 ? (
                     <EmptyState
@@ -186,149 +192,159 @@ export default function WebSpaceSchedulesPage() {
                         }
                     />
                 ) : (
-                    <div className='grid grid-cols-1 gap-4'>
-                        {schedules.map((schedule) => {
-                            const active = Boolean(schedule.is_active);
-                            const processing = Boolean(schedule.is_processing);
-                            const locked = isWebSpaceScheduleLocked(schedule);
-                            return (
-                                <ResourceCard
-                                    key={schedule.id}
-                                    icon={Calendar}
-                                    iconWrapperClassName={
-                                        processing
-                                            ? 'bg-blue-500/10 border-blue-500/20 text-blue-500'
-                                            : active
-                                              ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500'
-                                              : 'bg-gray-500/10 border-gray-500/20 text-gray-500'
-                                    }
-                                    title={schedule.name}
-                                    description={
-                                        <div className='text-muted-foreground flex flex-wrap items-center gap-3 text-xs'>
-                                            <span className='bg-muted/40 flex items-center gap-1.5 rounded-lg px-2 py-1 font-mono'>
-                                                <Clock className='h-3 w-3' />
-                                                {formatCron(schedule)}
-                                            </span>
-                                            {schedule.timezone && (
-                                                <span className='font-mono'>{schedule.timezone}</span>
-                                            )}
-                                            {schedule.next_run_at && (
-                                                <span className='flex items-center gap-1.5'>
-                                                    <CalendarClock className='h-3 w-3' />
-                                                    {t('serverSchedules.nextRun')}{' '}
-                                                    {formatDateTimeInTz(schedule.next_run_at, dateOpts)}
-                                                </span>
-                                            )}
-                                            <span>
-                                                {t('webSpaces.schedules.taskCount', {
-                                                    count: String(schedule.tasks?.length ?? 0),
-                                                })}
-                                            </span>
-                                            {(schedule.tasks || []).slice(0, 2).map((task, taskIndex) => {
-                                                const action = String(task.action || '');
-                                                const actionKey = `webSpaces.schedules.actions.${action}`;
-                                                const actionLabel = t(actionKey);
-                                                const label =
-                                                    action === 'command' || action === 'exec'
-                                                        ? `${actionLabel === actionKey ? t('webSpaces.schedules.actions.command') : actionLabel}: ${(task.payload || '').slice(0, 40)}${(task.payload || '').length > 40 ? '…' : ''}`
-                                                        : actionLabel === actionKey
-                                                          ? action
-                                                          : actionLabel;
-                                                return (
-                                                    <span
-                                                        key={`${schedule.id}-task-${task.id ?? taskIndex}`}
-                                                        className='bg-muted/40 rounded-lg px-2 py-1 font-mono'
-                                                    >
-                                                        {label}
-                                                    </span>
-                                                );
-                                            })}
-                                        </div>
-                                    }
-                                    badges={[
-                                        {
-                                            label: processing
-                                                ? t('serverSchedules.statusProcessing')
+                    <>
+                        <ResourceTable>
+                            {pageSchedules.paged.map((schedule) => {
+                                const active = Boolean(schedule.is_active);
+                                const processing = Boolean(schedule.is_processing);
+                                const locked = isWebSpaceScheduleLocked(schedule);
+                                return (
+                                    <ResourceCard
+                                        key={schedule.id}
+                                        icon={Calendar}
+                                        iconWrapperClassName={
+                                            processing
+                                                ? 'bg-blue-500/10 border-blue-500/20 text-blue-500'
                                                 : active
-                                                  ? t('serverSchedules.statusActive')
-                                                  : t('serverSchedules.statusInactive'),
-                                            className: active
-                                                ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
-                                                : processing
-                                                  ? 'bg-blue-500/10 text-blue-500 border-blue-500/20'
-                                                  : 'bg-destructive/10 text-destructive border-destructive/20',
-                                        },
-                                        ...(locked
-                                            ? [
-                                                  {
-                                                      label: t('webSpaces.schedules.locked'),
-                                                      className: 'bg-amber-500/10 text-amber-500 border-amber-500/20',
-                                                  },
-                                              ]
-                                            : []),
-                                    ]}
-                                    actions={
-                                        <div className='flex flex-wrap items-center gap-2'>
-                                            {!locked && (
-                                                <Button
-                                                    variant='glass'
-                                                    size='sm'
-                                                    onClick={() =>
-                                                        router.push(
-                                                            `/webspace/${uuidShort}/schedules/${schedule.id}/edit`,
-                                                        )
-                                                    }
-                                                >
-                                                    <Pencil className='mr-1.5 h-3.5 w-3.5' />
-                                                    {t('common.edit')}
-                                                </Button>
-                                            )}
-                                            <Button
-                                                variant='glass'
-                                                size='sm'
-                                                disabled={busy === schedule.id}
-                                                onClick={() => void handleExecute(schedule)}
-                                            >
-                                                {busy === schedule.id ? (
-                                                    <Loader2 className='mr-1.5 h-3.5 w-3.5 animate-spin' />
-                                                ) : (
-                                                    <Play className='mr-1.5 h-3.5 w-3.5' />
+                                                  ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500'
+                                                  : 'bg-gray-500/10 border-gray-500/20 text-gray-500'
+                                        }
+                                        title={schedule.name}
+                                        description={
+                                            <div className='text-muted-foreground flex flex-wrap items-center gap-3 text-xs'>
+                                                <span className='bg-muted/40 flex items-center gap-1.5 rounded-lg px-2 py-1 font-mono'>
+                                                    <Clock className='h-3 w-3' />
+                                                    {formatCron(schedule)}
+                                                </span>
+                                                {schedule.timezone && (
+                                                    <span className='font-mono'>{schedule.timezone}</span>
                                                 )}
-                                                {t('serverSchedules.runNow')}
-                                            </Button>
-                                            {!locked && (
-                                                <>
+                                                {schedule.next_run_at && (
+                                                    <span className='flex items-center gap-1.5'>
+                                                        <CalendarClock className='h-3 w-3' />
+                                                        {t('serverSchedules.nextRun')}{' '}
+                                                        {formatDateTimeInTz(schedule.next_run_at, dateOpts)}
+                                                    </span>
+                                                )}
+                                                <span>
+                                                    {t('webSpaces.schedules.taskCount', {
+                                                        count: String(schedule.tasks?.length ?? 0),
+                                                    })}
+                                                </span>
+                                                {(schedule.tasks || []).slice(0, 2).map((task, taskIndex) => {
+                                                    const action = String(task.action || '');
+                                                    const actionKey = `webSpaces.schedules.actions.${action}`;
+                                                    const actionLabel = t(actionKey);
+                                                    const label =
+                                                        action === 'command' || action === 'exec'
+                                                            ? `${actionLabel === actionKey ? t('webSpaces.schedules.actions.command') : actionLabel}: ${(task.payload || '').slice(0, 40)}${(task.payload || '').length > 40 ? '…' : ''}`
+                                                            : actionLabel === actionKey
+                                                              ? action
+                                                              : actionLabel;
+                                                    return (
+                                                        <span
+                                                            key={`${schedule.id}-task-${task.id ?? taskIndex}`}
+                                                            className='bg-muted/40 rounded-lg px-2 py-1 font-mono'
+                                                        >
+                                                            {label}
+                                                        </span>
+                                                    );
+                                                })}
+                                            </div>
+                                        }
+                                        badges={[
+                                            {
+                                                label: processing
+                                                    ? t('serverSchedules.statusProcessing')
+                                                    : active
+                                                      ? t('serverSchedules.statusActive')
+                                                      : t('serverSchedules.statusInactive'),
+                                                className: active
+                                                    ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
+                                                    : processing
+                                                      ? 'bg-blue-500/10 text-blue-500 border-blue-500/20'
+                                                      : 'bg-destructive/10 text-destructive border-destructive/20',
+                                            },
+                                            ...(locked
+                                                ? [
+                                                      {
+                                                          label: t('webSpaces.schedules.locked'),
+                                                          className:
+                                                              'bg-amber-500/10 text-amber-500 border-amber-500/20',
+                                                      },
+                                                  ]
+                                                : []),
+                                        ]}
+                                        actions={
+                                            <div className='flex flex-wrap items-center gap-2'>
+                                                {!locked && (
                                                     <Button
                                                         variant='glass'
                                                         size='sm'
-                                                        disabled={busy === schedule.id}
-                                                        onClick={() => void handleToggle(schedule)}
+                                                        onClick={() =>
+                                                            router.push(
+                                                                `/webspace/${uuidShort}/schedules/${schedule.id}/edit`,
+                                                            )
+                                                        }
                                                     >
-                                                        <Power className='mr-1.5 h-3.5 w-3.5' />
-                                                        {active ? t('common.disable') : t('common.enable')}
+                                                        <Pencil className='mr-1.5 h-3.5 w-3.5' />
+                                                        {t('common.edit')}
                                                     </Button>
-                                                    <Button
-                                                        variant='destructive'
-                                                        size='sm'
-                                                        onClick={() => setDeleteTarget(schedule)}
-                                                    >
-                                                        <Trash2 className='mr-1.5 h-3.5 w-3.5' />
-                                                        {t('common.delete')}
-                                                    </Button>
-                                                </>
-                                            )}
-                                            {locked && (
-                                                <span className='text-muted-foreground flex items-center gap-1.5 text-xs'>
-                                                    <Lock className='h-3.5 w-3.5' />
-                                                    {t('webSpaces.schedules.lockedHelp')}
-                                                </span>
-                                            )}
-                                        </div>
-                                    }
-                                />
-                            );
-                        })}
-                    </div>
+                                                )}
+                                                <Button
+                                                    variant='glass'
+                                                    size='sm'
+                                                    disabled={busy === schedule.id}
+                                                    onClick={() => void handleExecute(schedule)}
+                                                >
+                                                    {busy === schedule.id ? (
+                                                        <Loader2 className='mr-1.5 h-3.5 w-3.5 animate-spin' />
+                                                    ) : (
+                                                        <Play className='mr-1.5 h-3.5 w-3.5' />
+                                                    )}
+                                                    {t('serverSchedules.runNow')}
+                                                </Button>
+                                                {!locked && (
+                                                    <>
+                                                        <Button
+                                                            variant='glass'
+                                                            size='sm'
+                                                            disabled={busy === schedule.id}
+                                                            onClick={() => void handleToggle(schedule)}
+                                                        >
+                                                            <Power className='mr-1.5 h-3.5 w-3.5' />
+                                                            {active ? t('common.disable') : t('common.enable')}
+                                                        </Button>
+                                                        <Button
+                                                            variant='destructive'
+                                                            size='sm'
+                                                            onClick={() => setDeleteTarget(schedule)}
+                                                        >
+                                                            <Trash2 className='mr-1.5 h-3.5 w-3.5' />
+                                                            {t('common.delete')}
+                                                        </Button>
+                                                    </>
+                                                )}
+                                                {locked && (
+                                                    <span className='text-muted-foreground flex items-center gap-1.5 text-xs'>
+                                                        <Lock className='h-3.5 w-3.5' />
+                                                        {t('webSpaces.schedules.lockedHelp')}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        }
+                                    />
+                                );
+                            })}
+                        </ResourceTable>
+                        <ListPagination
+                            page={pageSchedules.page}
+                            totalPages={pageSchedules.totalPages}
+                            totalItems={pageSchedules.totalItems}
+                            pageSize={pageSchedules.pageSize}
+                            onPageChange={pageSchedules.setPage}
+                        />
+                    </>
                 )}
 
                 <Dialog

@@ -45,6 +45,7 @@
 
 ### Improved
 
+- Web hosting pages now match the redesigned server pages: the same header card with breadcrumbs, dismissible tip cards, list tables with pagination for databases, backups, users, schedules, mailboxes, forwarders and mailing lists, an unsaved changes bar on the firewall page and no blurred surfaces. The Logs tab now follows the console output permission and the Apps tab shows for subusers who can create files.
 - VDS ISO flow: rescue and user ISO storage resolve per VM node (legacy global settings still fall back); admin VDS ISO list aggregates node storages; Mount ISO is host-library only; Settings points to Boot; admin VDS settings ISO group links to VDS nodes; `vds_iso_library_only` defaults to true. by @nayskutzu
 - Embedded VDS console VNC reconnects after stop/reboot/start and unexpected disconnects (clears stale tickets, retries with backoff) so noVNC is not stuck on a dead session. by @nayskutzu
 - User and admin VDS firewall pages: segmented controls, clearer option rows and a shared card layout. by @nayskutzu

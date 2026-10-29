@@ -234,7 +234,7 @@ export function WebSpaceSwitcher({ fallbackTitle }: WebSpaceSwitcherProps) {
                 <MenuItems
                     anchor='bottom start'
                     modal={false}
-                    className='border-border/40 bg-card/95 z-50 mt-1 flex max-h-[min(28rem,75vh)] w-[min(22rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-xl border shadow-2xl backdrop-blur-xl focus:outline-none'
+                    className='border-border/40 bg-card/95 z-50 mt-1 flex max-h-[min(28rem,75vh)] w-[min(22rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-xl border shadow-2xl focus:outline-none'
                 >
                     <div className='border-border/40 shrink-0 border-b px-3 py-2.5'>
                         <p className='text-muted-foreground mb-2 text-[11px] font-semibold tracking-wider uppercase'>
