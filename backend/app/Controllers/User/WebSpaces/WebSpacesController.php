@@ -176,6 +176,37 @@ class WebSpacesController
         ], 'OK', 200);
     }
 
+    /** GET usage samples (one per minute, up to 24h) for the resource graphs. */
+    public function utilizationHistory(Request $request, string $uuidShort): Response
+    {
+        $resolved = $this->resolveAccessible($request, $uuidShort);
+        if ($resolved instanceof Response) {
+            return $resolved;
+        }
+
+        $space = $resolved['space'];
+        $webNode = WebNode::getWebNodeById((int) $space['web_node_id']);
+        if (!$webNode) {
+            return ApiResponse::error('Web node not found', 'WEB_NODE_NOT_FOUND', 404);
+        }
+
+        $minutes = (int) $request->query->get('minutes', 60);
+        $daemon = FeatherQuilldClient::getWebSpaceUtilizationHistory($webNode, (string) $space['uuid'], $minutes);
+        if (!$daemon['ok']) {
+            return ApiResponse::error(
+                $daemon['error'] ?? 'Daemon utilization failed',
+                'DAEMON_UTILIZATION_FAILED',
+                502,
+            );
+        }
+        $body = is_array($daemon['body']) ? $daemon['body'] : [];
+
+        return ApiResponse::success([
+            'minutes' => (int) ($body['minutes'] ?? $minutes),
+            'samples' => is_array($body['samples'] ?? null) ? array_values($body['samples']) : [],
+        ], 'OK', 200);
+    }
+
     public function backupJobStatus(Request $request, string $uuidShort, string $jobId): Response
     {
         $resolved = $this->resolveAccessible($request, $uuidShort);

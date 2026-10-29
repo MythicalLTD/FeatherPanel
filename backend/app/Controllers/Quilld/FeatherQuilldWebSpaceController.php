@@ -18,6 +18,7 @@
 namespace App\Controllers\Quilld;
 
 use App\Chat\WebSpace;
+use App\Services\Notifications\InboxNotifier;
 use App\Helpers\ApiResponse;
 use App\Plugins\Events\Events\QuilldEvent;
 use Symfony\Component\HttpFoundation\Request;
@@ -139,6 +140,8 @@ class FeatherQuilldWebSpaceController
         if (!WebSpace::updateStatus($uuid, $status)) {
             return ApiResponse::error('Failed to update WebSpace status', 'UPDATE_FAILED', 500);
         }
+
+        InboxNotifier::webspaceEvent($space, $successful ? 'install_completed' : 'install_failed');
 
         self::emitPluginEvent(QuilldEvent::onQuilldInstallCompleted(), [
             'webspace' => WebSpace::getByUuid($uuid) ?? $space,
