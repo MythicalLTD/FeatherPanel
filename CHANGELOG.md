@@ -115,6 +115,7 @@
 
 ### Security
 
+- Server permissions: an account without a subuser entry on a server is no longer treated as its owner by the permission checker. Only the owner and staff with server admin rights (`admin.root`, `admin.servers.view/edit/delete`) get every permission; anyone else gets none. This closes paths such as the chatbot database tool showing database passwords to users without `database.view_password`. by @nayskutzu
 - Panel logs no longer contain node daemon tokens, database host passwords or other secrets: validation errors in nodes, web nodes, VDS nodes, database hosts, servers and spell variables now log the data with password, token, secret and key fields masked (new `LogRedactor`). by @nayskutzu
 - Security center: users the 2FA requirement applies to can no longer turn two-factor authentication off from their account settings (`TWO_FACTOR_REQUIRED_BY_POLICY`). by @nayskutzu
 - Admin audit log: the CSV export now neutralises spreadsheet formulas in every column (user name, email, action, IP), not only the context, and search text is matched literally (`%` and `_` are no longer wildcards). by @nayskutzu
