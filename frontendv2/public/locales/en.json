@@ -1677,7 +1677,15 @@
             "SSO_NOT_LINKED": "This provider is not linked to your account.",
             "SSO_PROVIDER_UNKNOWN": "Unknown sign-in provider.",
             "SSO_UNLINK_FAILED": "Could not unlink this provider. Please try again.",
-            "INVALID_SSO_LOGIN_TOKEN": "This sign-in link has expired. Please try again."
+            "INVALID_SSO_LOGIN_TOKEN": "This sign-in link has expired. Please try again.",
+            "NODE_ALERT_NOT_FOUND": "That alert no longer exists.",
+            "NODE_ALERT_WEBHOOK_REQUIRED": "Enter a webhook URL before turning on the webhook channel.",
+            "NODE_ALERT_WEBHOOK_INVALID": "The webhook URL is not valid.",
+            "NODE_ALERT_WEBHOOK_NOT_HTTPS": "The webhook URL must use https and must not contain a username or password.",
+            "NODE_ALERT_WEBHOOK_UNRESOLVABLE": "The webhook host could not be resolved.",
+            "NODE_ALERT_WEBHOOK_PRIVATE_ADDRESS": "The webhook host points to a private or local address, which is not allowed.",
+            "NODE_ALERT_SETTINGS_SAVE_FAILED": "Could not save the alert settings.",
+            "NODE_ALERT_NO_CHANNELS": "Turn on at least one delivery channel first."
         },
         "global": {}
     },
@@ -4402,7 +4410,8 @@
                 "vds_backup_failed": "VDS backup failed",
                 "vds_bandwidth": "VDS traffic limit",
                 "vds_expiring": "VDS expires soon",
-                "storage_disconnected": "Storage disconnected"
+                "storage_disconnected": "Storage disconnected",
+                "node_alert": "Node alert"
             },
             "bodies": {
                 "ticket_reply": "New reply on \"{ticket}\".",
@@ -4418,7 +4427,8 @@
                 "vds_backup_failed": "A backup of {vds} failed: {error}",
                 "vds_bandwidth": "{vds} used {used_gb} GB of {limit_gb} GB traffic this month ({percent}%). {action_label}",
                 "vds_expiring": "{vds} expires on {expires_at} UTC ({days} day(s) left). Renew it to avoid suspension.",
-                "storage_disconnected": "The panel lost access to {storage}. Backups there ({files}) cannot be created, downloaded or restored until you reconnect it."
+                "storage_disconnected": "The panel lost access to {storage}. Backups there ({files}) cannot be created, downloaded or restored until you reconnect it.",
+                "node_alert": "{message}"
             },
             "metrics": {
                 "cpu": "CPU",
@@ -19600,5 +19610,94 @@
         "bannerTitle": "You are viewing the panel as {username}",
         "bannerDescription": "Signed in as {admin}. This view is read only and every visit is audit logged.",
         "stop": "Stop viewing"
+    },
+    "adminNodeAlerts": {
+        "title": "Alerts",
+        "monitorOff": "Alerting is turned off. Turn it on in Settings.",
+        "lastCheck": "Last health check {time}",
+        "neverChecked": "No health check has run yet. The cron runs every minute.",
+        "checkNow": "Run check now",
+        "checked": "Health check finished",
+        "checkFailed": "The health check failed",
+        "resolve": "Resolve",
+        "resolved": "Alert resolved",
+        "resolveFailed": "Could not resolve the alert",
+        "allClear": "All clear. No open alerts.",
+        "since": "since {time}",
+        "occurrences": "seen {count} times",
+        "heartbeat": "Seen {time}",
+        "failedBackups": "{count} failed backups in the last 7 days",
+        "tabs": {
+            "open": "Open",
+            "history": "History",
+            "settings": "Settings"
+        },
+        "types": {
+            "node_down": "Node down",
+            "disk_full": "Disk almost full",
+            "backup_failed": "Backup failed",
+            "test": "Test alert"
+        },
+        "status": {
+            "open": "Open",
+            "resolved": "Resolved"
+        },
+        "history": {
+            "search": "Search alert messages",
+            "type": "Type",
+            "status": "Status",
+            "allTypes": "All types",
+            "allStatuses": "All statuses",
+            "when": "When",
+            "message": "Message",
+            "emptyTitle": "No alerts yet",
+            "emptyDescription": "Alerts appear here once a rule fires.",
+            "loadFailed": "Could not load alert history"
+        },
+        "settings": {
+            "rulesTitle": "Rules",
+            "channelsTitle": "Delivery",
+            "enabled": "Alerting",
+            "enabledHint": "Check nodes every minute and raise alerts.",
+            "nodeDown": "Node down",
+            "nodeDownAfter": "Alert after",
+            "checks": "checks",
+            "disk": "Disk almost full",
+            "diskAt": "Alert at disk usage",
+            "backupFailed": "Backup failed",
+            "cooldown": "Repeat open alerts every",
+            "minutes": "minutes",
+            "notifyResolved": "Notify when resolved",
+            "inbox": "Panel inbox",
+            "inboxHint": "Admins who can view nodes get a bell notification.",
+            "email": "Email",
+            "emailHint": "Uses the panel mail settings.",
+            "webhook": "Webhook",
+            "webhookHint": "Signed JSON POST to a public https URL.",
+            "webhookUrl": "Webhook URL",
+            "webhookSecret": "Webhook signing secret",
+            "secretKept": "Secret saved. Type a new one to replace it.",
+            "secretPlaceholder": "Signing secret (optional)",
+            "signatureHint": "Requests carry X-FeatherPanel-Signature: sha256=HMAC(secret, timestamp + \".\" + body).",
+            "clearSecret": "Remove secret",
+            "secretCleared": "Signing secret removed",
+            "saved": "Alert settings saved",
+            "saveFailed": "Could not save the alert settings",
+            "loadFailed": "Could not load the alert settings",
+            "sendTest": "Send test alert",
+            "testSent": "Test alert sent",
+            "testFailed": "Could not send the test alert",
+            "channelNames": {
+                "inbox": "Inbox",
+                "email": "Email",
+                "webhook": "Webhook"
+            },
+            "results": {
+                "sent": "sent",
+                "skipped": "off",
+                "mail_disabled": "mail is turned off",
+                "no_recipients": "no recipients"
+            }
+        }
     }
 }
