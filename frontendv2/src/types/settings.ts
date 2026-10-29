@@ -99,6 +99,8 @@ export interface AppSettings {
     require_two_fa_admins: string;
     telemetry: string;
     discord_oauth_enabled: string;
+    sso_google_enabled?: string;
+    sso_github_enabled?: string;
     discord_oauth_client_id: string;
     oidc_enabled: string;
     oidc_provider_name?: string;
