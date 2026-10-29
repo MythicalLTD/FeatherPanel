@@ -105,7 +105,7 @@ class LoginController
         }
         if ($discordToken) {
             $discordController = new DiscordController();
-            $userInfo = $discordController->authenticateWithToken($discordToken);
+            $userInfo = $discordController->authenticateWithToken($discordToken, $request);
 
             if (!$userInfo) {
                 return ApiResponse::error('Invalid or expired Discord token', 'INVALID_DISCORD_TOKEN', 400);

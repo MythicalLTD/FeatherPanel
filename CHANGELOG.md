@@ -114,6 +114,7 @@
 
 ### Security
 
+- Discord sign-in, link and register hand-off tokens now only work in the browser that finished the Discord callback, so a shared link can no longer sign someone in or link an attacker's Discord account to another user.
 - Backup storage: a full server backup now checks that the chosen storage destination belongs to the user creating it, like plain backups and schedules already did. Before, any destination id was accepted, so a backup could be sent to another user's storage. by @nayskutzu
 - OAuth sign-in (Google, GitHub, OIDC, Discord): the `state` is now bound to the browser with a short lived cookie, and the SSO login hand-off token only works in the browser that finished the provider callback (blocks login CSRF and linking someone else's provider account). Server lifecycle HTTP hooks no longer follow redirects and pin the checked IP (blocks SSRF through redirects or DNS rebinding).
 - Admins without `admin.root` can no longer edit, ban, delete or create SSO tokens for an account that holds `admin.root`, and can no longer create users with a role other than the default one. (#371) by @redstonerthebest
