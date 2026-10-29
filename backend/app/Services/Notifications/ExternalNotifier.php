@@ -48,6 +48,11 @@ class ExternalNotifier
         'vds_bandwidth' => [UserNotification::KIND_VDS_BANDWIDTH],
         'vds_expiring' => [UserNotification::KIND_VDS_EXPIRING],
         'storage_disconnected' => [UserNotification::KIND_STORAGE_DISCONNECTED],
+        'webspace_install' => [UserNotification::KIND_WEBSPACE_INSTALLED, UserNotification::KIND_WEBSPACE_INSTALL_FAILED],
+        'webspace_backup_completed' => [UserNotification::KIND_WEBSPACE_BACKUP_COMPLETED],
+        'webspace_backup_failed' => [UserNotification::KIND_WEBSPACE_BACKUP_FAILED],
+        'webspace_limit' => [UserNotification::KIND_WEBSPACE_LIMIT],
+        'webspace_malware' => [UserNotification::KIND_WEBSPACE_MALWARE],
     ];
 
     private const TITLES = [
@@ -64,6 +69,12 @@ class ExternalNotifier
         UserNotification::KIND_VDS_BANDWIDTH => 'VDS traffic limit',
         UserNotification::KIND_VDS_EXPIRING => 'VDS expires soon',
         UserNotification::KIND_STORAGE_DISCONNECTED => 'Backup storage disconnected',
+        UserNotification::KIND_WEBSPACE_INSTALLED => 'Web hosting is ready',
+        UserNotification::KIND_WEBSPACE_INSTALL_FAILED => 'Web hosting install failed',
+        UserNotification::KIND_WEBSPACE_BACKUP_COMPLETED => 'Web hosting backup completed',
+        UserNotification::KIND_WEBSPACE_BACKUP_FAILED => 'Web hosting backup failed',
+        UserNotification::KIND_WEBSPACE_LIMIT => 'Web hosting near its limit',
+        UserNotification::KIND_WEBSPACE_MALWARE => 'Malware found on web hosting',
     ];
 
     private const COLORS = [
@@ -78,6 +89,10 @@ class ExternalNotifier
         UserNotification::KIND_STORAGE_DISCONNECTED => 0xEF4444,
         UserNotification::KIND_VDS_BANDWIDTH => 0xF59E0B,
         UserNotification::KIND_VDS_EXPIRING => 0xF97316,
+        UserNotification::KIND_WEBSPACE_INSTALL_FAILED => 0xEF4444,
+        UserNotification::KIND_WEBSPACE_BACKUP_FAILED => 0xEF4444,
+        UserNotification::KIND_WEBSPACE_LIMIT => 0xF59E0B,
+        UserNotification::KIND_WEBSPACE_MALWARE => 0xEF4444,
     ];
 
     /** Stored preferences merged over the defaults. */
@@ -169,6 +184,16 @@ class ExternalNotifier
         $lines = [];
         if (!empty($data['server_name'])) {
             $lines[] = 'Server: ' . $data['server_name'];
+        }
+        if (!empty($data['webspace_name'])) {
+            $lines[] = 'Web hosting: ' . $data['webspace_name'];
+        }
+        if ($kind === UserNotification::KIND_WEBSPACE_LIMIT && isset($data['resource'], $data['percent'])) {
+            $labels = ['disk' => 'Disk', 'bandwidth' => 'Traffic', 'memory' => 'Memory'];
+            $lines[] = ($labels[$data['resource']] ?? $data['resource']) . ': ' . $data['percent'] . '% of the limit';
+        }
+        if ($kind === UserNotification::KIND_WEBSPACE_MALWARE && isset($data['count'])) {
+            $lines[] = 'Infected files: ' . $data['count'];
         }
         if (!empty($data['vds_name'])) {
             $lines[] = 'VDS: ' . $data['vds_name'];

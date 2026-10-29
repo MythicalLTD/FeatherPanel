@@ -18,6 +18,7 @@
 namespace App\Controllers\Quilld;
 
 use App\App;
+use App\Services\Notifications\InboxNotifier;
 use App\Chat\User;
 use App\Chat\WebSpace;
 use App\Helpers\ApiResponse;
@@ -93,6 +94,7 @@ class QuilldActivityController
 
                 if ($activityId) {
                     ++$processedCount;
+                    InboxNotifier::webspaceEvent($space, (string) $activity['event'], is_array($metadata) ? $metadata : []);
                 } else {
                     $errors[] = "Activity at index {$index}: Failed to store";
                 }

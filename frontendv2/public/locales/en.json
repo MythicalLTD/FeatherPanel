@@ -2908,7 +2908,12 @@
                 "vds_backup_failed": "VDS backup failed",
                 "vds_bandwidth": "VDS traffic limit",
                 "vds_expiring": "VDS expires soon",
-                "storage_disconnected": "Backup storage disconnected"
+                "storage_disconnected": "Backup storage disconnected",
+                "webspace_install": "Web hosting install finished or failed",
+                "webspace_backup_completed": "Web hosting backup completed",
+                "webspace_backup_failed": "Web hosting backup failed",
+                "webspace_limit": "Web hosting near its disk, traffic or memory limit",
+                "webspace_malware": "Malware found on web hosting"
             },
             "save": "Save",
             "saved": "Notification settings saved",
@@ -4426,7 +4431,13 @@
                 "vds_expiring": "VDS expires soon",
                 "storage_disconnected": "Storage disconnected",
                 "node_alert": "Node alert",
-                "server_inactive": "Server inactive"
+                "server_inactive": "Server inactive",
+                "webspace_installed": "Web hosting is ready",
+                "webspace_install_failed": "Web hosting install failed",
+                "webspace_backup_completed": "Web hosting backup completed",
+                "webspace_backup_failed": "Web hosting backup failed",
+                "webspace_limit": "Web hosting near its limit",
+                "webspace_malware": "Malware found"
             },
             "bodies": {
                 "ticket_reply": "New reply on \"{ticket}\".",
@@ -4444,7 +4455,13 @@
                 "vds_expiring": "{vds} expires on {expires_at} UTC ({days} day(s) left). Renew it to avoid suspension.",
                 "storage_disconnected": "The panel lost access to {storage}. Backups there ({files}) cannot be created, downloaded or restored until you reconnect it.",
                 "node_alert": "{message}",
-                "server_inactive": "{server} has not been used for {days} days. Use it soon to keep it."
+                "server_inactive": "{server} has not been used for {days} days. Use it soon to keep it.",
+                "webspace_installed": "{webspace} finished installing and is ready to use.",
+                "webspace_install_failed": "{webspace} could not be installed. Check the install log.",
+                "webspace_backup_completed": "A backup of {webspace} finished.",
+                "webspace_backup_failed": "A backup of {webspace} failed: {error}",
+                "webspace_limit": "{webspace} uses {percent}% of its {resource} limit.",
+                "webspace_malware": "The last scan of {webspace} found {files} infected file(s)."
             },
             "metrics": {
                 "cpu": "CPU",
@@ -13140,7 +13157,13 @@
             "info": {
                 "title": "Excluded Data",
                 "description": "The following items are excluded from migration to ensure a clean import.",
-                "items": [null, null, null, null, null],
+                "items": [
+                    null,
+                    null,
+                    null,
+                    null,
+                    null
+                ],
                 "footer": "Excluding this data significantly reduces migration time."
             },
             "create_key": {
@@ -13156,7 +13179,12 @@
                 "creating": "Creating..."
             },
             "warning_dialog": {
-                "items": [null, null, null, null]
+                "items": [
+                    null,
+                    null,
+                    null,
+                    null
+                ]
             },
             "visibility": {
                 "hide": "Hide importer",
@@ -16725,6 +16753,18 @@
             "settings_t1_body": "Saving settings updates the web server config on the node. The site stays online.",
             "settings_t2_title": "Protect the site",
             "settings_t2_body": "Turn on the firewall and block paths like xmlrpc.php if your app does not need them."
+        },
+        "graphs": {
+            "title": "Resource usage",
+            "description": "CPU, memory and disk, sampled once a minute by the node.",
+            "range_60": "1h",
+            "range_360": "6h",
+            "range_1440": "24h",
+            "empty": "No samples yet. The node records usage once a minute.",
+            "cpu": "CPU",
+            "memory": "Memory",
+            "disk": "Disk",
+            "peak": "Peak {value}"
         }
     },
     "landing": {

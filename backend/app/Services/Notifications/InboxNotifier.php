@@ -21,6 +21,8 @@ use App\App;
 use App\Chat\User;
 use App\Chat\Subuser;
 use App\Chat\VmSubuser;
+use App\Chat\WebSpaceSubuser;
+use App\WebSpaceSubuserPermissions;
 use App\Realtime\Mercure;
 use App\SubuserPermissions;
 use App\Chat\UserNotification;
@@ -285,6 +287,101 @@ class InboxNotifier
             }
             $permissions = json_decode((string) ($row['permissions'] ?? ''), true);
             if (!is_array($permissions) || !in_array($permission, $permissions, true)) {
+                continue;
+            }
+            if ($user = User::getUserById($userId)) {
+                $users[$userId] = $user;
+            }
+        }
+
+        return array_values($users);
+    }
+
+    /**
+     * A FeatherQuilld event for a WebSpace (install result, backup, limit or malware).
+     * Unknown events are ignored. Each user can opt out per event in their notification settings.
+     */
+    public static function webspaceEvent(array $space, string $event, array $metadata = []): void
+    {
+        $uuidShort = (string) ($space['uuidShort'] ?? '');
+        $base = '/webspace/' . rawurlencode($uuidShort);
+        $id = (int) ($space['id'] ?? 0);
+        switch ($event) {
+            case 'install_completed':
+            case 'install_failed':
+                $ok = $event === 'install_completed';
+                self::webspaceSend($space, $ok ? UserNotification::KIND_WEBSPACE_INSTALLED : UserNotification::KIND_WEBSPACE_INSTALL_FAILED, 'webspace_install', WebSpaceSubuserPermissions::CONSOLE_OUTPUT, [], $base, 'ws-install:' . $id, 0);
+                break;
+            case 'backup_completed':
+                self::webspaceSend($space, UserNotification::KIND_WEBSPACE_BACKUP_COMPLETED, 'webspace_backup_completed', WebSpaceSubuserPermissions::BACKUP_READ, [], $base . '/backups', 'ws-backup:' . $id, 0);
+                break;
+            case 'backup_failed':
+                self::webspaceSend($space, UserNotification::KIND_WEBSPACE_BACKUP_FAILED, 'webspace_backup_failed', WebSpaceSubuserPermissions::BACKUP_READ, [
+                    'error' => mb_substr((string) ($metadata['error'] ?? ''), 0, 300),
+                ], $base . '/backups', 'ws-backup-failed:' . $id, 0);
+                break;
+            case 'limit_reached':
+                $resource = (string) ($metadata['resource'] ?? '');
+                if (!in_array($resource, ['disk', 'bandwidth', 'memory'], true)) {
+                    return;
+                }
+                $limit = (float) ($metadata['limit_bytes'] ?? 0);
+                $percent = $limit > 0 ? (int) min(100, round(((float) ($metadata['used_bytes'] ?? 0)) / $limit * 100)) : 0;
+                self::webspaceSend($space, UserNotification::KIND_WEBSPACE_LIMIT, 'webspace_limit', WebSpaceSubuserPermissions::CONSOLE_OUTPUT, [
+                    'resource' => $resource,
+                    'percent' => (string) $percent,
+                ], $base, 'ws-limit:' . $id . ':' . $resource, self::RESOURCE_ALERT_COOLDOWN);
+                break;
+            case 'malware_scan_completed':
+                $count = (int) ($metadata['infected_count'] ?? $metadata['infectedCount'] ?? 0);
+                if ($count <= 0) {
+                    return;
+                }
+                self::webspaceSend($space, UserNotification::KIND_WEBSPACE_MALWARE, 'webspace_malware', WebSpaceSubuserPermissions::SETTINGS_READ, [
+                    'count' => (string) $count,
+                ], $base . '/malware', 'ws-malware:' . $id, 0);
+                break;
+        }
+    }
+
+    private static function webspaceSend(array $space, string $kind, string $event, string $permission, array $extra, string $link, string $groupKey, int $cooldownSeconds): void
+    {
+        self::guard(static function () use ($space, $kind, $event, $permission, $extra, $link, $groupKey, $cooldownSeconds): void {
+            $audience = array_values(array_filter(
+                self::webspaceAudience($space, $permission),
+                static function (array $user) use ($event, $groupKey, $cooldownSeconds): bool {
+                    $prefs = ExternalNotifier::getPreferences((string) ($user['uuid'] ?? ''));
+                    if (empty($prefs['events'][$event])) {
+                        return false;
+                    }
+
+                    return $cooldownSeconds <= 0 || !UserNotification::sentWithin((int) $user['id'], $groupKey, $cooldownSeconds);
+                }
+            ));
+            self::send(
+                $audience,
+                $kind,
+                array_merge([
+                    'webspace_name' => mb_substr((string) ($space['name'] ?? ''), 0, 120),
+                    'webspace' => (string) ($space['uuidShort'] ?? ''),
+                ], $extra),
+                $link,
+                $groupKey
+            );
+        });
+    }
+
+    /** WebSpace owner plus subusers that hold the given permission. */
+    private static function webspaceAudience(array $space, string $permission): array
+    {
+        $users = [];
+        $ownerId = (int) ($space['owner_id'] ?? 0);
+        if ($ownerId > 0 && ($owner = User::getUserById($ownerId))) {
+            $users[$ownerId] = $owner;
+        }
+        foreach (WebSpaceSubuser::listByWebSpaceId((int) ($space['id'] ?? 0)) as $row) {
+            $userId = (int) ($row['user_id'] ?? 0);
+            if ($userId <= 0 || isset($users[$userId]) || !in_array($permission, (array) ($row['permissions'] ?? []), true)) {
                 continue;
             }
             if ($user = User::getUserById($userId)) {
