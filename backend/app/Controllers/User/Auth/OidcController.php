@@ -22,6 +22,7 @@ use App\Chat\User;
 use App\Cache\Cache;
 use App\Chat\SsoIdentity;
 use App\Helpers\ApiResponse;
+use App\Helpers\OAuthStateCookie;
 use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
 use App\Helpers\PanelIpBlockGuard;
@@ -101,7 +102,7 @@ class OidcController
         }
 
         $cached = Cache::get('oidc_state_' . $state);
-        if (!is_array($cached) || !isset($cached['nonce'], $cached['provider_uuid'])) {
+        if (!is_array($cached) || !isset($cached['nonce'], $cached['provider_uuid']) || !OAuthStateCookie::matches($request, $state)) {
             return new RedirectResponse('/auth/login?error=oidc_invalid_state');
         }
 
@@ -478,7 +479,10 @@ class OidcController
             'code_challenge_method' => 'S256',
         ]);
 
-        return new RedirectResponse($discovery['authorization_endpoint'] . '?' . $query);
+        $response = new RedirectResponse($discovery['authorization_endpoint'] . '?' . $query);
+        OAuthStateCookie::attach($response, $state);
+
+        return $response;
     }
 
     private function oidcErrorRedirect(string $errorCode, bool $accountSettings): RedirectResponse

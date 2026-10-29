@@ -60,6 +60,8 @@ class LifecycleHookExecutorService
             'timeout' => 15,
             'verify' => true,
             'http_errors' => false,
+            // A redirect could point at an internal address after the URL check passed.
+            'allow_redirects' => false,
         ]);
     }
 
@@ -377,7 +379,7 @@ class LifecycleHookExecutorService
         }
 
         $request = new Request('POST', $url, ['Content-Type' => 'application/json'], json_encode($body));
-        $response = $this->httpClient->send($request);
+        $response = $this->httpClient->send($request, $this->pinnedOptions($url));
         $status = $response->getStatusCode();
         if ($status < 200 || $status >= 300) {
             throw new \Exception('Discord webhook request failed with status ' . $status);
@@ -601,13 +603,42 @@ class LifecycleHookExecutorService
         }
 
         $request = new Request($method, $url, $headers, $body);
-        $response = $this->httpClient->send($request);
+        $response = $this->httpClient->send($request, $this->pinnedOptions($url));
         $status = $response->getStatusCode();
         if ($status < 200 || $status >= 300) {
             throw new \Exception('HTTP request failed with status ' . $status);
         }
 
         return ['status_code' => $status];
+    }
+
+    /**
+     * Pin the connection to an address that passed the public IP check, so a DNS answer that
+     * changes between the check and the request (DNS rebinding) cannot reach an internal host.
+     *
+     * @return array<string, mixed>
+     */
+    private function pinnedOptions(string $url): array
+    {
+        $parts = parse_url($url);
+        $host = is_array($parts) ? trim((string) ($parts['host'] ?? ''), '[]') : '';
+        if ($host === '' || filter_var($host, FILTER_VALIDATE_IP) !== false) {
+            return [];
+        }
+        $ips = \App\Helpers\SafeUrlFetcher::resolveHost($host);
+        foreach ($ips as $ip) {
+            if (!\App\Helpers\SafeUrlFetcher::isPublicIp($ip)) {
+                throw new \RuntimeException('Hook URL resolves to a non-public address');
+            }
+        }
+        if ($ips === []) {
+            throw new \RuntimeException('Hook URL host could not be resolved');
+        }
+        $scheme = strtolower((string) ($parts['scheme'] ?? 'https'));
+        $port = isset($parts['port']) ? (int) $parts['port'] : ($scheme === 'https' ? 443 : 80);
+        $ip = filter_var($ips[0], FILTER_VALIDATE_IP, FILTER_FLAG_IPV6) !== false ? '[' . $ips[0] . ']' : $ips[0];
+
+        return ['curl' => [\CURLOPT_RESOLVE => [$host . ':' . $port . ':' . $ip]]];
     }
 
     protected function isSafeUrl(string $url): bool

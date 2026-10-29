@@ -23,6 +23,7 @@ use App\Cache\Cache;
 use App\Chat\Activity;
 use App\Helpers\UUIDUtils;
 use App\Helpers\ApiResponse;
+use App\Helpers\OAuthStateCookie;
 use App\Config\ConfigInterface;
 use App\Helpers\PanelIpBlockGuard;
 use App\CloudFlare\CloudFlareRealIP;
@@ -77,7 +78,7 @@ class DiscordController
 
         // Validate state
         $cachedState = $state ? Cache::get('discord_oauth_state_' . $state) : null;
-        if (!$state || $cachedState === null) {
+        if (!$state || $cachedState === null || !OAuthStateCookie::matches($request, $state)) {
             return new RedirectResponse('/auth/login?error=invalid_state');
         }
 
@@ -645,8 +646,10 @@ class DiscordController
         $redirectUri = urlencode(rtrim($app->getConfig()->getSetting(ConfigInterface::APP_URL, ''), '/') . '/api/user/auth/discord/callback');
         $scopes = urlencode('identify email');
         $url = "https://discord.com/api/oauth2/authorize?client_id={$clientId}&redirect_uri={$redirectUri}&response_type=code&scope={$scopes}&state={$state}";
+        $response = new RedirectResponse($url);
+        OAuthStateCookie::attach($response, $state);
 
-        return new RedirectResponse($url);
+        return $response;
     }
 
     private function completeAccountLink(

@@ -23,6 +23,7 @@ use App\Cache\Cache;
 use App\Chat\Activity;
 use App\Chat\SsoIdentity;
 use App\Helpers\ApiResponse;
+use App\Helpers\OAuthStateCookie;
 use App\Config\ConfigInterface;
 use App\Helpers\PanelIpBlockGuard;
 use App\CloudFlare\CloudFlareRealIP;
@@ -73,7 +74,7 @@ class SsoController
         $app = App::getInstance(true);
         $state = $request->query->get('state');
         $cached = is_string($state) && $state !== '' ? Cache::get('sso_state_' . $state) : null;
-        if (!is_array($cached) || ($cached['provider'] ?? '') !== $provider) {
+        if (!is_array($cached) || ($cached['provider'] ?? '') !== $provider || !OAuthStateCookie::matches($request, $state)) {
             return self::errorRedirect('sso_invalid_state', false);
         }
         Cache::forget('sso_state_' . $state);
@@ -222,15 +223,23 @@ class SsoController
         $token = bin2hex(random_bytes(32));
         Cache::put('sso_login_handoff_' . $token, ['user_uuid' => $user['uuid'], 'provider' => $provider], 5);
 
-        return new RedirectResponse('/auth/login?sso_login_token=' . $token);
+        $response = new RedirectResponse('/auth/login?sso_login_token=' . $token);
+        OAuthStateCookie::clear($response);
+        OAuthStateCookie::attach($response, $token, OAuthStateCookie::HANDOFF);
+
+        return $response;
     }
 
     /**
      * Consume a handoff token (single use). Returns the stored payload or null.
      */
-    public static function consumeHandoff(string $token): ?array
+    public static function consumeHandoff(string $token, ?Request $request = null): ?array
     {
         if (!preg_match('/^[a-f0-9]{64}$/', $token)) {
+            return null;
+        }
+        // The token must come back from the browser that finished the provider callback.
+        if ($request !== null && !OAuthStateCookie::matches($request, $token, OAuthStateCookie::HANDOFF)) {
             return null;
         }
         $data = Cache::get('sso_login_handoff_' . $token);
@@ -442,7 +451,10 @@ class SsoController
             $params['allow_signup'] = 'false';
         }
 
-        return new RedirectResponse($endpoint . '?' . http_build_query($params));
+        $response = new RedirectResponse($endpoint . '?' . http_build_query($params));
+        OAuthStateCookie::attach($response, $state);
+
+        return $response;
     }
 
     /**
