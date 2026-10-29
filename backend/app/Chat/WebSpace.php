@@ -897,8 +897,7 @@ class WebSpace
             if ($value === '' || strlen($value) > 64) {
                 continue;
             }
-            $host = explode('/', $value, 2)[0];
-            if (filter_var($host, FILTER_VALIDATE_IP) === false) {
+            if (!\App\Helpers\WebSpaceWafRules::isValidIp($value)) {
                 continue;
             }
             if (!in_array($value, $out, true)) {
@@ -950,7 +949,7 @@ class WebSpace
             while (str_contains($value, '//')) {
                 $value = str_replace('//', '/', $value);
             }
-            if ($value === '/') {
+            if ($value === '/' || !\App\Helpers\WebSpaceWafRules::isValidPath($value)) {
                 continue;
             }
             if (!in_array($value, $out, true)) {
