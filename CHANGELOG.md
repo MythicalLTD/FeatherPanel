@@ -91,6 +91,7 @@
 
 ### Fixed
 
+- FeatherOS desktop: server icons get a taller row step so two-line labels and the disk meter no longer overlap the next icon; snapping, auto-arrange and arrow-key moves use the same step. by @nayskutzu
 - Admin audit log: the filter row no longer clips the date inputs and placeholders at desktop widths; search, user, action, target and date fields get their own column spans. by @nayskutzu
 - Node alerts: a failed backup that started before another backup but finished after it is no longer skipped. The failed backup scan now follows completion time instead of the backup id (the old position is reset to now once on upgrade). by @nayskutzu
 - WebSpace console no longer logs a 404 every few seconds when no transfer is running, and subusers without the Users permission see an access notice on the Users page instead of an error toast and an empty list. by @nayskutzu
