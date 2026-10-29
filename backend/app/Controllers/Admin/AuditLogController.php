@@ -19,6 +19,7 @@ namespace App\Controllers\Admin;
 
 use App\Chat\Database;
 use App\Helpers\ApiResponse;
+use App\Helpers\SpreadsheetSafe;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -93,10 +94,10 @@ class AuditLogController
         $out = fopen('php://temp', 'r+');
         fputcsv($out, ['id', 'created_at', 'username', 'email', 'user_uuid', 'action', 'target', 'context', 'ip_address'], ',', '"', '\\');
         foreach ($rows as $r) {
-            fputcsv($out, [
+            fputcsv($out, array_map([SpreadsheetSafe::class, 'cell'], [
                 $r['id'], $r['created_at'], $r['username'] ?? '', $r['email'] ?? '', $r['user_uuid'],
-                $r['name'], $r['target'], $this->csvSafe((string) ($r['context'] ?? '')), $r['ip_address'] ?? '',
-            ], ',', '"', '\\');
+                $r['name'], $r['target'], $r['context'] ?? '', $r['ip_address'] ?? '',
+            ]), ',', '"', '\\');
         }
         rewind($out);
         $csv = stream_get_contents($out);
@@ -120,7 +121,7 @@ class AuditLogController
         if ($search !== '') {
             $clauses[] = '(a.name LIKE :s1 OR a.context LIKE :s2 OR a.ip_address LIKE :s3 OR u.username LIKE :s4 OR u.email LIKE :s5)';
             for ($i = 1; $i <= 5; ++$i) {
-                $params['s' . $i] = '%' . $search . '%';
+                $params['s' . $i] = '%' . SpreadsheetSafe::likeLiteral($search) . '%';
             }
         }
 
@@ -192,13 +193,5 @@ class AuditLogController
         }
 
         return $case . " ELSE 'other' END";
-    }
-
-    /**
-     * Prevent spreadsheet formula injection in exported cells.
-     */
-    private function csvSafe(string $value): string
-    {
-        return preg_match('/^[=+\-@\t\r]/', $value) ? "'" . $value : $value;
     }
 }

@@ -179,6 +179,12 @@ class SessionController
             if ($data['two_fa_enabled'] && ($user['two_fa_enabled'] ?? 'false') !== 'true') {
                 return ApiResponse::error('Use the two-factor setup to enable 2FA', 'INVALID_2FA_VALUE', 400);
             }
+            // Security center: a user the 2FA requirement applies to cannot switch it off.
+            if (!$data['two_fa_enabled'] && ($user['two_fa_enabled'] ?? 'false') === 'true'
+                && !$request->attributes->has('impersonator')
+                && \App\Services\Security\SecurityPolicy::twoFactorApplies($user)) {
+                return ApiResponse::error('Your role requires two-factor authentication, so it cannot be turned off', 'TWO_FACTOR_REQUIRED_BY_POLICY', 403);
+            }
             $data['two_fa_enabled'] = $data['two_fa_enabled'] ? 'true' : 'false';
         }
 
