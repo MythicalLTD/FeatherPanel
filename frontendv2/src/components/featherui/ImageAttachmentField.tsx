@@ -95,11 +95,7 @@ export function ImageAttachmentField({
 
     return (
         <div className={cn('space-y-3', className)}>
-            {label && (
-                <Label htmlFor={id} className='text-base font-medium'>
-                    {label}
-                </Label>
-            )}
+            {label && <Label htmlFor={id}>{label}</Label>}
 
             <div className='flex flex-wrap items-start gap-4'>
                 <div className='border-border bg-muted/40 flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-xl border'>
