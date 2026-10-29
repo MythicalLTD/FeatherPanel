@@ -1,3 +1,4 @@
+-- Guarded with information_schema checks so it is safe to re-run and also works on MySQL 8.
 -- Add a deterministic lookup hash for API client private keys, so the
 -- private_key column itself can be switched to encrypted-at-rest storage
 -- without losing the ability to look up a client by the raw key a client
@@ -15,9 +16,22 @@
 -- it only fills NULL hashes, skips already-encrypted values (enc:v1:...),
 -- and must run before application code that looks up by private_key_hash.
 -- Re-run after database restores that reintroduce plaintext rows.
-ALTER TABLE `featherpanel_apikeys_client`
-	ADD COLUMN `private_key_hash` CHAR(64) DEFAULT NULL AFTER `private_key`,
-	ADD UNIQUE KEY `featherpanel_apikeys_client_private_key_hash_unique` (`private_key_hash`);
+SET @fp_sql = IF(
+	(SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'featherpanel_apikeys_client' AND COLUMN_NAME = 'private_key_hash') = 0,
+	'ALTER TABLE `featherpanel_apikeys_client` ADD COLUMN `private_key_hash` CHAR(64) DEFAULT NULL AFTER `private_key`',
+	'SELECT 1'
+);
+PREPARE fp_stmt FROM @fp_sql;
+EXECUTE fp_stmt;
+DEALLOCATE PREPARE fp_stmt;
+SET @fp_sql = IF(
+	(SELECT COUNT(*) FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'featherpanel_apikeys_client' AND INDEX_NAME = 'featherpanel_apikeys_client_private_key_hash_unique') = 0,
+	'ALTER TABLE `featherpanel_apikeys_client` ADD UNIQUE KEY `featherpanel_apikeys_client_private_key_hash_unique` (`private_key_hash`)',
+	'SELECT 1'
+);
+PREPARE fp_stmt FROM @fp_sql;
+EXECUTE fp_stmt;
+DEALLOCATE PREPARE fp_stmt;
 
 UPDATE `featherpanel_apikeys_client`
 SET `private_key_hash` = SHA2(`private_key`, 256)

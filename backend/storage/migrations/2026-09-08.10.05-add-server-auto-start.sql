@@ -1,7 +1,28 @@
-ALTER TABLE `featherpanel_servers`
-ADD COLUMN `auto_start` TINYINT(1) NOT NULL DEFAULT 0 AFTER `show_on_status`,
-ADD COLUMN `manually_stopped` TINYINT(1) NOT NULL DEFAULT 0 AFTER `auto_start`,
-ADD COLUMN `auto_start_delay` INT UNSIGNED NOT NULL DEFAULT 0 AFTER `manually_stopped`;
+-- Guarded with information_schema checks so it is safe to re-run and also works on MySQL 8.
+SET @fp_sql = IF(
+	(SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'featherpanel_servers' AND COLUMN_NAME = 'auto_start') = 0,
+	'ALTER TABLE `featherpanel_servers` ADD COLUMN `auto_start` TINYINT(1) NOT NULL DEFAULT 0 AFTER `show_on_status`',
+	'SELECT 1'
+);
+PREPARE fp_stmt FROM @fp_sql;
+EXECUTE fp_stmt;
+DEALLOCATE PREPARE fp_stmt;
+SET @fp_sql = IF(
+	(SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'featherpanel_servers' AND COLUMN_NAME = 'manually_stopped') = 0,
+	'ALTER TABLE `featherpanel_servers` ADD COLUMN `manually_stopped` TINYINT(1) NOT NULL DEFAULT 0 AFTER `auto_start`',
+	'SELECT 1'
+);
+PREPARE fp_stmt FROM @fp_sql;
+EXECUTE fp_stmt;
+DEALLOCATE PREPARE fp_stmt;
+SET @fp_sql = IF(
+	(SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'featherpanel_servers' AND COLUMN_NAME = 'auto_start_delay') = 0,
+	'ALTER TABLE `featherpanel_servers` ADD COLUMN `auto_start_delay` INT UNSIGNED NOT NULL DEFAULT 0 AFTER `manually_stopped`',
+	'SELECT 1'
+);
+PREPARE fp_stmt FROM @fp_sql;
+EXECUTE fp_stmt;
+DEALLOCATE PREPARE fp_stmt;
 
 CREATE TABLE IF NOT EXISTS `featherpanel_server_auto_start_queue` (
 	`id` INT NOT NULL AUTO_INCREMENT,

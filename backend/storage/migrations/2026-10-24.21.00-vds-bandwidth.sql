@@ -1,3 +1,4 @@
+-- Guarded with information_schema checks so it is safe to re-run and also works on MySQL 8.
 -- Monthly VDS traffic accounting (sampled by the ZVdsMonitor cron) and a per-VDS limit override.
 CREATE TABLE IF NOT EXISTS `featherpanel_vm_bandwidth` (
     `vm_instance_id` INT NOT NULL,
@@ -14,5 +15,11 @@ CREATE TABLE IF NOT EXISTS `featherpanel_vm_bandwidth` (
     CONSTRAINT `featherpanel_vm_bandwidth_instance_fk` FOREIGN KEY (`vm_instance_id`) REFERENCES `featherpanel_vm_instances` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-ALTER TABLE `featherpanel_vm_instances`
-    ADD COLUMN `bandwidth_limit_gb` INT NULL DEFAULT NULL COMMENT 'NULL = panel default, 0 = unlimited' AFTER `iso_mode`;
+SET @fp_sql = IF(
+	(SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'featherpanel_vm_instances' AND COLUMN_NAME = 'bandwidth_limit_gb') = 0,
+	'ALTER TABLE `featherpanel_vm_instances` ADD COLUMN `bandwidth_limit_gb` INT NULL DEFAULT NULL COMMENT ''NULL = panel default, 0 = unlimited'' AFTER `iso_mode`',
+	'SELECT 1'
+);
+PREPARE fp_stmt FROM @fp_sql;
+EXECUTE fp_stmt;
+DEALLOCATE PREPARE fp_stmt;

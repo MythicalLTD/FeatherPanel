@@ -1,3 +1,4 @@
+-- Guarded with information_schema checks so it is safe to re-run and also works on MySQL 8.
 -- Node health monitor: the last known state per node (written by the node health cron)
 -- and the alert history (node down, disk nearly full, backup failed) with resolve times.
 CREATE TABLE IF NOT EXISTS `featherpanel_node_health` (
@@ -38,5 +39,11 @@ CREATE TABLE IF NOT EXISTS `featherpanel_node_alerts` (
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 -- Failed backups are picked up incrementally; index the lookup.
-ALTER TABLE `featherpanel_server_backups`
-	ADD INDEX IF NOT EXISTS `server_backups_completed_success` (`completed_at`, `is_successful`);
+SET @fp_sql = IF(
+	(SELECT COUNT(*) FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'featherpanel_server_backups' AND INDEX_NAME = 'server_backups_completed_success') = 0,
+	'ALTER TABLE `featherpanel_server_backups` ADD INDEX `server_backups_completed_success` (`completed_at`, `is_successful`)',
+	'SELECT 1'
+);
+PREPARE fp_stmt FROM @fp_sql;
+EXECUTE fp_stmt;
+DEALLOCATE PREPARE fp_stmt;

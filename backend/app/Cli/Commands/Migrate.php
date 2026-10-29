@@ -175,7 +175,14 @@ class Migrate extends App implements CommandBuilder
                     MainApp::getInstance(true)->updateEnvValue('DATABASE_ENCRYPTION_KEY', $encryptionKey, true);
                     $cliApp->send('&a&l✅ Encryption key generated successfully!');
                 }
-                $db->getPdo()->exec($migrationContent);
+                // exec() only reports an error in the first statement of a multi statement
+                // script; walk every result set so a failure later in the file is not missed.
+                $stmt = $db->getPdo()->query($migrationContent);
+                if ($stmt !== false) {
+                    while ($stmt->nextRowset()) {
+                    }
+                    $stmt->closeCursor();
+                }
                 $migrationTime = round((microtime(true) - $migrationStartTime) * 1000, 2);
                 $cliApp->send('&a&l✅ Success: &r&f' . $displayName . ' &7(' . $migrationTime . 'ms)');
                 ++$executedMigrations;
