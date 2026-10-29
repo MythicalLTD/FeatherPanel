@@ -20,7 +20,11 @@ import { useParams } from 'next/navigation';
 import axios from 'axios';
 import { toast } from 'sonner';
 import { Plus, Trash2, Users, Mail, Loader2, RefreshCw, Shield } from 'lucide-react';
-import { PageHeader } from '@/components/featherui/PageHeader';
+import { ResourceTable } from '@/components/featherui/ResourceCard';
+import { ListPagination } from '@/components/featherui/ListPagination';
+import { useClientPagination } from '@/hooks/useClientPagination';
+import { WebSpacePageHeader as PageHeader } from '@/components/webspace/WebSpacePageHeader';
+import { WebSpacePageTips } from '@/components/webspace/WebSpacePageTips';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { EmptyState } from '@/components/featherui/EmptyState';
@@ -143,6 +147,7 @@ export default function WebSpaceUsersPage() {
         setEditPermissions((prev) => (prev.includes(perm) ? prev.filter((p) => p !== perm) : [...prev, perm]));
     };
 
+    const pageSubusers = useClientPagination(subusers);
     if (loading || permissionsLoading) {
         return (
             <div className='flex flex-col items-center justify-center py-24'>
@@ -173,6 +178,7 @@ export default function WebSpaceUsersPage() {
                         </div>
                     }
                 />
+                <WebSpacePageTips page='users' />
 
                 {subusers.length === 0 ? (
                     <EmptyState
@@ -193,49 +199,58 @@ export default function WebSpaceUsersPage() {
                         }
                     />
                 ) : (
-                    <div className='grid grid-cols-1 gap-4'>
-                        {subusers.map((su) => (
-                            <ResourceCard
-                                key={su.id}
-                                icon={Users}
-                                iconWrapperClassName='bg-primary/10 border-primary/20 text-primary'
-                                title={su.username || su.email || ''}
-                                description={
-                                    <div className='text-muted-foreground flex items-center gap-2 text-xs font-medium'>
-                                        <Mail className='h-3 w-3' />
-                                        <span>
-                                            <Sensitive>{su.email}</Sensitive>
-                                        </span>
-                                    </div>
-                                }
-                                actions={
-                                    <div className='flex items-center gap-3'>
-                                        {canUpdate && (
-                                            <Button
-                                                variant='ghost'
-                                                size='sm'
-                                                onClick={() => openEdit(su)}
-                                                className='hover:bg-muted/70 h-8 rounded-lg px-3 text-xs'
-                                            >
-                                                <Shield className='mr-1.5 h-3.5 w-3.5' />
-                                                {t('webSpaces.users.editPermissions')}
-                                            </Button>
-                                        )}
-                                        {canDelete && (
-                                            <Button
-                                                variant='destructive'
-                                                size='sm'
-                                                onClick={() => void removeUser(su.id)}
-                                                className='h-8 w-8 p-0'
-                                            >
-                                                <Trash2 className='h-3.5 w-3.5' />
-                                            </Button>
-                                        )}
-                                    </div>
-                                }
-                            />
-                        ))}
-                    </div>
+                    <>
+                        <ResourceTable>
+                            {pageSubusers.paged.map((su) => (
+                                <ResourceCard
+                                    key={su.id}
+                                    icon={Users}
+                                    iconWrapperClassName='bg-primary/10 border-primary/20 text-primary'
+                                    title={su.username || su.email || ''}
+                                    description={
+                                        <div className='text-muted-foreground flex items-center gap-2 text-xs font-medium'>
+                                            <Mail className='h-3 w-3' />
+                                            <span>
+                                                <Sensitive>{su.email}</Sensitive>
+                                            </span>
+                                        </div>
+                                    }
+                                    actions={
+                                        <div className='flex items-center gap-3'>
+                                            {canUpdate && (
+                                                <Button
+                                                    variant='ghost'
+                                                    size='sm'
+                                                    onClick={() => openEdit(su)}
+                                                    className='hover:bg-muted/70 h-8 rounded-lg px-3 text-xs'
+                                                >
+                                                    <Shield className='mr-1.5 h-3.5 w-3.5' />
+                                                    {t('webSpaces.users.editPermissions')}
+                                                </Button>
+                                            )}
+                                            {canDelete && (
+                                                <Button
+                                                    variant='destructive'
+                                                    size='sm'
+                                                    onClick={() => void removeUser(su.id)}
+                                                    className='h-8 w-8 p-0'
+                                                >
+                                                    <Trash2 className='h-3.5 w-3.5' />
+                                                </Button>
+                                            )}
+                                        </div>
+                                    }
+                                />
+                            ))}
+                        </ResourceTable>
+                        <ListPagination
+                            page={pageSubusers.page}
+                            totalPages={pageSubusers.totalPages}
+                            totalItems={pageSubusers.totalItems}
+                            pageSize={pageSubusers.pageSize}
+                            onPageChange={pageSubusers.setPage}
+                        />
+                    </>
                 )}
 
                 <Dialog

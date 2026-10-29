@@ -21,7 +21,8 @@ import axios from 'axios';
 import { Copy, FolderOpen, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useSession } from '@/contexts/SessionContext';
-import { PageHeader } from '@/components/featherui/PageHeader';
+import { WebSpacePageHeader as PageHeader } from '@/components/webspace/WebSpacePageHeader';
+import { WebSpacePageTips } from '@/components/webspace/WebSpacePageTips';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
@@ -152,6 +153,7 @@ export default function WebSpaceAccessPage() {
                     title={t('webSpaces.accessPage.title')}
                     description={t('webSpaces.accessPage.description')}
                 />
+                <WebSpacePageTips page='access' />
 
                 <PageCard
                     title={t('webSpaces.settings.sftpTitle')}

@@ -39,7 +39,11 @@ import {
     AlertTriangle,
     ShieldAlert,
 } from 'lucide-react';
-import { PageHeader } from '@/components/featherui/PageHeader';
+import { ResourceTable } from '@/components/featherui/ResourceCard';
+import { ListPagination } from '@/components/featherui/ListPagination';
+import { useClientPagination } from '@/hooks/useClientPagination';
+import { WebSpacePageHeader as PageHeader } from '@/components/webspace/WebSpacePageHeader';
+import { WebSpacePageTips } from '@/components/webspace/WebSpacePageTips';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { EmptyState } from '@/components/featherui/EmptyState';
@@ -276,6 +280,7 @@ export default function WebSpaceDatabasesPage() {
         }
     };
 
+    const pageFiltered = useClientPagination(filtered);
     if (loading && rows.length === 0) {
         return (
             <div className='flex flex-col items-center justify-center py-24'>
@@ -327,9 +332,10 @@ export default function WebSpaceDatabasesPage() {
                         </div>
                     }
                 />
+                <WebSpacePageTips page='databases' />
 
                 {atLimit && (
-                    <div className='relative overflow-hidden rounded-3xl border border-yellow-500/20 bg-yellow-500/10 p-6 backdrop-blur-xl'>
+                    <div className='relative overflow-hidden rounded-3xl border border-yellow-500/20 bg-yellow-500/10 p-6'>
                         <div className='relative z-10 flex items-start gap-5'>
                             <div className='flex h-12 w-12 items-center justify-center rounded-2xl border border-yellow-500/30 bg-yellow-500/20'>
                                 <AlertTriangle className='h-6 w-6 text-yellow-500' />
@@ -383,150 +389,159 @@ export default function WebSpaceDatabasesPage() {
                             }
                         />
                     ) : (
-                        <div className='grid grid-cols-1 gap-4'>
-                            {filtered.map((db) => (
-                                <ResourceCard
-                                    key={db.id}
-                                    icon={DatabaseIcon}
-                                    title={db.database}
-                                    badges={
-                                        <>
-                                            {db.database_type && (
-                                                <span className='bg-primary/10 text-primary border-primary/20 rounded-full border px-3 py-1 text-[10px] leading-none font-black tracking-widest uppercase'>
-                                                    {db.database_type}
-                                                </span>
-                                            )}
-                                            {db.remote === '%' ? (
-                                                <span className='flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-[10px] leading-none font-black tracking-widest text-emerald-500 uppercase'>
-                                                    <Globe className='h-3 w-3' />
-                                                    {t('serverDatabases.allHosts')}
-                                                </span>
-                                            ) : db.remote ? (
-                                                <span className='bg-muted border-border/50 text-muted-foreground rounded-full border px-3 py-1 font-mono text-[10px] leading-none font-black tracking-widest uppercase'>
-                                                    {db.remote}
-                                                </span>
-                                            ) : null}
-                                        </>
-                                    }
-                                    description={
-                                        <>
-                                            <div className='text-muted-foreground flex items-center gap-2'>
-                                                <User className='h-4 w-4 opacity-50' />
-                                                <span className='text-sm font-semibold'>{db.username}</span>
-                                            </div>
-                                            <div className='text-muted-foreground flex items-center gap-2'>
-                                                <ServerIcon className='h-4 w-4 opacity-50' />
-                                                <span className='font-mono text-sm font-semibold'>
-                                                    {getDatabaseDisplayHost(db)}
-                                                    {db.database_port ? `:${db.database_port}` : ''}
-                                                </span>
-                                            </div>
-                                        </>
-                                    }
-                                    actions={
-                                        (canViewPassword || canReset || canDelete || canRead) && (
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger className='group-hover:bg-primary/10 flex h-12 w-12 items-center justify-center rounded-xl transition-colors outline-none'>
-                                                    <MoreVertical className='text-muted-foreground group-hover:text-primary h-6 w-6 transition-colors' />
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent
-                                                    align='end'
-                                                    className='bg-card/90 border-border/40 w-56 rounded-2xl p-2 backdrop-blur-xl'
-                                                >
-                                                    {canViewPassword && (
-                                                        <DropdownMenuItem
-                                                            onClick={() => openViewDatabase(db)}
-                                                            className='flex cursor-pointer items-center gap-3 rounded-xl p-3'
-                                                        >
-                                                            <Eye className='text-primary h-4 w-4' />
-                                                            <span className='font-bold'>
-                                                                {t('webSpaces.databases.view')}
-                                                            </span>
-                                                        </DropdownMenuItem>
-                                                    )}
-                                                    {canRead && (
-                                                        <DropdownMenuItem
-                                                            onClick={() => void dumpDatabase(db.id)}
-                                                            className='flex cursor-pointer items-center gap-3 rounded-xl p-3'
-                                                        >
-                                                            <Download className='h-4 w-4' />
-                                                            <span className='font-bold'>
-                                                                {t('webSpaces.databases.dump')}
-                                                            </span>
-                                                        </DropdownMenuItem>
-                                                    )}
-                                                    {canReset && (
-                                                        <DropdownMenuItem
-                                                            onClick={() => void restoreDatabase(db.id)}
-                                                            className='flex cursor-pointer items-center gap-3 rounded-xl p-3'
-                                                        >
-                                                            <Upload className='h-4 w-4' />
-                                                            <span className='font-bold'>
-                                                                {t('webSpaces.databases.restore')}
-                                                            </span>
-                                                        </DropdownMenuItem>
-                                                    )}
-                                                    {canViewPassword &&
-                                                        phpMyAdminInstalled &&
-                                                        !['postgresql', 'pgsql', 'postgres'].includes(
-                                                            (db.database_type || '').toLowerCase(),
-                                                        ) && (
+                        <>
+                            <ResourceTable>
+                                {pageFiltered.paged.map((db) => (
+                                    <ResourceCard
+                                        key={db.id}
+                                        icon={DatabaseIcon}
+                                        title={db.database}
+                                        badges={
+                                            <>
+                                                {db.database_type && (
+                                                    <span className='bg-primary/10 text-primary border-primary/20 rounded-full border px-3 py-1 text-[10px] leading-none font-black tracking-widest uppercase'>
+                                                        {db.database_type}
+                                                    </span>
+                                                )}
+                                                {db.remote === '%' ? (
+                                                    <span className='flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-[10px] leading-none font-black tracking-widest text-emerald-500 uppercase'>
+                                                        <Globe className='h-3 w-3' />
+                                                        {t('serverDatabases.allHosts')}
+                                                    </span>
+                                                ) : db.remote ? (
+                                                    <span className='bg-muted border-border/50 text-muted-foreground rounded-full border px-3 py-1 font-mono text-[10px] leading-none font-black tracking-widest uppercase'>
+                                                        {db.remote}
+                                                    </span>
+                                                ) : null}
+                                            </>
+                                        }
+                                        description={
+                                            <>
+                                                <div className='text-muted-foreground flex items-center gap-2'>
+                                                    <User className='h-4 w-4 opacity-50' />
+                                                    <span className='text-sm font-semibold'>{db.username}</span>
+                                                </div>
+                                                <div className='text-muted-foreground flex items-center gap-2'>
+                                                    <ServerIcon className='h-4 w-4 opacity-50' />
+                                                    <span className='font-mono text-sm font-semibold'>
+                                                        {getDatabaseDisplayHost(db)}
+                                                        {db.database_port ? `:${db.database_port}` : ''}
+                                                    </span>
+                                                </div>
+                                            </>
+                                        }
+                                        actions={
+                                            (canViewPassword || canReset || canDelete || canRead) && (
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger className='group-hover:bg-primary/10 flex h-12 w-12 items-center justify-center rounded-xl transition-colors outline-none'>
+                                                        <MoreVertical className='text-muted-foreground group-hover:text-primary h-6 w-6 transition-colors' />
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent
+                                                        align='end'
+                                                        className='bg-card/90 border-border/40 w-56 rounded-2xl p-2'
+                                                    >
+                                                        {canViewPassword && (
                                                             <DropdownMenuItem
-                                                                onClick={() => void openPhpMyAdmin(db.id)}
+                                                                onClick={() => openViewDatabase(db)}
                                                                 className='flex cursor-pointer items-center gap-3 rounded-xl p-3'
                                                             >
-                                                                <ExternalLink className='h-4 w-4 text-blue-500' />
-                                                                <span className='font-bold'>phpMyAdmin</span>
-                                                            </DropdownMenuItem>
-                                                        )}
-                                                    {canViewPassword &&
-                                                        phpPgAdminInstalled &&
-                                                        ['postgresql', 'pgsql', 'postgres'].includes(
-                                                            (db.database_type || '').toLowerCase(),
-                                                        ) && (
-                                                            <DropdownMenuItem
-                                                                onClick={() => void openPhpPgAdmin(db.id)}
-                                                                className='flex cursor-pointer items-center gap-3 rounded-xl p-3'
-                                                            >
-                                                                <ExternalLink className='h-4 w-4 text-blue-500' />
-                                                                <span className='font-bold'>phpPgAdmin</span>
-                                                            </DropdownMenuItem>
-                                                        )}
-                                                    {canReset && (
-                                                        <DropdownMenuItem
-                                                            onClick={() => void resetPassword(db.id)}
-                                                            className='flex cursor-pointer items-center gap-3 rounded-xl p-3'
-                                                        >
-                                                            <KeyRound className='h-4 w-4 text-amber-500' />
-                                                            <span className='font-bold'>
-                                                                {t('webSpaces.databases.resetPassword')}
-                                                            </span>
-                                                        </DropdownMenuItem>
-                                                    )}
-                                                    {canDelete && (
-                                                        <>
-                                                            <DropdownMenuSeparator className='bg-border/40 my-1' />
-                                                            <DropdownMenuItem
-                                                                onClick={() => {
-                                                                    setDatabaseToDelete(db);
-                                                                    setConfirmDeleteDialogOpen(true);
-                                                                }}
-                                                                className='text-destructive focus:text-destructive focus:bg-destructive/10 flex cursor-pointer items-center gap-3 rounded-xl p-3'
-                                                            >
-                                                                <Trash2 className='h-4 w-4' />
+                                                                <Eye className='text-primary h-4 w-4' />
                                                                 <span className='font-bold'>
-                                                                    {t('webSpaces.databases.deleteConfirm')}
+                                                                    {t('webSpaces.databases.view')}
                                                                 </span>
                                                             </DropdownMenuItem>
-                                                        </>
-                                                    )}
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
-                                        )
-                                    }
-                                />
-                            ))}
-                        </div>
+                                                        )}
+                                                        {canRead && (
+                                                            <DropdownMenuItem
+                                                                onClick={() => void dumpDatabase(db.id)}
+                                                                className='flex cursor-pointer items-center gap-3 rounded-xl p-3'
+                                                            >
+                                                                <Download className='h-4 w-4' />
+                                                                <span className='font-bold'>
+                                                                    {t('webSpaces.databases.dump')}
+                                                                </span>
+                                                            </DropdownMenuItem>
+                                                        )}
+                                                        {canReset && (
+                                                            <DropdownMenuItem
+                                                                onClick={() => void restoreDatabase(db.id)}
+                                                                className='flex cursor-pointer items-center gap-3 rounded-xl p-3'
+                                                            >
+                                                                <Upload className='h-4 w-4' />
+                                                                <span className='font-bold'>
+                                                                    {t('webSpaces.databases.restore')}
+                                                                </span>
+                                                            </DropdownMenuItem>
+                                                        )}
+                                                        {canViewPassword &&
+                                                            phpMyAdminInstalled &&
+                                                            !['postgresql', 'pgsql', 'postgres'].includes(
+                                                                (db.database_type || '').toLowerCase(),
+                                                            ) && (
+                                                                <DropdownMenuItem
+                                                                    onClick={() => void openPhpMyAdmin(db.id)}
+                                                                    className='flex cursor-pointer items-center gap-3 rounded-xl p-3'
+                                                                >
+                                                                    <ExternalLink className='h-4 w-4 text-blue-500' />
+                                                                    <span className='font-bold'>phpMyAdmin</span>
+                                                                </DropdownMenuItem>
+                                                            )}
+                                                        {canViewPassword &&
+                                                            phpPgAdminInstalled &&
+                                                            ['postgresql', 'pgsql', 'postgres'].includes(
+                                                                (db.database_type || '').toLowerCase(),
+                                                            ) && (
+                                                                <DropdownMenuItem
+                                                                    onClick={() => void openPhpPgAdmin(db.id)}
+                                                                    className='flex cursor-pointer items-center gap-3 rounded-xl p-3'
+                                                                >
+                                                                    <ExternalLink className='h-4 w-4 text-blue-500' />
+                                                                    <span className='font-bold'>phpPgAdmin</span>
+                                                                </DropdownMenuItem>
+                                                            )}
+                                                        {canReset && (
+                                                            <DropdownMenuItem
+                                                                onClick={() => void resetPassword(db.id)}
+                                                                className='flex cursor-pointer items-center gap-3 rounded-xl p-3'
+                                                            >
+                                                                <KeyRound className='h-4 w-4 text-amber-500' />
+                                                                <span className='font-bold'>
+                                                                    {t('webSpaces.databases.resetPassword')}
+                                                                </span>
+                                                            </DropdownMenuItem>
+                                                        )}
+                                                        {canDelete && (
+                                                            <>
+                                                                <DropdownMenuSeparator className='bg-border/40 my-1' />
+                                                                <DropdownMenuItem
+                                                                    onClick={() => {
+                                                                        setDatabaseToDelete(db);
+                                                                        setConfirmDeleteDialogOpen(true);
+                                                                    }}
+                                                                    className='text-destructive focus:text-destructive focus:bg-destructive/10 flex cursor-pointer items-center gap-3 rounded-xl p-3'
+                                                                >
+                                                                    <Trash2 className='h-4 w-4' />
+                                                                    <span className='font-bold'>
+                                                                        {t('webSpaces.databases.deleteConfirm')}
+                                                                    </span>
+                                                                </DropdownMenuItem>
+                                                            </>
+                                                        )}
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                            )
+                                        }
+                                    />
+                                ))}
+                            </ResourceTable>
+                            <ListPagination
+                                page={pageFiltered.page}
+                                totalPages={pageFiltered.totalPages}
+                                totalItems={pageFiltered.totalItems}
+                                pageSize={pageFiltered.pageSize}
+                                onPageChange={pageFiltered.setPage}
+                            />
+                        </>
                     )}
                 </div>
 
@@ -599,7 +614,7 @@ export default function WebSpaceDatabasesPage() {
                                 </div>
                             </DialogHeader>
                             <div className='space-y-6 px-1'>
-                                <div className='border-primary/20 bg-primary/5 space-y-5 rounded-3xl border p-6 backdrop-blur-sm'>
+                                <div className='border-primary/20 bg-primary/5 space-y-5 rounded-3xl border p-6'>
                                     <h3 className='text-primary/60 flex items-center gap-2 text-[10px] font-black tracking-[0.2em] uppercase'>
                                         <div className='bg-primary/30 h-4 w-1.5 rounded-full' />
                                         {t('serverDatabases.connectionDetails')}
@@ -642,7 +657,7 @@ export default function WebSpaceDatabasesPage() {
                                         ))}
                                     </div>
                                 </div>
-                                <div className='border-primary/20 bg-primary/5 space-y-5 rounded-3xl border p-6 backdrop-blur-sm'>
+                                <div className='border-primary/20 bg-primary/5 space-y-5 rounded-3xl border p-6'>
                                     <h3 className='text-primary/60 flex items-center gap-2 text-[10px] font-black tracking-[0.2em] uppercase'>
                                         <div className='bg-primary/30 h-4 w-1.5 rounded-full' />
                                         {t('serverDatabases.loginCredentials')}

@@ -21,7 +21,8 @@ import axios, { isAxiosError } from 'axios';
 import { AlertTriangle, Code, Globe, Loader2, Save, Settings } from 'lucide-react';
 import { toast } from 'sonner';
 import { useSession } from '@/contexts/SessionContext';
-import { PageHeader } from '@/components/featherui/PageHeader';
+import { WebSpacePageHeader as PageHeader } from '@/components/webspace/WebSpacePageHeader';
+import { WebSpacePageTips } from '@/components/webspace/WebSpacePageTips';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
@@ -256,6 +257,7 @@ export default function WebSpaceSettingsPage() {
         <WebSpacePageWidgets pageId='webspace-settings'>
             <div className='mx-auto max-w-6xl space-y-8 pb-16'>
                 <PageHeader title={t('webSpaces.settings.title')} description={t('webSpaces.settings.description')} />
+                <WebSpacePageTips page='settings' />
 
                 <div className='grid min-w-0 grid-cols-1 gap-8 lg:grid-cols-12'>
                     <div className='min-w-0 space-y-8 lg:col-span-8'>
