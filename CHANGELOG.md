@@ -47,6 +47,7 @@
 
 ### Improved
 
+- Admin audit log: filtering by user now resolves the username/email first and uses the activity index (750 ms to 3 ms on 300k rows), and the total count skips the users join unless a search needs it (36 ms to 26 ms). by @nayskutzu
 - WebSpace Files now runs on the shared file manager hook, with list/grid view, sorting, image thumbnails, a file info sheet and pinned/recent folders like server files. by @nayskutzu
 - Web hosting pages now match the redesigned server pages: the same header card with breadcrumbs, dismissible tip cards, list tables with pagination for databases, backups, users, schedules, mailboxes, forwarders and mailing lists, an unsaved changes bar on the firewall page and no blurred surfaces. The Logs tab now follows the console output permission and the Apps tab shows for subusers who can create files. by @nayskutzu
 - VDS ISO flow: rescue and user ISO storage resolve per VM node (legacy global settings still fall back); admin VDS ISO list aggregates node storages; Mount ISO is host-library only; Settings points to Boot; admin VDS settings ISO group links to VDS nodes; `vds_iso_library_only` defaults to true. by @nayskutzu
