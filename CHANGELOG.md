@@ -37,6 +37,8 @@
 - Donation link to the non-profit Hack Club HCB fund (admin only): a small card on the admin dashboard that hides for 30 days when dismissed (synced per admin) and is never shown while Premium is active, plus a Support FeatherPanel link on the Premium page. (#370) by @nayskutzu
 - Plugins: settings in `conf.yml` get their defaults, required flag and validation applied, and the admin plugin page shows required settings and a not configured state. (#365) by @nayskutzu
 
+- Sign in with Google and GitHub next to Discord and generic OIDC: authorization code flow with state and PKCE (also added to OIDC), Google id_token checked against its JWKS with nonce, GitHub verified email lookup. New Settings > OAuth options for allowed email domains, registration through SSO and auto-linking by verified email (off by default, which now also applies to OIDC). Users link and unlink providers under Account > Settings; the last sign-in method cannot be removed from an account without a password. SSO sign-ins now go through the login page so two factor, ban and deletion checks apply. Setup guide in the docs under FeatherPanel, Features, Single sign-on. by @nayskutzu
+
 ### Improved
 
 - VDS ISO flow: rescue and user ISO storage resolve per VM node (legacy global settings still fall back); admin VDS ISO list aggregates node storages; Mount ISO is host-library only; Settings points to Boot; admin VDS settings ISO group links to VDS nodes; `vds_iso_library_only` defaults to true. by @nayskutzu

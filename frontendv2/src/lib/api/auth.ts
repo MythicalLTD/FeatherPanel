@@ -22,6 +22,7 @@ export const authApi = {
         turnstile_token?: string;
         sso_token?: string;
         discord_token?: string;
+        sso_login_token?: string;
     }) => {
         const response = await api.put('/user/auth/login', data);
         return response.data;

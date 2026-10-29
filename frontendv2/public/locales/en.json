@@ -240,6 +240,25 @@
             "signedInAs": "Signed in as {name}",
             "approvingAs": "Approving as",
             "goDashboard": "Go to dashboard"
+        },
+        "ssoErrors": {
+            "generic": "Single sign-on failed. Please try again.",
+            "invalidState": "The sign-in request expired or was tampered with. Please try again.",
+            "disabled": "This sign-in provider is not enabled.",
+            "accessDenied": "Access was denied by the provider.",
+            "missingCode": "The provider did not return an authorization code.",
+            "tokenFailed": "Could not complete sign-in with the provider.",
+            "discoveryFailed": "Could not reach the sign-in provider.",
+            "invalidIdToken": "The identity token from the provider could not be verified.",
+            "missingSubject": "The provider did not return an account identifier.",
+            "userFailed": "Could not read your profile from the provider.",
+            "emailDomainNotAllowed": "Your email domain is not allowed to sign in here.",
+            "accountNotLinked": "No panel account is linked to this provider. Sign in with your password and link it from Account settings.",
+            "emailNotVerified": "Your email address at the provider is not verified.",
+            "emailInUse": "An account with this email already exists. Sign in with your password and link the provider from Account settings.",
+            "registrationFailed": "We could not create your account. Please contact an administrator.",
+            "accountUnavailable": "This account is not available.",
+            "userBanned": "This account is banned."
         }
     },
     "public_portal": {
@@ -1653,7 +1672,12 @@
             "REMOTE_FILE_MISSING": "The backup file is no longer on your storage.",
             "RELAY_BAD_RANGE": "The uploaded chunk is too large or out of range.",
             "RELAY_DISABLED": "SFTP and WebDAV storage is turned off on this panel.",
-            "UPLOAD_LINK_INVALID": "This upload link is invalid or expired."
+            "UPLOAD_LINK_INVALID": "This upload link is invalid or expired.",
+            "SSO_LAST_LOGIN_METHOD": "Set a password or link another provider before removing your last sign-in method.",
+            "SSO_NOT_LINKED": "This provider is not linked to your account.",
+            "SSO_PROVIDER_UNKNOWN": "Unknown sign-in provider.",
+            "SSO_UNLINK_FAILED": "Could not unlink this provider. Please try again.",
+            "INVALID_SSO_LOGIN_TOKEN": "This sign-in link has expired. Please try again."
         },
         "global": {}
     },
@@ -2981,6 +3005,26 @@
             "securityNoteSftp": "The server must have a public address. Its host key is saved on the first connection and checked every time after that. Use an account that can only reach the backup folder.",
             "securityNoteWebdav": "The URL must use https and a public address. Use an app password if your server has them.",
             "removeWarningRelay": "{count} backups use this storage. They stay on your server but the panel can no longer download, restore or delete them (they show as orphaned)."
+        },
+        "sso": {
+            "title": "Sign-in providers",
+            "description": "Link Google or GitHub to sign in without your password. Linked providers are listed here.",
+            "link": "Link",
+            "unlink": "Unlink",
+            "linked": "Linked",
+            "notLinked": "Not linked",
+            "oidcFallback": "Single sign-on",
+            "linkedSuccessfully": "Provider linked successfully.",
+            "unlinkedSuccessfully": "Provider unlinked successfully.",
+            "unlinkFailed": "Failed to unlink provider.",
+            "errors": {
+                "alreadyLinked": "This provider account is already linked to another user.",
+                "linkFailed": "Linking the provider failed. Please try again.",
+                "disabled": "This sign-in provider is not enabled.",
+                "emailDomainNotAllowed": "Your email domain is not allowed for this provider.",
+                "invalidState": "The link request expired. Please try again.",
+                "accessDenied": "Access was denied by the provider."
+            }
         }
     },
     "servers": {

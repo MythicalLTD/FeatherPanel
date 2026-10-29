@@ -229,6 +229,15 @@ interface ConfigInterface
     public const DISCORD_OAUTH_ENABLED = 'discord_oauth_enabled';
     public const DISCORD_OAUTH_CLIENT_ID = 'discord_oauth_client_id';
     public const DISCORD_OAUTH_CLIENT_SECRET = 'discord_oauth_client_secret';
+    public const SSO_GOOGLE_ENABLED = 'sso_google_enabled';
+    public const SSO_GOOGLE_CLIENT_ID = 'sso_google_client_id';
+    public const SSO_GOOGLE_CLIENT_SECRET = 'sso_google_client_secret';
+    public const SSO_GITHUB_ENABLED = 'sso_github_enabled';
+    public const SSO_GITHUB_CLIENT_ID = 'sso_github_client_id';
+    public const SSO_GITHUB_CLIENT_SECRET = 'sso_github_client_secret';
+    public const SSO_ALLOWED_EMAIL_DOMAINS = 'sso_allowed_email_domains';
+    public const SSO_ALLOW_REGISTRATION = 'sso_allow_registration';
+    public const SSO_AUTO_LINK_VERIFIED_EMAIL = 'sso_auto_link_verified_email';
 
     /**
      * OpenID Connect (OIDC) - generic SSO provider.

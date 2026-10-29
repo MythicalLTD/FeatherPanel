@@ -36,6 +36,7 @@ import {
     Smartphone,
 } from 'lucide-react';
 import axios from 'axios';
+import { GoogleIcon, GitHubIcon, type SsoProviderKey } from '@/components/auth/SsoProviderIcons';
 import { toast } from 'sonner';
 import { Captcha } from '@/components/Captcha';
 import { cn, isEnabled } from '@/lib/utils';
@@ -90,6 +91,23 @@ const discordLinkErrorKeys: Record<string, string> = {
     discord_token_failed: 'account.discordTokenFailed',
     discord_user_failed: 'account.discordUserFailed',
     discord_user_not_found: 'account.discordUserNotFound',
+};
+
+const ssoLinkErrorKeys: Record<string, string> = {
+    sso_already_linked: 'account.sso.errors.alreadyLinked',
+    sso_link_failed: 'account.sso.errors.linkFailed',
+    sso_disabled: 'account.sso.errors.disabled',
+    sso_email_domain_not_allowed: 'account.sso.errors.emailDomainNotAllowed',
+    sso_invalid_state: 'account.sso.errors.invalidState',
+    sso_access_denied: 'account.sso.errors.accessDenied',
+};
+
+type SsoIdentityRow = {
+    id: number;
+    provider: string;
+    email?: string | null;
+    last_login_at?: string | null;
+    created_at?: string;
 };
 
 const oidcLinkErrorKeys: Record<string, string> = {
@@ -147,6 +165,8 @@ export default function SettingsTab() {
     const [ldapPassword, setLdapPassword] = useState('');
     const [oidcLinkErrorMessage, setOidcLinkErrorMessage] = useState<string | null>(null);
     const [discordLinkErrorMessage, setDiscordLinkErrorMessage] = useState<string | null>(null);
+    const [ssoIdentities, setSsoIdentities] = useState<SsoIdentityRow[]>([]);
+    const [ssoLinkErrorMessage, setSsoLinkErrorMessage] = useState<string | null>(null);
     const [turnstileToken, setTurnstileToken] = useState('');
     const [turnstileKey, setTurnstileKey] = useState(0);
     const [deletionStatus, setDeletionStatus] = useState<AccountDeletionStatus | null>(null);
@@ -227,11 +247,15 @@ export default function SettingsTab() {
                 ? 'linked:oidc'
                 : linkedParam === 'discord'
                   ? 'linked:discord'
-                  : identityErrorParam?.startsWith('oidc_')
-                    ? `error:${identityErrorParam}`
-                    : identityErrorParam?.startsWith('discord_')
+                  : linkedParam === 'google' || linkedParam === 'github'
+                    ? `linked:${linkedParam}`
+                    : identityErrorParam?.startsWith('sso_')
                       ? `error:${identityErrorParam}`
-                      : null;
+                      : identityErrorParam?.startsWith('oidc_')
+                        ? `error:${identityErrorParam}`
+                        : identityErrorParam?.startsWith('discord_')
+                          ? `error:${identityErrorParam}`
+                          : null;
 
         if (!callbackKey || identityCallbackHandledRef.current === callbackKey) {
             return;
@@ -248,6 +272,14 @@ export default function SettingsTab() {
             setDiscordLinkErrorMessage(null);
             toast.success(t('account.discordLinkedSuccessfully'));
             void fetchSession(true);
+        } else if (linkedParam === 'google' || linkedParam === 'github') {
+            setSsoLinkErrorMessage(null);
+            toast.success(t('account.sso.linkedSuccessfully'));
+            void loadSsoIdentities();
+        } else if (identityErrorParam?.startsWith('sso_')) {
+            const message = t(ssoLinkErrorKeys[identityErrorParam] ?? 'account.sso.errors.linkFailed');
+            setSsoLinkErrorMessage(message);
+            toast.error(message);
         } else if (identityErrorParam?.startsWith('oidc_')) {
             const message = t(oidcLinkErrorKeys[identityErrorParam] ?? 'account.oidcLinkFailed');
             setOidcLinkErrorMessage(message);
@@ -257,7 +289,63 @@ export default function SettingsTab() {
             setDiscordLinkErrorMessage(message);
             toast.error(message);
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [fetchSession, identityErrorParam, linkedParam, router, t]);
+
+    const loadSsoIdentities = async () => {
+        try {
+            const response = await axios.get('/api/user/auth/sso/identities');
+            if (response.data?.success) {
+                setSsoIdentities(response.data.data?.identities ?? []);
+            }
+        } catch {
+            // The list is informational; linking still works without it.
+        }
+    };
+
+    useEffect(() => {
+        if (!loading && user?.uuid) {
+            void loadSsoIdentities();
+        }
+    }, [loading, user?.uuid, user?.oidc_provider, user?.discord_oauth2_linked]);
+
+    const handleLinkSso = (provider: SsoProviderKey) => {
+        setSsoLinkErrorMessage(null);
+        // Hard navigation required: backend OAuth endpoint redirects off-site.
+        window.location.href = window.location.origin + '/api/user/auth/sso/' + provider + '/link';
+    };
+
+    const handleUnlinkSso = async (provider: SsoProviderKey) => {
+        try {
+            setIsSubmitting(true);
+            const response = await axios.delete('/api/user/auth/sso/' + provider + '/unlink');
+            if (response.data?.success) {
+                toast.success(t('account.sso.unlinkedSuccessfully'));
+                await loadSsoIdentities();
+            } else {
+                toast.error(getApiErrorMessageFromPayload(response.data, t, 'account.sso.unlinkFailed'));
+            }
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'account.sso.unlinkFailed'));
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const ssoProviderLabel = (provider: string) => {
+        if (provider === 'google') return 'Google';
+        if (provider === 'github') return 'GitHub';
+        if (provider.startsWith('oidc:')) {
+            const uuid = provider.slice(5);
+            return oidcProviders.find((p) => p.uuid === uuid)?.name || t('account.sso.oidcFallback');
+        }
+        return provider;
+    };
+
+    const builtinSsoProviders = [
+        isEnabled(settings?.sso_google_enabled) ? { key: 'google' as const, name: 'Google', Icon: GoogleIcon } : null,
+        isEnabled(settings?.sso_github_enabled) ? { key: 'github' as const, name: 'GitHub', Icon: GitHubIcon } : null,
+    ].filter((p) => p !== null);
 
     const resetTurnstile = () => {
         if (settings?.turnstile_enabled) {
@@ -1062,6 +1150,75 @@ export default function SettingsTab() {
                                 </Button>
                             )}
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {(builtinSsoProviders.length > 0 || ssoIdentities.length > 0) && (
+                <div className='fp-surface-inset rounded-xl border p-6'>
+                    <h4 className='text-foreground text-sm font-medium'>{t('account.sso.title')}</h4>
+                    <p className='text-muted-foreground mt-1 text-sm'>{t('account.sso.description')}</p>
+                    {ssoLinkErrorMessage && <p className='text-destructive mt-2 text-sm'>{ssoLinkErrorMessage}</p>}
+                    <div className='mt-4 space-y-2'>
+                        {builtinSsoProviders.map(({ key, name, Icon }) => {
+                            const identity = ssoIdentities.find((row) => row.provider === key);
+                            return (
+                                <div
+                                    key={key}
+                                    className='border-border/60 flex flex-col gap-3 rounded-lg border px-4 py-3 sm:flex-row sm:items-center sm:justify-between'
+                                >
+                                    <div className='flex min-w-0 items-center gap-3'>
+                                        <Icon className='h-4 w-4 shrink-0' />
+                                        <div className='min-w-0'>
+                                            <p className='text-foreground text-sm font-medium'>{name}</p>
+                                            <p className='text-muted-foreground truncate text-xs'>
+                                                {identity
+                                                    ? identity.email || t('account.sso.linked')
+                                                    : t('account.sso.notLinked')}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    {identity ? (
+                                        <Button
+                                            type='button'
+                                            variant='destructive'
+                                            size='sm'
+                                            disabled={isSubmitting}
+                                            onClick={() => void handleUnlinkSso(key)}
+                                        >
+                                            {t('account.sso.unlink')}
+                                        </Button>
+                                    ) : (
+                                        <Button
+                                            type='button'
+                                            variant='outline'
+                                            size='sm'
+                                            disabled={isSubmitting}
+                                            onClick={() => handleLinkSso(key)}
+                                        >
+                                            {t('account.sso.link')}
+                                        </Button>
+                                    )}
+                                </div>
+                            );
+                        })}
+                        {ssoIdentities
+                            .filter((row) => row.provider !== 'google' && row.provider !== 'github')
+                            .map((row) => (
+                                <div
+                                    key={row.id}
+                                    className='border-border/60 flex items-center justify-between gap-3 rounded-lg border px-4 py-3'
+                                >
+                                    <div className='min-w-0'>
+                                        <p className='text-foreground text-sm font-medium'>
+                                            {ssoProviderLabel(row.provider)}
+                                        </p>
+                                        <p className='text-muted-foreground truncate text-xs'>
+                                            {row.email || t('account.sso.linked')}
+                                        </p>
+                                    </div>
+                                </div>
+                            ))}
                     </div>
                 </div>
             )}

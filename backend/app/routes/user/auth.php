@@ -26,6 +26,7 @@ use App\Controllers\User\Auth\QrLoginController;
 use App\Controllers\User\Auth\RegisterController;
 use App\Controllers\User\Auth\TwoFactorController;
 use App\Controllers\User\Auth\AuthLogoutController;
+use App\Controllers\User\Auth\SsoController;
 use App\Controllers\User\Auth\EmailLoginController;
 use App\Controllers\User\Auth\VerifyEmailController;
 use App\Controllers\User\Auth\ResetPasswordController;
@@ -289,6 +290,67 @@ return function (RouteCollection $routes): void {
         ['DELETE'],
         Rate::perMinute(5),
         'user-auth-oidc'
+    );
+
+    // Google and GitHub single sign-on routes
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'sso-identities',
+        '/api/user/auth/sso/identities',
+        function (Request $request) {
+            return (new SsoController())->identities($request);
+        },
+        ['GET'],
+        Rate::perMinute(30),
+        'user-auth-sso'
+    );
+
+    App::getInstance(true)->registerApiRoute(
+        $routes,
+        'sso-login',
+        '/api/user/auth/sso/{provider}/login',
+        function (Request $request, array $args) {
+            return (new SsoController())->login($request, (string) ($args['provider'] ?? ''));
+        },
+        ['GET'],
+        Rate::perMinute(10),
+        'user-auth-sso'
+    );
+
+    App::getInstance(true)->registerApiRoute(
+        $routes,
+        'sso-callback',
+        '/api/user/auth/sso/{provider}/callback',
+        function (Request $request, array $args) {
+            return (new SsoController())->callback($request, (string) ($args['provider'] ?? ''));
+        },
+        ['GET'],
+        Rate::perMinute(10),
+        'user-auth-sso'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'sso-link',
+        '/api/user/auth/sso/{provider}/link',
+        function (Request $request, array $args) {
+            return (new SsoController())->link($request, (string) ($args['provider'] ?? ''));
+        },
+        ['GET'],
+        Rate::perMinute(5),
+        'user-auth-sso'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'sso-unlink',
+        '/api/user/auth/sso/{provider}/unlink',
+        function (Request $request, array $args) {
+            return (new SsoController())->unlink($request, (string) ($args['provider'] ?? ''));
+        },
+        ['DELETE'],
+        Rate::perMinute(5),
+        'user-auth-sso'
     );
 
     // Email Login (OTP) routes
