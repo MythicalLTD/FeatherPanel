@@ -91,6 +91,7 @@
 
 ### Fixed
 
+- WebSpace console no longer logs a 404 every few seconds when no transfer is running, and subusers without the Users permission see an access notice on the Users page instead of an error toast and an empty list.
 - Backup storage: the backup count on a storage card no longer includes failed backups; Dropbox backups are verified by Dropbox `content_hash` when FeatherWings reports it (FeatherWings #32), not only by size; SFTP storage cards show the pinned host key, and the host key mismatch error says how to trust a new key; removing a OneDrive storage explains that Microsoft has no per-app token revoke and links to the consent page. by @nayskutzu
 - Web hosting: adding a domain that already belongs to another WebSpace in the admin WebSpace editor now returns a clear 409 `DOMAIN_IN_USE` error (translated) instead of a generic 500 `UPDATE_FAILED`. by @nayskutzu
 - Migrations: the runner now stops on an error in any statement of a migration file (before, only the first statement was checked, so a later failure was marked as done). The migrations added since v1.5.2 no longer use `ADD COLUMN/INDEX IF NOT EXISTS`, so they also run on MySQL 8, and they are safe to run again.

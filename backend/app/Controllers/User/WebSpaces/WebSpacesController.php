@@ -1489,7 +1489,8 @@ class WebSpacesController
             ], 'OK', 200);
         }
 
-        return ApiResponse::error('No transfer found for this WebSpace', 'TRANSFER_NOT_FOUND', 404);
+        // No transfer is the normal case; the console polls this, so answer 200 instead of a 404 every few seconds.
+        return ApiResponse::success(null, 'No transfer for this WebSpace', 200);
     }
 
     public function generateJwt(Request $request, string $uuidShort): Response
