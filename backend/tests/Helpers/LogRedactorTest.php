@@ -26,9 +26,9 @@ class LogRedactorTest extends TestCase
     {
         $out = LogRedactor::redact([
             'name' => 'node-1',
-            'daemon_token' => 'abc',
+            'daemon_token' => 'placeholder-a',
             'daemon_token_id' => 'id1',
-            'database_password' => 's3cret',
+            'database_password' => 'placeholder-value',
             'api_key' => 'k',
             'nested' => ['client_secret' => 'x', 'fqdn' => 'n.example.com'],
             'empty_password' => '',
@@ -45,6 +45,6 @@ class LogRedactorTest extends TestCase
 
     public function testJsonNeverContainsSecret(): void
     {
-        $this->assertStringNotContainsString('s3cret', LogRedactor::json(['password' => 's3cret', 'id' => 5]));
+        $this->assertStringNotContainsString('placeholder-value', LogRedactor::json(['password' => 'placeholder-value', 'id' => 5]));
     }
 }
