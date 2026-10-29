@@ -421,7 +421,7 @@ export default function EditSpellPage() {
                 <TabsContent value='general' className='space-y-4'>
                     <PageCard title={t('admin.spells.form.basic_information')} icon={Sparkles}>
                         <div className='space-y-4'>
-                            <div className='grid grid-cols-2 gap-4'>
+                            <div className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
                                 <div className='space-y-2'>
                                     <Label>{t('admin.spells.form.name')} *</Label>
                                     <Input
@@ -516,7 +516,7 @@ export default function EditSpellPage() {
                                     </Button>
                                 </div>
                             </div>
-                            <div className='grid grid-cols-2 gap-4'>
+                            <div className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
                                 <div className='space-y-2'>
                                     <Label>{t('admin.spells.form.script_container')}</Label>
                                     <Input
@@ -740,7 +740,7 @@ export default function EditSpellPage() {
                             }
                         >
                             <div className='space-y-4'>
-                                <div className='grid grid-cols-2 gap-3'>
+                                <div className='grid grid-cols-1 gap-3 sm:grid-cols-2'>
                                     <div className='space-y-2'>
                                         <Label>{t('admin.spells.variables.name')} *</Label>
                                         <Input
@@ -771,7 +771,7 @@ export default function EditSpellPage() {
                                         rows={2}
                                     />
                                 </div>
-                                <div className='grid grid-cols-2 gap-3'>
+                                <div className='grid grid-cols-1 gap-3 sm:grid-cols-2'>
                                     <div className='space-y-2'>
                                         <Label>{t('admin.spells.variables.default_value')}</Label>
                                         <Input
@@ -917,7 +917,7 @@ export default function EditSpellPage() {
                             >
                                 {editingVariable?.id === variable.id ? (
                                     <div className='space-y-4'>
-                                        <div className='grid grid-cols-2 gap-3'>
+                                        <div className='grid grid-cols-1 gap-3 sm:grid-cols-2'>
                                             <div className='space-y-2'>
                                                 <Label>{t('admin.spells.variables.name')} *</Label>
                                                 <Input
@@ -953,7 +953,7 @@ export default function EditSpellPage() {
                                                 rows={2}
                                             />
                                         </div>
-                                        <div className='grid grid-cols-2 gap-3'>
+                                        <div className='grid grid-cols-1 gap-3 sm:grid-cols-2'>
                                             <div className='space-y-2'>
                                                 <Label>{t('admin.spells.variables.default_value')}</Label>
                                                 <Input
