@@ -90,6 +90,7 @@
 
 ### Fixed
 
+- Web hosting: adding a domain that already belongs to another WebSpace in the admin WebSpace editor now returns a clear 409 `DOMAIN_IN_USE` error (translated) instead of a generic 500 `UPDATE_FAILED`. by @nayskutzu
 - Migrations: the runner now stops on an error in any statement of a migration file (before, only the first statement was checked, so a later failure was marked as done). The migrations added since v1.5.2 no longer use `ADD COLUMN/INDEX IF NOT EXISTS`, so they also run on MySQL 8, and they are safe to run again.
 - Web hosting security: subusers without console permission no longer get console output through the websocket token, logs, install logs, SSL status and DNS check now need console or DNS/settings permissions, blocked IPs and paths in the WAF are strictly validated (IP/CIDR and a safe path character set) in the user and admin APIs, and PrestaShop/Magento installs check app support and the database limit before starting.
 

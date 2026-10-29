@@ -553,6 +553,7 @@
             "DOMAIN_CREATE_FAILED": "Failed to create domain",
             "DOMAIN_DELETE_FAILED": "Failed to delete domain",
             "DOMAIN_HAS_SUBDOMAINS": "Domain still has active subdomains",
+            "DOMAIN_IN_USE": "This domain is already used by another WebSpace",
             "DOMAIN_NOT_ALLOWED": "domain must be one of the WebSpace domains",
             "DOMAIN_NOT_AVAILABLE": "Domain not found or inactive",
             "DOMAIN_NOT_FOUND": "Domain not found",
