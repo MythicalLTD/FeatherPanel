@@ -18,16 +18,32 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import * as React from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import axios from 'axios';
+import Link from 'next/link';
 import { useVmInstance } from '@/contexts/VmInstanceContext';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { VdsPageHeader } from '@/components/vds/VdsPageHeader';
 import { VdsPageLoading } from '@/components/vds/VdsPageLoading';
 import { Button } from '@/components/featherui/Button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/featherui/Input';
+import { PageCard } from '@/components/featherui/PageCard';
+import { EmptyState } from '@/components/featherui/EmptyState';
+import { Select } from '@/components/ui/select-native';
+import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
-import Link from 'next/link';
-import { RefreshCw, AlertTriangle, Loader2, RotateCcw, Lock, HardDrive, Server, Eye, EyeOff } from 'lucide-react';
+import {
+    RefreshCw,
+    AlertTriangle,
+    Loader2,
+    RotateCcw,
+    Lock,
+    HardDrive,
+    Server,
+    Eye,
+    EyeOff,
+    Cpu,
+    ChevronRight,
+    Check,
+} from 'lucide-react';
 import { Dialog, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
@@ -36,10 +52,24 @@ import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-err
 import { isReauthCancelled, useVdsReauth } from '@/components/vds/VdsReauth';
 import { UnsavedChangesBar } from '@/components/featherui/UnsavedChangesBar';
 import { useFormBaseline } from '@/hooks/useFormBaseline';
+
 interface ReinstallTemplate {
     id: number;
     name: string;
     os?: string;
+}
+
+/** Title + hint on the left, control on the right (same pattern as VDS firewall). */
+function OptionRow({ title, hint, children }: { title: string; hint: string; children: React.ReactNode }) {
+    return (
+        <div className='fp-surface-inset flex flex-col gap-3 rounded-xl border p-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6'>
+            <div className='min-w-0 space-y-0.5'>
+                <p className='text-sm font-medium'>{title}</p>
+                <p className='text-muted-foreground text-sm'>{hint}</p>
+            </div>
+            <div className='shrink-0 self-start sm:self-center'>{children}</div>
+        </div>
+    );
 }
 
 export default function VdsSettingsPage() {
@@ -50,14 +80,12 @@ export default function VdsSettingsPage() {
     const { instance, loading: instanceLoading, hasPermission, refreshInstance } = useVmInstance();
     const { fetchWidgets, getWidgets } = usePluginWidgets('vds-settings');
 
-    // Reinstall state
     const [templates, setTemplates] = React.useState<ReinstallTemplate[]>([]);
     const [templatesLoading, setTemplatesLoading] = React.useState(true);
     const [selectedTemplate, setSelectedTemplate] = React.useState<number | null>(null);
     const [reinstallOpen, setReinstallOpen] = React.useState(false);
     const [reinstalling, setReinstalling] = React.useState(false);
 
-    // Cloud-init credentials for QEMU (if required)
     const [ciUser, setCiUser] = React.useState('');
     const [ciPassword, setCiPassword] = React.useState('');
     const [showPassword, setShowPassword] = React.useState(false);
@@ -65,7 +93,6 @@ export default function VdsSettingsPage() {
 
     const isQemu = instance?.vm_type === 'qemu';
 
-    // QEMU hardware settings (EFI + TPM)
     const [qemuHardwareLoading, setQemuHardwareLoading] = React.useState(false);
     const [qemuHardwareSaving, setQemuHardwareSaving] = React.useState(false);
     const [biosMode, setBiosMode] = React.useState<'seabios' | 'ovmf'>('seabios');
@@ -89,12 +116,11 @@ export default function VdsSettingsPage() {
                 setBiosMode(bios);
                 setEfiEnabled(!!hw?.efi_enabled);
                 setTpmEnabled(!!hw?.tpm_enabled);
-                // serial0_enabled=true means serial console socket is configured.
                 setSerial0Enabled(!!hw?.serial0_enabled);
                 markHardwareClean();
             }
         } catch {
-            // Ignore: the UI is permission-gated; backend will 403 if not allowed.
+            // Permission-gated; backend returns 403 when not allowed.
         } finally {
             setQemuHardwareLoading(false);
         }
@@ -112,10 +138,10 @@ export default function VdsSettingsPage() {
         try {
             const { data } = await axios.get(`/api/user/vm-instances/${id}/templates`);
             if (data.success) {
-                // Backend already enforces guest_type and node; just trust it.
                 setTemplates(data.data.templates || []);
             }
         } catch {
+            // Keep the last known list; refresh toast is not needed for a silent poll.
         } finally {
             setTemplatesLoading(false);
         }
@@ -164,8 +190,7 @@ export default function VdsSettingsPage() {
             toast.loading(data.message || t('vds.settings.reinstall.started'), { id: toastId });
             setReinstallOpen(false);
 
-            // Poll reinstall status until active or failed (mirrors admin VM flow).
-            const MAX_POLLS = 120; // 6 minutes at 3s interval
+            const MAX_POLLS = 120;
             let polls = 0;
             const poll = async (): Promise<void> => {
                 if (polls >= MAX_POLLS) {
@@ -202,7 +227,7 @@ export default function VdsSettingsPage() {
                         toast.loading(s.message, { id: toastId });
                     }
                 } catch {
-                    // Ignore transient polling errors keep polling.
+                    // Transient poll errors; keep going.
                 }
                 setTimeout(() => {
                     void poll();
@@ -246,16 +271,16 @@ export default function VdsSettingsPage() {
 
     if (!instance) {
         return (
-            <div className='flex min-h-[60vh] items-center justify-center'>
-                <div className='space-y-4 text-center'>
-                    <div className='bg-destructive/10 mx-auto flex h-20 w-20 items-center justify-center rounded-xl'>
-                        <AlertTriangle className='text-destructive h-10 w-10' />
-                    </div>
-                    <h2 className='text-2xl font-semibold'>{t('vds.console.not_found_title')}</h2>
-                    <Button variant='outline' onClick={() => router.push('/dashboard')}>
-                        {t('common.goBack')}
-                    </Button>
-                </div>
+            <div className='flex min-h-[60vh] items-center justify-center p-4'>
+                <EmptyState
+                    icon={AlertTriangle}
+                    title={t('vds.console.not_found_title')}
+                    action={
+                        <Button variant='outline' onClick={() => router.push('/dashboard')}>
+                            {t('common.goBack')}
+                        </Button>
+                    }
+                />
             </div>
         );
     }
@@ -265,312 +290,303 @@ export default function VdsSettingsPage() {
 
     if (!canSettings) {
         return (
-            <div className='flex flex-col items-center justify-center space-y-6 py-24 text-center'>
-                <div className='flex h-20 w-20 items-center justify-center rounded-xl bg-red-500/10'>
-                    <Lock className='h-10 w-10 text-red-400' />
-                </div>
-                <div>
-                    <h2 className='text-2xl font-semibold tracking-tight'>{t('common.accessDenied')}</h2>
-                    <p className='text-muted-foreground mt-2'>{t('vds.settings.access_denied')}</p>
-                </div>
-                <Button variant='outline' onClick={() => router.push(`/vds/${id}`)}>
-                    {t('common.goBack')}
-                </Button>
+            <div className='flex min-h-[60vh] items-center justify-center p-4'>
+                <EmptyState
+                    icon={Lock}
+                    title={t('common.accessDenied')}
+                    description={t('vds.settings.access_denied')}
+                    action={
+                        <Button variant='outline' onClick={() => router.push(`/vds/${id}`)}>
+                            {t('common.goBack')}
+                        </Button>
+                    }
+                />
             </div>
         );
     }
 
+    const diskAllocatedGb = instance.plan_disk ?? instance.disk_gb;
+    const infoRows: { label: string; value: string; mono?: boolean }[] = [
+        { label: t('vds.settings.instance_info.hostname'), value: instance.hostname ?? '—' },
+        { label: t('vds.settings.instance_info.vmid'), value: String(instance.vmid), mono: true },
+        { label: t('vds.settings.instance_info.type'), value: instance.vm_type?.toUpperCase() ?? 'QEMU' },
+        {
+            label: t('vds.settings.instance_info.node'),
+            value: instance.node_name ?? instance.pve_node ?? '—',
+        },
+        {
+            label: t('vds.settings.instance_info.disk'),
+            value: diskAllocatedGb ? `${diskAllocatedGb} GB` : '—',
+            mono: true,
+        },
+    ];
+
     return (
-        <div className='space-y-8 pb-12'>
+        <div className='space-y-6 pb-12'>
             <WidgetRenderer widgets={getWidgets('vds-settings', 'top-of-page')} />
 
             <VdsPageHeader
                 title={t('vds.settings.title')}
                 description={t('vds.settings.description')}
                 actions={
-                    <div className='flex w-full sm:w-auto sm:justify-end'>
-                        <Button
-                            variant='outline'
-                            size='sm'
-                            onClick={fetchTemplates}
-                            disabled={templatesLoading}
-                            aria-label={t('common.refresh')}
-                        >
-                            <RefreshCw className={cn('h-4 w-4 sm:mr-1.5', templatesLoading && 'animate-spin')} />
-                            <span className='hidden sm:inline'>{t('common.refresh')}</span>
-                        </Button>
-                    </div>
+                    <Button
+                        variant='outline'
+                        size='sm'
+                        onClick={fetchTemplates}
+                        disabled={templatesLoading}
+                        aria-label={t('common.refresh')}
+                    >
+                        <RefreshCw className={cn('h-4 w-4 sm:mr-1.5', templatesLoading && 'animate-spin')} />
+                        <span className='hidden sm:inline'>{t('common.refresh')}</span>
+                    </Button>
                 }
             />
 
-            {/* Instance info summary */}
-            <Card>
-                <CardHeader>
-                    <CardTitle className='flex items-center gap-2 text-base font-semibold tracking-tight'>
-                        <Server className='text-primary h-4 w-4' />
-                        {t('vds.settings.instance_info.title')}
-                    </CardTitle>
-                </CardHeader>
-                <CardContent className='grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-5'>
-                    {[
-                        { label: t('vds.settings.instance_info.hostname'), value: instance.hostname ?? '-' },
-                        { label: t('vds.settings.instance_info.vmid'), value: String(instance.vmid) },
-                        {
-                            label: t('vds.settings.instance_info.type'),
-                            value: instance.vm_type?.toUpperCase() ?? 'QEMU',
-                        },
-                        {
-                            label: t('vds.settings.instance_info.node'),
-                            value: instance.node_name ?? instance.pve_node ?? '-',
-                        },
-                        {
-                            label: t('vds.settings.instance_info.disk'),
-                            value:
-                                (instance.plan_disk ?? instance.disk_gb)
-                                    ? `${instance.plan_disk ?? instance.disk_gb} GB`
-                                    : '-',
-                        },
-                    ].map(({ label, value }) => (
-                        <div key={label} className='flex flex-col gap-1'>
-                            <span className='text-muted-foreground/50 text-[10px] font-semibold tracking-wide uppercase'>
-                                {label}
-                            </span>
-                            <span className='font-mono text-sm font-bold'>{value}</span>
+            <PageCard title={t('vds.settings.instance_info.title')} icon={Server}>
+                <dl className='grid grid-cols-1 gap-x-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5'>
+                    {infoRows.map(({ label, value, mono }) => (
+                        <div
+                            key={label}
+                            className='border-border/40 flex items-center justify-between gap-3 border-b py-2.5 last:border-b-0 sm:flex-col sm:items-start sm:justify-start sm:gap-1 sm:border-b-0 sm:py-0'
+                        >
+                            <dt className='text-muted-foreground shrink-0 text-xs font-medium'>{label}</dt>
+                            <dd
+                                className={cn(
+                                    'min-w-0 truncate text-sm font-medium',
+                                    mono && 'font-mono tabular-nums',
+                                )}
+                            >
+                                {value}
+                            </dd>
                         </div>
                     ))}
-                </CardContent>
-            </Card>
-
-            {/* QEMU Hardware (EFI + TPM) */}
-            {isQemu && (
-                <Card>
-                    <CardHeader>
-                        <CardTitle className='flex items-center gap-2 text-base font-semibold tracking-tight'>
-                            <Server className='text-primary h-4 w-4' />
-                            {t('vds.settings.hardware.title')}
-                        </CardTitle>
-                        <CardDescription className='text-muted-foreground'>
-                            {t('vds.settings.hardware.description')}
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className='space-y-5'>
-                        {qemuHardwareLoading ? (
-                            <div className='text-muted-foreground flex items-center gap-2'>
-                                <Loader2 className='h-4 w-4 animate-spin' />
-                                {t('vds.settings.hardware.loading')}
-                            </div>
-                        ) : (
-                            <div className='space-y-4'>
-                                <div className='space-y-2'>
-                                    <div className='text-muted-foreground text-xs font-semibold'>
-                                        {t('vds.settings.hardware.bios_label')}
-                                    </div>
-                                    <select
-                                        value={biosMode}
-                                        onChange={(e) =>
-                                            (() => {
-                                                const next = e.target.value === 'ovmf' ? 'ovmf' : 'seabios';
-                                                setBiosMode(next);
-                                                // UEFI (OVMF) normally needs an EFI disk. If user switches to
-                                                // OVMF, automatically enable the EFI checkbox.
-                                                if (next === 'ovmf') setEfiEnabled(true);
-                                            })()
-                                        }
-                                        className='bg-muted/30 border-border/30 h-11 w-full rounded-xl border px-3'
-                                    >
-                                        <option value='seabios'>{t('vds.settings.hardware.bios_seabios')}</option>
-                                        <option value='ovmf'>{t('vds.settings.hardware.bios_ovmf')}</option>
-                                    </select>
-                                </div>
-
-                                <div className='space-y-2'>
-                                    <label className='flex items-center gap-2 text-sm'>
-                                        <input
-                                            type='checkbox'
-                                            checked={efiEnabled}
-                                            onChange={(e) => {
-                                                const next = e.target.checked;
-                                                setEfiEnabled(next);
-                                                if (next) setBiosMode('ovmf');
-                                            }}
-                                        />
-                                        {t('vds.settings.hardware.efi_label')}
-                                    </label>
-                                    <p className='text-muted-foreground text-xs'>
-                                        {t('vds.settings.hardware.efi_help')}
-                                    </p>
-                                </div>
-
-                                <div className='space-y-2'>
-                                    <label className='flex items-center gap-2 text-sm'>
-                                        <input
-                                            type='checkbox'
-                                            checked={tpmEnabled}
-                                            onChange={(e) => {
-                                                const next = e.target.checked;
-                                                setTpmEnabled(next);
-                                                if (next) {
-                                                    setEfiEnabled(true);
-                                                    setBiosMode('ovmf');
-                                                }
-                                            }}
-                                        />
-                                        {t('vds.settings.hardware.tpm_label')}
-                                    </label>
-                                    <p className='text-muted-foreground text-xs'>
-                                        {t('vds.settings.hardware.tpm_help')}
-                                    </p>
-                                </div>
-
-                                <div className='space-y-2'>
-                                    <label className='flex items-center gap-2 text-sm'>
-                                        <input
-                                            type='checkbox'
-                                            checked={!serial0Enabled}
-                                            onChange={(e) => {
-                                                const disable = e.target.checked;
-                                                setSerial0Enabled(!disable);
-                                            }}
-                                        />
-                                        {t('vds.settings.hardware.disable_serial_label')}
-                                    </label>
-                                    <p className='text-muted-foreground text-xs'>
-                                        {t('vds.settings.hardware.disable_serial_help')}
-                                    </p>
-                                </div>
-
-                                <div className='flex justify-end pt-2'>
-                                    <Button
-                                        variant='default'
-                                        disabled={qemuHardwareSaving || qemuHardwareLoading}
-                                        onClick={handleApplyQemuHardware}
-                                    >
-                                        {qemuHardwareSaving && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
-                                        {t('vds.settings.hardware.apply_button')}
-                                    </Button>
-                                </div>
-                            </div>
-                        )}
-                    </CardContent>
-                </Card>
-            )}
+                </dl>
+            </PageCard>
 
             {isQemu && (
-                <Card>
-                    <CardHeader>
-                        <CardTitle className='flex items-center gap-2 text-base font-semibold tracking-tight'>
-                            <HardDrive className='text-primary h-4 w-4' />
-                            {t('vds.boot.title')}
-                        </CardTitle>
-                        <CardDescription className='text-muted-foreground'>
-                            {t('vds.settings.boot_link_description')}
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <Button variant='outline' asChild>
-                            <Link href={`/vds/${id}/boot`}>{t('vds.settings.boot_link')}</Link>
-                        </Button>
-                    </CardContent>
-                </Card>
-            )}
-
-            {/* Reinstall */}
-            {canReinstall && (
-                <Card>
-                    <CardHeader>
-                        <CardTitle className='flex items-center gap-2 text-base font-semibold tracking-tight'>
-                            <RotateCcw className='text-primary h-4 w-4' />
-                            {t('vds.settings.reinstall.title')}
-                        </CardTitle>
-                        <CardDescription className='text-muted-foreground'>
-                            {t('vds.settings.reinstall.description')}
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className='space-y-4'>
-                        {templatesLoading ? (
-                            <div className='text-muted-foreground flex items-center gap-2'>
-                                <Loader2 className='h-4 w-4 animate-spin' />
-                                <span className='text-sm'>{t('vds.settings.reinstall.templates_loading')}</span>
-                            </div>
-                        ) : templates.length === 0 ? (
-                            <p className='text-muted-foreground text-sm italic'>
-                                {t('vds.settings.reinstall.templates_none', {
-                                    template_type: isQemu ? 'QEMU/KVM' : 'LXC',
-                                })}
-                            </p>
-                        ) : (
-                            <div className='grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3'>
-                                {templates.map((tpl) => (
-                                    <button
-                                        key={tpl.id}
-                                        onClick={() => setSelectedTemplate(tpl.id)}
-                                        className={cn(
-                                            'flex flex-col items-start gap-1 rounded-2xl border-2 p-4 text-left transition-all',
-                                            selectedTemplate === tpl.id
-                                                ? 'border-primary bg-primary/10'
-                                                : 'border-border/20 bg-card/30 hover:border-border/40',
-                                        )}
-                                    >
-                                        <span className='text-sm font-bold'>{tpl.name}</span>
-                                        {tpl.os && <span className='text-muted-foreground text-xs'>{tpl.os}</span>}
-                                    </button>
-                                ))}
-                            </div>
-                        )}
-
+                <PageCard
+                    title={t('vds.settings.hardware.title')}
+                    description={t('vds.settings.hardware.description')}
+                    icon={Cpu}
+                    action={
                         <Button
                             variant='default'
-                            size='default'
-                            disabled={!selectedTemplate || templatesLoading}
-                            onClick={() => setReinstallOpen(true)}
-                            className='mt-2 rounded-2xl'
+                            size='sm'
+                            disabled={qemuHardwareSaving || qemuHardwareLoading || !hardwareUnsaved}
+                            onClick={() => void handleApplyQemuHardware()}
                         >
-                            <RotateCcw className='mr-2 h-4 w-4' />
-                            {t('vds.settings.reinstall.button')}
+                            {qemuHardwareSaving && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
+                            {t('vds.settings.hardware.apply_button')}
                         </Button>
-                    </CardContent>
-                </Card>
+                    }
+                >
+                    {qemuHardwareLoading ? (
+                        <div className='text-muted-foreground flex items-center gap-2 py-6 text-sm'>
+                            <Loader2 className='h-4 w-4 animate-spin' />
+                            {t('vds.settings.hardware.loading')}
+                        </div>
+                    ) : (
+                        <div className='space-y-3'>
+                            <div className='fp-surface-inset space-y-2 rounded-xl border p-4'>
+                                <Select
+                                    label={t('vds.settings.hardware.bios_label')}
+                                    value={biosMode}
+                                    onChange={(e) => {
+                                        const next = e.target.value === 'ovmf' ? 'ovmf' : 'seabios';
+                                        setBiosMode(next);
+                                        // UEFI needs an EFI disk; flip the switch when OVMF is chosen.
+                                        if (next === 'ovmf') setEfiEnabled(true);
+                                    }}
+                                >
+                                    <option value='seabios'>{t('vds.settings.hardware.bios_seabios')}</option>
+                                    <option value='ovmf'>{t('vds.settings.hardware.bios_ovmf')}</option>
+                                </Select>
+                            </div>
+
+                            <OptionRow
+                                title={t('vds.settings.hardware.efi_label')}
+                                hint={t('vds.settings.hardware.efi_help')}
+                            >
+                                <Switch
+                                    checked={efiEnabled}
+                                    onCheckedChange={(next) => {
+                                        setEfiEnabled(next);
+                                        if (next) setBiosMode('ovmf');
+                                    }}
+                                    aria-label={t('vds.settings.hardware.efi_label')}
+                                />
+                            </OptionRow>
+
+                            <OptionRow
+                                title={t('vds.settings.hardware.tpm_label')}
+                                hint={t('vds.settings.hardware.tpm_help')}
+                            >
+                                <Switch
+                                    checked={tpmEnabled}
+                                    onCheckedChange={(next) => {
+                                        setTpmEnabled(next);
+                                        if (next) {
+                                            setEfiEnabled(true);
+                                            setBiosMode('ovmf');
+                                        }
+                                    }}
+                                    aria-label={t('vds.settings.hardware.tpm_label')}
+                                />
+                            </OptionRow>
+
+                            <OptionRow
+                                title={t('vds.settings.hardware.disable_serial_label')}
+                                hint={t('vds.settings.hardware.disable_serial_help')}
+                            >
+                                <Switch
+                                    checked={!serial0Enabled}
+                                    onCheckedChange={(disable) => setSerial0Enabled(!disable)}
+                                    aria-label={t('vds.settings.hardware.disable_serial_label')}
+                                />
+                            </OptionRow>
+                        </div>
+                    )}
+                </PageCard>
             )}
 
-            {/* Reinstall confirm modal */}
+            {isQemu && (
+                <Link
+                    href={`/vds/${id}/boot`}
+                    className='fp-surface group flex items-center gap-3 rounded-xl border p-4 transition-colors hover:bg-muted/20 focus-visible:ring-primary focus-visible:ring-2 focus-visible:outline-none sm:p-5'
+                >
+                    <span className='fp-icon-tile flex h-9 w-9 shrink-0 items-center justify-center rounded-lg'>
+                        <HardDrive className='text-primary h-5 w-5' />
+                    </span>
+                    <span className='min-w-0 flex-1'>
+                        <span className='block text-base font-semibold tracking-tight'>{t('vds.boot.title')}</span>
+                        <span className='text-muted-foreground mt-0.5 block text-sm'>
+                            {t('vds.settings.boot_link_description')}
+                        </span>
+                    </span>
+                    <span className='text-muted-foreground group-hover:text-foreground flex shrink-0 items-center gap-1 text-sm font-medium'>
+                        <span className='hidden sm:inline'>{t('vds.settings.boot_link')}</span>
+                        <ChevronRight className='h-4 w-4' />
+                    </span>
+                </Link>
+            )}
+
+            {canReinstall && (
+                <PageCard
+                    title={t('vds.settings.reinstall.title')}
+                    description={t('vds.settings.reinstall.description')}
+                    icon={RotateCcw}
+                    variant='danger'
+                    action={
+                        <Button
+                            variant='destructive'
+                            size='sm'
+                            disabled={!selectedTemplate || templatesLoading || reinstalling}
+                            onClick={() => setReinstallOpen(true)}
+                        >
+                            <RotateCcw className='mr-1.5 h-4 w-4' />
+                            {t('vds.settings.reinstall.button')}
+                        </Button>
+                    }
+                >
+                    {templatesLoading ? (
+                        <div className='text-muted-foreground flex items-center gap-2 py-6 text-sm'>
+                            <Loader2 className='h-4 w-4 animate-spin' />
+                            {t('vds.settings.reinstall.templates_loading')}
+                        </div>
+                    ) : templates.length === 0 ? (
+                        <EmptyState
+                            icon={HardDrive}
+                            title={t('vds.settings.reinstall.templates_none', {
+                                template_type: isQemu ? 'QEMU/KVM' : 'LXC',
+                            })}
+                            className='border-0 bg-transparent py-8 sm:py-10'
+                        />
+                    ) : (
+                        <div
+                            role='radiogroup'
+                            aria-label={t('vds.settings.reinstall.title')}
+                            className='grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3'
+                        >
+                            {templates.map((tpl) => {
+                                const selected = selectedTemplate === tpl.id;
+                                return (
+                                    <button
+                                        key={tpl.id}
+                                        type='button'
+                                        role='radio'
+                                        aria-checked={selected}
+                                        onClick={() => setSelectedTemplate(tpl.id)}
+                                        className={cn(
+                                            'flex min-h-11 items-start gap-3 rounded-xl border p-3.5 text-left transition-colors',
+                                            'focus-visible:ring-primary focus-visible:ring-2 focus-visible:outline-none',
+                                            selected
+                                                ? 'border-primary/50 bg-primary/10'
+                                                : 'border-border/50 bg-muted/10 hover:border-border hover:bg-muted/20',
+                                        )}
+                                    >
+                                        <span
+                                            className={cn(
+                                                'mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border',
+                                                selected
+                                                    ? 'border-primary bg-primary text-primary-foreground'
+                                                    : 'border-border/60',
+                                            )}
+                                            aria-hidden
+                                        >
+                                            {selected ? <Check className='h-3 w-3' /> : null}
+                                        </span>
+                                        <span className='min-w-0 flex-1'>
+                                            <span className='block text-sm font-medium'>{tpl.name}</span>
+                                            {tpl.os ? (
+                                                <span className='text-muted-foreground mt-0.5 block text-xs'>
+                                                    {tpl.os}
+                                                </span>
+                                            ) : null}
+                                        </span>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    )}
+                </PageCard>
+            )}
+
             <Dialog
                 open={reinstallOpen}
                 onClose={() => setReinstallOpen(false)}
                 onOpenChange={(open) => {
-                    if (!open) {
-                        setReinstallOpen(false);
-                    }
+                    if (!open) setReinstallOpen(false);
                 }}
             >
                 <DialogHeader>
                     <DialogTitle>{t('vds.settings.reinstall.confirm_title')}</DialogTitle>
                     <DialogDescription>{t('vds.settings.reinstall.confirm_desc')}</DialogDescription>
                 </DialogHeader>
-                <div className='space-y-6 py-4'>
-                    <div className='flex items-start gap-4 rounded-2xl border border-red-500/20 bg-red-500/10 p-4'>
-                        <AlertTriangle className='mt-0.5 h-5 w-5 shrink-0 text-red-400' />
-                        <p className='text-sm text-red-300'>
+                <div className='space-y-5 py-4'>
+                    <div className='flex items-start gap-3 rounded-xl border border-red-500/20 bg-red-500/10 p-4'>
+                        <AlertTriangle className='mt-0.5 h-5 w-5 shrink-0 text-red-500' />
+                        <p className='text-sm text-red-700 dark:text-red-300'>
                             {t('vds.settings.reinstall.confirm_body_prefix')}
-                            <strong>{templates.find((t) => t.id === selectedTemplate)?.name}</strong>
+                            <strong>{templates.find((tpl) => tpl.id === selectedTemplate)?.name}</strong>
                             {t('vds.settings.reinstall.confirm_body_on')}
                             <strong>{instance.hostname ?? `VDS #${instance.id}`}</strong>
                             {t('vds.settings.reinstall.confirm_body_after_hostname')}
                         </p>
                     </div>
 
-                    <div className='bg-primary/10 border-primary/20 flex items-start gap-4 rounded-2xl border p-4'>
+                    <div className='border-primary/20 bg-primary/10 flex items-start gap-3 rounded-xl border p-4'>
                         <Lock className='text-primary mt-0.5 h-5 w-5 shrink-0' />
                         <p className='text-foreground/90 text-sm'>{t('vds.settings.reinstall.password_notice')}</p>
                     </div>
 
                     {isQemu && (
                         <div className='space-y-4'>
-                            <p className='text-primary/70 text-xs font-semibold tracking-wide uppercase'>
+                            <p className='text-muted-foreground text-xs font-semibold tracking-wide uppercase'>
                                 {t('vds.settings.reinstall.cloud_init_credentials_optional')}
                             </p>
                             <div className='space-y-3'>
                                 <div>
-                                    <label className='text-muted-foreground mb-1 block text-xs font-semibold'>
+                                    <label className='text-muted-foreground mb-1.5 block text-xs font-semibold'>
                                         {t('vds.settings.reinstall.cloud_init.username_label')}
                                     </label>
                                     <Input
@@ -581,7 +597,7 @@ export default function VdsSettingsPage() {
                                     />
                                 </div>
                                 <div>
-                                    <label className='text-muted-foreground mb-1 block text-xs font-semibold'>
+                                    <label className='text-muted-foreground mb-1.5 block text-xs font-semibold'>
                                         {t('vds.settings.reinstall.cloud_init.password_label')}
                                     </label>
                                     <div className='relative'>
@@ -595,7 +611,12 @@ export default function VdsSettingsPage() {
                                         <button
                                             type='button'
                                             onClick={() => setShowPassword((v) => !v)}
-                                            className='text-muted-foreground hover:text-foreground absolute top-1/2 right-3 -translate-y-1/2'
+                                            className='text-muted-foreground hover:text-foreground absolute top-1/2 right-3 -translate-y-1/2 rounded-md p-0.5 focus-visible:ring-primary focus-visible:ring-2 focus-visible:outline-none'
+                                            aria-label={
+                                                showPassword
+                                                    ? t('common.hide', { defaultValue: 'Hide password' })
+                                                    : t('common.show', { defaultValue: 'Show password' })
+                                            }
                                         >
                                             {showPassword ? (
                                                 <EyeOff className='h-4 w-4' />
@@ -606,7 +627,7 @@ export default function VdsSettingsPage() {
                                     </div>
                                 </div>
                                 <div>
-                                    <label className='text-muted-foreground mb-1 block text-xs font-semibold'>
+                                    <label className='text-muted-foreground mb-1.5 block text-xs font-semibold'>
                                         {t('vds.settings.reinstall.cloud_init.ssh_keys_label')}
                                     </label>
                                     <textarea
@@ -614,7 +635,7 @@ export default function VdsSettingsPage() {
                                         onChange={(e) => setCiSshKeys(e.target.value)}
                                         placeholder={t('vds.settings.reinstall.cloud_init.ssh_keys_placeholder')}
                                         rows={3}
-                                        className='border-border/20 bg-background/50 focus:ring-primary/50 w-full resize-none rounded-xl border px-4 py-3 font-mono text-sm focus:ring-2 focus:outline-none'
+                                        className='border-border/50 bg-muted/30 focus:border-primary focus:ring-primary/20 w-full resize-y rounded-xl border px-4 py-3 font-mono text-sm focus:ring-4 focus:outline-none'
                                     />
                                 </div>
                             </div>
@@ -622,27 +643,25 @@ export default function VdsSettingsPage() {
                     )}
                 </div>
 
-                <div className='border-border/5 flex justify-end gap-3 border-t pt-4'>
+                <div className='border-border/40 flex flex-col-reverse gap-2 border-t pt-4 sm:flex-row sm:justify-end sm:gap-3'>
                     <Button
                         variant='outline'
-                        size='default'
                         onClick={() => setReinstallOpen(false)}
                         disabled={reinstalling}
-                        className='rounded-2xl'
+                        className='min-h-11 w-full sm:w-auto'
                     >
                         {t('vds.settings.reinstall.cancel_button')}
                     </Button>
                     <Button
-                        variant='default'
-                        size='default'
+                        variant='destructive'
                         onClick={handleReinstall}
                         disabled={reinstalling}
-                        className='rounded-2xl'
+                        className='min-h-11 w-full sm:w-auto'
                     >
                         {reinstalling ? (
-                            <Loader2 className='mr-2 h-5 w-5 animate-spin' />
+                            <Loader2 className='mr-2 h-4 w-4 animate-spin' />
                         ) : (
-                            <RotateCcw className='mr-2 h-5 w-5' />
+                            <RotateCcw className='mr-2 h-4 w-4' />
                         )}
                         {t('vds.settings.reinstall.confirm_button')}
                     </Button>

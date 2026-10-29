@@ -41,6 +41,8 @@ class UserNotification
     public const KIND_VDS_BANDWIDTH = 'vds_bandwidth';
     public const KIND_VDS_EXPIRING = 'vds_expiring';
     public const KIND_STORAGE_DISCONNECTED = 'storage_disconnected';
+    public const KIND_NODE_ALERT = 'node_alert';
+    public const KIND_SERVER_INACTIVE = 'server_inactive';
 
     public const KINDS = [
         self::KIND_TICKET_REPLY,
@@ -57,6 +59,8 @@ class UserNotification
         self::KIND_VDS_BANDWIDTH,
         self::KIND_VDS_EXPIRING,
         self::KIND_STORAGE_DISCONNECTED,
+        self::KIND_NODE_ALERT,
+        self::KIND_SERVER_INACTIVE,
     ];
 
     /** Read items are kept this long, unread ones three times as long. */

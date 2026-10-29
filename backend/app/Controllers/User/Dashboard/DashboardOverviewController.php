@@ -26,6 +26,7 @@ use App\Helpers\ModuleGate;
 use App\SubuserPermissions;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
+use App\Services\Quota\DiskQuota;
 use App\Helpers\ServerUtilization;
 use App\Helpers\PlayerStatusService;
 use Symfony\Component\HttpFoundation\Request;
@@ -133,6 +134,7 @@ class DashboardOverviewController
         $scheduleIds = array_keys(array_filter($permissions, static fn (?array $p): bool => $p === null || in_array(SubuserPermissions::SCHEDULE_READ, $p, true)));
 
         return ApiResponse::success([
+            'disk_quota' => DiskQuota::effectiveMb($userId) > 0 ? DiskQuota::summary($userId) : null,
             'servers' => [
                 'total' => count($servers),
                 'by_status' => $byStatus,

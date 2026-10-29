@@ -28,6 +28,7 @@ import { Mail, Lock, ArrowRight, KeyRound, ArrowLeft, Fingerprint, Network, Buil
 import { Captcha } from '@/components/Captcha';
 import { isCaptchaConfigured, isRecaptchaV3Configured, obtainCaptchaResponseToken } from '@/lib/captchaGate';
 import { startAuthentication } from '@simplewebauthn/browser';
+import { GoogleIcon, GitHubIcon, ssoLoginUrl, type SsoProviderKey } from '@/components/auth/SsoProviderIcons';
 import { authApi } from '@/lib/api/auth';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
@@ -54,6 +55,33 @@ function isSafeInternalRedirectPath(redirect: string | null): redirect is string
 function resolvePostLoginPath(redirect: string | null): string {
     return isSafeInternalRedirectPath(redirect) ? redirect : '/dashboard';
 }
+
+const ssoLoginErrorKeys: Record<string, string> = {
+    sso_invalid_state: 'auth.ssoErrors.invalidState',
+    sso_disabled: 'auth.ssoErrors.disabled',
+    sso_access_denied: 'auth.ssoErrors.accessDenied',
+    sso_missing_code: 'auth.ssoErrors.missingCode',
+    sso_token_failed: 'auth.ssoErrors.tokenFailed',
+    sso_discovery_failed: 'auth.ssoErrors.discoveryFailed',
+    sso_invalid_id_token: 'auth.ssoErrors.invalidIdToken',
+    sso_missing_subject: 'auth.ssoErrors.missingSubject',
+    sso_user_failed: 'auth.ssoErrors.userFailed',
+    sso_email_domain_not_allowed: 'auth.ssoErrors.emailDomainNotAllowed',
+    sso_account_not_linked: 'auth.ssoErrors.accountNotLinked',
+    sso_email_not_verified: 'auth.ssoErrors.emailNotVerified',
+    sso_email_in_use: 'auth.ssoErrors.emailInUse',
+    sso_registration_failed: 'auth.ssoErrors.registrationFailed',
+    sso_account_unavailable: 'auth.ssoErrors.accountUnavailable',
+    sso_user_banned: 'auth.ssoErrors.userBanned',
+    oidc_user_not_found: 'auth.ssoErrors.accountNotLinked',
+    oidc_provision_failed: 'auth.ssoErrors.registrationFailed',
+    oidc_email_not_verified: 'auth.ssoErrors.emailNotVerified',
+    oidc_invalid_state: 'auth.ssoErrors.invalidState',
+    oidc_token_failed: 'auth.ssoErrors.tokenFailed',
+    oidc_invalid_id_token: 'auth.ssoErrors.invalidIdToken',
+    oidc_access_denied: 'auth.ssoErrors.accessDenied',
+    oidc_discovery_failed: 'auth.ssoErrors.discoveryFailed',
+};
 
 export default function LoginForm() {
     const router = useRouter();
@@ -329,6 +357,55 @@ export default function LoginForm() {
             handleSsoLogin(ssoToken);
         }
 
+        const ssoLoginToken = searchParams.get('sso_login_token');
+        if (ssoLoginToken) {
+            authProcessed.current = true;
+            setIsSsoLogin(true);
+            setSsoStatus(t('auth.ssoLoggingIn'));
+            setLoading(true);
+            authApi
+                .login({ sso_login_token: ssoLoginToken })
+                .then(async (response) => {
+                    if (response.success) {
+                        setSuccess(response.message || t('auth.loginSuccess'));
+                        await completeLoginNavigation({ hardNavigate: true });
+                    } else {
+                        setIsSsoLogin(false);
+                        setError(getApiErrorMessageFromPayload(response, t, 'common.error'));
+                        authProcessed.current = false;
+                    }
+                })
+                .catch(
+                    (err: {
+                        response?: {
+                            data?: { error_code?: string; data?: { email?: string; challenge?: string } };
+                        };
+                    }) => {
+                        const payload = err.response?.data;
+                        if (payload?.error_code === 'TWO_FACTOR_REQUIRED' && payload.data?.email) {
+                            if (payload.data.challenge) {
+                                try {
+                                    sessionStorage.setItem('fp_2fa_challenge', payload.data.challenge);
+                                } catch {
+                                    /* ignore */
+                                }
+                            }
+                            router.push(`/auth/verify-2fa?username_or_email=${encodeURIComponent(payload.data.email)}`);
+                            return;
+                        }
+                        setIsSsoLogin(false);
+                        setError(getApiErrorMessage(err, t, 'common.error'));
+                        authProcessed.current = false;
+                    },
+                )
+                .finally(() => setLoading(false));
+        }
+
+        const ssoErrorParam = searchParams.get('error');
+        if (ssoErrorParam && /^(sso|oidc)_[a-z_]+$/.test(ssoErrorParam)) {
+            setError(t(ssoLoginErrorKeys[ssoErrorParam] ?? 'auth.ssoErrors.generic'));
+        }
+
         const discordToken = searchParams.get('discord_token');
         if (discordToken) {
             authProcessed.current = true;
@@ -441,6 +518,11 @@ export default function LoginForm() {
         // Hard navigation required: backend OAuth endpoint redirects off-site.
         window.location.href =
             window.location.origin + '/api/user/auth/oidc/login?provider=' + encodeURIComponent(providerUuid);
+    };
+
+    const handleSsoProviderLogin = (provider: SsoProviderKey) => {
+        // Hard navigation required: backend OAuth endpoint redirects off-site.
+        window.location.href = ssoLoginUrl(provider);
     };
 
     const handleLdapLogin = async (e: React.FormEvent) => {
@@ -813,7 +895,18 @@ export default function LoginForm() {
 
     const discordEnabled = settings?.discord_oauth_enabled === 'true';
     const emailLoginEnabled = settings?.email_login_enabled === 'true';
-    const oidcEnabled = oidcProviders.length > 0;
+    const googleEnabled = settings?.sso_google_enabled === 'true';
+    const githubEnabled = settings?.sso_github_enabled === 'true';
+    const builtinSsoProviders = useMemo(
+        () =>
+            [
+                googleEnabled ? { key: 'google' as const, name: 'Google', Icon: GoogleIcon } : null,
+                githubEnabled ? { key: 'github' as const, name: 'GitHub', Icon: GitHubIcon } : null,
+            ].filter((p) => p !== null),
+        [googleEnabled, githubEnabled],
+    );
+    // Google and GitHub share the SSO slot of the login layout with generic OIDC providers.
+    const oidcEnabled = oidcProviders.length > 0 || builtinSsoProviders.length > 0;
     const ldapEnabled = ldapProviders.length > 0;
 
     const loginPageLayout = useMemo(() => {
@@ -1012,6 +1105,20 @@ export default function LoginForm() {
                 }
                 return (
                     <div key='oidc' className='contents'>
+                        {builtinSsoProviders.map(({ key, name, Icon }) => (
+                            <Button
+                                key={key}
+                                type='button'
+                                variant='outline'
+                                size='sm'
+                                className={methodBtnClass}
+                                disabled={loading}
+                                onClick={() => handleSsoProviderLogin(key)}
+                            >
+                                <Icon className='h-3.5 w-3.5 shrink-0' />
+                                {name}
+                            </Button>
+                        ))}
                         {oidcProviders.map((provider) => (
                             <Button
                                 key={provider.uuid}
@@ -1080,6 +1187,26 @@ export default function LoginForm() {
                     <p className='text-muted-foreground text-center text-xs font-medium'>
                         {t('auth.sso.chooseProvider')}
                     </p>
+                    {builtinSsoProviders.map(({ key, name, Icon }) => (
+                        <Button
+                            key={key}
+                            type='button'
+                            variant='outline'
+                            className='group h-12 w-full justify-between px-4 text-left'
+                            disabled={loading}
+                            onClick={() => handleSsoProviderLogin(key)}
+                        >
+                            <span className='flex min-w-0 items-center gap-3'>
+                                <span className='border-border/60 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border'>
+                                    <Icon className='h-4 w-4' />
+                                </span>
+                                <span className='truncate font-semibold'>
+                                    {t('auth.sso.continueWith', { provider: name })}
+                                </span>
+                            </span>
+                            <ArrowRight className='h-4 w-4 shrink-0 transition-transform group-hover:translate-x-0.5' />
+                        </Button>
+                    ))}
                     {oidcProviders.map((provider) => (
                         <Button
                             key={provider.uuid}

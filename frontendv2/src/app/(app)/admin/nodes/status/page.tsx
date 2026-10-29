@@ -23,7 +23,18 @@ import api from '@/lib/api';
 import { Button } from '@/components/featherui/Button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { RefreshCw, Server, Check, AlertTriangle, Cpu, MemoryStick, HardDrive, Users } from 'lucide-react';
+import {
+    RefreshCw,
+    Server,
+    Check,
+    AlertTriangle,
+    Cpu,
+    MemoryStick,
+    HardDrive,
+    Users,
+    Archive,
+    Activity,
+} from 'lucide-react';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { PageCard } from '@/components/featherui/PageCard';
 import { ResourceCard } from '@/components/featherui/ResourceCard';
@@ -34,6 +45,29 @@ import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { formatBytes } from '@/lib/format';
 import { NodeServersList, type NodeStatusServer } from '@/components/admin/NodeServersList';
 import { useIpMask } from '@/hooks/useIpMask';
+import { NodeAlertsPanel, type NodeAlert } from '@/components/admin/node-alerts/NodeAlertsPanel';
+import { useDateFormatOptions } from '@/contexts/PreferencesContext';
+import { formatRelativeTime } from '@/lib/dateUtils';
+import Link from 'next/link';
+
+interface NodeHealth {
+    online: boolean;
+    consecutive_failures: number;
+    last_seen_at: string | null;
+    last_checked_at: string | null;
+}
+
+interface FailedBackups {
+    count: number;
+    recent: { id: number; name: string; server_name: string; server_uuid_short: string; completed_at: string }[];
+}
+
+interface AlertsOverview {
+    health: Record<string, NodeHealth>;
+    failed_backups: Record<string, FailedBackups>;
+    open_alerts: NodeAlert[];
+    monitor: { enabled: boolean; last_run_at: string | null };
+}
 
 interface GlobalStats {
     total_nodes: number;
@@ -82,6 +116,17 @@ export default function NodeStatusPage() {
     const [nodes, setNodes] = useState<NodeStatus[]>([]);
 
     const { getWidgets } = usePluginWidgets('admin-nodes-status');
+    const dateOpts = useDateFormatOptions();
+    const [alerts, setAlerts] = useState<AlertsOverview | null>(null);
+
+    const fetchAlerts = useCallback(async () => {
+        try {
+            const res = await api.get('/admin/node-alerts/overview');
+            if (res.data.success) setAlerts(res.data.data);
+        } catch {
+            // The alerts overview is optional; the live status still renders without it.
+        }
+    }, []);
 
     const fetchData = useCallback(
         async (background = false) => {
@@ -117,13 +162,15 @@ export default function NodeStatusPage() {
 
     useEffect(() => {
         fetchData(false);
+        fetchAlerts();
 
         const interval = setInterval(() => {
             fetchData(true);
+            fetchAlerts();
         }, 10000);
 
         return () => clearInterval(interval);
-    }, [fetchData]);
+    }, [fetchData, fetchAlerts]);
 
     const getMemoryUsagePercent = () => {
         if (!globalStats || globalStats.total_memory === 0) return 0;
@@ -169,7 +216,15 @@ export default function NodeStatusPage() {
                 description={t('admin.nodes.subtitle')}
                 icon={Server}
                 actions={
-                    <Button variant='outline' size='sm' onClick={() => fetchData(false)} disabled={loading}>
+                    <Button
+                        variant='outline'
+                        size='sm'
+                        onClick={() => {
+                            fetchData(false);
+                            fetchAlerts();
+                        }}
+                        disabled={loading}
+                    >
                         <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
                         {t('admin.nodes.refresh')}
                     </Button>
@@ -274,6 +329,15 @@ export default function NodeStatusPage() {
 
                     <WidgetRenderer widgets={getWidgets('admin-nodes-status', 'after-resource-usage')} />
 
+                    {alerts && (
+                        <NodeAlertsPanel
+                            openAlerts={alerts.open_alerts}
+                            lastRunAt={alerts.monitor.last_run_at}
+                            monitorEnabled={alerts.monitor.enabled}
+                            onChanged={fetchAlerts}
+                        />
+                    )}
+
                     <div className='space-y-4'>
                         <h2 className='text-2xl font-bold tracking-tight'>{t('admin.nodes.individual_nodes')}</h2>
                         <div className='grid grid-cols-1 gap-6 xl:grid-cols-2'>
@@ -317,6 +381,20 @@ export default function NodeStatusPage() {
                                                     </span>
                                                     {t('dashboard.status.playersOnline')}
                                                 </span>
+                                                {alerts?.health[node.id]?.last_seen_at && (
+                                                    <>
+                                                        <span className='bg-muted-foreground/30 h-1 w-1 shrink-0 rounded-full' />
+                                                        <span className='flex shrink-0 items-center gap-1'>
+                                                            <Activity className='h-3 w-3' />
+                                                            {t('adminNodeAlerts.heartbeat', {
+                                                                time: formatRelativeTime(
+                                                                    alerts.health[node.id].last_seen_at as string,
+                                                                    dateOpts,
+                                                                ),
+                                                            })}
+                                                        </span>
+                                                    </>
+                                                )}
                                             </div>
                                             {node.status === 'healthy' && node.utilization ? (
                                                 <div className='space-y-6'>
@@ -418,6 +496,32 @@ export default function NodeStatusPage() {
                                                         </AlertDescription>
                                                     </div>
                                                 </Alert>
+                                            )}
+
+                                            {(alerts?.failed_backups[node.id]?.count ?? 0) > 0 && (
+                                                <div className='mt-4 rounded-xl border border-amber-500/20 bg-amber-500/5 p-3'>
+                                                    <p className='flex items-center gap-2 text-sm font-medium text-amber-600 dark:text-amber-400'>
+                                                        <Archive className='h-4 w-4' />
+                                                        {t('adminNodeAlerts.failedBackups', {
+                                                            count: String(alerts!.failed_backups[node.id].count),
+                                                        })}
+                                                    </p>
+                                                    <ul className='mt-2 space-y-1 text-xs'>
+                                                        {alerts!.failed_backups[node.id].recent.map((b) => (
+                                                            <li key={b.id} className='flex justify-between gap-3'>
+                                                                <Link
+                                                                    href={`/server/${b.server_uuid_short}/backups`}
+                                                                    className='min-w-0 truncate underline-offset-2 hover:underline'
+                                                                >
+                                                                    {b.server_name} · {b.name}
+                                                                </Link>
+                                                                <span className='text-muted-foreground shrink-0'>
+                                                                    {formatRelativeTime(b.completed_at, dateOpts)}
+                                                                </span>
+                                                            </li>
+                                                        ))}
+                                                    </ul>
+                                                </div>
                                             )}
 
                                             {node.servers !== undefined && (

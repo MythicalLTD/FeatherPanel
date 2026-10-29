@@ -40,6 +40,7 @@ import {
     ExternalLink,
     AlertTriangle,
     CheckCircle2,
+    MonitorSmartphone,
 } from 'lucide-react';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
@@ -77,6 +78,8 @@ import {
     isAbuseIPDBReportValid,
 } from '@/components/admin/AbuseIPDBBanReportFields';
 import { ModerationStatusCard } from '@/components/admin/ModerationStatusCard';
+import { UserDiskQuotaCard } from '@/components/admin/inactive-cleanup/UserDiskQuotaCard';
+import { AdminUserSessionsPanel } from '@/components/admin/AdminUserSessionsPanel';
 import { copyToClipboard } from '@/lib/utils';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
@@ -1030,6 +1033,8 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                         </div>
                     </PageCard>
 
+                    {typeof user.id === 'number' && <UserDiskQuotaCard userId={user.id} />}
+
                     <PageCard title={t('admin.users.edit.actions.title')} icon={Shield} variant='default'>
                         <div className='space-y-4'>
                             <ModerationStatusCard
@@ -1133,6 +1138,10 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                                     {potentialAlts.length}
                                 </Badge>
                             )}
+                        </TabsTrigger>
+                        <TabsTrigger value='sessions' className='gap-2'>
+                            <MonitorSmartphone className='h-4 w-4' />
+                            {t('admin.users.edit.tabs.sessions')}
                         </TabsTrigger>
                         <TabsTrigger value='vds' className='gap-2'>
                             <ServerIcon className='h-4 w-4' />
@@ -1496,6 +1505,10 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                             </table>
                         </div>
                     </PageCard>
+                </TabsContent>
+
+                <TabsContent value='sessions'>
+                    <AdminUserSessionsPanel userUuid={resolvedParams.uuid} />
                 </TabsContent>
 
                 <TabsContent value='vds'>
