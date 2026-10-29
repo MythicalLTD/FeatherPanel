@@ -2433,7 +2433,7 @@
         "passwordPlaceholder": "Leave blank to keep current password",
         "passwordHint": "Leave blank if you don't want to change your password",
         "ticketSignature": "Ticket Signature",
-        "ticketSignaturePlaceholder": "Your signature (e.g., Best regards,\\nJohn Doe\\nSupport Team)",
+        "ticketSignaturePlaceholder": "Your signature (e.g., Best regards, John Doe, Support Team)",
         "ticketSignatureHint": "This signature will be automatically appended to all your ticket replies. Supports Markdown formatting.",
         "saving": "Saving...",
         "saveChanges": "Save Changes",

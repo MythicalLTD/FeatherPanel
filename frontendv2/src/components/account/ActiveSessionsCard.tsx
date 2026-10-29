@@ -18,7 +18,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import { useCallback, useEffect, useState } from 'react';
 import axios from 'axios';
 import { toast } from 'sonner';
-import { Globe, Laptop, Loader2, LogOut, MonitorSmartphone, Smartphone } from 'lucide-react';
+import { Globe, Laptop, LogOut, MonitorSmartphone, Smartphone } from 'lucide-react';
 import { Button } from '@/components/featherui/Button';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { getApiErrorMessage } from '@/lib/api-errors';
@@ -117,109 +117,108 @@ export function ActiveSessionsCard() {
     const others = sessions.filter((s) => !s.current).length;
 
     return (
-        <div className='fp-surface-inset rounded-xl border p-6'>
-            <div className='flex items-start gap-4'>
-                <div className='bg-primary/10 flex h-12 w-12 shrink-0 items-center justify-center rounded-lg'>
-                    <MonitorSmartphone className='text-primary h-6 w-6' />
+        <div className='fp-surface-inset space-y-4 rounded-xl border p-4 sm:p-6'>
+            <div className='flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between'>
+                <div className='flex min-w-0 items-start gap-4'>
+                    <div className='bg-primary/10 flex h-12 w-12 shrink-0 items-center justify-center rounded-lg'>
+                        <MonitorSmartphone className='text-primary h-6 w-6' />
+                    </div>
+                    <div className='min-w-0'>
+                        <h4 className='text-foreground text-sm font-medium'>{t('account.sessions.title')}</h4>
+                        <p className='text-muted-foreground mt-1 max-w-xl text-sm'>
+                            {t('account.sessions.description')}
+                        </p>
+                    </div>
                 </div>
-                <div className='min-w-0 flex-1 space-y-4'>
-                    <div className='flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between'>
-                        <div>
-                            <h4 className='text-foreground text-sm font-medium'>{t('account.sessions.title')}</h4>
-                            <p className='text-muted-foreground mt-1 max-w-xl text-sm'>
-                                {t('account.sessions.description')}
-                            </p>
-                        </div>
-                        <Button
-                            type='button'
-                            variant='outline'
-                            size='sm'
-                            className='shrink-0'
-                            onClick={() => void revokeOthers()}
-                            loading={busyId === 'others'}
-                            disabled={busyId !== null}
-                        >
-                            {busyId !== 'others' ? <LogOut className='mr-2 h-4 w-4' /> : null}
-                            {t('account.sessions.revoke_others')}
+                <Button
+                    type='button'
+                    variant='outline'
+                    size='sm'
+                    className='shrink-0 self-start'
+                    onClick={() => void revokeOthers()}
+                    loading={busyId === 'others'}
+                    disabled={busyId !== null || (sessions.length > 0 && others === 0)}
+                >
+                    {busyId !== 'others' ? <LogOut className='mr-2 h-4 w-4' /> : null}
+                    {t('account.sessions.revoke_others')}
+                </Button>
+            </div>
+            <div className='space-y-4'>
+                {loading ? (
+                    <div className='space-y-2' aria-busy='true' aria-label={t('account.sessions.loading')}>
+                        {[0, 1, 2].map((i) => (
+                            <div key={i} className='bg-muted/40 h-[62px] animate-pulse rounded-lg border' />
+                        ))}
+                    </div>
+                ) : loadError ? (
+                    <div className='border-destructive/25 bg-destructive/[0.04] flex flex-col gap-3 rounded-xl border px-4 py-4 sm:flex-row sm:items-center sm:justify-between'>
+                        <p className='text-muted-foreground text-sm'>{t('account.sessions.load_failed')}</p>
+                        <Button type='button' variant='outline' size='sm' onClick={() => void load()}>
+                            {t('account.sessions.retry')}
                         </Button>
                     </div>
-
-                    {loading ? (
-                        <p className='text-muted-foreground flex items-center gap-2 text-sm'>
-                            <Loader2 className='h-4 w-4 animate-spin' />
-                            {t('account.sessions.loading')}
-                        </p>
-                    ) : loadError ? (
-                        <div className='border-destructive/25 bg-destructive/[0.04] flex flex-col gap-3 rounded-xl border px-4 py-4 sm:flex-row sm:items-center sm:justify-between'>
-                            <p className='text-muted-foreground text-sm'>{t('account.sessions.load_failed')}</p>
-                            <Button type='button' variant='outline' size='sm' onClick={() => void load()}>
-                                {t('account.sessions.retry')}
-                            </Button>
-                        </div>
-                    ) : (
-                        <ul className='space-y-2'>
-                            {sessions.map((s) => {
-                                const ua = describeUserAgent(s.user_agent);
-                                const Icon = ua.mobile ? Smartphone : ua.browser ? Laptop : Globe;
-                                const name =
-                                    [ua.browser, ua.os].filter(Boolean).join(' / ') ||
-                                    t('account.sessions.unknown_device');
-                                return (
-                                    <li
-                                        key={s.id}
-                                        className={cn(
-                                            'flex flex-col gap-3 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between',
-                                            s.current && 'border-primary/30 bg-primary/[0.04]',
-                                        )}
-                                    >
-                                        <div className='flex min-w-0 items-center gap-3'>
-                                            <Icon className='text-muted-foreground h-5 w-5 shrink-0' />
-                                            <div className='min-w-0'>
-                                                <p className='text-foreground flex flex-wrap items-center gap-2 font-medium'>
-                                                    <span className='truncate'>{name}</span>
-                                                    {s.current ? (
-                                                        <span className='bg-primary/10 text-primary rounded-md px-1.5 py-0.5 text-xs font-medium'>
-                                                            {t('account.sessions.this_device')}
-                                                        </span>
-                                                    ) : null}
-                                                </p>
-                                                <p className='text-muted-foreground mt-0.5 text-xs'>
-                                                    {t('account.sessions.meta', {
-                                                        ip: s.ip_address || '-',
-                                                        seen: s.current
-                                                            ? t('account.sessions.active_now')
-                                                            : formatRelativeTime(s.last_seen_at),
-                                                    })}
-                                                </p>
-                                            </div>
+                ) : (
+                    <ul className='space-y-2'>
+                        {sessions.map((s) => {
+                            const ua = describeUserAgent(s.user_agent);
+                            const Icon = ua.mobile ? Smartphone : ua.browser ? Laptop : Globe;
+                            const name =
+                                [ua.browser, ua.os].filter(Boolean).join(' / ') || t('account.sessions.unknown_device');
+                            return (
+                                <li
+                                    key={s.id}
+                                    className={cn(
+                                        'animate-in fade-in-0 slide-in-from-bottom-1 fill-mode-both flex items-center justify-between gap-3 rounded-lg border p-3 transition-colors duration-300 motion-reduce:animate-none sm:p-4',
+                                        s.current && 'border-primary/30 bg-primary/[0.04]',
+                                    )}
+                                >
+                                    <div className='flex min-w-0 items-center gap-3'>
+                                        <Icon className='text-muted-foreground h-5 w-5 shrink-0' />
+                                        <div className='min-w-0'>
+                                            <p className='text-foreground flex flex-wrap items-center gap-2 font-medium'>
+                                                <span className='truncate'>{name}</span>
+                                                {s.current ? (
+                                                    <span className='bg-primary/10 text-primary rounded-md px-1.5 py-0.5 text-xs font-medium'>
+                                                        {t('account.sessions.this_device')}
+                                                    </span>
+                                                ) : null}
+                                            </p>
+                                            <p className='text-muted-foreground mt-0.5 text-xs'>
+                                                {t('account.sessions.meta', {
+                                                    ip: s.ip_address || '-',
+                                                    seen: s.current
+                                                        ? t('account.sessions.active_now')
+                                                        : formatRelativeTime(s.last_seen_at),
+                                                })}
+                                            </p>
                                         </div>
-                                        {!s.current ? (
-                                            <Button
-                                                type='button'
-                                                variant='ghost'
-                                                size='sm'
-                                                className='shrink-0'
-                                                onClick={() => void revoke(s.id)}
-                                                loading={busyId === s.id}
-                                                disabled={busyId !== null}
-                                            >
-                                                {t('account.sessions.revoke')}
-                                            </Button>
-                                        ) : null}
-                                    </li>
-                                );
-                            })}
-                            {sessions.length === 0 ? (
-                                <li className='text-muted-foreground rounded-lg border border-dashed px-4 py-6 text-center text-sm'>
-                                    {t('account.sessions.legacy')}
+                                    </div>
+                                    {!s.current ? (
+                                        <Button
+                                            type='button'
+                                            variant='ghost'
+                                            size='sm'
+                                            className='text-destructive hover:text-destructive shrink-0'
+                                            onClick={() => void revoke(s.id)}
+                                            loading={busyId === s.id}
+                                            disabled={busyId !== null}
+                                        >
+                                            {t('account.sessions.revoke')}
+                                        </Button>
+                                    ) : null}
                                 </li>
-                            ) : null}
-                        </ul>
-                    )}
-                    {!loading && others === 0 && sessions.length > 0 ? (
-                        <p className='text-muted-foreground text-xs'>{t('account.sessions.only_this')}</p>
-                    ) : null}
-                </div>
+                            );
+                        })}
+                        {sessions.length === 0 ? (
+                            <li className='text-muted-foreground rounded-lg border border-dashed px-4 py-6 text-center text-sm'>
+                                {t('account.sessions.legacy')}
+                            </li>
+                        ) : null}
+                    </ul>
+                )}
+                {!loading && others === 0 && sessions.length > 0 ? (
+                    <p className='text-muted-foreground text-xs'>{t('account.sessions.only_this')}</p>
+                ) : null}
             </div>
         </div>
     );
