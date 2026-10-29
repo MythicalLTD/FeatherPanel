@@ -1685,7 +1685,16 @@
             "NODE_ALERT_WEBHOOK_UNRESOLVABLE": "The webhook host could not be resolved.",
             "NODE_ALERT_WEBHOOK_PRIVATE_ADDRESS": "The webhook host points to a private or local address, which is not allowed.",
             "NODE_ALERT_SETTINGS_SAVE_FAILED": "Could not save the alert settings.",
-            "NODE_ALERT_NO_CHANNELS": "Turn on at least one delivery channel first."
+            "NODE_ALERT_NO_CHANNELS": "Turn on at least one delivery channel first.",
+            "DISK_QUOTA_EXCEEDED": "This would go over the user's disk quota.",
+            "DISK_QUOTA_UNLIMITED_NOT_ALLOWED": "This user has a disk quota, so the server needs a disk limit.",
+            "DISK_QUOTA_INVALID": "Enter a quota of 0 MiB or more.",
+            "DISK_QUOTA_SAVE_FAILED": "Could not save the disk quota. Please try again.",
+            "INACTIVE_CLEANUP_ARCHIVE_NEEDS_S3": "Archiving needs S3 backup storage set as the default.",
+            "INACTIVE_CLEANUP_CONFIRM_REQUIRED": "Confirm this action before turning it on.",
+            "INACTIVE_CLEANUP_PLAN_CHANGED": "The plan changed since your preview. Review it again before running.",
+            "INACTIVE_CLEANUP_PREVIEW_REQUIRED": "Preview the run before starting it.",
+            "INACTIVE_CLEANUP_SAVE_FAILED": "Could not save the cleanup settings. Please try again."
         },
         "global": {}
     },
@@ -2177,7 +2186,8 @@
                 "bandwidth": "Bandwidth this period",
                 "allocated_disk": "{disk} of disk allocated",
                 "vds": "VDS ({count})",
-                "allocated_vds": "{cpu} vCPU, {ram} RAM, {disk} disk allocated"
+                "allocated_vds": "{cpu} vCPU, {ram} RAM, {disk} disk allocated",
+                "disk_quota": "Disk quota"
             },
             "status": {
                 "title": "Server status"
@@ -3979,7 +3989,8 @@
             "health": "System health",
             "snapshots": "Snapshots",
             "boot": "Boot",
-            "vdsIsos": "VDS ISO Library"
+            "vdsIsos": "VDS ISO Library",
+            "inactiveServers": "Inactive Servers"
         }
     },
     "adminWingsBackups": {
@@ -4411,7 +4422,8 @@
                 "vds_bandwidth": "VDS traffic limit",
                 "vds_expiring": "VDS expires soon",
                 "storage_disconnected": "Storage disconnected",
-                "node_alert": "Node alert"
+                "node_alert": "Node alert",
+                "server_inactive": "Server inactive"
             },
             "bodies": {
                 "ticket_reply": "New reply on \"{ticket}\".",
@@ -4428,7 +4440,8 @@
                 "vds_bandwidth": "{vds} used {used_gb} GB of {limit_gb} GB traffic this month ({percent}%). {action_label}",
                 "vds_expiring": "{vds} expires on {expires_at} UTC ({days} day(s) left). Renew it to avoid suspension.",
                 "storage_disconnected": "The panel lost access to {storage}. Backups there ({files}) cannot be created, downloaded or restored until you reconnect it.",
-                "node_alert": "{message}"
+                "node_alert": "{message}",
+                "server_inactive": "{server} has not been used for {days} days. Use it soon to keep it."
             },
             "metrics": {
                 "cpu": "CPU",
@@ -19698,6 +19711,131 @@
                 "mail_disabled": "mail is turned off",
                 "no_recipients": "no recipients"
             }
+        }
+    },
+    "adminInactive": {
+        "title": "Inactive Servers",
+        "subtitle": "Find servers nobody uses, warn their owners and clean them up. Off until you turn it on.",
+        "tabs": {
+            "preview": "Preview",
+            "settings": "Settings",
+            "archives": "Archives",
+            "quota": "Disk quotas"
+        },
+        "steps": {
+            "warn": "Warn owner",
+            "wait": "Waiting",
+            "clear": "Back in use",
+            "skip": "Skipped",
+            "suspend": "Suspend",
+            "archive": "Back up",
+            "archive_check": "Delete after backup",
+            "delete": "Delete"
+        },
+        "stages": {
+            "warned": "Owner warned",
+            "suspended": "Suspended for inactivity",
+            "archiving": "Backing up",
+            "archive_failed": "Backup failed"
+        },
+        "reasons": {
+            "exempt": "Exempt",
+            "suspended_by_staff": "Suspended by staff",
+            "archive_failed": "Backup failed, needs a look",
+            "archive_needs_s3": "Needs S3 backup storage"
+        },
+        "actions": {
+            "notify": "Only notify",
+            "suspend": "Suspend",
+            "archive": "Back up, then delete",
+            "delete": "Delete"
+        },
+        "actionHints": {
+            "notify": "Owners get a reminder. Nothing else happens.",
+            "suspend": "After the grace period the server is suspended. You can unsuspend it.",
+            "archive": "After the grace period the server is backed up to S3, then deleted.",
+            "delete": "After the grace period the server and its files are deleted for good."
+        },
+        "columns": {
+            "server": "Server",
+            "inactive": "Inactive",
+            "next": "Next step"
+        },
+        "days": "{count} days",
+        "dueAt": "Due {time}",
+        "truncated": "Showing {shown} of {total} servers.",
+        "previewHint": "This is a dry run. Nothing changes until you run it.",
+        "refreshPreview": "Refresh preview",
+        "runNow": "Run now",
+        "ran": "Done: {applied} applied, {failed} failed, {deferred} left for later.",
+        "runFailed": "Could not run the cleanup.",
+        "previewFailed": "Could not load the preview.",
+        "loadFailed": "Could not load the settings.",
+        "saved": "Cleanup settings saved.",
+        "saveFailed": "Could not save the cleanup settings.",
+        "emptyTitle": "No inactive servers",
+        "emptyDescription": "Every server was used recently.",
+        "exempt": "Exempt",
+        "unexempt": "Remove exemption",
+        "exemptAdded": "Server is now exempt.",
+        "exemptRemoved": "Exemption removed.",
+        "exemptFailed": "Could not change the exemption.",
+        "confirmRunTitle": "Run the cleanup now?",
+        "confirmRunSafe": "{count} servers will be updated. Owners may get a warning.",
+        "confirmRunDestructive": "{count} servers will be suspended, backed up or deleted. Deleted servers cannot be restored from the panel.",
+        "confirmActionTitle": "Turn on \"{action}\"?",
+        "confirmActionButton": "I understand, save",
+        "confirmAction": {
+            "notify": "Owners will only get reminders.",
+            "suspend": "Inactive servers will be suspended after the grace period, even when nobody is watching.",
+            "archive": "Inactive servers will be backed up and then deleted after the grace period. Only the backup stays.",
+            "delete": "Inactive servers will be deleted for good after the grace period. This cannot be undone."
+        },
+        "settings": {
+            "enabled": "Run automatically",
+            "enabledHint": "Checks every hour. When off, you can still preview and run by hand.",
+            "action": "Action",
+            "archiveNeedsS3": "Back up, then delete needs S3 backup storage set as the default.",
+            "inactiveDays": "Inactive after",
+            "inactiveDaysHint": "Days with no owner or subuser activity.",
+            "graceDays": "Grace period",
+            "graceDaysHint": "Days between the warning and the action.",
+            "daysUnit": "days",
+            "maxPerRun": "Most actions per run",
+            "maxPerRunHint": "Limits how many servers are suspended or deleted at once.",
+            "warnOwner": "Email the owner",
+            "warnOwnerHint": "Owners always get an inbox notice. This adds an email.",
+            "confirmedAt": "\"{action}\" confirmed {time}."
+        },
+        "archives": {
+            "emptyTitle": "No archives yet",
+            "emptyDescription": "Servers that were backed up and deleted show up here.",
+            "backup": "Backup",
+            "archivedAt": "Archived"
+        },
+        "serverCard": {
+            "title": "Inactivity",
+            "exempt": "Exempt from inactive cleanup",
+            "exemptHint": "This server is never warned, suspended or deleted for inactivity.",
+            "lastActivity": "Last activity {time}",
+            "policyOff": "Cleanup is off"
+        },
+        "quota": {
+            "defaultLabel": "Default disk quota per user",
+            "defaultHint": "Total disk all servers of a user can have. 0 means no limit.",
+            "perUserHint": "Set a different quota for a user on their edit page.",
+            "saved": "Default quota saved.",
+            "userSaved": "Disk quota saved.",
+            "saveFailed": "Could not save the disk quota.",
+            "cardTitle": "Disk quota",
+            "mode": "Quota",
+            "modeDefault": "Default ({size})",
+            "modeDefaultUnlimited": "Default (no limit)",
+            "modeCustom": "Custom",
+            "modeUnlimited": "No limit",
+            "usage": "{used} of {limit} used by servers",
+            "usageUnlimited": "{used} used by servers, no limit",
+            "enforceHint": "Checked when servers are created or their disk grows."
         }
     }
 }

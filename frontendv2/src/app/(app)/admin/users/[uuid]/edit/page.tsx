@@ -77,6 +77,7 @@ import {
     isAbuseIPDBReportValid,
 } from '@/components/admin/AbuseIPDBBanReportFields';
 import { ModerationStatusCard } from '@/components/admin/ModerationStatusCard';
+import { UserDiskQuotaCard } from '@/components/admin/inactive-cleanup/UserDiskQuotaCard';
 import { copyToClipboard } from '@/lib/utils';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
@@ -1029,6 +1030,8 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                             )}
                         </div>
                     </PageCard>
+
+                    {typeof user.id === 'number' && <UserDiskQuotaCard userId={user.id} />}
 
                     <PageCard title={t('admin.users.edit.actions.title')} icon={Shield} variant='default'>
                         <div className='space-y-4'>
