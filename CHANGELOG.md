@@ -91,6 +91,7 @@
 
 ### Fixed
 
+- FeatherOS desktop: server icons get a taller row step so two-line labels and the disk meter no longer overlap the next icon; snapping, auto-arrange and arrow-key moves use the same step. by @nayskutzu
 - Node alerts: a failed backup that started before another backup but finished after it is no longer skipped. The failed backup scan now follows completion time instead of the backup id (the old position is reset to now once on upgrade). by @nayskutzu
 - WebSpace console no longer logs a 404 every few seconds when no transfer is running, and subusers without the Users permission see an access notice on the Users page instead of an error toast and an empty list.
 - Backup storage: the backup count on a storage card no longer includes failed backups; Dropbox backups are verified by Dropbox `content_hash` when FeatherWings reports it (FeatherWings #32), not only by size; SFTP storage cards show the pinned host key, and the host key mismatch error says how to trust a new key; removing a OneDrive storage explains that Microsoft has no per-app token revoke and links to the consent page. by @nayskutzu
