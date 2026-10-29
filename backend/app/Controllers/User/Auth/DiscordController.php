@@ -40,6 +40,9 @@ class DiscordController
      * Initiate Discord OAuth login.
      * GET /api/user/auth/discord/login.
      */
+    /** Binds Discord hand-off tokens to the browser that finished the callback. */
+    private const HANDOFF_COOKIE = 'fp_discord_handoff';
+
     public function login(Request $request): RedirectResponse
     {
         return $this->startDiscordFlow($request);
@@ -199,7 +202,7 @@ class DiscordController
                 'is_registration' => true,
             ], 10);
 
-            return new RedirectResponse('/auth/register?discord_link_token=' . $tempToken);
+            return $this->handoffRedirect('/auth/register?discord_link_token=' . $tempToken, $tempToken);
         }
 
         // Registration is disabled or a matching account already exists link to existing account
@@ -214,15 +217,18 @@ class DiscordController
             'discord_email' => $discordEmail,
         ], 10);
 
-        return new RedirectResponse('/auth/login?discord_link_token=' . $tempToken);
+        return $this->handoffRedirect('/auth/login?discord_link_token=' . $tempToken, $tempToken);
     }
 
     /**
      * Authenticate user with Discord token.
      * Called by LoginController to complete Discord login.
      */
-    public function authenticateWithToken(string $token): ?array
+    public function authenticateWithToken(string $token, ?Request $request = null): ?array
     {
+        if ($request !== null && !OAuthStateCookie::matches($request, $token, self::HANDOFF_COOKIE)) {
+            return null;
+        }
         $data = Cache::get('discord_login_token_' . $token);
         if (!$data) {
             return null;
@@ -271,7 +277,7 @@ class DiscordController
         }
 
         // Get pending Discord data
-        $pendingData = Cache::get('discord_link_token_' . $token);
+        $pendingData = OAuthStateCookie::matches($request, $token, self::HANDOFF_COOKIE) ? Cache::get('discord_link_token_' . $token) : null;
         if (!$pendingData) {
             return ApiResponse::error('Invalid or expired link token', 'INVALID_TOKEN', 400);
         }
@@ -365,7 +371,7 @@ class DiscordController
             return ApiResponse::error('Missing registration token', 'MISSING_TOKEN', 400);
         }
 
-        $cached = Cache::get('discord_link_token_' . $token);
+        $cached = OAuthStateCookie::matches($request, $token, self::HANDOFF_COOKIE) ? Cache::get('discord_link_token_' . $token) : null;
         if (!$cached || !is_array($cached)) {
             return ApiResponse::error('Invalid or expired registration token', 'INVALID_TOKEN', 400);
         }
@@ -713,6 +719,18 @@ class DiscordController
         return null;
     }
 
+    /**
+     * Redirect with a hand-off token that only works in this browser, so a link
+     * containing it cannot be used to sign someone else in or link an account.
+     */
+    private function handoffRedirect(string $url, string $token): RedirectResponse
+    {
+        $response = new RedirectResponse($url);
+        OAuthStateCookie::attach($response, $token, self::HANDOFF_COOKIE);
+
+        return $response;
+    }
+
     private function createDiscordLoginRedirect(
         array $user,
         string $discordId,
@@ -731,7 +749,7 @@ class DiscordController
             'discord_name' => $discordName,
         ], 5);
 
-        return new RedirectResponse('/auth/login?discord_token=' . $tempToken);
+        return $this->handoffRedirect('/auth/login?discord_token=' . $tempToken, $tempToken);
     }
 
     private function applyDiscordLink(
