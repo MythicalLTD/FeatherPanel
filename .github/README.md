@@ -56,6 +56,7 @@ This branch ships experimental features that may be unstable, incomplete, or uns
 - [Installation guides](https://docs.mythical.systems/docs)
 - [Configuration](https://docs.mythical.systems/docs)
 - [Releases](https://github.com/mythicalltd/featherpanel/releases)
+- [Changelog](https://github.com/mythicalltd/featherpanel/blob/develop/CHANGELOG.md) (what is new in v1.5.3: BYO backup storage, SSO, node alerts, admin 2FA)
 
 </td>
 <td valign="top">
