@@ -882,33 +882,57 @@ export function useGlobalSearchItems(open: boolean, query: string) {
                 const slash = q.lastIndexOf('/');
                 const directory = slash >= 0 ? `/${q.slice(0, slash)}` : '/';
                 const needle = slash >= 0 ? q.slice(slash + 1) : q;
+                const toResult = (fullPath: string, isFile: boolean): GlobalSearchResult => {
+                    const cut = fullPath.lastIndexOf('/');
+                    const parent = cut > 0 ? fullPath.slice(0, cut) : '/';
+                    const name = fullPath.slice(cut + 1);
+                    return {
+                        id: `file:${serverRouteId}:${fullPath}`,
+                        title: name,
+                        subtitle: fullPath,
+                        href: isFile
+                            ? `/server/${serverRouteId}/files/edit?file=${encodeURIComponent(name)}&directory=${encodeURIComponent(parent)}`
+                            : `/server/${serverRouteId}/files?path=${encodeURIComponent(fullPath)}`,
+                        category: 'files' as const,
+                        icon: isFile ? FileText : Folder,
+                        keywords: [fullPath],
+                        contextTag: entityContext?.entityName,
+                    };
+                };
+                // Listing the typed directory (and filtering it) works on every daemon.
+                const listDirectory = () =>
+                    filesApi.getFiles(serverRouteId, directory, needle || undefined).then(({ contents }) =>
+                        contents
+                            .filter((file) => !file.isTrashShortcut)
+                            .slice(0, 25)
+                            .map((file) => toResult(`${directory === '/' ? '' : directory}/${file.name}`, file.isFile)),
+                    );
+                // Recursive search below the typed directory where the daemon supports it
+                // (`search-files`); unsupported daemons and errors fall back to the listing.
+                const search =
+                    needle.length >= 2
+                        ? filesApi
+                              .searchFiles(serverRouteId, {
+                                  directory,
+                                  pattern: needle,
+                                  case_insensitive: true,
+                              })
+                              .then((found) =>
+                                  found.slice(0, 25).map((file) => {
+                                      const raw = String(file.name ?? '');
+                                      const full = raw.startsWith('/')
+                                          ? raw
+                                          : `${directory === '/' ? '' : directory}/${raw}`;
+                                      return toResult(full, file.isFile);
+                                  }),
+                              )
+                              .catch(() => (controller.signal.aborted ? [] : listDirectory()))
+                        : listDirectory();
                 jobs.push(
-                    filesApi
-                        .getFiles(serverRouteId, directory, needle || undefined)
-                        .then(({ contents }) =>
-                            contents
-                                .filter((file) => !file.isTrashShortcut)
-                                .slice(0, 25)
-                                .map((file) => {
-                                    const fullPath = `${directory === '/' ? '' : directory}/${file.name}`;
-                                    return {
-                                        id: `file:${serverRouteId}:${fullPath}`,
-                                        title: file.name,
-                                        subtitle: fullPath,
-                                        href: file.isFile
-                                            ? `/server/${serverRouteId}/files/edit?file=${encodeURIComponent(file.name)}&directory=${encodeURIComponent(directory)}`
-                                            : `/server/${serverRouteId}/files?path=${encodeURIComponent(fullPath)}`,
-                                        category: 'files' as const,
-                                        icon: file.isFile ? FileText : Folder,
-                                        keywords: [fullPath],
-                                        contextTag: entityContext?.entityName,
-                                    };
-                                }),
-                        )
-                        .catch(() => {
-                            if (!controller.signal.aborted) setFilesUnavailable('error');
-                            return [];
-                        }),
+                    search.catch(() => {
+                        if (!controller.signal.aborted) setFilesUnavailable('error');
+                        return [];
+                    }),
                 );
             }
             if (wantNodes) {
