@@ -40,6 +40,7 @@ import {
     ExternalLink,
     AlertTriangle,
     CheckCircle2,
+    MonitorSmartphone,
 } from 'lucide-react';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
@@ -78,6 +79,7 @@ import {
 } from '@/components/admin/AbuseIPDBBanReportFields';
 import { ModerationStatusCard } from '@/components/admin/ModerationStatusCard';
 import { UserDiskQuotaCard } from '@/components/admin/inactive-cleanup/UserDiskQuotaCard';
+import { AdminUserSessionsPanel } from '@/components/admin/AdminUserSessionsPanel';
 import { copyToClipboard } from '@/lib/utils';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
@@ -1137,6 +1139,10 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                                 </Badge>
                             )}
                         </TabsTrigger>
+                        <TabsTrigger value='sessions' className='gap-2'>
+                            <MonitorSmartphone className='h-4 w-4' />
+                            {t('admin.users.edit.tabs.sessions')}
+                        </TabsTrigger>
                         <TabsTrigger value='vds' className='gap-2'>
                             <ServerIcon className='h-4 w-4' />
                             {t('admin.users.edit.tabs.vds', { defaultValue: 'VDS' })}
@@ -1499,6 +1505,10 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                             </table>
                         </div>
                     </PageCard>
+                </TabsContent>
+
+                <TabsContent value='sessions'>
+                    <AdminUserSessionsPanel userUuid={resolvedParams.uuid} />
                 </TabsContent>
 
                 <TabsContent value='vds'>
