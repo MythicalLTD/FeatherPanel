@@ -58,6 +58,11 @@ class SecurityCenterController
             return ApiResponse::error($ipError, 'INVALID_IP_ALLOW_LIST', 422);
         }
         $policy = SecurityPolicy::stampRequirement(SecurityPolicy::normalize($merged), $old);
+        // Never let an admin lock themselves out with an immediate 2FA requirement.
+        if ($policy['require_2fa_grace_days'] === 0 && ($admin['two_fa_enabled'] ?? 'false') !== 'true'
+            && ($policy['require_2fa_admins'] || in_array((int) ($admin['role_id'] ?? 0), $policy['require_2fa_role_ids'], true))) {
+            return ApiResponse::error('Enable two-factor authentication on your own account first, or set a grace period', 'TWO_FACTOR_SELF_LOCKOUT', 422);
+        }
         // Never let an admin lock themselves out with the allow list.
         $ip = CloudFlareRealIP::getRealIP();
         if ($policy['ip_allow_list'] !== '' && !IpAddressMatcher::clientMatchesAllowedList($ip, $policy['ip_allow_list'])) {
