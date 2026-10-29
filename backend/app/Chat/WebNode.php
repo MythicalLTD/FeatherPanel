@@ -913,8 +913,8 @@ class WebNode
                 $cachedNode = self::getWebNodeById((int) $cachedNodeId);
                 if (
                     $cachedNode !== null
-                    && ($cachedNode['daemon_token_id'] ?? '') === $tokenId
-                    && ($cachedNode['daemon_token'] ?? '') === $tokenSecret
+                    && hash_equals($tokenId, (string) ($cachedNode['daemon_token_id'] ?? ''))
+                    && hash_equals($tokenSecret, (string) ($cachedNode['daemon_token'] ?? ''))
                 ) {
                     return $cachedNode;
                 }
@@ -937,7 +937,7 @@ class WebNode
                     continue;
                 }
 
-                if ($storedId === $tokenId && $storedSecret === $tokenSecret) {
+                if (hash_equals($tokenId, (string) $storedId) && hash_equals($tokenSecret, (string) $storedSecret)) {
                     Cache::put($cacheKey, (int) $row['id'], 5);
 
                     return self::decryptSensitiveFields($row);
