@@ -150,6 +150,10 @@ class PublicConfig extends ConfigFactory
             ConfigInterface::DISCORD_OAUTH_ENABLED => 'false',
             ConfigInterface::DISCORD_OAUTH_CLIENT_ID => 'XXXX',
 
+            // Google / GitHub single sign-on (only the enabled flags are public)
+            ConfigInterface::SSO_GOOGLE_ENABLED => 'false',
+            ConfigInterface::SSO_GITHUB_ENABLED => 'false',
+
             // OIDC (generic OpenID Connect SSO) settings
             // Only non-sensitive values are exposed here.
             ConfigInterface::OIDC_ENABLED => 'false',

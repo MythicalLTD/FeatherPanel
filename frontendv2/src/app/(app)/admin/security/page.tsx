@@ -30,9 +30,13 @@ import { Input } from '@/components/featherui/Input';
 import { Textarea } from '@/components/featherui/Textarea';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
+import { parseApiDate } from '@/lib/dateUtils';
 
 interface Policy {
     require_2fa_role_ids: number[];
+    require_2fa_admins: boolean;
+    require_2fa_grace_days: number;
+    require_2fa_since: string | null;
     password_min_length: number;
     password_require_upper: boolean;
     password_require_lower: boolean;
@@ -189,6 +193,41 @@ export default function SecurityCenterPage() {
                                 })}
                             </p>
                         )}
+                        <ToggleRow
+                            id='tfa-admins'
+                            label={t('adminSecurity.twoFactor.requireAdmins')}
+                            checked={policy.require_2fa_admins}
+                            onChange={(v) => update('require_2fa_admins', v)}
+                            disabled={!canEdit}
+                        />
+                        <div className='flex items-center justify-between gap-4 py-2'>
+                            <label htmlFor='tfa-grace' className='text-sm'>
+                                {t('adminSecurity.twoFactor.graceDays')}
+                            </label>
+                            <Input
+                                id='tfa-grace'
+                                type='number'
+                                min={0}
+                                max={30}
+                                className='w-24'
+                                disabled={!canEdit}
+                                value={policy.require_2fa_grace_days}
+                                onChange={(e) =>
+                                    update(
+                                        'require_2fa_grace_days',
+                                        Math.max(0, Math.min(30, Number(e.target.value) || 0)),
+                                    )
+                                }
+                            />
+                        </div>
+                        <p className='text-muted-foreground mb-3 text-xs'>
+                            {policy.require_2fa_since && policy.require_2fa_grace_days > 0
+                                ? t('adminSecurity.twoFactor.graceSince', {
+                                      date: parseApiDate(policy.require_2fa_since)?.toLocaleString() ?? '',
+                                  })
+                                : t('adminSecurity.twoFactor.graceHint')}
+                        </p>
+                        <p className='mb-2 text-sm font-medium'>{t('adminSecurity.twoFactor.rolesLabel')}</p>
                         <div className='flex flex-wrap gap-2'>
                             {roles.length === 0 && (
                                 <p className='text-muted-foreground text-sm'>{t('adminSecurity.twoFactor.noRoles')}</p>

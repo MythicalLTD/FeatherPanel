@@ -398,6 +398,8 @@ class SessionController
         // Security center: the frontend sends users whose role needs 2FA to the setup page.
         $impersonator = $request->attributes->get('impersonator');
         $user['two_fa_required'] = !is_array($impersonator) && \App\Services\Security\SecurityPolicy::requiresTwoFactor($user);
+        $graceUntil = is_array($impersonator) ? null : \App\Services\Security\SecurityPolicy::twoFactorGraceRemaining($user);
+        $user['two_fa_grace_until'] = $graceUntil !== null ? gmdate('Y-m-d H:i:s', $graceUntil) : null;
 
         $user = User::stripSensitiveFields($user);
         $user['impersonated_by'] = is_array($impersonator) ? ['uuid' => $impersonator['uuid'], 'username' => $impersonator['username']] : null;

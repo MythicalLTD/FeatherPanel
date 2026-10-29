@@ -236,9 +236,7 @@ export function DhcpAgentTab({ nodeId, form, setForm, configRefreshKey = 0 }: Dh
                                     {t('admin.vdsNodes.feathertail.setup_step_1')}
                                 </p>
                                 <CommandBlock
-                                    displayCommand={
-                                        setupData.install_command_display || setupData.install_command
-                                    }
+                                    displayCommand={setupData.install_command_display || setupData.install_command}
                                     copyCommand={setupData.install_command}
                                     copyLabel={t('admin.vdsNodes.feathertail.copy_install')}
                                     tokenHiddenHint={t('admin.vdsNodes.feathertail.token_hidden_hint')}
@@ -250,9 +248,7 @@ export function DhcpAgentTab({ nodeId, form, setForm, configRefreshKey = 0 }: Dh
                                         {t('admin.vdsNodes.feathertail.setup_step_2')}
                                     </p>
                                     <CommandBlock
-                                        displayCommand={
-                                            setupData.setup_command_display || setupData.setup_command
-                                        }
+                                        displayCommand={setupData.setup_command_display || setupData.setup_command}
                                         copyCommand={setupData.setup_command}
                                         copyLabel={t('admin.vdsNodes.feathertail.copy_setup')}
                                         tokenHiddenHint={t('admin.vdsNodes.feathertail.token_hidden_hint')}
@@ -300,7 +296,9 @@ export function DhcpAgentTab({ nodeId, form, setForm, configRefreshKey = 0 }: Dh
                             onChange={(e) => setForm((prev) => ({ ...prev, feathertail_url: e.target.value }))}
                         />
                         <p className='text-muted-foreground text-xs'>{t('admin.vdsNodes.feathertail.url_help')}</p>
-                        <p className='text-muted-foreground text-xs'>{t('admin.vdsNodes.feathertail.url_privacy_hint')}</p>
+                        <p className='text-muted-foreground text-xs'>
+                            {t('admin.vdsNodes.feathertail.url_privacy_hint')}
+                        </p>
                     </div>
 
                     <div className='flex items-center justify-between gap-4'>
@@ -355,7 +353,13 @@ export function DhcpAgentTab({ nodeId, form, setForm, configRefreshKey = 0 }: Dh
                 title={t('admin.vdsNodes.feathertail.leases_title')}
                 icon={Zap}
                 action={
-                    <Button type='button' variant='outline' size='sm' onClick={() => void fetchLeases()} loading={leasesLoading}>
+                    <Button
+                        type='button'
+                        variant='outline'
+                        size='sm'
+                        onClick={() => void fetchLeases()}
+                        loading={leasesLoading}
+                    >
                         <RefreshCw className='mr-2 h-4 w-4' />
                         {t('common.refresh')}
                     </Button>

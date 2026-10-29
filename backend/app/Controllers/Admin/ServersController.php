@@ -40,6 +40,7 @@ use OpenApi\Attributes as OA;
 use App\Chat\DatabaseInstance;
 use App\Config\ConfigInterface;
 use App\Helpers\WingsUrlHelper;
+use App\Services\Quota\DiskQuota;
 use App\Chat\ServerCustomVariable;
 use App\Helpers\DaemonCapabilities;
 use App\CloudFlare\CloudFlareRealIP;
@@ -978,6 +979,11 @@ class ServersController
             return ApiResponse::error('Swap must be -1 (unlimited), 0 (disabled), or a positive integer', 'INVALID_DATA_TYPE', 400);
         }
 
+        $quotaError = DiskQuota::check((int) $data['owner_id'], (int) $data['disk']);
+        if ($quotaError !== null) {
+            return ApiResponse::error($quotaError['message'], $quotaError['code'], 422);
+        }
+
         // Validate string fields (description is optional)
         $requiredStringFields = ['name', 'startup', 'image'];
         foreach ($requiredStringFields as $field) {
@@ -1427,6 +1433,19 @@ class ServersController
                         return ApiResponse::error(ucfirst(str_replace('_', ' ', $field)) . ' must be a non-negative integer', 'INVALID_DATA_TYPE', 400);
                     }
                 }
+            }
+        }
+
+        // Disk quota: only checked when the change gives the owner more disk (or moves the server to another owner),
+        // so servers already above a newly lowered quota can still be edited or shrunk.
+        $newOwner = isset($data['owner_id']) ? (int) $data['owner_id'] : (int) $server['owner_id'];
+        $oldDisk = (int) $server['disk'];
+        $newDisk = isset($data['disk']) ? (int) $data['disk'] : $oldDisk;
+        $grows = $newDisk === 0 ? $oldDisk !== 0 : ($oldDisk !== 0 && $newDisk > $oldDisk);
+        if ($newOwner !== (int) $server['owner_id'] || $grows) {
+            $quotaError = DiskQuota::check($newOwner, $newDisk, $id);
+            if ($quotaError !== null) {
+                return ApiResponse::error($quotaError['message'], $quotaError['code'], 422);
             }
         }
 

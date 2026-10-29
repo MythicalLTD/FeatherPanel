@@ -115,6 +115,36 @@ class LoginController
             return $this->completeLogin($userInfo);
         }
 
+        // Handle Google / GitHub / OIDC sign-in handoff (same ban, deletion and 2FA rules as password login)
+        $ssoLoginToken = $data['sso_login_token'] ?? null;
+        if ($ssoLoginToken !== null) {
+            $handoff = is_string($ssoLoginToken) ? SsoController::consumeHandoff($ssoLoginToken) : null;
+            $userInfo = $handoff !== null ? User::getUserByUuid((string) $handoff['user_uuid']) : null;
+            if ($userInfo === null) {
+                return ApiResponse::error('Invalid or expired sign-in token', 'INVALID_SSO_LOGIN_TOKEN', 400);
+            }
+            if (($userInfo['banned'] ?? 'false') === 'true') {
+                return ApiResponse::error('User is banned', 'USER_BANNED');
+            }
+            if (($userInfo['deleted'] ?? 'false') === 'true') {
+                return ApiResponse::error('Account is deleted', 'ACCOUNT_DELETED', 403);
+            }
+            if (($userInfo['two_fa_enabled'] ?? 'false') === 'true') {
+                $challenge = TwoFactorChallengeHelper::issue($userInfo['uuid']);
+                if ($challenge === null) {
+                    return ApiResponse::error('Two-factor authentication is temporarily unavailable. Please try again shortly.', '2FA_UNAVAILABLE', 503);
+                }
+
+                return ApiResponse::error('2FA required', 'TWO_FACTOR_REQUIRED', 401, [
+                    'email' => $userInfo['email'],
+                    'challenge' => $challenge,
+                ]);
+            }
+            SsoController::audit($userInfo['uuid'], 'sso_login', 'Signed in with ' . SsoController::label((string) $handoff['provider']));
+
+            return $this->completeLogin($userInfo);
+        }
+
         // Handle SSO token login
         $ssoToken = $data['sso_token'] ?? null;
         if ($ssoToken !== null && !is_string($ssoToken)) {
