@@ -91,6 +91,7 @@
 
 ### Fixed
 
+- Node alerts: a failed backup that started before another backup but finished after it is no longer skipped. The failed backup scan now follows completion time instead of the backup id (the old position is reset to now once on upgrade). by @nayskutzu
 - WebSpace console no longer logs a 404 every few seconds when no transfer is running, and subusers without the Users permission see an access notice on the Users page instead of an error toast and an empty list.
 - Backup storage: the backup count on a storage card no longer includes failed backups; Dropbox backups are verified by Dropbox `content_hash` when FeatherWings reports it (FeatherWings #32), not only by size; SFTP storage cards show the pinned host key, and the host key mismatch error says how to trust a new key; removing a OneDrive storage explains that Microsoft has no per-app token revoke and links to the consent page. by @nayskutzu
 - Web hosting: adding a domain that already belongs to another WebSpace in the admin WebSpace editor now returns a clear 409 `DOMAIN_IN_USE` error (translated) instead of a generic 500 `UPDATE_FAILED`. by @nayskutzu
@@ -115,6 +116,8 @@
 ### Security
 
 - Security center: users the 2FA requirement applies to can no longer turn two-factor authentication off from their account settings (`TWO_FACTOR_REQUIRED_BY_POLICY`). by @nayskutzu
+- Discord sign-in, link and register hand-off tokens now only work in the browser that finished the Discord callback, so a shared link can no longer sign someone in or link an attacker's Discord account to another user.
+- Backup storage: a full server backup now checks that the chosen storage destination belongs to the user creating it, like plain backups and schedules already did. Before, any destination id was accepted, so a backup could be sent to another user's storage. by @nayskutzu
 - OAuth sign-in (Google, GitHub, OIDC, Discord): the `state` is now bound to the browser with a short lived cookie, and the SSO login hand-off token only works in the browser that finished the provider callback (blocks login CSRF and linking someone else's provider account). Server lifecycle HTTP hooks no longer follow redirects and pin the checked IP (blocks SSRF through redirects or DNS rebinding).
 - Admins without `admin.root` can no longer edit, ban, delete or create SSO tokens for an account that holds `admin.root`, and can no longer create users with a role other than the default one. (#371) by @redstonerthebest
 - Granting `admin.root` to a role, by adding or by changing a permission, now requires `admin.root`. (#371) by @redstonerthebest

@@ -237,28 +237,30 @@ class NodeAlertService
         $out = ['raised' => 0, 'resolved' => 0, 'notified' => 0];
         $pdo = Database::getPdoConnection();
         $config = App::getInstance(true)->getConfig();
-        $watermark = $config->getSetting(self::BACKUP_WATERMARK_KEY, null);
-        if ($watermark === null || $watermark === '' || !is_numeric($watermark)) {
-            // First run: start from now so years of old failures do not alert at once.
-            $max = (int) $pdo->query('SELECT COALESCE(MAX(id), 0) FROM featherpanel_server_backups WHERE completed_at IS NOT NULL')->fetchColumn();
-            $config->setSetting(self::BACKUP_WATERMARK_KEY, (string) $max);
+        $cursor = self::parseBackupCursor($config->getSetting(self::BACKUP_WATERMARK_KEY, null));
+        if ($cursor === null) {
+            // First run (or the old id-only watermark): start from now so old failures do not alert at once.
+            $last = $pdo->query('SELECT completed_at, id FROM featherpanel_server_backups WHERE completed_at IS NOT NULL ORDER BY completed_at DESC, id DESC LIMIT 1')->fetch(\PDO::FETCH_ASSOC);
+            $config->setSetting(self::BACKUP_WATERMARK_KEY, self::formatBackupCursor($last ? (string) $last['completed_at'] : '1970-01-01 00:00:01', $last ? (int) $last['id'] : 0));
 
             return $out;
         }
+        // Walk by completion time, not by id: a backup that started earlier (lower id) but
+        // finished after a newer one would otherwise fall behind the watermark and never alert.
         $stmt = $pdo->prepare(
-            'SELECT b.id, b.uuid, b.name, b.is_successful, s.id AS server_id, s.name AS server_name, s.uuidShort, s.node_id, n.name AS node_name
+            'SELECT b.id, b.uuid, b.name, b.is_successful, b.completed_at, s.id AS server_id, s.name AS server_name, s.uuidShort, s.node_id, n.name AS node_name
              FROM featherpanel_server_backups b
              JOIN featherpanel_servers s ON s.id = b.server_id
              LEFT JOIN featherpanel_nodes n ON n.id = s.node_id
-             WHERE b.id > :w AND b.completed_at IS NOT NULL
-             ORDER BY b.id ASC LIMIT 500'
+             WHERE b.completed_at IS NOT NULL AND (b.completed_at > :t1 OR (b.completed_at = :t2 AND b.id > :id))
+             ORDER BY b.completed_at ASC, b.id ASC LIMIT 500'
         );
-        $stmt->execute(['w' => (int) $watermark]);
+        $stmt->execute(['t1' => $cursor[0], 't2' => $cursor[0], 'id' => $cursor[1]]);
         $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
         if ($rows === []) {
             return $out;
         }
-        // Only move past completed rows; group failures per node so a burst is one alert.
+        // Group failures per node so a burst is one alert.
         $failed = [];
         $succeeded = [];
         foreach ($rows as $row) {
@@ -270,7 +272,8 @@ class NodeAlertService
             }
             $failed[$nodeId][] = $row;
         }
-        $config->setSetting(self::BACKUP_WATERMARK_KEY, (string) (int) end($rows)['id']);
+        $tail = end($rows);
+        $config->setSetting(self::BACKUP_WATERMARK_KEY, self::formatBackupCursor((string) $tail['completed_at'], (int) $tail['id']));
 
         foreach (array_keys($succeeded) as $nodeId) {
             if (!isset($failed[$nodeId])) {
@@ -301,6 +304,26 @@ class NodeAlertService
         }
 
         return $out;
+    }
+
+    /**
+     * Failed-backup scan position: "completed_at|id". Anything else (unset, or the old id-only
+     * watermark) returns null so the scan restarts from now.
+     *
+     * @return array{0: string, 1: int}|null
+     */
+    public static function parseBackupCursor(mixed $raw): ?array
+    {
+        if (!is_string($raw) || !preg_match('/^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\|(\d+)$/', $raw, $m)) {
+            return null;
+        }
+
+        return [$m[1], (int) $m[2]];
+    }
+
+    public static function formatBackupCursor(string $completedAt, int $id): string
+    {
+        return substr($completedAt, 0, 19) . '|' . max(0, $id);
     }
 
     /** @return array{new: int, notified: int} */
