@@ -18,7 +18,8 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import Link from 'next/link';
 import { useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { Wrench, LogOut } from 'lucide-react';
+import { Wrench, LogOut, KeyRound } from 'lucide-react';
+import { parseApiDate } from '@/lib/dateUtils';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useSession } from '@/contexts/SessionContext';
 import { useTranslation } from '@/contexts/TranslationContext';
@@ -47,9 +48,33 @@ export function MaintenanceGate({ children }: { children: React.ReactNode }) {
         return null;
     }
 
+    // Grace period: 2FA is required soon, keep working but show how long is left.
+    const graceUntil = parseApiDate(user?.two_fa_grace_until ?? null);
+    const graceBanner = graceUntil ? (
+        <div className='mb-5 flex shrink-0 flex-col gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm sm:flex-row sm:items-center'>
+            <div className='flex min-w-0 flex-1 items-start gap-3'>
+                <KeyRound className='mt-0.5 h-4 w-4 shrink-0 text-amber-500' />
+                <div className='min-w-0'>
+                    <p className='font-semibold'>{t('twoFactorGrace.title')}</p>
+                    <p className='text-muted-foreground'>
+                        {t('twoFactorGrace.description', { date: graceUntil.toLocaleString() })}
+                    </p>
+                </div>
+            </div>
+            <Button asChild size='sm' variant='outline' className='shrink-0'>
+                <Link href='/auth/setup-2fa'>{t('twoFactorGrace.action')}</Link>
+            </Button>
+        </div>
+    ) : null;
+
     // The status page stays reachable so users can follow the maintenance there.
     if (settings?.maintenance_mode_enabled !== 'true' || pathname?.startsWith('/dashboard/status')) {
-        return <>{children}</>;
+        return (
+            <>
+                {graceBanner}
+                {children}
+            </>
+        );
     }
 
     const message = settings?.maintenance_mode_message?.trim() || t('maintenance.defaultMessage');
@@ -57,6 +82,7 @@ export function MaintenanceGate({ children }: { children: React.ReactNode }) {
     if (hasPermission(Permissions.ADMIN_DASHBOARD_VIEW)) {
         return (
             <>
+                {graceBanner}
                 <div className='mb-5 flex shrink-0 items-start gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm'>
                     <Wrench className='mt-0.5 h-4 w-4 shrink-0 text-amber-500' />
                     <div className='min-w-0'>

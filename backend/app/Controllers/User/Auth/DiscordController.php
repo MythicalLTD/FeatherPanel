@@ -328,6 +328,10 @@ class DiscordController
             return ApiResponse::error('Unauthorized', 'UNAUTHORIZED', 401);
         }
 
+        if (!empty($user['id']) && SsoController::isLastLoginMethod($user, 'discord')) {
+            return ApiResponse::error('Set a password or link another provider before removing your last sign-in method', 'SSO_LAST_LOGIN_METHOD', 409);
+        }
+
         // Unlink Discord account
         $updated = User::updateUser($user['uuid'], [
             'discord_oauth2_id' => null,

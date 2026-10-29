@@ -35,6 +35,8 @@ import {
     Power,
     type LucideProps,
     ArrowRightLeft,
+    ServerCrash,
+    Hourglass,
 } from 'lucide-react';
 import { useSession } from '@/contexts/SessionContext';
 import { useTranslation } from '@/contexts/TranslationContext';
@@ -60,6 +62,8 @@ type InboxKind =
     | 'vds_bandwidth'
     | 'vds_expiring'
     | 'storage_disconnected'
+    | 'node_alert'
+    | 'server_inactive'
     | 'announcement';
 
 export interface InboxItem {
@@ -95,6 +99,8 @@ const KIND_ICONS: Record<InboxKind, { icon: ComponentType<LucideProps>; tone: st
     vds_bandwidth: { icon: Gauge, tone: 'text-amber-500 bg-amber-500/10' },
     vds_expiring: { icon: CalendarClock, tone: 'text-orange-500 bg-orange-500/10' },
     storage_disconnected: { icon: CloudOff, tone: 'text-red-500 bg-red-500/10' },
+    node_alert: { icon: ServerCrash, tone: 'text-red-500 bg-red-500/10' },
+    server_inactive: { icon: Hourglass, tone: 'text-amber-500 bg-amber-500/10' },
     announcement: { icon: Megaphone, tone: 'text-sky-500 bg-sky-500/10' },
 };
 
@@ -113,6 +119,8 @@ const KIND_TITLES: Record<InboxKind, string> = {
     vds_bandwidth: 'navbar.inbox.kinds.vds_bandwidth',
     vds_expiring: 'navbar.inbox.kinds.vds_expiring',
     storage_disconnected: 'navbar.inbox.kinds.storage_disconnected',
+    node_alert: 'navbar.inbox.kinds.node_alert',
+    server_inactive: 'navbar.inbox.kinds.server_inactive',
     announcement: 'navbar.inbox.kinds.announcement',
 };
 
@@ -131,6 +139,8 @@ const KIND_BODIES: Record<Exclude<InboxKind, 'announcement'>, string> = {
     vds_bandwidth: 'navbar.inbox.bodies.vds_bandwidth',
     vds_expiring: 'navbar.inbox.bodies.vds_expiring',
     storage_disconnected: 'navbar.inbox.bodies.storage_disconnected',
+    node_alert: 'navbar.inbox.bodies.node_alert',
+    server_inactive: 'navbar.inbox.bodies.server_inactive',
 };
 
 function isKnownKind(kind: string): kind is InboxKind {
@@ -152,6 +162,8 @@ function bodyParams(item: InboxItem): Record<string, string> {
         minutes: d.minutes ?? '',
         error: d.error ?? '',
         storage: d.storage_name ?? '',
+        message: d.message ?? '',
+        days: d.days ?? '',
         count: String(item.count),
     };
 }

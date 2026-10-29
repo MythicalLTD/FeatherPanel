@@ -58,6 +58,7 @@ import { AllocationsTab } from './AllocationsTab';
 import { MountsTab } from './MountsTab';
 import type { AssignableMountRow } from './MountsTab';
 import { ActionsTab } from './ActionsTab';
+import { ServerInactivityCard } from '@/components/admin/inactive-cleanup/ServerInactivityCard';
 import { AllocationPickerSheet } from '@/components/admin/AllocationPickerSheet';
 import { SpellPickerSheet } from '@/components/admin/SpellPickerSheet';
 import { resolveSpellDefaultDockerImage, buildSpellDockerImageOptions } from '@/lib/spellDockerImages';
@@ -1217,6 +1218,7 @@ export default function EditServerPage() {
                             nodeCapabilities={node?.capabilities ?? null}
                             onRefresh={fetchServerData}
                         />
+                        <ServerInactivityCard serverId={serverId} />
                     </TabsContent>
 
                     {!['actions'].includes(activeTab) && (

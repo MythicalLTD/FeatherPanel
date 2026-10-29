@@ -395,6 +395,10 @@ class User
 
             $columns = self::getColumns();
             $columns = array_map(fn ($c) => $c['Field'], $columns);
+            // A password chosen by the user counts as a login method again (SSO only accounts start without one).
+            if (array_key_exists('password', $data) && !array_key_exists('password_set', $data) && in_array('password_set', $columns, true)) {
+                $data['password_set'] = 'true';
+            }
             $missing = array_diff(array_keys($data), $columns);
             if (!empty($missing)) {
                 App::getInstance(true)->getLogger()->error('Invalid fields: ' . implode(', ', $missing));
