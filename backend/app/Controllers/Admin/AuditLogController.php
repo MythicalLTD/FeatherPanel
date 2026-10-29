@@ -153,8 +153,19 @@ class AuditLogController
 
         $target = trim((string) $request->query->get('target', ''));
         if ($target !== '' && ($target === 'other' || isset(self::TARGETS[$target]))) {
-            $clauses[] = $this->targetExpression() . ' = :target';
-            $params['target'] = $target;
+            // The target is a pure function of the action name, so classify the (few) distinct
+            // names once and filter with an indexable IN list instead of a CASE on every row.
+            $names = $this->namesForTarget($target);
+            if ($names === []) {
+                $clauses[] = '1 = 0';
+            } else {
+                $placeholders = [];
+                foreach ($names as $i => $name) {
+                    $placeholders[] = ':target_name' . $i;
+                    $params['target_name' . $i] = $name;
+                }
+                $clauses[] = 'a.name IN (' . implode(', ', $placeholders) . ')';
+            }
         }
 
         foreach (['from' => '>=', 'to' => '<='] as $key => $op) {
@@ -191,6 +202,21 @@ class AuditLogController
 
             return $r;
         }, $stmt->fetchAll(\PDO::FETCH_ASSOC));
+    }
+
+    /**
+     * Distinct activity names that the target CASE maps to $target (same expression as the rows use).
+     *
+     * @return string[]
+     */
+    private function namesForTarget(string $target): array
+    {
+        $stmt = Database::getPdoConnection()->prepare(
+            'SELECT a.name FROM (SELECT DISTINCT name FROM featherpanel_activity) a WHERE ' . $this->targetExpression() . ' = :target'
+        );
+        $stmt->execute(['target' => $target]);
+
+        return array_values(array_map('strval', $stmt->fetchAll(\PDO::FETCH_COLUMN)));
     }
 
     /**
