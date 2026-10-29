@@ -1777,7 +1777,14 @@ class ServerBackupController
         if ($backupLimit === 0) {
             return ApiResponse::error('Backups are disabled for this server', 'BACKUPS_DISABLED', 403);
         }
-        $fullDestinationId = isset($body['destination_id']) && (int) $body['destination_id'] > 0 ? (int) $body['destination_id'] : null;
+        // Bring-your-own storage: only destinations owned by the requesting user (same rule as plain backups).
+        try {
+            $fullDestination = StorageDestinationService::resolveForBackup($body['destination_id'] ?? null, (int) ($user['id'] ?? 0));
+        } catch (StorageException $e) {
+            return ApiResponse::error($e->getMessage(), $e->errorCode(), $e->status());
+        }
+        $fullDestinationId = $fullDestination !== null ? (int) $fullDestination['id'] : null;
+        $body['destination_id'] = $fullDestinationId;
 
         $node = Node::getNodeById($server['node_id']);
         if (!$node) {
