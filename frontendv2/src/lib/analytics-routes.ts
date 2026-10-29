@@ -51,6 +51,7 @@ export const ANALYTICS_ROUTES = [
     '/admin/analytics/servers',
     '/admin/analytics/tickets',
     '/dashboard/knowledgebase',
+    '/admin/inactive-servers',
     '/admin/analytics/system',
     '/admin/backup-schedules',
     '/admin/cloud-management',
