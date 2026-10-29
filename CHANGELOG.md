@@ -44,6 +44,7 @@
 
 ### Improved
 
+- WebSpace Files now runs on the shared file manager hook, with list/grid view, sorting, image thumbnails, a file info sheet and pinned/recent folders like server files.
 - VDS ISO flow: rescue and user ISO storage resolve per VM node (legacy global settings still fall back); admin VDS ISO list aggregates node storages; Mount ISO is host-library only; Settings points to Boot; admin VDS settings ISO group links to VDS nodes; `vds_iso_library_only` defaults to true. by @nayskutzu
 - Embedded VDS console VNC reconnects after stop/reboot/start and unexpected disconnects (clears stale tickets, retries with backoff) so noVNC is not stuck on a dead session. by @nayskutzu
 - User and admin VDS firewall pages: segmented controls, clearer option rows and a shared card layout. by @nayskutzu

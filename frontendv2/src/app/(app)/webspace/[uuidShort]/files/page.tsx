@@ -23,6 +23,11 @@ import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { FileManagerApiProvider, useFileManagerApi } from '@/contexts/FileManagerApiContext';
+import { useFileManager } from '@/hooks/useFileManager';
+import { useFilesViewPrefs, useFilesQuickAccess, sortAndFilterFiles } from '@/lib/files-view-prefs';
+import { FileInfoSheet } from '@/app/(app)/server/[uuidShort]/files/components/FileInfoSheet';
+import { FileListControls } from '@/app/(app)/server/[uuidShort]/files/components/FileListControls';
+import { FileQuickAccess } from '@/app/(app)/server/[uuidShort]/files/components/FileQuickAccess';
 import { WebSpacePageWidgets } from '@/components/webspace/WebSpacePageWidgets';
 import { useWebSpacePermissions } from '@/hooks/useWebSpacePermissions';
 import { WebSpaceSubuserPermissions } from '@/lib/webspace-permissions';
@@ -101,13 +106,6 @@ function resolveDirectoryTarget(currentDirectory: string, nameOrPath: string): s
     if (!nameOrPath) return normalizePath(currentDirectory || '/');
     if (nameOrPath.startsWith('/')) return normalizePath(nameOrPath);
     return joinPath(currentDirectory || '/', nameOrPath);
-}
-
-function sortFiles(files: FileObject[]): FileObject[] {
-    return [...files].sort((a, b) => {
-        if (a.isFile !== b.isFile) return a.isFile ? 1 : -1;
-        return a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
-    });
 }
 
 async function collectFilesFromDataTransfer(dt: DataTransfer): Promise<FileWithPath[]> {
@@ -218,11 +216,22 @@ function WebSpaceFilesPageInner({ uuidShort }: { uuidShort: string }) {
     const currentDirectory = normalizePath(searchParams?.get('path') || '/');
     const filesBasePath = `/webspace/${uuidShort}/files`;
 
-    const [files, setFiles] = useState<FileObject[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
-    const [searchQuery, setSearchQuery] = useState('');
-    const [debouncedSearch, setDebouncedSearch] = useState('');
+    const {
+        files,
+        loading,
+        selectedFiles,
+        setSelectedFiles,
+        searchQuery,
+        setSearchQuery,
+        activePulls,
+        refresh,
+        navigate,
+        cancelPull,
+        refreshPulls,
+    } = useFileManager(uuidShort, { enabled: canRead, pullProgress: pullProgressEnabled });
+    const { prefs: viewPrefs, update: updateViewPrefs } = useFilesViewPrefs();
+    const quickAccess = useFilesQuickAccess(`webspace:${uuidShort}`);
+    const [infoFile, setInfoFile] = useState<FileObject | null>(null);
     const [actionFile, setActionFile] = useState<FileObject | null>(null);
     const [anchorName, setAnchorName] = useState<string | null>(null);
     const [isDragging, setIsDragging] = useState(false);
@@ -247,7 +256,6 @@ function WebSpaceFilesPageInner({ uuidShort }: { uuidShort: string }) {
     const [trashStats, setTrashStats] = useState<TrashFolderStats | null>(null);
     const [emptyTrashOpen, setEmptyTrashOpen] = useState(false);
     const [emptyTrashBusy, setEmptyTrashBusy] = useState(false);
-    const [activePulls, setActivePulls] = useState<{ Identifier: string; Progress: number }[]>([]);
     const [includePattern, setIncludePattern] = useState('');
     const [excludePattern, setExcludePattern] = useState('');
     const [searchCaseInsensitive] = useState(true);
@@ -265,54 +273,7 @@ function WebSpaceFilesPageInner({ uuidShort }: { uuidShort: string }) {
     const uploadProcessingRef = useRef(false);
     const uploadAbortRef = useRef<Map<string, AbortController>>(new Map());
     const createdDirectoriesRef = useRef<Set<string>>(new Set());
-    const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const shiftPivotRef = useRef<string | null>(null);
-
-    const navigate = useCallback(
-        (path: string) => {
-            const params = new URLSearchParams(searchParams?.toString() ?? '');
-            const sanitized = normalizePath(path || '/');
-            if (sanitized === '/') {
-                params.delete('path');
-            } else {
-                params.set('path', sanitized);
-            }
-            const qs = params.toString();
-            router.push(qs ? `${filesBasePath}?${qs}` : filesBasePath);
-            setSelectedFiles([]);
-            setSearchQuery('');
-            setDebouncedSearch('');
-        },
-        [filesBasePath, router, searchParams],
-    );
-
-    useEffect(() => {
-        if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
-        searchDebounceRef.current = setTimeout(() => {
-            setDebouncedSearch(searchQuery.trim());
-        }, 250);
-        return () => {
-            if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
-        };
-    }, [searchQuery]);
-
-    const refresh = useCallback(async () => {
-        if (!uuidShort || !canRead) return;
-        setLoading(true);
-        try {
-            const data = await filesApi.getFiles(uuidShort, currentDirectory, debouncedSearch || undefined);
-            setFiles(sortFiles(data.contents));
-            setSelectedFiles([]);
-        } catch (error) {
-            toast.error(getApiErrorMessage(error, t, 'files.messages.load_error'));
-        } finally {
-            setLoading(false);
-        }
-    }, [uuidShort, canRead, filesApi, currentDirectory, debouncedSearch, t]);
-
-    useEffect(() => {
-        void refresh();
-    }, [refresh]);
 
     const activeAdvancedFiltersCount = useMemo(() => {
         let count = 0;
@@ -352,39 +313,6 @@ function WebSpaceFilesPageInner({ uuidShort }: { uuidShort: string }) {
     useEffect(() => {
         void refreshTrashStats();
     }, [refreshTrashStats]);
-
-    const refreshPulls = useCallback(async () => {
-        if (!pullProgressEnabled || !uuidShort) return;
-        try {
-            const pulls = await filesApi.getPullFiles(uuidShort);
-            setActivePulls(pulls.filter((p) => p.Progress < 100));
-        } catch {
-            setActivePulls([]);
-        }
-    }, [filesApi, pullProgressEnabled, uuidShort]);
-
-    useEffect(() => {
-        void refreshPulls();
-    }, [refreshPulls]);
-
-    useEffect(() => {
-        if (!pullProgressEnabled || activePulls.length === 0) return;
-        const interval = setInterval(() => void refreshPulls(), 5000);
-        return () => clearInterval(interval);
-    }, [activePulls.length, pullProgressEnabled, refreshPulls]);
-
-    const cancelPull = useCallback(
-        async (id: string) => {
-            try {
-                await filesApi.deletePullFile(uuidShort, id);
-                toast.success(t('files.messages.download_cancelled'));
-                void refreshPulls();
-            } catch (error) {
-                toast.error(getApiErrorMessage(error, t, 'files.messages.cancel_download_failed'));
-            }
-        },
-        [filesApi, refreshPulls, t, uuidShort],
-    );
 
     useEffect(() => {
         let cancelled = false;
@@ -487,7 +415,10 @@ function WebSpaceFilesPageInner({ uuidShort }: { uuidShort: string }) {
         }
     };
 
-    const baseFiles = searchResults ?? files;
+    const baseFiles = useMemo(
+        () => sortAndFilterFiles(searchResults ?? files, viewPrefs),
+        [searchResults, files, viewPrefs],
+    );
     const selectableFiles = useMemo(() => filterSelectableFiles(baseFiles), [baseFiles]);
     const visibleFiles = useMemo(() => {
         if (!trashEnabled || searchResults !== null) return baseFiles;
@@ -825,6 +756,14 @@ function WebSpaceFilesPageInner({ uuidShort }: { uuidShort: string }) {
             return;
         }
 
+        if (action === 'info') {
+            setInfoFile(file);
+            return;
+        }
+        if (file.isFile && (action === 'edit' || action === 'preview')) {
+            quickAccess.addRecent(joinPath(currentDirectory || '/', file.name));
+        }
+
         setActionFile(file);
         const usesSelection = selectedFiles.includes(file.name) && selectedFiles.length > 1;
         switch (action) {
@@ -1015,6 +954,18 @@ function WebSpaceFilesPageInner({ uuidShort }: { uuidShort: string }) {
                         onToggleFilters={fileSearchEnabled ? () => setSearchFiltersOpen(true) : undefined}
                         activeFiltersCount={activeAdvancedFiltersCount}
                     />
+                </div>
+
+                <div className='flex flex-wrap items-center justify-end gap-2'>
+                    <FileQuickAccess
+                        currentDirectory={currentDirectory || '/'}
+                        pins={quickAccess.pins}
+                        recent={quickAccess.recent}
+                        onTogglePin={quickAccess.togglePin}
+                        onClearRecent={quickAccess.clearRecent}
+                        onNavigate={navigate}
+                    />
+                    <FileListControls prefs={viewPrefs} onChange={updateViewPrefs} />
                 </div>
 
                 <FileActionToolbar
@@ -1281,8 +1232,20 @@ function WebSpaceFilesPageInner({ uuidShort }: { uuidShort: string }) {
                     currentDirectory={currentDirectory || '/'}
                     anchorName={anchorName}
                     isSearching={Boolean(searchQuery.trim()) || searchResults !== null}
+                    view={viewPrefs.view}
                 />
             </div>
+
+            <FileInfoSheet
+                file={infoFile}
+                directory={currentDirectory || '/'}
+                open={infoFile !== null}
+                onOpenChange={(open) => !open && setInfoFile(null)}
+                onChecksum={(file) => {
+                    setInfoFile(null);
+                    handleAction('hash', file);
+                }}
+            />
 
             <CreateFolderDialog
                 open={createFolderOpen}
