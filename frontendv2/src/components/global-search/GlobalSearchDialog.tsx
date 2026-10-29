@@ -18,7 +18,8 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { reportPanelInteraction } from '@/lib/panel-analytics';
-import { ArrowRight, Bug, Loader2, Search, Sparkles, Terminal } from 'lucide-react';
+import { ArrowRight, Bug, FolderSearch, Loader2, Search, Sparkles, Terminal } from 'lucide-react';
+import { useTheme } from '@/contexts/ThemeContext';
 import { DynamicIcon } from 'lucide-react/dynamic';
 import { Dialog } from '@/components/ui/dialog';
 import { Button } from '@/components/featherui/Button';
@@ -32,6 +33,16 @@ import { isKnownLucideName, isReactIconComponent } from '@/lib/iconLibrary';
 import type { GlobalSearchEntityContext } from '@/lib/global-search-context';
 import { cn } from '@/lib/utils';
 import { ModuleBadge } from '@/components/ui/module-badge';
+
+/** Paths, e-mails, hostnames and sentences: shown as-is instead of title-cased. */
+const RAW_SUBTITLE_CATEGORIES: GlobalSearchCategory[] = ['files', 'commands', 'nodes', 'tickets', 'users', 'recent'];
+
+const PREFIX_KEYS: Record<string, string> = {
+    '>': 'commands',
+    '/': 'files',
+    '@admin ': 'admin',
+    '#servers ': 'servers',
+};
 
 function formatGroupLabel(value?: string): string | undefined {
     if (!value) return undefined;
@@ -139,9 +150,18 @@ export default function GlobalSearchDialog() {
     const inputRef = useRef<HTMLInputElement>(null);
     const listRef = useRef<HTMLDivElement>(null);
 
-    const { results, loading, parsedQuery, entityContext } = useGlobalSearchItems(open, query);
+    const { toggleTheme } = useTheme();
+    const { results, loading, parsedQuery, entityContext, filesUnavailable, recordRecent, clearRecents } =
+        useGlobalSearchItems(open, query);
     const isDebugMode = parsedQuery.mode === 'debug';
-    const grouped = useMemo(() => groupGlobalSearchResults(results), [results]);
+    const grouped = useMemo(() => {
+        const ranked = parsedQuery.text.trim() !== '';
+        // Unscoped searches show the top 6 per group so one big group cannot bury the rest.
+        return groupGlobalSearchResults(results, {
+            ranked,
+            perGroupLimit: ranked && !parsedQuery.scopeExplicit ? 6 : undefined,
+        });
+    }, [results, parsedQuery.text, parsedQuery.scopeExplicit]);
     const flatResults = useMemo(() => grouped.flatMap((group) => group.items), [grouped]);
 
     useEffect(() => {
@@ -163,10 +183,30 @@ export default function GlobalSearchDialog() {
         selected?.scrollIntoView({ block: 'nearest' });
     }, [selectedIndex]);
 
-    const navigateTo = (href: string) => {
+    const selectResult = (result: GlobalSearchResult, newTab = false) => {
         reportPanelInteraction('panel.search.select', 'search');
+        if (result.action === 'toggleTheme') {
+            toggleTheme();
+            setOpen(false);
+            return;
+        }
+        if (result.action === 'clearRecents') {
+            clearRecents();
+            setQuery('');
+            return;
+        }
+        recordRecent(result);
+        if (newTab) {
+            window.open(result.href, '_blank', 'noopener');
+            return;
+        }
         setOpen(false);
-        router.push(href);
+        router.push(result.href);
+    };
+
+    const applyPrefix = (prefix: string) => {
+        setQuery(prefix);
+        inputRef.current?.focus();
     };
 
     const launchDebugConsole = () => {
@@ -196,9 +236,26 @@ export default function GlobalSearchDialog() {
             );
             return;
         }
+        if ((event.key === 'Home' || event.key === 'End') && flatResults.length && !query) {
+            event.preventDefault();
+            setSelectedIndex(event.key === 'Home' ? 0 : flatResults.length - 1);
+            return;
+        }
+        if (event.key === 'Tab' && flatResults.length) {
+            // Tab / Shift+Tab jump between result groups.
+            event.preventDefault();
+            const starts = grouped.reduce<number[]>((acc, group, i) => {
+                acc.push(i === 0 ? 0 : acc[i - 1] + grouped[i - 1].items.length);
+                return acc;
+            }, []);
+            const current = starts.filter((start) => start <= selectedIndex).length - 1;
+            const next = (current + (event.shiftKey ? -1 : 1) + starts.length) % starts.length;
+            setSelectedIndex(starts[next]);
+            return;
+        }
         if (event.key === 'Enter' && flatResults[selectedIndex]) {
             event.preventDefault();
-            navigateTo(flatResults[selectedIndex].href);
+            selectResult(flatResults[selectedIndex], event.ctrlKey || event.metaKey);
         }
     };
 
@@ -277,20 +334,60 @@ export default function GlobalSearchDialog() {
                     ref={listRef}
                     className='custom-scrollbar max-h-[min(28rem,calc(100dvh-10rem))] overflow-y-auto p-2'
                 >
-                    {flatResults.length === 0 ? (
-                        <div className='animate-in fade-in-0 flex flex-col items-center justify-center gap-2 px-6 py-14 text-center duration-300'>
+                    {flatResults.length === 0 && loading ? (
+                        <div className='space-y-1.5 p-1' aria-busy='true' aria-label={t('globalSearch.loading')}>
+                            {[0, 1, 2, 3].map((row) => (
+                                <div key={row} className='flex items-center gap-3 rounded-xl px-2.5 py-2'>
+                                    <div className='bg-muted/50 h-9 w-9 shrink-0 animate-pulse rounded-lg' />
+                                    <div className='flex-1 space-y-1.5'>
+                                        <div className='bg-muted/50 h-3 w-1/3 animate-pulse rounded' />
+                                        <div className='bg-muted/40 h-2.5 w-1/2 animate-pulse rounded' />
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : flatResults.length === 0 ? (
+                        <div className='animate-in fade-in-0 flex flex-col items-center justify-center gap-2 px-6 py-12 text-center duration-300'>
                             <div className='bg-muted/40 flex h-12 w-12 items-center justify-center rounded-2xl'>
-                                <Search className='text-muted-foreground h-5 w-5' aria-hidden />
+                                {parsedQuery.scope === 'files' ? (
+                                    <FolderSearch className='text-muted-foreground h-5 w-5' aria-hidden />
+                                ) : (
+                                    <Search className='text-muted-foreground h-5 w-5' aria-hidden />
+                                )}
                             </div>
                             <p className='text-foreground text-sm font-medium'>
-                                {query ? t('globalSearch.emptySearch') : t('globalSearch.emptyDefault')}
+                                {parsedQuery.scope === 'files'
+                                    ? filesUnavailable === 'noServer'
+                                        ? t('globalSearch.files.noServer')
+                                        : filesUnavailable === 'error'
+                                          ? t('globalSearch.files.error')
+                                          : t('globalSearch.files.empty')
+                                    : parsedQuery.scope === 'commands'
+                                      ? t('globalSearch.commands.empty')
+                                      : query
+                                        ? t('globalSearch.emptySearch')
+                                        : t('globalSearch.emptyDefault')}
                             </p>
                             <p className='text-muted-foreground max-w-sm text-xs leading-relaxed'>
-                                {t('globalSearch.emptyHint')}
+                                {parsedQuery.scope === 'files'
+                                    ? t('globalSearch.files.hint')
+                                    : t('globalSearch.emptyHint')}
                             </p>
-                            <p className='text-muted-foreground/80 max-w-md text-[11px] leading-relaxed'>
-                                {t('globalSearch.scopeHint')}
-                            </p>
+                            <div className='mt-2 flex flex-wrap justify-center gap-2'>
+                                {(['>', '/', '@admin ', '#servers '] as const).map((prefix) => (
+                                    <button
+                                        key={prefix}
+                                        type='button'
+                                        onClick={() => applyPrefix(prefix)}
+                                        className='border-border/60 bg-background/60 text-muted-foreground hover:text-foreground rounded-lg border px-2.5 py-1 font-mono text-xs transition-colors'
+                                    >
+                                        {prefix.trim()}{' '}
+                                        <span className='font-sans'>
+                                            {t(`globalSearch.prefixes.${PREFIX_KEYS[prefix]}`)}
+                                        </span>
+                                    </button>
+                                ))}
+                            </div>
                         </div>
                     ) : (
                         grouped.map((group) => (
@@ -313,16 +410,28 @@ export default function GlobalSearchDialog() {
                                     >
                                         {getCategoryLabel(group.category, entityContext, t)}
                                     </p>
-                                    <span className='text-muted-foreground/70 text-[10px] tabular-nums'>
-                                        {group.items.length}
-                                    </span>
+                                    {group.category === 'recent' ? (
+                                        <button
+                                            type='button'
+                                            onClick={clearRecents}
+                                            className='text-muted-foreground hover:text-foreground text-[11px] transition-colors'
+                                        >
+                                            {t('globalSearch.clearRecents')}
+                                        </button>
+                                    ) : (
+                                        <span className='text-muted-foreground/70 text-[10px] tabular-nums'>
+                                            {group.items.length}
+                                        </span>
+                                    )}
                                 </div>
                                 <ul className='space-y-0.5'>
                                     {group.items.map((result, itemIndex) => {
                                         runningIndex += 1;
                                         const index = runningIndex;
                                         const selected = index === selectedIndex;
-                                        const subtitle = formatGroupLabel(result.subtitle) ?? result.subtitle;
+                                        const subtitle = RAW_SUBTITLE_CATEGORIES.includes(result.category)
+                                            ? result.subtitle
+                                            : (formatGroupLabel(result.subtitle) ?? result.subtitle);
 
                                         return (
                                             <li
@@ -334,11 +443,13 @@ export default function GlobalSearchDialog() {
                                                 <button
                                                     type='button'
                                                     onMouseEnter={() => setSelectedIndex(index)}
-                                                    onClick={() => navigateTo(result.href)}
+                                                    onClick={(event) =>
+                                                        selectResult(result, event.ctrlKey || event.metaKey)
+                                                    }
                                                     className={cn(
                                                         'group flex w-full items-center gap-3 rounded-xl px-2.5 py-2 text-left transition-all',
                                                         selected
-                                                            ? 'bg-primary/12 ring-primary/20 shadow-primary/5 ring-1'
+                                                            ? 'bg-primary/12 ring-primary/20 ring-1'
                                                             : 'hover:bg-muted/55',
                                                     )}
                                                 >
@@ -407,6 +518,8 @@ export default function GlobalSearchDialog() {
                         <span>{t('globalSearch.navigate')}</span>
                         <kbd className='border-border/60 bg-background/70 rounded border px-1.5 py-0.5'>↵</kbd>
                         <span>{t('globalSearch.openItem')}</span>
+                        <kbd className='border-border/60 bg-background/70 rounded border px-1.5 py-0.5'>Tab</kbd>
+                        <span>{t('globalSearch.nextGroup')}</span>
                     </div>
                 ) : null}
             </div>

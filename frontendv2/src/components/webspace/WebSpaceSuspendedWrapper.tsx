@@ -41,7 +41,7 @@ export function WebSpaceSuspendedWrapper({ children }: WebSpaceSuspendedWrapperP
                     <div className='group relative'>
                         <div className='absolute -inset-0.5 rounded-3xl bg-linear-to-r from-red-500/50 to-red-500/30 opacity-20 blur transition duration-1000 group-hover:opacity-30' />
 
-                        <div className='bg-card/95 relative rounded-3xl border-2 border-red-500/20 p-8 backdrop-blur-xl md:p-12'>
+                        <div className='bg-card/95 relative rounded-3xl border-2 border-red-500/20 p-8 md:p-12'>
                             <div className='space-y-6 text-center'>
                                 <div className='relative'>
                                     <div className='mb-4 inline-flex h-24 w-24 items-center justify-center rounded-3xl bg-red-500/10'>

@@ -18,6 +18,8 @@
 namespace App\Controllers\User\WebSpaces;
 
 use App\Chat\WebNode;
+use App\Chat\WebSpaceDatabase;
+use App\Helpers\WebSpaceLimits;
 use App\Helpers\ApiResponse;
 use App\Helpers\WebSpaceGateway;
 use App\WebSpaceSubuserPermissions;
@@ -860,6 +862,17 @@ class WebSpaceAppsController
         $denied = CheckWebSpacePermission::require($request, $space, WebSpaceSubuserPermissions::DATABASE_CREATE);
         if ($denied instanceof Response) {
             return $denied;
+        }
+
+        try {
+            WebSpaceAppsCatalog::requireApp($space, $appId);
+        } catch (\Throwable $e) {
+            return ApiResponse::error($e->getMessage(), $errorPrefix . '_UNSUPPORTED', 400);
+        }
+
+        $databaseLimit = (int) ($space['database_limit'] ?? 1);
+        if (WebSpaceLimits::isLimitReached($databaseLimit, WebSpaceDatabase::countByWebSpaceId((int) $space['id']))) {
+            return ApiResponse::error('Database limit reached', 'DATABASE_LIMIT_REACHED', 400);
         }
 
         $webNode = WebNode::getWebNodeById((int) $space['web_node_id']);

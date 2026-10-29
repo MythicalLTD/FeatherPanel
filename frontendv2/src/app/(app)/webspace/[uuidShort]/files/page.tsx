@@ -19,7 +19,8 @@ import { use, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import { AlertCircle, CheckCircle2, Download, Loader2, Pause, Play, Upload, X } from 'lucide-react';
-import { PageHeader } from '@/components/featherui/PageHeader';
+import { WebSpacePageHeader as PageHeader } from '@/components/webspace/WebSpacePageHeader';
+import { WebSpacePageTips } from '@/components/webspace/WebSpacePageTips';
 import { Button } from '@/components/featherui/Button';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { FileManagerApiProvider, useFileManagerApi } from '@/contexts/FileManagerApiContext';
@@ -942,6 +943,7 @@ function WebSpaceFilesPageInner({ uuidShort }: { uuidShort: string }) {
                 title={t('files.title')}
                 description={t('files.manage_description', { directory: currentDirectory || '/' })}
             />
+            <WebSpacePageTips page='files' />
 
             <div className='flex flex-col gap-4'>
                 <div className='fp-surface flex flex-col gap-4 rounded-xl border p-4 sm:flex-row sm:items-center sm:justify-between'>
@@ -1431,7 +1433,7 @@ function WebSpaceFilesPageInner({ uuidShort }: { uuidShort: string }) {
             </Dialog>
 
             {isDragging && canCreate && (
-                <div className='pointer-events-none fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm'>
+                <div className='pointer-events-none fixed inset-0 z-50 flex items-center justify-center bg-black/40'>
                     <div className='bg-muted/60 rounded-2xl border border-dashed border-white/30 px-10 py-8 text-center shadow-2xl'>
                         <Download className='text-primary mx-auto mb-3 h-10 w-10' />
                         <p className='text-lg font-semibold text-white'>{t('files.messages.drop_to_upload')}</p>

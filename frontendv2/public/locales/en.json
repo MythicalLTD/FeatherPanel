@@ -4456,12 +4456,12 @@
     "globalSearch": {
         "open": "Open global search",
         "placeholder": "Search servers, files, webspaces, pages…",
-        "inputPlaceholder": "Search servers, files, webspaces, VDS, admin…",
+        "inputPlaceholder": "Search or type > for commands, / for files…",
         "shortcut": "Ctrl+K",
         "emptyDefault": "Start typing to search the panel",
         "emptySearch": "No results found",
         "emptyHint": "Try a page name (e.g. files, backups), server, WebSpace, VM, account action, or panel setting.",
-        "scopeHint": "Filter with @admin, @settings, @account, #servers, #webspace, #vds, or #infra.",
+        "scopeHint": "Type > for commands, / for files on this server, or filter with @admin, @settings, @account, #servers, #webspace, #vds, #nodes, #tickets or #infra.",
         "footerHint": "Permission-aware results from across the panel",
         "navigate": "Navigate",
         "openItem": "Open",
@@ -4487,7 +4487,12 @@
             "account": "Account",
             "adminSettings": "Panel settings",
             "admin": "Administration",
-            "users": "Users"
+            "users": "Users",
+            "recent": "Recent",
+            "commands": "Commands",
+            "files": "Files",
+            "nodes": "Nodes",
+            "tickets": "Tickets"
         },
         "debug": {
             "title": "Panel debug console",
@@ -4630,6 +4635,34 @@
                 "forceOobeBody": "Marks setup as not completed so every admin is sent through the onboarding wizard again. Your saved settings are kept.",
                 "confirm": "Yes, continue"
             }
+        },
+        "loading": "Searching…",
+        "clearRecents": "Clear",
+        "nextGroup": "Next group",
+        "prefixes": {
+            "commands": "Commands",
+            "files": "Files",
+            "admin": "Admin",
+            "servers": "Servers"
+        },
+        "files": {
+            "noServer": "Open a server first to search its files",
+            "error": "Could not list files. The node may be offline.",
+            "empty": "No matching files",
+            "hint": "Type / followed by a name, or a folder path like /config/server to look inside a folder."
+        },
+        "commands": {
+            "empty": "No matching commands",
+            "actionHint": "Runs right away",
+            "toggleTheme": "Switch light / dark theme",
+            "newTicket": "Open a support ticket",
+            "accountSecurity": "Account security (2FA, password, sessions)",
+            "newServer": "Create a server",
+            "newUser": "Create a user",
+            "newNode": "Add a node",
+            "auditLog": "Open the audit log",
+            "clearRecents": "Clear recent searches",
+            "signOut": "Sign out"
         }
     },
     "features": {
@@ -13107,13 +13140,7 @@
             "info": {
                 "title": "Excluded Data",
                 "description": "The following items are excluded from migration to ensure a clean import.",
-                "items": [
-                    null,
-                    null,
-                    null,
-                    null,
-                    null
-                ],
+                "items": [null, null, null, null, null],
                 "footer": "Excluding this data significantly reduces migration time."
             },
             "create_key": {
@@ -13129,12 +13156,7 @@
                 "creating": "Creating..."
             },
             "warning_dialog": {
-                "items": [
-                    null,
-                    null,
-                    null,
-                    null
-                ]
+                "items": [null, null, null, null]
             },
             "visibility": {
                 "hide": "Hide importer",
@@ -16665,6 +16687,44 @@
             "suspended": "This WebSpace is suspended",
             "installFailed": "Installation failed check the console log",
             "runtimeStopped": "Runtime is not running"
+        },
+        "tips": {
+            "files_t1_title": "Upload big files safely",
+            "files_t1_body": "Large uploads are sent in parts and resume after a dropped connection. Use SFTP for whole site migrations.",
+            "files_t2_title": "Deleted files go to the trash",
+            "files_t2_body": "Restore files from the trash until it is emptied. Nothing in the trash is served by the site.",
+            "domains_t1_title": "Point DNS first",
+            "domains_t1_body": "Add an A record to the node address before you enable SSL, otherwise the certificate request fails.",
+            "domains_t2_title": "Free SSL renews itself",
+            "domains_t2_body": "Certificates renew automatically. Upload a custom certificate only when you need one from your own provider.",
+            "access_t1_title": "One account per person",
+            "access_t1_body": "Create a separate SFTP account for each developer so you can remove access without changing everyone else.",
+            "access_t2_title": "Limit the folder",
+            "access_t2_body": "Give agencies and plugins access to a single folder instead of the whole site.",
+            "backups_t1_title": "Back up before big changes",
+            "backups_t1_body": "Create a backup before updates, theme changes or a migration. It includes files and databases.",
+            "backups_t2_title": "Restore only what you need",
+            "backups_t2_body": "You can restore single files or folders from a backup without rolling back the whole site.",
+            "schedules_t1_title": "Automate routine work",
+            "schedules_t1_body": "Run backups, commands or restarts on a timer. Times use the cron format.",
+            "schedules_t2_title": "Chain tasks",
+            "schedules_t2_body": "Add several tasks with a delay between them, for example a backup and then a cache clear.",
+            "databases_t1_title": "One database per app",
+            "databases_t1_body": "Keep each application in its own database so a problem in one does not affect the others.",
+            "databases_t2_title": "Rotate passwords",
+            "databases_t2_body": "After rotating a password, update the config file of the app that uses the database.",
+            "email_t1_title": "Set up DNS for mail",
+            "email_t1_body": "Add the MX, SPF, DKIM and DMARC records shown here so your mail is delivered and not marked as spam.",
+            "email_t2_title": "Use strong passwords",
+            "email_t2_body": "Mailboxes are a common target. Use a long unique password and forward mail instead of sharing logins.",
+            "users_t1_title": "Give the least access",
+            "users_t1_body": "Only grant the permissions a person needs. You can change them at any time.",
+            "users_t2_title": "Remove old users",
+            "users_t2_body": "Remove users who no longer work on the site. Their SFTP and panel access ends right away.",
+            "settings_t1_title": "Changes apply right away",
+            "settings_t1_body": "Saving settings updates the web server config on the node. The site stays online.",
+            "settings_t2_title": "Protect the site",
+            "settings_t2_body": "Turn on the firewall and block paths like xmlrpc.php if your app does not need them."
         }
     },
     "landing": {

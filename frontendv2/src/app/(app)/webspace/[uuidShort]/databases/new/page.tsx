@@ -26,7 +26,7 @@ import { WebSpaceSubuserPermissions } from '@/lib/webspace-permissions';
 import { useWebSpace } from '@/contexts/WebSpaceContext';
 import { WebSpacePageWidgets } from '@/components/webspace/WebSpacePageWidgets';
 import { safeBack } from '@/lib/safe-back';
-import { PageHeader } from '@/components/featherui/PageHeader';
+import { WebSpacePageHeader as PageHeader } from '@/components/webspace/WebSpacePageHeader';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { Label } from '@/components/ui/label';

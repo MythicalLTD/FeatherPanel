@@ -41,10 +41,12 @@
 - Node alerts on Admin, Nodes, Status: a cron checks every Wings node each minute and raises alerts for a node that stops answering (after a set number of checks, maintenance nodes skipped), disk usage above a set percent (default 90%) and failed backups. Alerts go to the panel inbox, email and a signed webhook (`X-FeatherPanel-Signature`, https only, public addresses only with DNS pinned, no redirects), are deduplicated with a cooldown and send a resolved notice. The status page shows last heartbeat and recent failed backups per node, open alerts with Resolve, alert history with filters, settings, a test alert and Run check now. All changes are audit logged. by @nayskutzu
 - Inactive server cleanup (Admin → Inactive Servers): finds servers with no owner or subuser activity, warns owners (inbox and email), then after a grace period only notifies, suspends, backs up to S3 and deletes, or deletes. Off by default; destructive actions need an explicit confirmation, manual runs need a dry-run preview, servers can be exempted, staff-suspended servers are skipped, runs are capped per hour and every step is audited. Per-user disk quotas: an admin default plus per-user overrides, enforced on server create and disk increases, shown on the user dashboard.
 - Security center: require two-factor authentication for every admin with an optional 0-30 day grace period. Affected users see a reminder banner with the deadline, and the panel refuses a setting that would lock out the admin saving it. Admins can see and sign out a user's active sessions from the new Sessions tab on the user edit page (audited). by @nayskutzu
+- Ctrl+K palette upgrades: recent results per user, `>` commands (toggle theme, clear recents, admin shortcuts filtered by permission), `/` file search inside the current server, node and ticket results, `@nodes`/`#tickets`/`#files` scopes, fuzzy word-prefix ranking with groups ordered by best match, Tab/Shift+Tab to jump between groups, Home/End, and Ctrl/Cmd+Enter to open in a new tab. by @nayskutzu
 
 ### Improved
 
 - WebSpace Files now runs on the shared file manager hook, with list/grid view, sorting, image thumbnails, a file info sheet and pinned/recent folders like server files.
+- Web hosting pages now match the redesigned server pages: the same header card with breadcrumbs, dismissible tip cards, list tables with pagination for databases, backups, users, schedules, mailboxes, forwarders and mailing lists, an unsaved changes bar on the firewall page and no blurred surfaces. The Logs tab now follows the console output permission and the Apps tab shows for subusers who can create files.
 - VDS ISO flow: rescue and user ISO storage resolve per VM node (legacy global settings still fall back); admin VDS ISO list aggregates node storages; Mount ISO is host-library only; Settings points to Boot; admin VDS settings ISO group links to VDS nodes; `vds_iso_library_only` defaults to true. by @nayskutzu
 - Embedded VDS console VNC reconnects after stop/reboot/start and unexpected disconnects (clears stale tickets, retries with backoff) so noVNC is not stuck on a dead session. by @nayskutzu
 - User and admin VDS firewall pages: segmented controls, clearer option rows and a shared card layout. by @nayskutzu
@@ -86,6 +88,8 @@
 
 ### Fixed
 
+- Web hosting security: subusers without console permission no longer get console output through the websocket token, logs, install logs, SSL status and DNS check now need console or DNS/settings permissions, blocked IPs and paths in the WAF are strictly validated (IP/CIDR and a safe path character set) in the user and admin APIs, and PrestaShop/Magento installs check app support and the database limit before starting.
+
 - Production containers no longer grow to many GB and get OOM killed; cron no longer runs every job twice after a failed run. (#338) by @nayskutzu
 - Clearing a user's fingerprint in alt detection now also drops IP based alt links. (#342) by @nayskutzu
 - Missing setup wizard module step translations. (#339) by @nayskutzu
@@ -109,6 +113,7 @@
 - VDS backup restores check that the backup belongs to that VM, and VDS subusers no longer see the cloud-init password stored in the VM notes. (#371) by @redstonerthebest
 - Lifecycle hook URLs and server-mode API client callbacks are checked against private, loopback and link-local addresses (including IPv6) by resolving the host. (#371) by @redstonerthebest
 - API clients: public key Bearer auth stays on by default (private keys are preferred) and can now be switched off in Admin, Settings, App (`api_clients_allow_public_key_auth`). (#371) by @nayskutzu
+- IP allow lists (Security center and API key `allowed_ips`) no longer treat a malformed CIDR mask such as `10.0.0.0/abc` or `10.0.0.0/` as a match-all `/0`; non-numeric masks now never match, the same as the validator. (#406) by @Devority
 
 ### Notes
 

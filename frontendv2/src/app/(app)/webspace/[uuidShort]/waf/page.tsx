@@ -20,8 +20,9 @@ import { useParams } from 'next/navigation';
 import axios, { isAxiosError } from 'axios';
 import { Loader2, Save, Shield } from 'lucide-react';
 import { toast } from 'sonner';
-import { PageHeader } from '@/components/featherui/PageHeader';
+import { WebSpacePageHeader as PageHeader } from '@/components/webspace/WebSpacePageHeader';
 import { PageCard } from '@/components/featherui/PageCard';
+import { UnsavedChangesBar } from '@/components/featherui/UnsavedChangesBar';
 import { Button } from '@/components/featherui/Button';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -41,6 +42,8 @@ export default function WebSpaceWafPage() {
         wafDenyIps: '',
         wafDenyPaths: '',
     });
+    const [savedForm, setSavedForm] = useState(form);
+    const dirty = JSON.stringify(form) !== JSON.stringify(savedForm);
 
     const load = useCallback(async () => {
         try {
@@ -50,11 +53,13 @@ export default function WebSpaceWafPage() {
                 waf_deny_ips?: string[];
                 waf_deny_paths?: string[];
             };
-            setForm({
+            const next = {
                 wafEnabled: !!ws.waf_enabled,
                 wafDenyIps: (ws.waf_deny_ips || []).join('\n'),
                 wafDenyPaths: (ws.waf_deny_paths || []).join('\n'),
-            });
+            };
+            setForm(next);
+            setSavedForm(next);
         } catch (error) {
             console.error(error);
             toast.error(getApiErrorMessage(error, t, 'webSpaces.settings.loadFailed'));
@@ -81,6 +86,7 @@ export default function WebSpaceWafPage() {
                     .map((s) => s.trim())
                     .filter(Boolean),
             });
+            setSavedForm(form);
             toast.success(t('webSpaces.settings.saved'));
         } catch (error) {
             let msg = getApiErrorMessage(error, t, 'webSpaces.settings.saveFailed');
@@ -148,6 +154,13 @@ export default function WebSpaceWafPage() {
                         </Button>
                     </div>
                 </PageCard>
+
+                <UnsavedChangesBar
+                    dirty={dirty}
+                    saving={saving}
+                    onSave={() => void saveWaf()}
+                    onDiscard={() => setForm(savedForm)}
+                />
             </div>
         </WebSpacePageWidgets>
     );

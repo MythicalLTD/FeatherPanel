@@ -70,6 +70,9 @@ class IpAddressMatcherTest extends TestCase
         yield 'garbage client ip with non-empty list' => ['abc', '1.2.3.4', false];
         yield 'invalid rule never matches' => ['1.2.3.4', '999.1.1.1', false];
         yield 'invalid cidr mask never matches' => ['10.0.0.5', '10.0.0.0/33', false];
+        // A malformed CIDR rule must not silently widen to a match-all.
+        yield 'malformed cidr rule stays closed' => ['9.9.9.9', '10.0.0.0/abc', false];
+        yield 'empty cidr mask stays closed' => ['9.9.9.9', '10.0.0.0/', false];
 
         // IPv4-mapped IPv6 does not match IPv4 rules (current behaviour).
         yield 'ipv4-mapped ipv6 vs ipv4 rule' => ['::ffff:1.2.3.4', '1.2.3.4', false];
@@ -179,6 +182,11 @@ class IpAddressMatcherTest extends TestCase
         yield 'ipv6 vs ipv4 cidr' => ['2001:db8::1', '10.0.0.0/8', false];
         yield 'invalid rule' => ['1.2.3.4', 'abc', false];
         yield 'invalid mask rejected' => ['10.0.0.5', '10.0.0.0/33', false];
+        // Malformed masks must fail closed, never cast to match-all /0.
+        yield 'ipv4 non-numeric mask never matches' => ['10.0.0.5', '10.0.0.0/abc', false];
+        yield 'ipv4 empty mask never matches' => ['10.0.0.5', '10.0.0.0/', false];
+        yield 'ipv4 mask with trailing junk never matches' => ['10.0.0.5', '10.0.0.0/24x', false];
+        yield 'ipv6 non-numeric mask never matches' => ['2001:db8::1', '2001:db8::/abc', false];
     }
 
     #[DataProvider('matchRuleCases')]

@@ -23,6 +23,11 @@ export type GlobalSearchMode = 'search' | 'debug';
 export const GLOBAL_SEARCH_DEBUG_TRIGGER = '##icanhasfeatherpanel';
 
 export type GlobalSearchCategory =
+    | 'recent'
+    | 'commands'
+    | 'files'
+    | 'nodes'
+    | 'tickets'
     | 'currentContext'
     | 'servers'
     | 'serverPages'
@@ -39,7 +44,19 @@ export type GlobalSearchCategory =
     | 'plugins';
 
 export type GlobalSearchScope =
-    'all' | 'admin' | 'settings' | 'account' | 'servers' | 'webspaces' | 'vds' | 'pages' | 'infrastructure';
+    | 'all'
+    | 'admin'
+    | 'settings'
+    | 'account'
+    | 'servers'
+    | 'webspaces'
+    | 'vds'
+    | 'pages'
+    | 'infrastructure'
+    | 'commands'
+    | 'files'
+    | 'nodes'
+    | 'tickets';
 
 export interface ParsedGlobalSearchQuery {
     raw: string;
@@ -84,10 +101,15 @@ export interface GlobalSearchResult {
     /** Module the result belongs to (GAME / WEB / VDS badge). */
     module?: PanelModule;
     isCurrentContext?: boolean;
+    /** Command results run this palette action instead of (or before) navigating. */
+    action?: string;
 }
 
 export const GLOBAL_SEARCH_CATEGORY_ORDER: GlobalSearchCategory[] = [
+    'recent',
     'currentContext',
+    'commands',
+    'files',
     'servers',
     'serverPages',
     'webspaces',
@@ -97,6 +119,8 @@ export const GLOBAL_SEARCH_CATEGORY_ORDER: GlobalSearchCategory[] = [
     'account',
     'adminSettings',
     'users',
+    'nodes',
+    'tickets',
     'pages',
     'settings',
     'admin',
@@ -104,6 +128,11 @@ export const GLOBAL_SEARCH_CATEGORY_ORDER: GlobalSearchCategory[] = [
 ];
 
 const CATEGORY_PRIORITY: Record<GlobalSearchCategory, number> = {
+    recent: 950,
+    commands: 800,
+    files: 750,
+    nodes: 390,
+    tickets: 380,
     currentContext: 900,
     servers: 700,
     serverPages: 650,
@@ -143,18 +172,41 @@ const SCOPE_ALIASES: Record<string, GlobalSearchScope> = {
     pages: 'pages',
     infra: 'infrastructure',
     infrastructure: 'infrastructure',
+    node: 'nodes',
+    nodes: 'nodes',
+    ticket: 'tickets',
+    tickets: 'tickets',
+    support: 'tickets',
+    file: 'files',
+    files: 'files',
+    cmd: 'commands',
+    command: 'commands',
+    commands: 'commands',
 };
 
 const SCOPE_CATEGORIES: Record<GlobalSearchScope, GlobalSearchCategory[] | 'all'> = {
     all: 'all',
-    admin: ['admin', 'adminSettings', 'users'],
+    admin: ['admin', 'adminSettings', 'users', 'nodes', 'tickets'],
     settings: ['settings', 'adminSettings', 'account'],
     account: ['account'],
     servers: ['currentContext', 'servers', 'serverPages'],
     webspaces: ['currentContext', 'webspaces', 'webspacePages'],
     vds: ['currentContext', 'vms', 'vdsPages'],
     pages: ['pages'],
-    infrastructure: ['currentContext', 'servers', 'serverPages', 'webspaces', 'webspacePages', 'vms', 'vdsPages'],
+    infrastructure: [
+        'currentContext',
+        'servers',
+        'serverPages',
+        'webspaces',
+        'webspacePages',
+        'vms',
+        'vdsPages',
+        'nodes',
+    ],
+    commands: ['commands'],
+    files: ['files'],
+    nodes: ['nodes'],
+    tickets: ['tickets'],
 };
 
 export function parseGlobalSearchQuery(query: string): ParsedGlobalSearchQuery {
@@ -170,6 +222,28 @@ export function parseGlobalSearchQuery(query: string): ParsedGlobalSearchQuery {
             scopeLabel: 'debug',
             mode: 'debug',
             debugCommand,
+        };
+    }
+
+    // `>` runs commands, `/` searches files of the current server (`/config/ser` looks in /config).
+    if (trimmed.startsWith('>')) {
+        return {
+            raw: trimmed,
+            text: trimmed.slice(1).trim(),
+            scope: 'commands',
+            scopeExplicit: true,
+            scopeLabel: '>',
+            mode: 'search',
+        };
+    }
+    if (trimmed.startsWith('/')) {
+        return {
+            raw: trimmed,
+            text: trimmed.slice(1).trim(),
+            scope: 'files',
+            scopeExplicit: true,
+            scopeLabel: '/',
+            mode: 'search',
         };
     }
 
@@ -387,21 +461,48 @@ export function navItemsToScopedSearchResults(
         });
 }
 
-function scoreResult(result: GlobalSearchResult, query: string): number {
+/** Characters of `needle` appear in order in `haystack` (gaps allowed). Tighter matches score higher. */
+function fuzzyScore(haystack: string, needle: string): number {
+    let position = -1;
+    let gaps = 0;
+    for (const char of needle) {
+        const next = haystack.indexOf(char, position + 1);
+        if (next === -1) return 0;
+        if (position !== -1) gaps += next - position - 1;
+        position = next;
+    }
+    return Math.max(1, 15 - gaps);
+}
+
+function scoreToken(title: string, subtitle: string, keywords: string[], token: string): number {
+    if (title === token) return 100;
+    if (title.startsWith(token)) return 80;
+    if (title.split(/[\s\-_./·]+/).some((word) => word.startsWith(token))) return 70;
+    if (title.includes(token)) return 60;
+    if (subtitle.includes(token)) return 40;
+    if (keywords.some((k) => k.includes(token))) return 30;
+    if (token.length >= 2) return fuzzyScore(title, token);
+    return 0;
+}
+
+/** Every word of the query must match somewhere; the score is the weakest word's score plus an exact-title bonus. */
+export function scoreResult(result: GlobalSearchResult, query: string): number {
     const q = normalize(query);
     if (!q) return 1;
 
     const title = normalize(result.title);
     const subtitle = normalize(result.subtitle ?? '');
     const keywords = (result.keywords ?? []).map(normalize);
+    if (title === q) return 120;
 
-    if (title === q) return 100;
-    if (title.startsWith(q)) return 80;
-    if (title.includes(q)) return 60;
-    if (subtitle.includes(q)) return 40;
-    if (keywords.some((k) => k.includes(q))) return 30;
-    if (`${title} ${subtitle} ${keywords.join(' ')}`.includes(q)) return 20;
-    return 0;
+    const tokens = q.split(/\s+/).filter(Boolean);
+    let weakest = Infinity;
+    for (const token of tokens) {
+        const score = scoreToken(title, subtitle, keywords, token);
+        if (score === 0) return 0;
+        weakest = Math.min(weakest, score);
+    }
+    return tokens.length > 1 && title.startsWith(tokens[0]) ? weakest + 5 : weakest;
 }
 
 function compareSearchResults(a: GlobalSearchResult, b: GlobalSearchResult): number {
@@ -421,7 +522,7 @@ function compareSearchResults(a: GlobalSearchResult, b: GlobalSearchResult): num
 export function filterGlobalSearchResults(
     results: GlobalSearchResult[],
     query: string,
-    options?: { limit?: number; parsed?: ParsedGlobalSearchQuery },
+    options?: { limit?: number; parsed?: ParsedGlobalSearchQuery; recentHrefs?: string[] },
 ): GlobalSearchResult[] {
     const parsed = options?.parsed ?? parseGlobalSearchQuery(query);
     const q = normalize(parsed.text);
@@ -434,9 +535,12 @@ export function filterGlobalSearchResults(
         .map((result) => {
             const baseScore = q ? scoreResult(result, q) : (CATEGORY_PRIORITY[result.category] ?? 1);
             const contextBoost = result.isCurrentContext ? 500 : 0;
+            // Places you opened recently rank a little higher while you type.
+            const recentIndex = q ? (options?.recentHrefs ?? []).indexOf(result.href) : -1;
+            const recentBoost = baseScore > 0 && recentIndex !== -1 ? 12 - Math.min(recentIndex, 10) : 0;
             return {
                 ...result,
-                score: baseScore + contextBoost,
+                score: baseScore + contextBoost + recentBoost,
             };
         })
         .filter((result) => !q || (result.score ?? 0) > 0)
@@ -447,6 +551,7 @@ export function filterGlobalSearchResults(
 
 export function groupGlobalSearchResults(
     results: GlobalSearchResult[],
+    options?: { ranked?: boolean; perGroupLimit?: number },
 ): Array<{ category: GlobalSearchCategory; items: GlobalSearchResult[] }> {
     const grouped = new Map<GlobalSearchCategory, GlobalSearchResult[]>();
     for (const result of results) {
@@ -455,8 +560,21 @@ export function groupGlobalSearchResults(
         grouped.set(result.category, list);
     }
 
-    return GLOBAL_SEARCH_CATEGORY_ORDER.filter((category) => grouped.has(category)).map((category) => ({
+    const groups = GLOBAL_SEARCH_CATEGORY_ORDER.filter((category) => grouped.has(category)).map((category) => ({
         category,
-        items: grouped.get(category)!,
+        items: options?.perGroupLimit ? grouped.get(category)!.slice(0, options.perGroupLimit) : grouped.get(category)!,
     }));
+    if (!options?.ranked) return groups;
+
+    // While typing, the group holding the best match comes first (recent and current context stay pinned).
+    const pinned: GlobalSearchCategory[] = ['recent', 'currentContext'];
+    const best = (items: GlobalSearchResult[]) => Math.max(...items.map((item) => item.score ?? 0));
+    return [
+        ...groups.filter((group) => pinned.includes(group.category)),
+        ...groups
+            .filter((group) => !pinned.includes(group.category))
+            .map((group, order) => ({ group, order, best: best(group.items) }))
+            .sort((a, b) => b.best - a.best || a.order - b.order)
+            .map(({ group }) => group),
+    ];
 }
