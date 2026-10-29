@@ -1,3 +1,4 @@
+-- Guarded with information_schema checks so it is safe to re-run and also works on MySQL 8.
 -- VDS ISO library: provider ISOs registered by admins (metadata + visibility) and ISOs
 -- uploaded/downloaded by users into the admin-configured user ISO storage.
 CREATE TABLE IF NOT EXISTS `featherpanel_vm_isos` (
@@ -33,5 +34,11 @@ CREATE TABLE IF NOT EXISTS `featherpanel_vm_isos` (
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 -- Per-VDS ISO policy override (NULL = use the panel setting vds_iso_mode).
-ALTER TABLE `featherpanel_vm_instances`
-ADD COLUMN `iso_mode` VARCHAR(16) NULL DEFAULT NULL;
+SET @fp_sql = IF(
+	(SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'featherpanel_vm_instances' AND COLUMN_NAME = 'iso_mode') = 0,
+	'ALTER TABLE `featherpanel_vm_instances` ADD COLUMN `iso_mode` VARCHAR(16) NULL DEFAULT NULL',
+	'SELECT 1'
+);
+PREPARE fp_stmt FROM @fp_sql;
+EXECUTE fp_stmt;
+DEALLOCATE PREPARE fp_stmt;

@@ -1,3 +1,4 @@
+-- Guarded with information_schema checks so it is safe to re-run and also works on MySQL 8.
 -- Linked single sign-on identities (generic OIDC, Google, GitHub). One row per provider account,
 -- unique on (provider, subject) so an outside account can only belong to one panel user.
 CREATE TABLE IF NOT EXISTS `featherpanel_user_sso_identities` (
@@ -23,5 +24,11 @@ WHERE `oidc_provider` IS NOT NULL AND `oidc_provider` <> '' AND `oidc_subject` I
 
 -- Accounts created through SSO get a random password the user never saw; track that so the
 -- last login method cannot be unlinked.
-ALTER TABLE `featherpanel_users`
-	ADD COLUMN IF NOT EXISTS `password_set` ENUM('false', 'true') NOT NULL DEFAULT 'true';
+SET @fp_sql = IF(
+	(SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'featherpanel_users' AND COLUMN_NAME = 'password_set') = 0,
+	'ALTER TABLE `featherpanel_users` ADD COLUMN `password_set` ENUM(''false'', ''true'') NOT NULL DEFAULT ''true''',
+	'SELECT 1'
+);
+PREPARE fp_stmt FROM @fp_sql;
+EXECUTE fp_stmt;
+DEALLOCATE PREPARE fp_stmt;
