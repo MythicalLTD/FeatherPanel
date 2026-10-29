@@ -34,6 +34,9 @@ import type { GlobalSearchEntityContext } from '@/lib/global-search-context';
 import { cn } from '@/lib/utils';
 import { ModuleBadge } from '@/components/ui/module-badge';
 
+/** Paths, e-mails, hostnames and sentences: shown as-is instead of title-cased. */
+const RAW_SUBTITLE_CATEGORIES: GlobalSearchCategory[] = ['files', 'commands', 'nodes', 'tickets', 'users', 'recent'];
+
 const PREFIX_KEYS: Record<string, string> = {
     '>': 'commands',
     '/': 'files',
@@ -419,7 +422,9 @@ export default function GlobalSearchDialog() {
                                         runningIndex += 1;
                                         const index = runningIndex;
                                         const selected = index === selectedIndex;
-                                        const subtitle = formatGroupLabel(result.subtitle) ?? result.subtitle;
+                                        const subtitle = RAW_SUBTITLE_CATEGORIES.includes(result.category)
+                                            ? result.subtitle
+                                            : (formatGroupLabel(result.subtitle) ?? result.subtitle);
 
                                         return (
                                             <li

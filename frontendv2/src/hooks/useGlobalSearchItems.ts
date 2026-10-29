@@ -774,7 +774,7 @@ export function useGlobalSearchItems(open: boolean, query: string) {
             {
                 id: 'cmd:theme',
                 title: t('globalSearch.commands.toggleTheme'),
-                href: '#',
+                href: '#toggle-theme',
                 action: 'toggleTheme',
                 icon: SunMoon,
                 keywords: ['dark', 'light', 'theme', 'mode'],
@@ -828,7 +828,7 @@ export function useGlobalSearchItems(open: boolean, query: string) {
             {
                 id: 'cmd:clear-recents',
                 title: t('globalSearch.commands.clearRecents'),
-                href: '#',
+                href: '#clear-recents',
                 action: 'clearRecents',
                 icon: Eraser,
                 keywords: ['history', 'recent'],
