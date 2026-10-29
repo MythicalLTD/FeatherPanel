@@ -115,6 +115,7 @@
 
 ### Security
 
+- Security center: users the 2FA requirement applies to can no longer turn two-factor authentication off from their account settings (`TWO_FACTOR_REQUIRED_BY_POLICY`). by @nayskutzu
 - Admin audit log: the CSV export now neutralises spreadsheet formulas in every column (user name, email, action, IP), not only the context, and search text is matched literally (`%` and `_` are no longer wildcards). by @nayskutzu
 - FeatherOS trash: `POST /api/user/featheros/trash` now only records entries for servers the user owns, is a subuser of, or can manage as admin. Before, any signed-in user could register trash rows against any server by its short id (the access check was an empty block). by @nayskutzu
 - Discord sign-in, link and register hand-off tokens now only work in the browser that finished the Discord callback, so a shared link can no longer sign someone in or link an attacker's Discord account to another user.
