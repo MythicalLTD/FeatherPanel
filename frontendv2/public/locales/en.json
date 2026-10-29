@@ -1616,6 +1616,7 @@
             "MAINTENANCE_MODE": "The panel is under maintenance. Please try again later.",
             "IP_NOT_ALLOWED": "Access from your IP address is not allowed",
             "TWO_FACTOR_SETUP_REQUIRED": "Your role requires two-factor authentication. Set it up to continue.",
+            "TWO_FACTOR_REQUIRED_BY_POLICY": "Your role requires two-factor authentication, so it cannot be turned off.",
             "PASSWORD_POLICY_VIOLATION": "The password does not meet the password policy",
             "INVALID_IP_ALLOW_LIST": "The IP allow list has an invalid entry",
             "IP_ALLOW_LIST_SELF_LOCKOUT": "Your current IP is not in the allow list, saving would lock you out",
