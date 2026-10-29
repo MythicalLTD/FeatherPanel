@@ -108,6 +108,7 @@
 - VDS backup restores check that the backup belongs to that VM, and VDS subusers no longer see the cloud-init password stored in the VM notes. (#371) by @redstonerthebest
 - Lifecycle hook URLs and server-mode API client callbacks are checked against private, loopback and link-local addresses (including IPv6) by resolving the host. (#371) by @redstonerthebest
 - API clients: public key Bearer auth stays on by default (private keys are preferred) and can now be switched off in Admin, Settings, App (`api_clients_allow_public_key_auth`). (#371) by @nayskutzu
+- IP allow lists (Security center and API key `allowed_ips`) no longer treat a malformed CIDR mask such as `10.0.0.0/abc` or `10.0.0.0/` as a match-all `/0`; non-numeric masks now never match, the same as the validator. (#406) by @Devority
 
 ### Notes
 
