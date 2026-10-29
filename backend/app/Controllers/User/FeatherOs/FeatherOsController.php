@@ -23,6 +23,7 @@ use App\Chat\FeatherOsNote;
 use App\Chat\FeatherOsState;
 use App\Chat\FeatherOsTrash;
 use App\Helpers\ApiResponse;
+use App\Helpers\ServerGateway;
 use OpenApi\Attributes as OA;
 use App\Chat\FeatherOsSession;
 use App\Config\ConfigInterface;
@@ -517,12 +518,9 @@ class FeatherOsController
             if (!$server) {
                 continue;
             }
-            // Ownership / subuser access is enforced by the Wings file calls the client already made;
-            // we still refuse to register against servers that are not owned and not shared to this user.
-            $ownerId = (int) ($server['owner_id'] ?? 0);
-            if ($ownerId !== (int) $user['id'] && empty($user['is_admin'])) {
-                // Allow if they can reach the server listing - lightweight check via Subuser table when available.
-                // Soft fail: still require matching authenticated session; file ops already needed file.delete.
+            // Only owners, subusers and server admins may record trash entries for a server.
+            if (!ServerGateway::canUserAccessServer((string) $user['uuid'], (string) $server['uuid'], $user, $server)) {
+                continue;
             }
             $row = FeatherOsTrash::create([
                 'uuid' => $uuid,
