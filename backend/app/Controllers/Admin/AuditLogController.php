@@ -56,7 +56,9 @@ class AuditLogController
         [$where, $params] = $this->buildFilters($request);
 
         $pdo = Database::getPdoConnection();
-        $count = $pdo->prepare('SELECT COUNT(*) FROM featherpanel_activity a LEFT JOIN featherpanel_users u ON u.uuid = a.user_uuid' . $where);
+        // The users join is only needed when a filter references it (free-text search).
+        $join = preg_match('/\bu\./', $where) === 1 ? ' LEFT JOIN featherpanel_users u ON u.uuid = a.user_uuid' : '';
+        $count = $pdo->prepare('SELECT COUNT(*) FROM featherpanel_activity a' . $join . $where);
         $count->execute($params);
         $total = (int) $count->fetchColumn();
 
@@ -127,10 +129,20 @@ class AuditLogController
 
         $user = trim((string) $request->query->get('user', ''));
         if ($user !== '') {
-            $clauses[] = '(a.user_uuid = :user_uuid OR u.username = :user_name OR u.email = :user_email)';
-            $params['user_uuid'] = $user;
-            $params['user_name'] = $user;
-            $params['user_email'] = $user;
+            // Resolve the username/email to a uuid first so the filter can use the
+            // (user_uuid, created_at) index instead of scanning the whole activity table.
+            $uuids = [$user];
+            $lookup = Database::getPdoConnection()->prepare('SELECT uuid FROM featherpanel_users WHERE username = :user_name OR email = :user_email');
+            $lookup->execute(['user_name' => $user, 'user_email' => $user]);
+            foreach ($lookup->fetchAll(\PDO::FETCH_COLUMN) as $uuid) {
+                $uuids[] = (string) $uuid;
+            }
+            $placeholders = [];
+            foreach (array_values(array_unique($uuids)) as $i => $uuid) {
+                $placeholders[] = ':user_uuid' . $i;
+                $params['user_uuid' . $i] = $uuid;
+            }
+            $clauses[] = 'a.user_uuid IN (' . implode(', ', $placeholders) . ')';
         }
 
         $action = trim((string) $request->query->get('action', ''));

@@ -35,7 +35,7 @@ const SHORTCUTS: { keys: string; label: string }[] = [
 
 const segBtn = (active: boolean) =>
     cn(
-        'inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-xs font-medium transition-colors',
+        'inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:outline-none',
         active ? 'bg-primary/15 text-primary' : 'text-muted-foreground hover:text-foreground hover:bg-muted/60',
     );
 
@@ -105,7 +105,7 @@ export function FileListControls({
                     </button>
                 </div>
                 <PopoverButton
-                    className={cn(segBtn(false), 'fp-surface-inset border')}
+                    className={cn(segBtn(false), 'fp-surface-inset hidden border sm:inline-flex')}
                     title={t('files.shortcuts.title')}
                     aria-label={t('files.shortcuts.title')}
                 >

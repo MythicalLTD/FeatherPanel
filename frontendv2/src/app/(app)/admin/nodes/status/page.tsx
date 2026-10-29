@@ -37,7 +37,6 @@ import {
 } from 'lucide-react';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { PageCard } from '@/components/featherui/PageCard';
-import { ResourceCard } from '@/components/featherui/ResourceCard';
 import { EmptyState } from '@/components/featherui/EmptyState';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
@@ -237,35 +236,51 @@ export default function NodeStatusPage() {
                 <>
                     <WidgetRenderer widgets={getWidgets('admin-nodes-status', 'before-global-stats')} />
 
-                    <div className='grid gap-6 md:grid-cols-2 lg:grid-cols-4'>
-                        <ResourceCard
-                            title={globalStats.total_nodes.toString()}
-                            subtitle={t('admin.nodes.total')}
-                            icon={Server}
-                            className='fp-surface border'
-                        />
-                        <ResourceCard
-                            title={globalStats.healthy_nodes.toString()}
-                            subtitle={t('admin.nodes.healthy')}
-                            icon={Check}
-                            className='fp-surface border'
-                            iconClassName='text-green-500'
-                            iconWrapperClassName='bg-green-500/10 border-green-500/20'
-                        />
-                        <ResourceCard
-                            title={globalStats.unhealthy_nodes.toString()}
-                            subtitle={t('admin.nodes.unhealthy')}
-                            icon={AlertTriangle}
-                            className='fp-surface border'
-                            iconClassName='text-red-500'
-                            iconWrapperClassName='bg-red-500/10 border-red-500/20'
-                        />
-                        <ResourceCard
-                            title={`${globalStats.avg_cpu_percent.toFixed(1)}%`}
-                            subtitle={t('admin.nodes.avg_cpu')}
-                            icon={Cpu}
-                            className='fp-surface border'
-                        />
+                    <div className='grid grid-cols-2 gap-3 sm:gap-6 lg:grid-cols-4'>
+                        {[
+                            {
+                                value: globalStats.total_nodes.toString(),
+                                label: t('admin.nodes.total'),
+                                icon: Server,
+                                tone: 'text-primary bg-primary/10 border-primary/20',
+                            },
+                            {
+                                value: globalStats.healthy_nodes.toString(),
+                                label: t('admin.nodes.healthy'),
+                                icon: Check,
+                                tone: 'text-green-600 dark:text-green-500 bg-green-500/10 border-green-500/20',
+                            },
+                            {
+                                value: globalStats.unhealthy_nodes.toString(),
+                                label: t('admin.nodes.unhealthy'),
+                                icon: AlertTriangle,
+                                tone: 'text-red-600 dark:text-red-500 bg-red-500/10 border-red-500/20',
+                            },
+                            {
+                                value: `${globalStats.avg_cpu_percent.toFixed(1)}%`,
+                                label: t('admin.nodes.avg_cpu'),
+                                icon: Cpu,
+                                tone: 'text-primary bg-primary/10 border-primary/20',
+                            },
+                        ].map(({ value, label, icon: StatIcon, tone }, i) => (
+                            <div
+                                key={label}
+                                className='fp-surface animate-in fade-in-0 slide-in-from-bottom-1 fill-mode-both flex min-w-0 items-center gap-3 rounded-xl border p-3 duration-300 motion-reduce:animate-none sm:p-4'
+                                style={{ animationDelay: `${i * 50}ms` }}
+                            >
+                                <div
+                                    className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border ${tone}`}
+                                >
+                                    <StatIcon className='h-5 w-5' />
+                                </div>
+                                <div className='min-w-0'>
+                                    <div className='text-lg leading-tight font-semibold tabular-nums sm:text-xl'>
+                                        {value}
+                                    </div>
+                                    <div className='text-muted-foreground truncate text-xs sm:text-sm'>{label}</div>
+                                </div>
+                            </div>
+                        ))}
                     </div>
 
                     <WidgetRenderer widgets={getWidgets('admin-nodes-status', 'after-global-stats')} />
@@ -339,8 +354,10 @@ export default function NodeStatusPage() {
                     )}
 
                     <div className='space-y-4'>
-                        <h2 className='text-2xl font-bold tracking-tight'>{t('admin.nodes.individual_nodes')}</h2>
-                        <div className='grid grid-cols-1 gap-6 xl:grid-cols-2'>
+                        <h2 className='text-lg font-bold tracking-tight sm:text-2xl'>
+                            {t('admin.nodes.individual_nodes')}
+                        </h2>
+                        <div className='grid grid-cols-1 gap-4 sm:gap-6 xl:grid-cols-2'>
                             {nodes.length === 0 ? (
                                 <div className='col-span-2'>
                                     <EmptyState
@@ -490,7 +507,10 @@ export default function NodeStatusPage() {
                                                     <AlertTriangle className='h-4 w-4' />
                                                     <div className='ml-2 min-w-0'>
                                                         <AlertTitle>{t('admin.nodes.offline')}</AlertTitle>
-                                                        <AlertDescription className='[overflow-wrap:anywhere]'>
+                                                        <AlertDescription
+                                                            className='line-clamp-3 [overflow-wrap:anywhere]'
+                                                            title={node.error || undefined}
+                                                        >
                                                             {node.error ||
                                                                 t('ui.admin.nodes.status.cannotConnectToWingsDaemon')}
                                                         </AlertDescription>
