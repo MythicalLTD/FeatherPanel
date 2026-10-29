@@ -50,12 +50,14 @@ class SecurityCenterController
         if (!is_array($data)) {
             return ApiResponse::error('Invalid request body', 'INVALID_REQUEST_BODY', 400);
         }
-        $merged = array_merge(SecurityPolicy::get(), $data);
+        $old = SecurityPolicy::get();
+        unset($data['require_2fa_since']);
+        $merged = array_merge($old, $data);
         $ipError = IpAddressMatcher::validateAllowedIpsInput((string) ($merged['ip_allow_list'] ?? ''));
         if ($ipError !== null) {
             return ApiResponse::error($ipError, 'INVALID_IP_ALLOW_LIST', 422);
         }
-        $policy = SecurityPolicy::normalize($merged);
+        $policy = SecurityPolicy::stampRequirement(SecurityPolicy::normalize($merged), $old);
         // Never let an admin lock themselves out with the allow list.
         $ip = CloudFlareRealIP::getRealIP();
         if ($policy['ip_allow_list'] !== '' && !IpAddressMatcher::clientMatchesAllowedList($ip, $policy['ip_allow_list'])) {
@@ -67,7 +69,7 @@ class SecurityCenterController
         Activity::createActivity([
             'user_uuid' => $admin['uuid'] ?? null,
             'name' => 'security_center_update',
-            'context' => 'Updated the security center policy',
+            'context' => 'Updated the security center policy (2FA: ' . ($policy['require_2fa_admins'] ? 'all admins' : 'admins not forced') . ', ' . count($policy['require_2fa_role_ids']) . ' roles, grace ' . $policy['require_2fa_grace_days'] . ' days)',
             'ip_address' => $ip,
         ]);
 
