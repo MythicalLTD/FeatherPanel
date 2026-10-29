@@ -92,6 +92,7 @@
 
 ### Fixed
 
+- Account sessions: header and "sign out other sessions" button sit on one row on desktop and stack on phones, a skeleton shows while loading, the button is disabled when there are no other sessions, and the ticket signature placeholder no longer shows a literal \\n. by @nayskutzu
 - Admin node status: the summary cards are a compact two-column grid on phones, the section heading scales down, and long node errors are clamped to three lines (full text on hover). by @nayskutzu
 - File manager: list control buttons show a keyboard focus ring, and the secondary control is hidden on phones so the toolbar no longer wraps. by @nayskutzu
 - FeatherOS desktop: server icons get a taller row step so two-line labels and the disk meter no longer overlap the next icon; snapping, auto-arrange and arrow-key moves use the same step. by @nayskutzu
