@@ -154,7 +154,14 @@ export default function GlobalSearchDialog() {
     const { results, loading, parsedQuery, entityContext, filesUnavailable, recordRecent, clearRecents } =
         useGlobalSearchItems(open, query);
     const isDebugMode = parsedQuery.mode === 'debug';
-    const grouped = useMemo(() => groupGlobalSearchResults(results), [results]);
+    const grouped = useMemo(() => {
+        const ranked = parsedQuery.text.trim() !== '';
+        // Unscoped searches show the top 6 per group so one big group cannot bury the rest.
+        return groupGlobalSearchResults(results, {
+            ranked,
+            perGroupLimit: ranked && !parsedQuery.scopeExplicit ? 6 : undefined,
+        });
+    }, [results, parsedQuery.text, parsedQuery.scopeExplicit]);
     const flatResults = useMemo(() => grouped.flatMap((group) => group.items), [grouped]);
 
     useEffect(() => {

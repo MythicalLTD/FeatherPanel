@@ -551,6 +551,7 @@ export function filterGlobalSearchResults(
 
 export function groupGlobalSearchResults(
     results: GlobalSearchResult[],
+    options?: { ranked?: boolean; perGroupLimit?: number },
 ): Array<{ category: GlobalSearchCategory; items: GlobalSearchResult[] }> {
     const grouped = new Map<GlobalSearchCategory, GlobalSearchResult[]>();
     for (const result of results) {
@@ -559,8 +560,21 @@ export function groupGlobalSearchResults(
         grouped.set(result.category, list);
     }
 
-    return GLOBAL_SEARCH_CATEGORY_ORDER.filter((category) => grouped.has(category)).map((category) => ({
+    const groups = GLOBAL_SEARCH_CATEGORY_ORDER.filter((category) => grouped.has(category)).map((category) => ({
         category,
-        items: grouped.get(category)!,
+        items: options?.perGroupLimit ? grouped.get(category)!.slice(0, options.perGroupLimit) : grouped.get(category)!,
     }));
+    if (!options?.ranked) return groups;
+
+    // While typing, the group holding the best match comes first (recent and current context stay pinned).
+    const pinned: GlobalSearchCategory[] = ['recent', 'currentContext'];
+    const best = (items: GlobalSearchResult[]) => Math.max(...items.map((item) => item.score ?? 0));
+    return [
+        ...groups.filter((group) => pinned.includes(group.category)),
+        ...groups
+            .filter((group) => !pinned.includes(group.category))
+            .map((group, order) => ({ group, order, best: best(group.items) }))
+            .sort((a, b) => b.best - a.best || a.order - b.order)
+            .map(({ group }) => group),
+    ];
 }
