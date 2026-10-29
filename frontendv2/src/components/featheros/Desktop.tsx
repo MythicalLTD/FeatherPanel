@@ -107,11 +107,14 @@ export function Desktop() {
 
     const grid = Math.max(72, settings.gridSpacing || 100);
     const iconPx = Math.max(40, Math.min(96, settings.iconSize || 64));
+    // Rows need room for the icon, a two-line label and the server disk meter, so the
+    // vertical step can be taller than the horizontal one (otherwise labels overlap).
+    const gridY = Math.max(grid, iconPx + 60);
 
     const rendered = useMemo<RenderedIcon[]>(() => {
         const width = typeof window !== 'undefined' ? window.innerWidth : 1440;
         const height = typeof window !== 'undefined' ? window.innerHeight - 120 : 800;
-        const perCol = Math.max(1, Math.floor((height - 20) / grid));
+        const perCol = Math.max(1, Math.floor((height - 20) / gridY));
         const stored = new Map(icons.map((i) => [i.id, i]));
         const out: RenderedIcon[] = [];
         if (settings.showServerIcons) {
@@ -129,7 +132,7 @@ export function Desktop() {
                     label: s.name,
                     space,
                     x: pos?.x ?? width - grid - 16 - col * grid,
-                    y: pos?.y ?? 16 + row * grid,
+                    y: pos?.y ?? 16 + row * gridY,
                 });
             });
         }
@@ -142,14 +145,14 @@ export function Desktop() {
                 out.push({ ...i, label });
             });
         return out;
-    }, [servers, icons, settings.showServerIcons, t, activeSpace, grid]);
+    }, [servers, icons, settings.showServerIcons, t, activeSpace, grid, gridY]);
 
     const snap = useCallback(
         (x: number, y: number) => {
             if (!settings.snapToGrid) return { x, y };
-            return { x: Math.round(x / grid) * grid, y: Math.round(y / grid) * grid };
+            return { x: Math.round(x / grid) * grid, y: Math.round(y / gridY) * gridY };
         },
-        [settings.snapToGrid, grid],
+        [settings.snapToGrid, grid, gridY],
     );
 
     const openIcon = (icon: RenderedIcon) => {
@@ -215,7 +218,7 @@ export function Desktop() {
     const cleanUp = (side: 'left' | 'right' | 'auto' = 'auto') => {
         const width = areaRef.current?.clientWidth ?? 1440;
         const height = areaRef.current?.clientHeight ?? 800;
-        const perCol = Math.max(1, Math.floor((height - 24) / grid));
+        const perCol = Math.max(1, Math.floor((height - 24) / gridY));
         const shortcuts = rendered.filter((i) => i.kind !== 'server');
         const serverIcons = rendered.filter((i) => i.kind === 'server');
         const layout = (list: RenderedIcon[], fromRight: boolean) => {
@@ -223,7 +226,7 @@ export function Desktop() {
                 const col = Math.floor(idx / perCol);
                 const row = idx % perCol;
                 const x = fromRight ? width - grid - 16 - col * grid : 16 + col * grid;
-                const y = 16 + row * grid;
+                const y = 16 + row * gridY;
                 placeIcon(icon, x, y);
             });
         };
@@ -239,13 +242,13 @@ export function Desktop() {
         const sorted = [...rendered].sort((a, b) => a.label.localeCompare(b.label, undefined, { sensitivity: 'base' }));
         const width = areaRef.current?.clientWidth ?? 1440;
         const height = areaRef.current?.clientHeight ?? 800;
-        const perCol = Math.max(1, Math.floor((height - 24) / grid));
+        const perCol = Math.max(1, Math.floor((height - 24) / gridY));
         sorted.forEach((icon, idx) => {
             const col = Math.floor(idx / perCol);
             const row = idx % perCol;
             const fromRight = icon.kind === 'server';
             const x = fromRight ? width - grid - 16 - col * grid : 16 + col * grid;
-            placeIcon(icon, x, 16 + row * grid);
+            placeIcon(icon, x, 16 + row * gridY);
         });
     };
 
@@ -255,15 +258,15 @@ export function Desktop() {
             toast.message(t('featheros.desktop.shortcut_exists', { defaultValue: 'Already on the desktop' }));
             return;
         }
-        const taken = new Set(rendered.map((i) => `${Math.round(i.x / grid)}:${Math.round(i.y / grid)}`));
+        const taken = new Set(rendered.map((i) => `${Math.round(i.x / grid)}:${Math.round(i.y / gridY)}`));
         let x = 16;
         let y = 16;
         for (let n = 0; n < 200; n++) {
-            const col = Math.floor(n / Math.max(1, Math.floor(((areaRef.current?.clientHeight ?? 800) - 24) / grid)));
-            const row = n % Math.max(1, Math.floor(((areaRef.current?.clientHeight ?? 800) - 24) / grid));
+            const col = Math.floor(n / Math.max(1, Math.floor(((areaRef.current?.clientHeight ?? 800) - 24) / gridY)));
+            const row = n % Math.max(1, Math.floor(((areaRef.current?.clientHeight ?? 800) - 24) / gridY));
             x = 16 + col * grid;
-            y = 16 + row * grid;
-            if (!taken.has(`${Math.round(x / grid)}:${Math.round(y / grid)}`)) break;
+            y = 16 + row * gridY;
+            if (!taken.has(`${Math.round(x / grid)}:${Math.round(y / gridY)}`)) break;
         }
         const pos = clampPos(snap(x, y).x, snap(x, y).y);
         upsertIcon({ id, kind: 'app', app, x: pos.x, y: pos.y, space: activeSpace, label: t(`featheros.apps.${app}`) });
@@ -335,7 +338,8 @@ export function Desktop() {
                 e.preventDefault();
                 const step = e.shiftKey ? grid : settings.snapToGrid ? grid : 12;
                 const dx = e.key === 'ArrowLeft' ? -step : e.key === 'ArrowRight' ? step : 0;
-                const dy = e.key === 'ArrowUp' ? -step : e.key === 'ArrowDown' ? step : 0;
+                const stepY = step === grid ? gridY : step;
+                const dy = e.key === 'ArrowUp' ? -stepY : e.key === 'ArrowDown' ? stepY : 0;
                 selectedIcons.forEach((icon) => placeIcon(icon, icon.x + dx, icon.y + dy));
             }
         };

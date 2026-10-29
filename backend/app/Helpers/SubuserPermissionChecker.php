@@ -18,11 +18,61 @@
 namespace App\Helpers;
 
 use App\App;
+use App\Chat\User;
+use App\Chat\Server;
+use App\Permissions;
 use App\Chat\Subuser;
 use App\SubuserPermissions;
 
 class SubuserPermissionChecker
 {
+    /** @var (\Closure(int, int): ?array)|null test hook: subuser row lookup */
+    public static ?\Closure $subuserResolver = null;
+    /** @var (\Closure(int): ?int)|null test hook: server id to owner id */
+    public static ?\Closure $ownerResolver = null;
+    /** @var (\Closure(int): list<string>)|null test hook: user id to role permission nodes */
+    public static ?\Closure $roleNodesResolver = null;
+
+    /**
+     * Full access without a subuser row: the server owner, or staff whose role can manage
+     * servers (the same admin rule as ServerGateway::canUserAccessServer).
+     */
+    public static function hasFullAccess(int $userId, int $serverId): bool
+    {
+        if ($userId <= 0 || $serverId <= 0) {
+            return false;
+        }
+        $ownerId = self::$ownerResolver !== null
+            ? (self::$ownerResolver)($serverId)
+            : (($s = Server::getServerById($serverId)) !== null ? (int) $s['owner_id'] : null);
+        if ($ownerId === null) {
+            return false;
+        }
+        if ($ownerId === $userId) {
+            return true;
+        }
+        if (self::$roleNodesResolver !== null) {
+            $nodes = (self::$roleNodesResolver)($userId);
+        } else {
+            $user = User::getUserById($userId);
+            $nodes = $user ? PermissionHelper::getPermissionNodesForRole((int) ($user['role_id'] ?? 0)) : [];
+        }
+
+        return in_array('admin.root', $nodes, true)
+            || in_array(Permissions::ADMIN_SERVERS_VIEW, $nodes, true)
+            || in_array(Permissions::ADMIN_SERVERS_EDIT, $nodes, true)
+            || in_array(Permissions::ADMIN_SERVERS_DELETE, $nodes, true);
+    }
+
+    private static function subuserRow(int $userId, int $serverId): ?array
+    {
+        $row = self::$subuserResolver !== null
+            ? (self::$subuserResolver)($userId, $serverId)
+            : Subuser::getSubuserByUserAndServer($userId, $serverId);
+
+        return $row ?: null;
+    }
+
     /**
      * Check if a user has a specific permission for a server.
      *
@@ -34,16 +84,11 @@ class SubuserPermissionChecker
      */
     public static function hasPermission(int $userId, int $serverId, string $permission): bool
     {
-        // If the user is the owner, they have all permissions
-        // This check is handled by ServerGateway::canUserAccessServer in ServerMiddleware
-        // So if we get here and they can access the server, we need to check if they're a subuser
+        $subuser = self::subuserRow($userId, $serverId);
 
-        // Get subuser record
-        $subuser = Subuser::getSubuserByUserAndServer($userId, $serverId);
-
-        // If not a subuser, they're the owner - grant all permissions
+        // No subuser row: only the owner or staff with server admin rights get everything.
         if (!$subuser) {
-            return true;
+            return self::hasFullAccess($userId, $serverId);
         }
 
         // Parse permissions from JSON
@@ -117,10 +162,11 @@ class SubuserPermissionChecker
      */
     public static function getPermissions(int $userId, int $serverId): ?array
     {
-        $subuser = Subuser::getSubuserByUserAndServer($userId, $serverId);
+        $subuser = self::subuserRow($userId, $serverId);
 
         if (!$subuser) {
-            return null; // Owner - full permission set
+            // Owner or server admin: full permission set. Anyone else: nothing.
+            return self::hasFullAccess($userId, $serverId) ? null : [];
         }
 
         $permissions = [];
