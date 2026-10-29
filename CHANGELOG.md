@@ -92,6 +92,7 @@
 ### Fixed
 
 - FeatherOS desktop: server icons get a taller row step so two-line labels and the disk meter no longer overlap the next icon; snapping, auto-arrange and arrow-key moves use the same step. by @nayskutzu
+- Admin audit log: the filter row no longer clips the date inputs and placeholders at desktop widths; search, user, action, target and date fields get their own column spans. by @nayskutzu
 - Node alerts: a failed backup that started before another backup but finished after it is no longer skipped. The failed backup scan now follows completion time instead of the backup id (the old position is reset to now once on upgrade). by @nayskutzu
 - WebSpace console no longer logs a 404 every few seconds when no transfer is running, and subusers without the Users permission see an access notice on the Users page instead of an error toast and an empty list.
 - Backup storage: the backup count on a storage card no longer includes failed backups; Dropbox backups are verified by Dropbox `content_hash` when FeatherWings reports it (FeatherWings #32), not only by size; SFTP storage cards show the pinned host key, and the host key mismatch error says how to trust a new key; removing a OneDrive storage explains that Microsoft has no per-app token revoke and links to the consent page. by @nayskutzu
@@ -116,6 +117,8 @@
 
 ### Security
 
+- 2FA codes can no longer be reused: a TOTP code accepted once (login, VDS confirmation, account deletion) is rejected if sent again, including two parallel requests with the same code. The last used timestep is stored per user (new column `two_fa_last_timestep`). by @nayskutzu
+- Server permissions: an account without a subuser entry on a server is no longer treated as its owner by the permission checker. Only the owner and staff with server admin rights (`admin.root`, `admin.servers.view/edit/delete`) get every permission; anyone else gets none. This closes paths such as the chatbot database tool showing database passwords to users without `database.view_password`. by @nayskutzu
 - Panel logs no longer contain node daemon tokens, database host passwords or other secrets: validation errors in nodes, web nodes, VDS nodes, database hosts, servers and spell variables now log the data with password, token, secret and key fields masked (new `LogRedactor`). by @nayskutzu
 - Security center: users the 2FA requirement applies to can no longer turn two-factor authentication off from their account settings (`TWO_FACTOR_REQUIRED_BY_POLICY`). by @nayskutzu
 - Admin audit log: the CSV export now neutralises spreadsheet formulas in every column (user name, email, action, IP), not only the context, and search text is matched literally (`%` and `_` are no longer wildcards). by @nayskutzu
