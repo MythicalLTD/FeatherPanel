@@ -108,6 +108,7 @@
 - VDS backup restores check that the backup belongs to that VM, and VDS subusers no longer see the cloud-init password stored in the VM notes. (#371) by @redstonerthebest
 - Lifecycle hook URLs and server-mode API client callbacks are checked against private, loopback and link-local addresses (including IPv6) by resolving the host. (#371) by @redstonerthebest
 - API clients: public key Bearer auth stays on by default (private keys are preferred) and can now be switched off in Admin, Settings, App (`api_clients_allow_public_key_auth`). (#371) by @nayskutzu
+- Wings and FeatherQuilld daemon token checks (`Node::getNodeByWingsAuth`, `WebNode::getWebNodeByDaemonAuth`) now compare the token id and secret with `hash_equals` (constant time) instead of `===`. (#407) by @Devority
 
 ### Notes
 
