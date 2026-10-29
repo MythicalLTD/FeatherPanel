@@ -1243,6 +1243,85 @@ return function (RouteCollection $routes): void {
         'user-webspaces'
     );
 
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-webspaces-users-invites',
+        '/api/user/webspaces/{uuidShort}/users/invites',
+        function (Request $request, array $args) {
+            $uuidShort = (string) ($args['uuidShort'] ?? '');
+            if ($uuidShort === '') {
+                return ApiResponse::error('Missing uuidShort', 'INVALID_UUID_SHORT', 400);
+            }
+
+            return (new WebSpaceSubuserController())->invites($request, $uuidShort);
+        },
+        ['GET'],
+        Rate::perMinute(30),
+        'user-webspaces'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-webspaces-users-invites-create',
+        '/api/user/webspaces/{uuidShort}/users/invites',
+        function (Request $request, array $args) {
+            $uuidShort = (string) ($args['uuidShort'] ?? '');
+            if ($uuidShort === '') {
+                return ApiResponse::error('Missing uuidShort', 'INVALID_UUID_SHORT', 400);
+            }
+
+            return (new WebSpaceSubuserController())->createInvite($request, $uuidShort);
+        },
+        ['POST'],
+        Rate::perMinute(10),
+        'user-webspaces'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-webspaces-users-invites-revoke',
+        '/api/user/webspaces/{uuidShort}/users/invites/{inviteId}',
+        function (Request $request, array $args) {
+            $uuidShort = (string) ($args['uuidShort'] ?? '');
+            if ($uuidShort === '') {
+                return ApiResponse::error('Missing uuidShort', 'INVALID_UUID_SHORT', 400);
+            }
+
+            return (new WebSpaceSubuserController())->revokeInvite($request, $uuidShort, (int) ($args['inviteId'] ?? 0));
+        },
+        ['DELETE'],
+        Rate::perMinute(20),
+        'user-webspaces'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-webspace-invites-preview',
+        '/api/user/webspace-invites/{token}',
+        function (Request $request, array $args) {
+            $token = (string) ($args['token'] ?? '');
+
+            return (new WebSpaceSubuserController())->previewInvite($request, $token);
+        },
+        ['GET'],
+        Rate::perMinute(30),
+        'user-webspaces'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-webspace-invites-accept',
+        '/api/user/webspace-invites/{token}',
+        function (Request $request, array $args) {
+            $token = (string) ($args['token'] ?? '');
+
+            return (new WebSpaceSubuserController())->acceptInvite($request, $token);
+        },
+        ['POST'],
+        Rate::perMinute(10),
+        'user-webspaces'
+    );
+
     // Subusers
     App::getInstance(true)->registerAuthRoute(
         $routes,

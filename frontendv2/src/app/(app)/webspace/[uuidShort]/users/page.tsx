@@ -15,6 +15,9 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { SubuserInviteManager } from '@/components/server/SubuserInviteManager';
+import { SubuserPresetPicker } from '@/components/server/SubuserPresetPicker';
+import { WEBSPACE_SUBUSER_PRESETS } from '@/lib/subuser-presets';
 import { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import axios from 'axios';
@@ -165,6 +168,7 @@ export default function WebSpaceUsersPage() {
                     description={t('webSpaces.users.description')}
                     actions={
                         <div className='flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:gap-3'>
+                            {canCreate && <SubuserInviteManager uuidShort={uuidShort} kind='webspace' />}
                             {canCreate && subusers.length > 0 && (
                                 <Button onClick={() => setIsAddOpen(true)}>
                                     <Plus className='mr-2 h-5 w-5' />
@@ -275,6 +279,14 @@ export default function WebSpaceUsersPage() {
                             />
                         </div>
                         {allPermissions.length > 0 && (
+                            <SubuserPresetPicker
+                                available={allPermissions}
+                                onApply={setSelectedPermissions}
+                                presets={WEBSPACE_SUBUSER_PRESETS}
+                                i18nPrefix='webSpaces.users.presets'
+                            />
+                        )}
+                        {allPermissions.length > 0 && (
                             <div className='flex max-h-60 flex-wrap gap-2 overflow-y-auto'>
                                 {allPermissions.map((perm) => (
                                     <label
@@ -312,6 +324,12 @@ export default function WebSpaceUsersPage() {
                             <p className='text-sm'>
                                 {editUser.email ? <Sensitive>{editUser.email}</Sensitive> : editUser.username}
                             </p>
+                            <SubuserPresetPicker
+                                available={allPermissions}
+                                onApply={setEditPermissions}
+                                presets={WEBSPACE_SUBUSER_PRESETS}
+                                i18nPrefix='webSpaces.users.presets'
+                            />
                             <div className='flex max-h-60 flex-wrap gap-2 overflow-y-auto'>
                                 {allPermissions.map((perm) => (
                                     <label

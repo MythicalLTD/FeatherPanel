@@ -163,4 +163,36 @@ return function (RouteCollection $routes): void {
         Rate::perMinute(10),
         'user-webspaces',
     );
+    foreach (['POST' => 'createDeployHook', 'DELETE' => 'deleteDeployHook'] as $method => $action) {
+        App::getInstance(true)->registerAuthRoute(
+            $routes,
+            'user-webspaces-schedules-deploy-hook-' . strtolower($method),
+            '/api/user/webspaces/{uuidShort}/schedules/{scheduleId}/deploy-hook',
+            function (Request $request, array $args) use ($action) {
+                $uuidShort = (string) ($args['uuidShort'] ?? '');
+                $scheduleId = (int) ($args['scheduleId'] ?? 0);
+                if ($uuidShort === '' || $scheduleId <= 0) {
+                    return ApiResponse::error('Missing parameters', 'INVALID_PARAMETERS', 400);
+                }
+
+                return (new WebSpaceScheduleController())->{$action}($request, $uuidShort, $scheduleId);
+            },
+            [$method],
+            Rate::perMinute(10),
+            'user-webspaces',
+        );
+    }
+
+    // Public push-to-deploy webhook; the token in the URL is the credential.
+    App::getInstance(true)->registerApiRoute(
+        $routes,
+        'webspaces-deploy-hook',
+        '/api/webspaces/deploy/{token}',
+        function (Request $request, array $args) {
+            return (new WebSpaceScheduleController())->runDeployHook($request, (string) ($args['token'] ?? ''));
+        },
+        ['POST'],
+        Rate::perMinute(10),
+        'webspaces-deploy',
+    );
 };

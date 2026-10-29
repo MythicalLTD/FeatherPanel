@@ -19,6 +19,8 @@ namespace App\Controllers\User\WebSpaces;
 
 use App\App;
 use App\Chat\WebNode;
+use App\Chat\WebSpace;
+use App\Config\ConfigInterface;
 use App\Chat\ServerSchedule;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
@@ -48,6 +50,8 @@ class WebSpaceScheduleController
         foreach ($schedules as &$schedule) {
             $schedule['tasks'] = WebSpaceSchedule::listTasks((int) $schedule['id']);
             $schedule['is_locked'] = WebSpaceSchedule::isLocked($schedule);
+            $schedule['has_deploy_hook'] = !empty($schedule['deploy_token_hash']);
+            unset($schedule['deploy_token_hash']);
         }
         unset($schedule);
 
@@ -374,6 +378,83 @@ class WebSpaceScheduleController
         ]);
 
         return ApiResponse::success([], 'Schedule execution started', 202);
+    }
+
+    #[OA\Post(path: '/api/user/webspaces/{uuidShort}/schedules/{scheduleId}/deploy-hook', summary: 'Create or rotate the push-to-deploy webhook of a schedule', tags: ['User - WebSpace Schedules'])]
+    public function createDeployHook(Request $request, string $uuidShort, int $scheduleId): Response
+    {
+        $resolved = $this->resolve($request, $uuidShort, WebSpaceSubuserPermissions::SCHEDULE_UPDATE);
+        if ($resolved instanceof Response) {
+            return $resolved;
+        }
+        $schedule = $this->findScheduleForSpace($scheduleId, $resolved['space']);
+        if ($schedule instanceof Response) {
+            return $schedule;
+        }
+        $token = bin2hex(random_bytes(24));
+        if (!WebSpaceSchedule::setDeployToken($scheduleId, $token)) {
+            return ApiResponse::error('Failed to save the deploy hook', 'UPDATE_FAILED', 500);
+        }
+        WebSpaceActivityLogger::log($resolved['space'], $resolved['user'], 'schedule_deploy_hook_created', [
+            'schedule_id' => $scheduleId,
+        ]);
+        $base = rtrim((string) App::getInstance(true)->getConfig()->getSetting(ConfigInterface::APP_URL, ''), '/');
+
+        return ApiResponse::success(['url' => $base . '/api/webspaces/deploy/' . $token], 'Deploy hook created', 201);
+    }
+
+    #[OA\Delete(path: '/api/user/webspaces/{uuidShort}/schedules/{scheduleId}/deploy-hook', summary: 'Remove the push-to-deploy webhook of a schedule', tags: ['User - WebSpace Schedules'])]
+    public function deleteDeployHook(Request $request, string $uuidShort, int $scheduleId): Response
+    {
+        $resolved = $this->resolve($request, $uuidShort, WebSpaceSubuserPermissions::SCHEDULE_UPDATE);
+        if ($resolved instanceof Response) {
+            return $resolved;
+        }
+        $schedule = $this->findScheduleForSpace($scheduleId, $resolved['space']);
+        if ($schedule instanceof Response) {
+            return $schedule;
+        }
+        WebSpaceSchedule::setDeployToken($scheduleId, null);
+        WebSpaceActivityLogger::log($resolved['space'], $resolved['user'], 'schedule_deploy_hook_deleted', [
+            'schedule_id' => $scheduleId,
+        ]);
+
+        return ApiResponse::success([], 'Deploy hook removed', 200);
+    }
+
+    /**
+     * Public push-to-deploy endpoint (GitHub, GitLab, Gitea or any CI can POST to it).
+     * The token in the URL is the only credential; the request body is ignored.
+     */
+    #[OA\Post(path: '/api/webspaces/deploy/{token}', summary: 'Run a WebSpace schedule from a deploy webhook', tags: ['WebSpace Deploy Hooks'])]
+    public function runDeployHook(Request $request, string $token): Response
+    {
+        $schedule = WebSpaceSchedule::getByDeployToken($token);
+        if (!$schedule) {
+            return ApiResponse::error('Unknown deploy hook', 'DEPLOY_HOOK_NOT_FOUND', 404);
+        }
+        $space = WebSpace::getById((int) $schedule['webspace_id']);
+        if (!$space || ($space['status'] ?? '') === 'suspended' || !empty($space['suspended'])) {
+            return ApiResponse::error('WebSpace is not available', 'WEBSPACE_UNAVAILABLE', 409);
+        }
+        if (WebSpaceSchedule::listTasks((int) $schedule['id']) === []) {
+            return ApiResponse::error('Schedule has no tasks to run', 'SCHEDULE_NO_TASKS', 400);
+        }
+        $webNode = WebNode::getWebNodeById((int) ($space['web_node_id'] ?? 0));
+        if (!$webNode) {
+            return ApiResponse::error('Web node not found', 'WEB_NODE_NOT_FOUND', 404);
+        }
+        $daemon = FeatherQuilldClient::triggerWebSpaceSchedule($webNode, (string) $space['uuid'], (int) $schedule['id']);
+        if (!$daemon['ok']) {
+            return ApiResponse::error('Failed to trigger the deploy', 'DAEMON_TRIGGER_FAILED', 502);
+        }
+        WebSpaceActivityLogger::log($space, null, 'schedule_deploy_hook_triggered', [
+            'schedule_id' => (int) $schedule['id'],
+            'schedule_name' => $schedule['name'],
+            'ip' => $request->getClientIp(),
+        ]);
+
+        return ApiResponse::success([], 'Deploy started', 202);
     }
 
     #[OA\Post(path: '/api/user/webspaces/{uuidShort}/schedules/abort', summary: 'Abort WebSpace schedule run', tags: ['User - WebSpace Schedules'])]

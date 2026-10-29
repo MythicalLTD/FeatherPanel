@@ -58,6 +58,29 @@ class WebSpaceSchedule
     /**
      * @return list<array<string, mixed>>
      */
+    /** Schedule whose push-to-deploy token matches (only the SHA-256 hash is stored). */
+    public static function getByDeployToken(string $token): ?array
+    {
+        if (!preg_match('/^[a-f0-9]{48}$/', $token)) {
+            return null;
+        }
+        $pdo = Database::getPdoConnection();
+        $stmt = $pdo->prepare('SELECT * FROM ' . self::$table . ' WHERE deploy_token_hash = :hash LIMIT 1');
+        $stmt->execute(['hash' => hash('sha256', $token)]);
+        $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        return $row ?: null;
+    }
+
+    /** Sets a new deploy token (returned once) or clears it with null. */
+    public static function setDeployToken(int $id, ?string $token): bool
+    {
+        $pdo = Database::getPdoConnection();
+        $stmt = $pdo->prepare('UPDATE ' . self::$table . ' SET deploy_token_hash = :hash WHERE id = :id');
+
+        return $stmt->execute(['hash' => $token === null ? null : hash('sha256', $token), 'id' => $id]);
+    }
+
     public static function listByWebspaceId(int $webspaceId): array
     {
         if ($webspaceId <= 0) {

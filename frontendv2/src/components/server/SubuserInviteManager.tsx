@@ -24,6 +24,7 @@ import { Input } from '@/components/featherui/Input';
 import { Dialog, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { getApiErrorMessage } from '@/lib/api-errors';
+import { WEBSPACE_SUBUSER_PRESETS } from '@/lib/subuser-presets';
 import { SubuserPresetPicker } from '@/components/server/SubuserPresetPicker';
 import { cn } from '@/lib/utils';
 
@@ -37,7 +38,23 @@ interface Invite {
 }
 
 /** "Invite link" button with a dialog to create, copy and revoke subuser invite links. */
-export function SubuserInviteManager({ uuidShort, disabled }: { uuidShort: string; disabled?: boolean }) {
+export function SubuserInviteManager({
+    uuidShort,
+    disabled,
+    kind = 'server',
+}: {
+    uuidShort: string;
+    disabled?: boolean;
+    /** Game servers or WebSpaces; they use different endpoints and invite links. */
+    kind?: 'server' | 'webspace';
+}) {
+    const isWebSpace = kind === 'webspace';
+    const invitesUrl = isWebSpace
+        ? `/api/user/webspaces/${uuidShort}/users/invites`
+        : `/api/user/servers/${uuidShort}/subuser-invites`;
+    const permissionsUrl = isWebSpace
+        ? `/api/user/webspaces/${uuidShort}/users`
+        : `/api/user/servers/${uuidShort}/subusers/permissions`;
     const { t } = useTranslation();
     const [open, setOpen] = React.useState(false);
     const [loading, setLoading] = React.useState(false);
@@ -52,10 +69,7 @@ export function SubuserInviteManager({ uuidShort, disabled }: { uuidShort: strin
     const load = React.useCallback(async () => {
         setLoading(true);
         try {
-            const [perms, list] = await Promise.all([
-                axios.get(`/api/user/servers/${uuidShort}/subusers/permissions`),
-                axios.get(`/api/user/servers/${uuidShort}/subuser-invites`),
-            ]);
+            const [perms, list] = await Promise.all([axios.get(permissionsUrl), axios.get(invitesUrl)]);
             setAvailable(perms.data?.data?.permissions ?? []);
             setInvites(list.data?.data?.invites ?? []);
         } catch (error) {
@@ -63,7 +77,7 @@ export function SubuserInviteManager({ uuidShort, disabled }: { uuidShort: strin
         } finally {
             setLoading(false);
         }
-    }, [uuidShort, t]);
+    }, [permissionsUrl, invitesUrl, t]);
 
     const openDialog = () => {
         setLink(null);
@@ -77,12 +91,12 @@ export function SubuserInviteManager({ uuidShort, disabled }: { uuidShort: strin
     const create = async () => {
         setCreating(true);
         try {
-            const { data } = await axios.post(`/api/user/servers/${uuidShort}/subuser-invites`, {
+            const { data } = await axios.post(invitesUrl, {
                 permissions: selected,
                 expires_in_hours: Number(hours),
                 max_uses: Number(maxUses),
             });
-            const url = `${window.location.origin}/dashboard/invites/${data.data.token}`;
+            const url = `${window.location.origin}/dashboard/invites/${data.data.token}${isWebSpace ? '?kind=webspace' : ''}`;
             setLink(url);
             toast.success(t('serverSubusers.invites.created'));
             void load();
@@ -95,7 +109,7 @@ export function SubuserInviteManager({ uuidShort, disabled }: { uuidShort: strin
 
     const revoke = async (id: number) => {
         try {
-            await axios.delete(`/api/user/servers/${uuidShort}/subuser-invites/${id}`);
+            await axios.delete(`${invitesUrl}/${id}`);
             setInvites((prev) => prev.filter((i) => i.id !== id));
             toast.success(t('serverSubusers.invites.revoked'));
         } catch (error) {
@@ -147,7 +161,12 @@ export function SubuserInviteManager({ uuidShort, disabled }: { uuidShort: strin
                                 <p className='text-muted-foreground text-xs'>{t('serverSubusers.invites.linkOnce')}</p>
                             </div>
                         )}
-                        <SubuserPresetPicker available={available} onApply={setSelected} />
+                        <SubuserPresetPicker
+                            available={available}
+                            onApply={setSelected}
+                            presets={isWebSpace ? WEBSPACE_SUBUSER_PRESETS : undefined}
+                            i18nPrefix={isWebSpace ? 'webSpaces.users.presets' : undefined}
+                        />
                         <div className='max-h-56 overflow-y-auto rounded-xl border p-3'>
                             <div className='grid gap-1 sm:grid-cols-2'>
                                 {available.map((perm) => (
