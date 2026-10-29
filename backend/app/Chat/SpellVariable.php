@@ -42,32 +42,32 @@ class SpellVariable
     public static function createVariable(array $data): int | false
     {
         // Log incoming data for debugging
-        \App\App::getInstance(true)->getLogger()->debug('SpellVariable::createVariable called with data: ' . json_encode($data));
+        \App\App::getInstance(true)->getLogger()->debug('SpellVariable::createVariable called with data: ' . \App\Helpers\LogRedactor::json($data));
 
         // Validate required fields exist
         // Note: name and env_variable must be non-empty, but description and default_value can be empty strings (Pterodactyl compatibility)
         if (!isset($data['spell_id']) || !is_numeric($data['spell_id']) || (int) $data['spell_id'] <= 0) {
-            \App\App::getInstance(true)->getLogger()->error('SpellVariable validation failed: Invalid spell_id. Data: ' . json_encode($data));
+            \App\App::getInstance(true)->getLogger()->error('SpellVariable validation failed: Invalid spell_id. Data: ' . \App\Helpers\LogRedactor::json($data));
 
             return false;
         }
         if (!isset($data['name']) || trim((string) $data['name']) === '') {
-            \App\App::getInstance(true)->getLogger()->error('SpellVariable validation failed: Missing or empty name. Data: ' . json_encode($data));
+            \App\App::getInstance(true)->getLogger()->error('SpellVariable validation failed: Missing or empty name. Data: ' . \App\Helpers\LogRedactor::json($data));
 
             return false;
         }
         if (!isset($data['env_variable']) || trim((string) $data['env_variable']) === '') {
-            \App\App::getInstance(true)->getLogger()->error('SpellVariable validation failed: Missing or empty env_variable. Data: ' . json_encode($data));
+            \App\App::getInstance(true)->getLogger()->error('SpellVariable validation failed: Missing or empty env_variable. Data: ' . \App\Helpers\LogRedactor::json($data));
 
             return false;
         }
         if (!isset($data['description'])) {
-            \App\App::getInstance(true)->getLogger()->error('SpellVariable validation failed: description not set. Data: ' . json_encode($data));
+            \App\App::getInstance(true)->getLogger()->error('SpellVariable validation failed: description not set. Data: ' . \App\Helpers\LogRedactor::json($data));
 
             return false;
         }
         if (!isset($data['default_value'])) {
-            \App\App::getInstance(true)->getLogger()->error('SpellVariable validation failed: default_value not set. Data: ' . json_encode($data));
+            \App\App::getInstance(true)->getLogger()->error('SpellVariable validation failed: default_value not set. Data: ' . \App\Helpers\LogRedactor::json($data));
 
             return false;
         }
