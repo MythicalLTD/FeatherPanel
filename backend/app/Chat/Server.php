@@ -692,7 +692,7 @@ class Server
             $result = $stmt->execute($data);
             if (!$result) {
                 $errorInfo = $stmt->errorInfo();
-                App::getInstance(true)->getLogger()->error('Failed to update server: ' . ($errorInfo[2] ?? 'Unknown error') . ' | SQL: ' . $sql . ' | Data: ' . json_encode($data));
+                App::getInstance(true)->getLogger()->error('Failed to update server: ' . ($errorInfo[2] ?? 'Unknown error') . ' | SQL: ' . $sql . ' | Data: ' . \App\Helpers\LogRedactor::json($data));
 
                 return false;
             }

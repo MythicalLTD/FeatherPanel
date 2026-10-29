@@ -508,14 +508,14 @@ class Node
     public static function updateNode(string $uuid, array $data): bool
     {
         if (!self::isValidUuid($uuid)) {
-            App::getInstance(true)->getLogger()->error('Invalid UUID: ' . $uuid . ' for node: ' . $data['name'] . ' with data: ' . json_encode($data));
+            App::getInstance(true)->getLogger()->error('Invalid UUID: ' . $uuid . ' for node: ' . $data['name'] . ' with data: ' . \App\Helpers\LogRedactor::json($data));
 
             return false;
         }
 
         // Validate location_id if provided
         if (isset($data['location_id']) && !Location::getById($data['location_id'])) {
-            App::getInstance(true)->getLogger()->error('Invalid location_id: ' . $data['location_id'] . ' for node: ' . $data['name'] . ' with data: ' . json_encode($data));
+            App::getInstance(true)->getLogger()->error('Invalid location_id: ' . $data['location_id'] . ' for node: ' . $data['name'] . ' with data: ' . \App\Helpers\LogRedactor::json($data));
 
             return false;
         }
@@ -562,14 +562,14 @@ class Node
     public static function updateNodeById(int $id, array $data): bool
     {
         if ($id <= 0) {
-            App::getInstance(true)->getLogger()->error('Invalid ID: ' . $id . ' for node: ' . $data['name'] . ' with data: ' . json_encode($data));
+            App::getInstance(true)->getLogger()->error('Invalid ID: ' . $id . ' for node: ' . $data['name'] . ' with data: ' . \App\Helpers\LogRedactor::json($data));
 
             return false;
         }
 
         // Validate location_id if provided
         if (isset($data['location_id']) && !Location::getById($data['location_id'])) {
-            App::getInstance(true)->getLogger()->error('Invalid location_id: ' . $data['location_id'] . ' for node: ' . $data['name'] . ' with data: ' . json_encode($data));
+            App::getInstance(true)->getLogger()->error('Invalid location_id: ' . $data['location_id'] . ' for node: ' . $data['name'] . ' with data: ' . \App\Helpers\LogRedactor::json($data));
 
             return false;
         }

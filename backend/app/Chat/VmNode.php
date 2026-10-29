@@ -337,21 +337,21 @@ class VmNode
     public static function updateVmNodeById(int $id, array $data): bool
     {
         if ($id <= 0) {
-            App::getInstance(true)->getLogger()->error('Invalid VM node ID: ' . $id . ' with data: ' . json_encode($data));
+            App::getInstance(true)->getLogger()->error('Invalid VM node ID: ' . $id . ' with data: ' . \App\Helpers\LogRedactor::json($data));
 
             return false;
         }
 
         if (isset($data['location_id'])) {
             if (!Location::getById((int) $data['location_id'])) {
-                App::getInstance(true)->getLogger()->error('Invalid location_id: ' . $data['location_id'] . ' for VM node with data: ' . json_encode($data));
+                App::getInstance(true)->getLogger()->error('Invalid location_id: ' . $data['location_id'] . ' for VM node with data: ' . \App\Helpers\LogRedactor::json($data));
 
                 return false;
             }
 
             $location = Location::getById((int) $data['location_id']);
             if (!$location || ($location['type'] ?? 'game') !== 'vps') {
-                App::getInstance(true)->getLogger()->error('Location is not marked as VPS/VDS location_id: ' . $data['location_id'] . ' for VM node with data: ' . json_encode($data));
+                App::getInstance(true)->getLogger()->error('Location is not marked as VPS/VDS location_id: ' . $data['location_id'] . ' for VM node with data: ' . \App\Helpers\LogRedactor::json($data));
 
                 return false;
             }

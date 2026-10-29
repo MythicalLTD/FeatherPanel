@@ -359,7 +359,7 @@ class DatabaseInstance
     public static function updateDatabase(int $id, array $data): bool
     {
         if ($id <= 0) {
-            App::getInstance(true)->getLogger()->error('Invalid ID: ' . $id . ' for database update with data: ' . json_encode($data));
+            App::getInstance(true)->getLogger()->error('Invalid ID: ' . $id . ' for database update with data: ' . \App\Helpers\LogRedactor::json($data));
 
             return false;
         }
@@ -368,7 +368,7 @@ class DatabaseInstance
         if (array_key_exists('node_id', $data)) {
             if ($data['node_id'] !== null && $data['node_id'] !== '') {
                 if (!is_numeric($data['node_id']) || (int) $data['node_id'] <= 0 || !Node::getNodeById((int) $data['node_id'])) {
-                    App::getInstance(true)->getLogger()->error('Invalid node_id: ' . $data['node_id'] . ' for database update with data: ' . json_encode($data));
+                    App::getInstance(true)->getLogger()->error('Invalid node_id: ' . $data['node_id'] . ' for database update with data: ' . \App\Helpers\LogRedactor::json($data));
 
                     return false;
                 }
@@ -379,7 +379,7 @@ class DatabaseInstance
         if (array_key_exists('web_node_id', $data)) {
             if ($data['web_node_id'] !== null && $data['web_node_id'] !== '') {
                 if (!is_numeric($data['web_node_id']) || (int) $data['web_node_id'] <= 0 || !WebNode::getWebNodeById((int) $data['web_node_id'])) {
-                    App::getInstance(true)->getLogger()->error('Invalid web_node_id: ' . $data['web_node_id'] . ' for database update with data: ' . json_encode($data));
+                    App::getInstance(true)->getLogger()->error('Invalid web_node_id: ' . $data['web_node_id'] . ' for database update with data: ' . \App\Helpers\LogRedactor::json($data));
 
                     return false;
                 }
@@ -393,7 +393,7 @@ class DatabaseInstance
         if (isset($data['database_type'])) {
             $allowedTypes = ['mysql', 'postgresql', 'mariadb', 'mongodb', 'redis', 'clickhouse'];
             if (!in_array($data['database_type'], $allowedTypes)) {
-                App::getInstance(true)->getLogger()->error('Invalid database_type: ' . $data['database_type'] . ' for database update with data: ' . json_encode($data));
+                App::getInstance(true)->getLogger()->error('Invalid database_type: ' . $data['database_type'] . ' for database update with data: ' . \App\Helpers\LogRedactor::json($data));
 
                 return false;
             }
@@ -402,7 +402,7 @@ class DatabaseInstance
         // Validate database_port if provided
         if (isset($data['database_port'])) {
             if (!is_numeric($data['database_port']) || (int) $data['database_port'] < 1 || (int) $data['database_port'] > 65535) {
-                App::getInstance(true)->getLogger()->error('Invalid database_port: ' . $data['database_port'] . ' for database update with data: ' . json_encode($data));
+                App::getInstance(true)->getLogger()->error('Invalid database_port: ' . $data['database_port'] . ' for database update with data: ' . \App\Helpers\LogRedactor::json($data));
 
                 return false;
             }
