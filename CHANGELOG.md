@@ -92,6 +92,7 @@
 
 ### Fixed
 
+- Admin node status: the summary cards are a compact two-column grid on phones, the section heading scales down, and long node errors are clamped to three lines (full text on hover). by @nayskutzu
 - File manager: list control buttons show a keyboard focus ring, and the secondary control is hidden on phones so the toolbar no longer wraps. by @nayskutzu
 - FeatherOS desktop: server icons get a taller row step so two-line labels and the disk meter no longer overlap the next icon; snapping, auto-arrange and arrow-key moves use the same step. by @nayskutzu
 - Admin audit log: the filter row no longer clips the date inputs and placeholders at desktop widths; search, user, action, target and date fields get their own column spans. by @nayskutzu
