@@ -22,6 +22,7 @@ use App\Chat\User;
 use App\Chat\WebNode;
 use App\Chat\WebPlate;
 use App\Chat\WebSpace;
+use App\Chat\WebSpaceDomain;
 use App\Chat\HostingPackage;
 use App\Helpers\ApiResponse;
 use App\Helpers\WebSpaceWafRules;
@@ -255,6 +256,26 @@ class WebSpacesController
                 'MISSING_ACME_EMAIL',
                 400,
             );
+        }
+
+        // Reject a domain owned by another WebSpace up front with a clear 409
+        // instead of letting the model swallow it and surface a generic 500.
+        $requestedDomains = [];
+        foreach (['domains', 'domain_routes'] as $domainKey) {
+            if (isset($fields[$domainKey]) && is_array($fields[$domainKey])) {
+                foreach ($fields[$domainKey] as $entry) {
+                    $requestedDomains[] = is_array($entry) ? (string) ($entry['domain'] ?? '') : (string) $entry;
+                }
+            }
+        }
+        foreach ($requestedDomains as $requestedDomain) {
+            if (WebSpaceDomain::findOwnerId($requestedDomain, (int) ($space['id'] ?? 0)) !== null) {
+                return ApiResponse::error(
+                    'Domain ' . substr(strtolower(trim($requestedDomain)), 0, 253) . ' is already used by another WebSpace',
+                    'DOMAIN_IN_USE',
+                    409,
+                );
+            }
         }
 
         if (!WebSpace::update($uuid, $fields)) {
