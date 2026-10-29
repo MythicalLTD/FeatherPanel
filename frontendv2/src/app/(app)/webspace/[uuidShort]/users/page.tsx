@@ -22,7 +22,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import axios from 'axios';
 import { toast } from 'sonner';
-import { Plus, Trash2, Users, Mail, Loader2, RefreshCw, Shield } from 'lucide-react';
+import { Plus, Trash2, Users, Mail, Loader2, RefreshCw, Shield, Lock } from 'lucide-react';
 import { ResourceTable } from '@/components/featherui/ResourceCard';
 import { ListPagination } from '@/components/featherui/ListPagination';
 import { useClientPagination } from '@/hooks/useClientPagination';
@@ -55,6 +55,7 @@ export default function WebSpaceUsersPage() {
     const canUpdate = !permissionsLoading && hasPermission(WebSpaceSubuserPermissions['user.update']);
     const canCreate = !permissionsLoading && hasPermission(WebSpaceSubuserPermissions['user.create']);
     const canDelete = !permissionsLoading && hasPermission(WebSpaceSubuserPermissions['user.delete']);
+    const canRead = !permissionsLoading && hasPermission(WebSpaceSubuserPermissions['user.read']);
     const [loading, setLoading] = useState(true);
     const [subusers, setSubusers] = useState<SubuserRow[]>([]);
     const [email, setEmail] = useState('');
@@ -66,6 +67,10 @@ export default function WebSpaceUsersPage() {
     const [isAddOpen, setIsAddOpen] = useState(false);
 
     const load = useCallback(async () => {
+        if (!canRead) {
+            setLoading(false);
+            return;
+        }
         try {
             const { data } = await axios.get(`/api/user/webspaces/${uuidShort}/users`);
             setSubusers((data.data?.subusers || []) as SubuserRow[]);
@@ -81,11 +86,12 @@ export default function WebSpaceUsersPage() {
         } finally {
             setLoading(false);
         }
-    }, [uuidShort, t]);
+    }, [uuidShort, t, canRead]);
 
     useEffect(() => {
+        if (permissionsLoading) return;
         void load();
-    }, [load]);
+    }, [load, permissionsLoading]);
 
     const addUser = async () => {
         if (!email.includes('@')) {
@@ -156,6 +162,18 @@ export default function WebSpaceUsersPage() {
             <div className='flex flex-col items-center justify-center py-24'>
                 <Loader2 className='text-primary h-12 w-12 animate-spin opacity-50' />
                 <p className='text-muted-foreground mt-4 font-medium'>{t('common.loading')}</p>
+            </div>
+        );
+    }
+
+    if (!canRead) {
+        return (
+            <div className='flex flex-col items-center justify-center py-24 text-center'>
+                <div className='mb-6 flex h-20 w-20 items-center justify-center rounded-3xl bg-red-500/10'>
+                    <Lock className='h-10 w-10 text-red-500' />
+                </div>
+                <h1 className='text-2xl font-semibold tracking-tight'>{t('common.accessDenied')}</h1>
+                <p className='text-muted-foreground mt-2'>{t('common.noPermission')}</p>
             </div>
         );
     }
