@@ -45,6 +45,7 @@
 - Security center: require two-factor authentication for every admin with an optional 0-30 day grace period. Affected users see a reminder banner with the deadline, and the panel refuses a setting that would lock out the admin saving it. Admins can see and sign out a user's active sessions from the new Sessions tab on the user edit page (audited). by @nayskutzu
 - Ctrl+K palette upgrades: recent results per user, `>` commands (toggle theme, clear recents, admin shortcuts filtered by permission), `/` file search inside the current server, node and ticket results, `@nodes`/`#tickets`/`#files` scopes, fuzzy word-prefix ranking with groups ordered by best match, Tab/Shift+Tab to jump between groups, Home/End, and Ctrl/Cmd+Enter to open in a new tab. by @nayskutzu
 
+- Ctrl+K file search (`files:` scope) now searches recursively below the typed directory through the daemon `search-files` endpoint, and falls back to listing that directory on daemons without search support.
 ### Improved
 
 - WebSpace Files now runs on the shared file manager hook, with list/grid view, sorting, image thumbnails, a file info sheet and pinned/recent folders like server files.
