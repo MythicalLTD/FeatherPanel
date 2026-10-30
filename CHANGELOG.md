@@ -94,6 +94,7 @@
 
 ### Fixed
 
+- Async runner Docker image: build and run on Debian Trixie (`rust:slim-trixie` + `debian:trixie-slim`) so glibc matches. The old Bookworm runtime only had glibc 2.36 while unpinned `rust:slim` linked against GLIBC_2.38+, which crashed on start with `version GLIBC_2.38 not found`. by @nayskutzu
 - Admin spell editor: two-column field groups collapse to one column on phones, and image field labels match the other form labels. by @nayskutzu
 - Account sessions: header and "sign out other sessions" button sit on one row on desktop and stack on phones, a skeleton shows while loading, the button is disabled when there are no other sessions, and the ticket signature placeholder no longer shows a literal \\n. by @nayskutzu
 - Admin node status: the summary cards are a compact two-column grid on phones, the section heading scales down, and long node errors are clamped to three lines (full text on hover). by @nayskutzu

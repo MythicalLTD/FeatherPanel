@@ -17,7 +17,9 @@ COPY frontendv2/ .
 RUN pnpm build
 
 # ============================================================================
-FROM rust:slim AS runner-builder
+# FrankenPHP final image is still Bookworm-based — keep the runner on Bookworm glibc.
+# The standalone runner image (runner/Dockerfile) uses Trixie; this all-in-one cannot yet.
+FROM rust:slim-bookworm AS runner-builder
 
 # Build the Rust async runner
 WORKDIR /build

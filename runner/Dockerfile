@@ -1,7 +1,9 @@
 # syntax=docker/dockerfile:1.7
 
-# Build stage
-FROM rust:slim as builder
+# Build + runtime both on Trixie so glibc matches (Bookworm is 2.36; Trixie is 2.41).
+# Unpinned `rust:slim` already builds against Trixie/newer — shipping that binary
+# into `debian:bookworm-slim` caused: version `GLIBC_2.38' not found.
+FROM rust:slim-trixie AS builder
 
 WORKDIR /build
 
@@ -50,14 +52,14 @@ RUN --mount=type=cache,target=/usr/local/cargo/registry \
     cp /build/target/release/async-runner /build/async-runner
 
 # Runtime stage
-FROM debian:bookworm-slim
+FROM debian:trixie-slim
 
 WORKDIR /app
 
-# Install runtime dependencies
+# Install runtime dependencies (openssl pulls the correct libssl* for the suite)
 RUN apt-get update && apt-get install -y \
     ca-certificates \
-    libssl3 \
+    openssl \
     && rm -rf /var/lib/apt/lists/* \
     && printf '\n# Prefer IPv4 when both A and AAAA exist (container often has no IPv6 route)\nprecedence ::ffff:0:0/96 100\n' >> /etc/gai.conf
 
