@@ -16,34 +16,13 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import type { OrganizedSettings, Setting } from '@/lib/admin-settings-api';
 import type { GlobalSearchResult } from '@/lib/global-search';
 import Permissions from '@/lib/permissions';
+import { groupSearchText, vdsGroupSearchText } from '@/lib/admin-settings-groups';
 
 const ADMIN_SETTING_DISPLAY_NAMES: Record<string, string> = {
     server_require_subdomain: 'Require subdomain before server start',
     server_lifecycle_hooks_enabled: 'Lifecycle hooks (pre-start / pre-stop / post-start / crash)',
     server_lifecycle_hooks_container_shell_enabled: 'Container Shell (docker exec) for lifecycle hooks & schedules',
 };
-
-/** First matching group wins - keep in sync with VdsSettingsSections GROUPS. */
-const VDS_SETTING_GROUPS: { id: string; match: (key: string) => boolean }[] = [
-    { id: 'branding', match: (k) => k.startsWith('vds_console_brand_') },
-    {
-        id: 'console',
-        match: (k) => k.startsWith('vnc_') || k.startsWith('vds_console_') || k.startsWith('vds_ctrl_alt_del'),
-    },
-    { id: 'graphs', match: (k) => k.startsWith('vds_graphs_') },
-    { id: 'iso', match: (k) => k.startsWith('vds_iso_') || k.startsWith('vds_rescue_') },
-    { id: 'snapshots', match: (k) => k.startsWith('vds_snapshots_') },
-    { id: 'firewall', match: (k) => k.startsWith('vds_firewall_') },
-    { id: 'schedules', match: (k) => k.startsWith('vds_schedules_') },
-    { id: 'bandwidth', match: (k) => k.startsWith('vds_bandwidth_') },
-    {
-        id: 'alerts',
-        match: (k) => k.startsWith('vds_monitor_') || k.startsWith('vds_notify_') || k.startsWith('vds_high_cpu_'),
-    },
-    { id: 'security', match: (k) => k.startsWith('vds_reauth_') },
-    { id: 'expiry', match: (k) => k.startsWith('vds_expiry_') || k.startsWith('vds_suspend_') },
-    { id: 'placement', match: (k) => k.startsWith('vds_placement_') || k.startsWith('vds_migration_') },
-];
 
 export function formatAdminSettingName(name: string, key: string): string {
     if (ADMIN_SETTING_DISPLAY_NAMES[key]) {
@@ -79,16 +58,7 @@ export function resolveAdminSettingLabel(
     };
 }
 
-/** Group title + description for VDS accordion sections (searchable). */
-export function vdsGroupSearchText(settingKey: string, t: (key: string) => string): string {
-    const group = VDS_SETTING_GROUPS.find((g) => g.match(settingKey));
-    const id = group?.id ?? 'other';
-    const titleKey = `admin.settings.vds_groups.${id}.title`;
-    const descKey = `admin.settings.vds_groups.${id}.description`;
-    const title = t(titleKey);
-    const desc = t(descKey);
-    return [title !== titleKey ? title : id, desc !== descKey ? desc : ''].filter(Boolean).join('\n');
-}
+export { vdsGroupSearchText };
 
 export function matchesAdminSettingQuery(
     query: string,
@@ -129,7 +99,7 @@ export function adminSettingsToSearchResults(
     for (const [categoryKey, data] of Object.entries(organized)) {
         for (const [settingKey, setting] of Object.entries(data.settings)) {
             const { title, description } = resolveAdminSettingLabel(settingKey, setting, t);
-            const groupText = categoryKey === 'vds' ? vdsGroupSearchText(settingKey, t) : '';
+            const groupText = groupSearchText(categoryKey, settingKey, t);
 
             results.push({
                 id: `admin-setting-${settingKey}`,
@@ -150,7 +120,6 @@ export function adminSettingsToSearchResults(
                     groupText,
                     'panel setting',
                     'admin setting',
-                    'vds',
                 ].filter(Boolean) as string[],
             });
         }

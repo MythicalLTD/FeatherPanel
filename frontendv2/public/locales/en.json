@@ -12932,6 +12932,386 @@
                 "testing": "Testing…",
                 "success": "Storage works: the test object was written and deleted.",
                 "failed": "Storage test failed. Check the endpoint, bucket and keys."
+            },
+            "groups": {
+                "shared": {
+                    "intro": "{count} sections. Click a section to expand it.",
+                    "expand_all": "Expand all",
+                    "collapse_all": "Collapse all"
+                },
+                "app": {
+                    "identity": {
+                        "title": "Identity",
+                        "description": "Panel name, URL, logos and timezone."
+                    },
+                    "sso_api": {
+                        "title": "SSO & API clients",
+                        "description": "SSO redirect path, token lifetime and public API key auth."
+                    },
+                    "locale": {
+                        "title": "Locale",
+                        "description": "Default language and whether users can change it."
+                    },
+                    "theme": {
+                        "title": "Theme & UI packs",
+                        "description": "Accent color, light/dark theme and UI pack defaults and locks."
+                    },
+                    "background": {
+                        "title": "Background & backdrop",
+                        "description": "Panel background image, blur and darken defaults."
+                    },
+                    "spell_banner": {
+                        "title": "Spell banner",
+                        "description": "How server spell banners look in the panel."
+                    },
+                    "temp_files": {
+                        "title": "Temp files",
+                        "description": "Temporary file hosting API for the panel."
+                    },
+                    "other": {
+                        "title": "Other",
+                        "description": "Remaining app settings."
+                    }
+                },
+                "modules": {
+                    "modules": {
+                        "title": "Modules",
+                        "description": "Turn whole panel modules on or off."
+                    },
+                    "other": {
+                        "title": "Other",
+                        "description": "Remaining module settings."
+                    }
+                },
+                "vds": {
+                    "intro": "{count} sections. Click a section to expand it; each one controls a single VDS feature.",
+                    "expand_all": "Expand all",
+                    "collapse_all": "Collapse all",
+                    "console": {
+                        "title": "Console",
+                        "description": "VNC proxy, paste, screenshots and Ctrl+Alt+Del in the browser console."
+                    },
+                    "branding": {
+                        "title": "Console branding",
+                        "description": "Name and logo shown on the VDS console header."
+                    },
+                    "graphs": {
+                        "title": "Resource graphs",
+                        "description": "CPU, memory, network and disk history from Proxmox RRD data."
+                    },
+                    "iso": {
+                        "title": "ISO & rescue",
+                        "description": "Who may mount which ISOs, user uploads and rescue mode. Storage and the rescue ISO volid are set per VDS node.",
+                        "node_callout": "User ISO storage, allowed ISO storages and the rescue ISO volid are configured on each VDS node’s Storage tab - not here.",
+                        "node_link": "Open VDS nodes"
+                    },
+                    "snapshots": {
+                        "title": "Snapshots",
+                        "description": "Allow snapshots, default limit per VDS and RAM state."
+                    },
+                    "firewall": {
+                        "title": "Firewall",
+                        "description": "Proxmox firewall rules users can manage, limits and presets."
+                    },
+                    "schedules": {
+                        "title": "Schedules",
+                        "description": "Automated power, snapshot and backup tasks per VDS."
+                    },
+                    "bandwidth": {
+                        "title": "Bandwidth",
+                        "description": "Monthly traffic quota, warnings and what happens when it is exceeded."
+                    },
+                    "alerts": {
+                        "title": "Monitoring & alerts",
+                        "description": "Background checks and notifications for downtime, high CPU and failed backups."
+                    },
+                    "security": {
+                        "title": "Security",
+                        "description": "Re-authentication before sensitive actions."
+                    },
+                    "expiry": {
+                        "title": "Expiry & suspension",
+                        "description": "Expiry warnings, stopping expired VDS and the suspension screen."
+                    },
+                    "placement": {
+                        "title": "Placement & migration",
+                        "description": "How new VDS pick a node, overcommit and live migration."
+                    },
+                    "other": {
+                        "title": "Other",
+                        "description": "Remaining VDS settings."
+                    }
+                },
+                "links": {
+                    "support": {
+                        "title": "Support & site",
+                        "description": "Support, website and status page links."
+                    },
+                    "social": {
+                        "title": "Social",
+                        "description": "Social media links shown in the footer."
+                    },
+                    "legal": {
+                        "title": "Legal",
+                        "description": "Terms of service and privacy policy URLs."
+                    },
+                    "other": {
+                        "title": "Other",
+                        "description": "Remaining link settings."
+                    }
+                },
+                "auth_page": {
+                    "copy": {
+                        "title": "Copy & headlines",
+                        "description": "Taglines and headlines on login, register and SSO."
+                    },
+                    "layout": {
+                        "title": "Layout & visuals",
+                        "description": "Marketing panel, template, density and footer style."
+                    },
+                    "qr": {
+                        "title": "QR login",
+                        "description": "Show or hide QR code sign-in."
+                    },
+                    "login_methods": {
+                        "title": "Login methods",
+                        "description": "Default method, order and hidden methods."
+                    },
+                    "other": {
+                        "title": "Other",
+                        "description": "Remaining auth page settings."
+                    }
+                },
+                "telemetry": {
+                    "telemetry": {
+                        "title": "Telemetry",
+                        "description": "Installation reports and analytics sent to FeatherPanel."
+                    },
+                    "other": {
+                        "title": "Other",
+                        "description": "Remaining telemetry settings."
+                    }
+                },
+                "security": {
+                    "login": {
+                        "title": "Login & registration",
+                        "description": "Email login, registration, device limits and admin 2FA."
+                    },
+                    "captcha": {
+                        "title": "Captcha",
+                        "description": "Turnstile, hCaptcha, reCAPTCHA and Friendly Captcha."
+                    },
+                    "abuseipdb": {
+                        "title": "AbuseIPDB",
+                        "description": "Block registrations from abusive IPs."
+                    },
+                    "avatars": {
+                        "title": "Avatars",
+                        "description": "Avatar provider and whether users can change theirs."
+                    },
+                    "profile": {
+                        "title": "Profile permissions",
+                        "description": "What users may change on their account."
+                    },
+                    "account_deletion": {
+                        "title": "Account deletion",
+                        "description": "Self-service account deletion and verification."
+                    },
+                    "other": {
+                        "title": "Other",
+                        "description": "Remaining security settings."
+                    }
+                },
+                "email": {
+                    "provider": {
+                        "title": "Provider",
+                        "description": "Enable mail, choose a preset and set the from address."
+                    },
+                    "smtp": {
+                        "title": "SMTP",
+                        "description": "SMTP host, port, credentials and encryption."
+                    },
+                    "api": {
+                        "title": "API mail",
+                        "description": "API key, domain and region for API-based providers."
+                    },
+                    "other": {
+                        "title": "Other",
+                        "description": "Remaining email settings."
+                    }
+                },
+                "status_page": {
+                    "enablement": {
+                        "title": "Enablement & maintenance",
+                        "description": "Status page on/off, public access and maintenance mode."
+                    },
+                    "visibility": {
+                        "title": "Visibility",
+                        "description": "What metrics and nodes the status page shows."
+                    },
+                    "other": {
+                        "title": "Other",
+                        "description": "Remaining status page settings."
+                    }
+                },
+                "knowledgebase": {
+                    "knowledgebase": {
+                        "title": "Knowledgebase",
+                        "description": "Public access and what knowledgebase elements are shown."
+                    },
+                    "other": {
+                        "title": "Other",
+                        "description": "Remaining knowledgebase settings."
+                    }
+                },
+                "oauth": {
+                    "discord": {
+                        "title": "Discord",
+                        "description": "Discord OAuth client for sign-in."
+                    },
+                    "google": {
+                        "title": "Google",
+                        "description": "Google SSO client for sign-in."
+                    },
+                    "github": {
+                        "title": "GitHub",
+                        "description": "GitHub SSO client for sign-in."
+                    },
+                    "shared": {
+                        "title": "Shared SSO rules",
+                        "description": "Allowed domains, registration and auto-link behavior."
+                    },
+                    "other": {
+                        "title": "Other",
+                        "description": "Remaining OAuth settings."
+                    }
+                },
+                "servers": {
+                    "permissions": {
+                        "title": "Permissions & features",
+                        "description": "What users may change or create on their game servers."
+                    },
+                    "lifecycle": {
+                        "title": "Lifecycle & scripts",
+                        "description": "Pre/post start hooks, crash hooks and run-script."
+                    },
+                    "backups": {
+                        "title": "Backup policy",
+                        "description": "Retention mode and whether users can edit backup policy."
+                    },
+                    "proxy_upload": {
+                        "title": "Proxy & uploads",
+                        "description": "User proxies, max proxies and upload chunk size."
+                    },
+                    "network": {
+                        "title": "Network",
+                        "description": "Require subdomain and hide allocation IPs."
+                    },
+                    "auto_start": {
+                        "title": "Auto-start",
+                        "description": "Restart servers when a node reconnects."
+                    },
+                    "trash": {
+                        "title": "File trash",
+                        "description": "Soft-delete for server files with size and retention limits."
+                    },
+                    "other": {
+                        "title": "Other",
+                        "description": "Remaining server settings."
+                    }
+                },
+                "chatbot": {
+                    "core": {
+                        "title": "Core",
+                        "description": "Enable the chatbot, pick a provider and tune prompts."
+                    },
+                    "google": {
+                        "title": "Google AI",
+                        "description": "API key and model for Google AI / Gemini."
+                    },
+                    "openrouter": {
+                        "title": "OpenRouter",
+                        "description": "API key and model for OpenRouter."
+                    },
+                    "openai": {
+                        "title": "OpenAI",
+                        "description": "API key, model and base URL for OpenAI-compatible APIs."
+                    },
+                    "ollama": {
+                        "title": "Ollama",
+                        "description": "Base URL and model for a local Ollama instance."
+                    },
+                    "grok": {
+                        "title": "Grok",
+                        "description": "API key and model for xAI Grok."
+                    },
+                    "perplexity": {
+                        "title": "Perplexity",
+                        "description": "API key, model and base URL for Perplexity."
+                    },
+                    "other": {
+                        "title": "Other",
+                        "description": "Remaining chatbot settings."
+                    }
+                },
+                "ticket_system": {
+                    "ticket_system": {
+                        "title": "Ticket system",
+                        "description": "Enable tickets, attachments and open-ticket limits."
+                    },
+                    "other": {
+                        "title": "Other",
+                        "description": "Remaining ticket settings."
+                    }
+                },
+                "seo": {
+                    "seo": {
+                        "title": "SEO",
+                        "description": "Title, description, keywords and indexing."
+                    },
+                    "other": {
+                        "title": "Other",
+                        "description": "Remaining SEO settings."
+                    }
+                },
+                "pwa": {
+                    "pwa": {
+                        "title": "Progressive Web App",
+                        "description": "Installable app name, colors and description."
+                    },
+                    "other": {
+                        "title": "Other",
+                        "description": "Remaining PWA settings."
+                    }
+                },
+                "other": {
+                    "other": {
+                        "title": "Other",
+                        "description": "Developer mode, custom CSS/JS and cache driver."
+                    }
+                },
+                "backup_storage": {
+                    "panel_s3": {
+                        "title": "Panel S3",
+                        "description": "Panel-managed S3 bucket for server backups."
+                    },
+                    "upload": {
+                        "title": "Upload tuning",
+                        "description": "Part size, concurrency and presigned URL lifetime."
+                    },
+                    "byo": {
+                        "title": "Bring your own",
+                        "description": "Let users connect their own backup storage."
+                    },
+                    "oauth_apps": {
+                        "title": "OAuth apps",
+                        "description": "Google Drive, Dropbox and OneDrive client credentials."
+                    },
+                    "other": {
+                        "title": "Other",
+                        "description": "Remaining backup storage settings."
+                    }
+                }
             }
         },
         "rate_limits": {

@@ -17,7 +17,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { AdminPageTips } from '@/components/admin/AdminPageTips';
 import { EmailProviderHint } from '@/components/admin/EmailProviderHint';
-import { VdsSettingsSections } from '@/components/admin/VdsSettingsSections';
+import { SettingsAccordionSections } from '@/components/admin/SettingsAccordionSections';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { applyMailProviderPreset, shouldShowMailSetting } from '@/lib/mail-providers';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
@@ -64,7 +64,8 @@ import {
 import { reopenSetup } from '@/lib/setup-wizard';
 import { copyToClipboard, cn } from '@/lib/utils';
 import { ImageAttachmentField } from '@/components/featherui/ImageAttachmentField';
-import { matchesAdminSettingQuery, resolveAdminSettingLabel, vdsGroupSearchText } from '@/lib/admin-settings-search';
+import { matchesAdminSettingQuery, resolveAdminSettingLabel } from '@/lib/admin-settings-search';
+import { groupSearchText } from '@/lib/admin-settings-groups';
 
 interface LogData {
     success: boolean;
@@ -125,7 +126,7 @@ function matchesSettingsQuery(
     t: (key: string) => string,
 ): boolean {
     const { title, description } = resolveAdminSettingLabel(settingKey, currentSetting, t);
-    const extra = categoryKey === 'vds' ? vdsGroupSearchText(settingKey, t) : '';
+    const extra = groupSearchText(categoryKey, settingKey, t);
     return matchesAdminSettingQuery(
         query,
         settingKey,
@@ -936,86 +937,29 @@ export default function SettingsPage() {
                                                         </div>
                                                     </div>
                                                 )}
-                                                {key === 'vds' ? (
-                                                    <VdsSettingsSections
-                                                        entries={filteredEntries}
-                                                        settings={settings}
-                                                        searching={searchTrimmed !== ''}
-                                                        renderField={(settingKey, currentSetting) => (
-                                                            <div
-                                                                className={cn(
-                                                                    'fp-setting-row',
-                                                                    dirtyKeys.has(settingKey) && 'fp-setting-dirty',
-                                                                )}
-                                                            >
-                                                                <SettingFieldRow
-                                                                    settingKey={settingKey}
-                                                                    currentSetting={currentSetting}
-                                                                    onSettingChange={handleSettingChange}
-                                                                    t={t}
-                                                                    switchBooleans
-                                                                />
-                                                            </div>
-                                                        )}
-                                                    />
-                                                ) : (
-                                                    (() => {
-                                                        const renderRow = ([
-                                                            settingKey,
-                                                            setting,
-                                                        ]: (typeof filteredEntries)[number]) => {
-                                                            const currentSetting = settings[settingKey] || setting;
-                                                            return (
-                                                                <div
-                                                                    key={settingKey}
-                                                                    className={cn(
-                                                                        'fp-setting-row',
-                                                                        dirtyKeys.has(settingKey) && 'fp-setting-dirty',
-                                                                    )}
-                                                                >
-                                                                    <SettingFieldRow
-                                                                        settingKey={settingKey}
-                                                                        currentSetting={currentSetting}
-                                                                        onSettingChange={handleSettingChange}
-                                                                        t={t}
-                                                                    />
-                                                                </div>
-                                                            );
-                                                        };
-                                                        const isSwitch = ([
-                                                            settingKey,
-                                                            setting,
-                                                        ]: (typeof filteredEntries)[number]) => {
-                                                            const s = settings[settingKey] || setting;
-                                                            return (
-                                                                settingKey === 'telemetry' ||
-                                                                s.type === 'toggle' ||
-                                                                (s.type as string) === 'boolean'
-                                                            );
-                                                        };
-                                                        const fields = filteredEntries.filter((e) => !isSwitch(e));
-                                                        const switches = filteredEntries.filter(isSwitch);
-                                                        if (!fields.length || !switches.length) {
-                                                            return filteredEntries.map(renderRow);
-                                                        }
-                                                        return (
-                                                            <>
-                                                                <section className='fp-settings-section space-y-4'>
-                                                                    <h3 className='fp-settings-section-title'>
-                                                                        {t('admin.settings.sections.values')}
-                                                                    </h3>
-                                                                    {fields.map(renderRow)}
-                                                                </section>
-                                                                <section className='fp-settings-section space-y-3'>
-                                                                    <h3 className='fp-settings-section-title'>
-                                                                        {t('admin.settings.sections.switches')}
-                                                                    </h3>
-                                                                    {switches.map(renderRow)}
-                                                                </section>
-                                                            </>
-                                                        );
-                                                    })()
-                                                )}
+                                                <SettingsAccordionSections
+                                                    key={key}
+                                                    categoryKey={key}
+                                                    entries={filteredEntries}
+                                                    settings={settings}
+                                                    searching={searchTrimmed !== ''}
+                                                    renderField={(settingKey, currentSetting) => (
+                                                        <div
+                                                            className={cn(
+                                                                'fp-setting-row',
+                                                                dirtyKeys.has(settingKey) && 'fp-setting-dirty',
+                                                            )}
+                                                        >
+                                                            <SettingFieldRow
+                                                                settingKey={settingKey}
+                                                                currentSetting={currentSetting}
+                                                                onSettingChange={handleSettingChange}
+                                                                t={t}
+                                                                switchBooleans
+                                                            />
+                                                        </div>
+                                                    )}
+                                                />
                                             </div>
                                         )}
                                     </PageCard>

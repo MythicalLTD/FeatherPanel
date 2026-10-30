@@ -47,6 +47,7 @@
 
 ### Improved
 
+- The settings editor was improved so you can know what you are chaning and what you have changed by @nayskutzu
 - Admin audit log: the target filter no longer evaluates the category CASE on every row. The distinct action names are classified once and the filter becomes an indexed `name IN (...)`, so `?target=auth` on 300k rows drops from ~200 ms to ~11 ms with identical results. by @nayskutzu
 - Admin audit log: filtering by user now resolves the username/email first and uses the activity index (750 ms to 3 ms on 300k rows), and the total count skips the users join unless a search needs it (36 ms to 26 ms). by @nayskutzu
 - WebSpace Files now runs on the shared file manager hook, with list/grid view, sorting, image thumbnails, a file info sheet and pinned/recent folders like server files. by @nayskutzu
