@@ -24,14 +24,16 @@ FEATHERPANEL_WORKER_MAX_THREADS="${FEATHERPANEL_WORKER_MAX_THREADS:-$((_fp_cpus 
 # "auto" thread sizing ignores the container memory limit, so on a big host
 # the pools can grow until the box runs out of RAM. Size it from the memory
 # that is actually available (cgroup limit or MemTotal): about 60% of it
-# divided by the per-request memory_limit, between 4 and 64 threads.
+# divided by the per-worker heap target (not PHP_MEMORY_LIMIT — that is a
+# hard ceiling, not typical RSS). Floor at 8 so a ≤2 GB VPS still has enough
+# threads for ≥2 API workers + scale-up while a request waits on Wings.
 _fp_mem_mb() {
 	_v=$(printf '%s' "$1" | tr '[:lower:]' '[:upper:]')
 	case "$_v" in
 	*G) echo $((${_v%G} * 1024)) ;;
 	*M) echo "${_v%M}" ;;
 	*K) echo $((${_v%K} / 1024)) ;;
-	'' | -1 | *[!0-9]*) echo 512 ;;
+	'' | -1 | *[!0-9]*) echo 256 ;;
 	*) echo $((_v / 1048576)) ;;
 	esac
 }
@@ -42,10 +44,11 @@ if [ "${FRANKENPHP_MAX_THREADS:-auto}" = auto ]; then
 	'' | max | *[!0-9]*) _fp_avail=$_fp_total ;;
 	*) _fp_avail=$((_fp_limit / 1048576)); [ "$_fp_avail" -le "$_fp_total" ] || _fp_avail=$_fp_total ;;
 	esac
-	_fp_per=$(_fp_mem_mb "${PHP_MEMORY_LIMIT:-512M}")
+	_fp_per=$(_fp_mem_mb "${FEATHERPANEL_WORKER_MAX_MEMORY:-256M}")
 	[ "$_fp_per" -ge 64 ] || _fp_per=64
 	FRANKENPHP_MAX_THREADS=$((_fp_avail * 6 / 10 / _fp_per))
-	[ "$FRANKENPHP_MAX_THREADS" -ge 4 ] || FRANKENPHP_MAX_THREADS=4
+	# 8 = 2 api + headroom to scale while blocked on Wings/HTTP + 1 slow + 1 classic.
+	[ "$FRANKENPHP_MAX_THREADS" -ge 8 ] || FRANKENPHP_MAX_THREADS=8
 	[ "$FRANKENPHP_MAX_THREADS" -le 64 ] || FRANKENPHP_MAX_THREADS=64
 	export FRANKENPHP_MAX_THREADS
 	echo "FrankenPHP: max_threads=${FRANKENPHP_MAX_THREADS} (${_fp_avail} MB available, ${_fp_per} MB per thread)"
@@ -53,27 +56,58 @@ fi
 
 # FrankenPHP refuses to start when the workers (plus one regular thread for
 # phpMyAdmin & co.) need more threads than max_threads allows.
+# Keep at least 2 API workers and leave scale-up room: a single API worker
+# deadlocks when a request blocks on Wings/HTTP (server create, installs and
+# transfers then time out with cURL error 28).
 if [ "$FEATHERPANEL_PHP_MODE" = worker ]; then
 	case "${FRANKENPHP_MAX_THREADS:-auto}" in
 	'' | *[!0-9]*) ;; # "auto": FrankenPHP sizes it, nothing to clamp
 	*)
 		_fp_max=$FRANKENPHP_MAX_THREADS
-		if [ $((FEATHERPANEL_WORKERS + FEATHERPANEL_SLOW_WORKERS + 1)) -gt "$_fp_max" ]; then
-			FEATHERPANEL_WORKERS=$((_fp_max - FEATHERPANEL_SLOW_WORKERS - 1))
-			if [ "$FEATHERPANEL_WORKERS" -lt 1 ]; then
-				FEATHERPANEL_SLOW_WORKERS=1
-				FEATHERPANEL_WORKERS=$((_fp_max - 2))
+		_fp_classic=1
+		_fp_budget=$((_fp_max - _fp_classic))
+		if [ "$_fp_budget" -lt 2 ]; then
+			echo "FrankenPHP: FRANKENPHP_MAX_THREADS=${_fp_max} is too small for worker mode (needs 3+), using classic mode"
+			FEATHERPANEL_PHP_MODE=classic
+		else
+			_fp_before_workers=$FEATHERPANEL_WORKERS
+			_fp_before_slow=$FEATHERPANEL_SLOW_WORKERS
+			# Never run with a single API worker: shrink slow first, then API start count.
+			# Also leave ≥2 free threads for scale-up while a request waits on Wings/HTTP.
+			_fp_need_fit=0
+			[ "$FEATHERPANEL_WORKERS" -ge 2 ] || _fp_need_fit=1
+			[ $((FEATHERPANEL_WORKERS + FEATHERPANEL_SLOW_WORKERS)) -le "$_fp_budget" ] || _fp_need_fit=1
+			[ $((_fp_max - FEATHERPANEL_WORKERS - FEATHERPANEL_SLOW_WORKERS - _fp_classic)) -ge 2 ] || _fp_need_fit=1
+			if [ "$_fp_need_fit" -eq 1 ]; then
+				if [ "$_fp_budget" -ge 3 ]; then
+					[ "$FEATHERPANEL_SLOW_WORKERS" -le $((_fp_budget - 2)) ] || FEATHERPANEL_SLOW_WORKERS=$((_fp_budget - 2))
+					[ "$FEATHERPANEL_SLOW_WORKERS" -ge 1 ] || FEATHERPANEL_SLOW_WORKERS=1
+				else
+					FEATHERPANEL_SLOW_WORKERS=0
+				fi
+				_fp_api_cap=$((_fp_budget - FEATHERPANEL_SLOW_WORKERS))
+				# Start at most half the API budget so Wings/HTTP waits can scale up.
+				_fp_api_start=$(((_fp_api_cap + 1) / 2))
+				[ "$_fp_api_start" -ge 2 ] || _fp_api_start=2
+				[ "$_fp_api_start" -le "$_fp_api_cap" ] || _fp_api_start=$_fp_api_cap
+				FEATHERPANEL_WORKERS=$_fp_api_start
 			fi
-			if [ "$FEATHERPANEL_WORKERS" -lt 1 ]; then
-				echo "FrankenPHP: FRANKENPHP_MAX_THREADS=${_fp_max} is too small for worker mode (needs 3+), using classic mode"
-				FEATHERPANEL_PHP_MODE=classic
-			else
-				echo "FrankenPHP: workers lowered to ${FEATHERPANEL_WORKERS} api + ${FEATHERPANEL_SLOW_WORKERS} slow to fit FRANKENPHP_MAX_THREADS=${_fp_max}"
+			_fp_api_cap=$((_fp_budget - FEATHERPANEL_SLOW_WORKERS))
+			[ "$_fp_api_cap" -ge 2 ] || _fp_api_cap=2
+			[ "$FEATHERPANEL_WORKERS" -ge 2 ] || FEATHERPANEL_WORKERS=2
+			[ "$FEATHERPANEL_WORKERS" -le "$_fp_api_cap" ] || FEATHERPANEL_WORKERS=$_fp_api_cap
+			# Cap the API pool at the threads actually left after slow + classic
+			# (not the global max — slow + classic already reserve slots).
+			[ "$FEATHERPANEL_WORKER_MAX_THREADS" -le "$_fp_api_cap" ] || FEATHERPANEL_WORKER_MAX_THREADS=$_fp_api_cap
+			if [ "$FEATHERPANEL_WORKER_MAX_THREADS" -le "$FEATHERPANEL_WORKERS" ] && [ "$_fp_api_cap" -gt "$FEATHERPANEL_WORKERS" ]; then
+				FEATHERPANEL_WORKER_MAX_THREADS=$_fp_api_cap
+			fi
+			[ "$FEATHERPANEL_SLOW_MAX_THREADS" -le "$_fp_max" ] || FEATHERPANEL_SLOW_MAX_THREADS=$_fp_max
+			[ "$FEATHERPANEL_SLOW_MAX_THREADS" -ge "$FEATHERPANEL_SLOW_WORKERS" ] || FEATHERPANEL_SLOW_MAX_THREADS=$FEATHERPANEL_SLOW_WORKERS
+			if [ "$FEATHERPANEL_WORKERS" -ne "$_fp_before_workers" ] || [ "$FEATHERPANEL_SLOW_WORKERS" -ne "$_fp_before_slow" ]; then
+				echo "FrankenPHP: workers lowered to ${FEATHERPANEL_WORKERS} api (up to ${FEATHERPANEL_WORKER_MAX_THREADS}) + ${FEATHERPANEL_SLOW_WORKERS} slow to fit FRANKENPHP_MAX_THREADS=${_fp_max}"
 			fi
 		fi
-		[ "$FEATHERPANEL_SLOW_MAX_THREADS" -le "$_fp_max" ] || FEATHERPANEL_SLOW_MAX_THREADS=$_fp_max
-		[ "$FEATHERPANEL_WORKER_MAX_THREADS" -le "$_fp_max" ] || FEATHERPANEL_WORKER_MAX_THREADS=$_fp_max
-		[ "$FEATHERPANEL_SLOW_MAX_THREADS" -ge "$FEATHERPANEL_SLOW_WORKERS" ] || FEATHERPANEL_SLOW_MAX_THREADS=$FEATHERPANEL_SLOW_WORKERS
 		;;
 	esac
 fi
@@ -120,5 +154,5 @@ else
 	echo "FrankenPHP: classic mode (FRANKENPHP_WORKER=${FRANKENPHP_WORKER:-true}, max_threads ${FRANKENPHP_MAX_THREADS:-auto})"
 fi
 echo "FrankenPHP: live updates (Mercure) ${FEATHERPANEL_MERCURE}"
-unset _fp_cpus _fp_max _fp_env_file
-unset -f _fp_env_get _fp_mercure_key
+unset _fp_cpus _fp_max _fp_classic _fp_budget _fp_api_cap _fp_api_start _fp_before_workers _fp_before_slow _fp_need_fit _fp_env_file
+unset -f _fp_env_get _fp_mercure_key _fp_mem_mb

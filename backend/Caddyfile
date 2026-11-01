@@ -7,7 +7,7 @@
 #   FEATHERPANEL_ROOT          {/var/www/html}  backend directory
 #   FEATHERPANEL_PHP_MODE      {worker}         worker | classic, set by init.sh from FRANKENPHP_WORKER (false = classic)
 #   PHP_MEMORY_LIMIT           {512M}           memory_limit of web requests (CLI and cron keep their own)
-#   FRANKENPHP_MAX_THREADS     {auto}           upper bound of PHP threads, "auto" sizes it from memory_limit
+#   FRANKENPHP_MAX_THREADS     {auto}           upper bound of PHP threads, "auto" sizes from RAM / worker heap (min 8)
 #   FRANKENPHP_MAX_WAIT_TIME   {30s}            a request waiting longer for a free thread gets an error
 #   CADDY_ADMIN_ADDRESS        {localhost:2019} Caddy admin API, local only
 #   FEATHERPANEL_MERCURE       {off}            on mounts the Mercure hub (live updates), see caddy/mercure-on.caddyfile
