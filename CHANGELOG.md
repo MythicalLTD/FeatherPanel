@@ -1,16 +1,10 @@
 # Changelog
 
-## v1.5.4 STABLE
-
-### Added 
-
-- FrankenPHP on low-RAM panel hosts (≤2 GB): `frankenphp-env.sh` no longer clamps `FRANKENPHP_MAX_THREADS` to 4 and then collapses the API pool to a single worker. That starvation made server create (and other Wings calls) hang until cURL error 28. Auto sizing now uses the worker heap target, floors max threads at 8, keeps at least 2 API workers with scale-up room, and shrinks the slow pool first. by @nayskutzu
-
-
 ## v1.5.3 STABLE
 
 ### Added
 
+- FrankenPHP on low-RAM panel hosts (≤2 GB): `frankenphp-env.sh` no longer clamps `FRANKENPHP_MAX_THREADS` to 4 and then collapses the API pool to a single worker. That starvation made server create (and other Wings calls) hang until cURL error 28. Auto sizing now uses the worker heap target, floors max threads at 8, keeps at least 2 API workers with scale-up room, and shrinks the slow pool first. by @nayskutzu
 - WebSpaces: subuser invite links with permission presets, a 7 day schedule calendar, backup schedule retention (keep last N) and push-to-deploy webhooks that run a schedule from GitHub, GitLab or any CI. by @nayskutzu
 - Web hosting notifications: install results, backups, malware findings and disk, traffic or memory limit alerts (90%) now reach the inbox, email and Discord. Each one can be turned off under Account > Notifications. The Analytics page also shows CPU, memory and disk graphs for the last 1, 6 or 24 hours (needs FeatherQuilld with usage history). by @nayskutzu
 - Multi-provider panel outbound mail: provider presets (Resend, Brevo, SendGrid, Mailgun, Postmark, MailerSend, SparkPost, Amazon SES, Gmail, Outlook, Mailtrap, SMTP2GO, custom SMTP) plus HTTP API transports in the async-runner (`mail_transport`, `mail_api_key`, `mail_api_domain`, `mail_api_region`). Delivery uses official/mature SDKs where available (`resend-rs`, `sendgrid`, `postmark`, `aws-sdk-sesv2`) and thin HTTP for the rest; SMTP stays on lettre. Admin Email settings and the setup wizard show or hide SMTP vs API fields from the selected preset. by @nayskutzu
