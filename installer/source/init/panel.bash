@@ -810,7 +810,24 @@ configure_cloudflare_tunnel() {
     fi
 
     install_cloudflared
-    cloudflared service install "$CF_TUNNEL_TOKEN"
+
+    local unit="/etc/systemd/system/cloudflared.service"
+    if [ -f "$unit" ] && grep -Fq -- "--token ${CF_TUNNEL_TOKEN}" "$unit" 2>/dev/null; then
+        echo "cloudflared service already uses this tunnel token; restarting it."
+    else
+        if [ -f "$unit" ] || [ -f /etc/systemd/system/cloudflared-update.service ] || [ -f /etc/systemd/system/cloudflared-update.timer ]; then
+            echo "Existing cloudflared systemd service detected; replacing it for the new tunnel token..."
+            systemctl stop cloudflared cloudflared-update.service cloudflared-update.timer >/dev/null 2>&1 || true
+            cloudflared service uninstall >/dev/null 2>&1 || true
+            rm -f /etc/systemd/system/cloudflared.service \
+                /etc/systemd/system/cloudflared-update.service \
+                /etc/systemd/system/cloudflared-update.timer
+            rm -rf /etc/systemd/system/cloudflared.service.d
+            systemctl daemon-reload >/dev/null 2>&1 || true
+        fi
+        cloudflared service install "$CF_TUNNEL_TOKEN"
+    fi
+
     systemctl enable cloudflared >/dev/null 2>&1 || true
     systemctl restart cloudflared
     echo ""

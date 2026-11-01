@@ -3241,6 +3241,36 @@ setup_cloudflare_tunnel_full_auto() {
 	log_success "Cloudflare settings saved."
 }
 
+# True when the systemd unit already embeds this tunnel token (reinstall / same token).
+cloudflared_service_has_token() {
+	local token="$1"
+	local unit="/etc/systemd/system/cloudflared.service"
+	[ -n "$token" ] || return 1
+	[ -f "$unit" ] || return 1
+	grep -Fq -- "--token ${token}" "$unit" 2>/dev/null
+}
+
+# cloudflared refuses a second `service install` if any unit file remains.
+# Uninstall first (and clean leftovers) so reinstalls / token swaps succeed.
+ensure_cloudflared_service_ready_for_install() {
+	local unit="/etc/systemd/system/cloudflared.service"
+	if [ ! -f "$unit" ] && [ ! -f /etc/systemd/system/cloudflared-update.service ] && [ ! -f /etc/systemd/system/cloudflared-update.timer ]; then
+		return 0
+	fi
+
+	log_info "Existing cloudflared systemd service detected; replacing it for the new tunnel token..."
+	systemctl stop cloudflared cloudflared-update.service cloudflared-update.timer >>"$LOG_FILE" 2>&1 || true
+	if command -v cloudflared >/dev/null 2>&1; then
+		cloudflared service uninstall >>"$LOG_FILE" 2>&1 || true
+	fi
+	# Leftover units after a partial uninstall still block `service install`.
+	rm -f /etc/systemd/system/cloudflared.service \
+		/etc/systemd/system/cloudflared-update.service \
+		/etc/systemd/system/cloudflared-update.timer
+	rm -rf /etc/systemd/system/cloudflared.service.d
+	systemctl daemon-reload >>"$LOG_FILE" 2>&1 || true
+}
+
 setup_cloudflare_tunnel_client() {
 	if [ -z "$CF_TUNNEL_TOKEN" ]; then
 		log_info "Skipping Cloudflare Tunnel setup as no token was provided or generated."
@@ -3255,12 +3285,26 @@ setup_cloudflare_tunnel_client() {
 		return 1
 	fi
 
-	# Register token with systemd so the tunnel starts on boot (same as: cloudflared service install <token>).
-	if ! run_with_spinner "Configuring cloudflared systemd service" "Cloudflare Tunnel service is installed and running." \
-		cloudflared service install "$CF_TUNNEL_TOKEN"; then
-		log_error "cloudflared service install failed. Check $LOG_FILE"
-		log_info "You can run the tunnel manually with: cloudflared tunnel run --token '<your-token>'"
-		return 1
+	# Same token already registered: keep the running service (idempotent reinstall).
+	if cloudflared_service_has_token "$CF_TUNNEL_TOKEN"; then
+		log_info "cloudflared systemd service already uses this tunnel token; ensuring it is enabled and running."
+		systemctl enable cloudflared >>"$LOG_FILE" 2>&1 || true
+		systemctl restart cloudflared >>"$LOG_FILE" 2>&1 || true
+		if systemctl is-active --quiet cloudflared; then
+			log_success "Cloudflare Tunnel service is installed and running."
+		else
+			log_error "cloudflared service is present but not running. Check: systemctl status cloudflared"
+			return 1
+		fi
+	else
+		ensure_cloudflared_service_ready_for_install
+		# Register token with systemd so the tunnel starts on boot (same as: cloudflared service install <token>).
+		if ! run_with_spinner "Configuring cloudflared systemd service" "Cloudflare Tunnel service is installed and running." \
+			cloudflared service install "$CF_TUNNEL_TOKEN"; then
+			log_error "cloudflared service install failed. Check $LOG_FILE"
+			log_info "You can run the tunnel manually with: cloudflared tunnel run --token '<your-token>'"
+			return 1
+		fi
 	fi
 
 	log_info "Cloudflare Tunnel uses the system cloudflared service (systemctl status cloudflared)."
