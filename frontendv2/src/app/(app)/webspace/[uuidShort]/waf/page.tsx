@@ -17,18 +17,14 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import axios, { isAxiosError } from 'axios';
-import { Loader2, Save, Shield } from 'lucide-react';
+import axios from 'axios';
+import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { WebSpacePageHeader as PageHeader } from '@/components/webspace/WebSpacePageHeader';
-import { PageCard } from '@/components/featherui/PageCard';
-import { UnsavedChangesBar } from '@/components/featherui/UnsavedChangesBar';
-import { Button } from '@/components/featherui/Button';
-import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
+import { getApiErrorMessage } from '@/lib/api-errors';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { WebSpacePageWidgets } from '@/components/webspace/WebSpacePageWidgets';
-import { getApiErrorMessage } from '@/lib/api-errors';
+import { WebSpaceWafDashboard } from '@/components/webspace/WebSpaceWafDashboard';
 
 export default function WebSpaceWafPage() {
     const params = useParams();
@@ -36,30 +32,13 @@ export default function WebSpaceWafPage() {
     const { t } = useTranslation();
 
     const [loading, setLoading] = useState(true);
-    const [saving, setSaving] = useState(false);
-    const [form, setForm] = useState({
-        wafEnabled: false,
-        wafDenyIps: '',
-        wafDenyPaths: '',
-    });
-    const [savedForm, setSavedForm] = useState(form);
-    const dirty = JSON.stringify(form) !== JSON.stringify(savedForm);
+    const [deniedIps, setDeniedIps] = useState<string[]>([]);
 
     const load = useCallback(async () => {
         try {
             const { data } = await axios.get(`/api/user/webspaces/${uuidShort}`);
-            const ws = data.data.webspace as {
-                waf_enabled?: boolean;
-                waf_deny_ips?: string[];
-                waf_deny_paths?: string[];
-            };
-            const next = {
-                wafEnabled: !!ws.waf_enabled,
-                wafDenyIps: (ws.waf_deny_ips || []).join('\n'),
-                wafDenyPaths: (ws.waf_deny_paths || []).join('\n'),
-            };
-            setForm(next);
-            setSavedForm(next);
+            const ws = data.data.webspace as { waf_deny_ips?: string[] };
+            setDeniedIps(ws.waf_deny_ips || []);
         } catch (error) {
             console.error(error);
             toast.error(getApiErrorMessage(error, t, 'webSpaces.settings.loadFailed'));
@@ -72,30 +51,18 @@ export default function WebSpaceWafPage() {
         void load();
     }, [load]);
 
-    const saveWaf = async () => {
-        setSaving(true);
+    const denyIp = async (ip: string) => {
+        if (deniedIps.includes(ip)) {
+            toast.info(t('webSpaces.wafDashboard.alreadyDenied'));
+            return;
+        }
+        const next = [...deniedIps, ip];
         try {
-            await axios.patch(`/api/user/webspaces/${uuidShort}`, {
-                waf_enabled: form.wafEnabled,
-                waf_deny_ips: form.wafDenyIps
-                    .split(/[\n,]+/)
-                    .map((s) => s.trim())
-                    .filter(Boolean),
-                waf_deny_paths: form.wafDenyPaths
-                    .split(/[\n,]+/)
-                    .map((s) => s.trim())
-                    .filter(Boolean),
-            });
-            setSavedForm(form);
-            toast.success(t('webSpaces.settings.saved'));
+            await axios.patch(`/api/user/webspaces/${uuidShort}`, { waf_deny_ips: next });
+            setDeniedIps(next);
+            toast.success(t('webSpaces.wafDashboard.ipDenied'));
         } catch (error) {
-            let msg = getApiErrorMessage(error, t, 'webSpaces.settings.saveFailed');
-            if (isAxiosError(error) && error.response?.status === 403) {
-                msg = t('webSpaces.settings.noPermission');
-            }
-            toast.error(msg);
-        } finally {
-            setSaving(false);
+            toast.error(getApiErrorMessage(error, t, 'webSpaces.settings.saveFailed'));
         }
     };
 
@@ -110,57 +77,10 @@ export default function WebSpaceWafPage() {
 
     return (
         <WebSpacePageWidgets pageId='webspace-waf'>
-            <div className='mx-auto max-w-4xl space-y-8 pb-16'>
+            <div className='space-y-6 pb-10'>
                 <PageHeader title={t('webSpaces.wafPage.title')} description={t('webSpaces.wafPage.description')} />
 
-                <PageCard title={t('webSpaces.settings.wafTitle')} icon={Shield}>
-                    <div className='space-y-4'>
-                        <p className='text-muted-foreground text-sm'>{t('webSpaces.settings.wafHelp')}</p>
-                        <label className='flex items-center gap-2 text-sm'>
-                            <Checkbox
-                                checked={form.wafEnabled}
-                                onCheckedChange={(checked) => setForm({ ...form, wafEnabled: checked === true })}
-                            />
-                            {t('webSpaces.settings.wafEnabled')}
-                        </label>
-                        <div className='space-y-2'>
-                            <Label className='text-muted-foreground ml-1 text-xs font-bold tracking-wider uppercase'>
-                                {t('webSpaces.settings.wafDenyIps')}
-                            </Label>
-                            <textarea
-                                value={form.wafDenyIps}
-                                onChange={(e) => setForm({ ...form, wafDenyIps: e.target.value })}
-                                rows={4}
-                                placeholder='203.0.113.10&#10;198.51.100.0/24'
-                                className='bg-secondary/50 border-border/10 focus:border-primary/50 w-full rounded-xl border p-3 font-mono text-sm'
-                            />
-                        </div>
-                        <div className='space-y-2'>
-                            <Label className='text-muted-foreground ml-1 text-xs font-bold tracking-wider uppercase'>
-                                {t('webSpaces.settings.wafDenyPaths')}
-                            </Label>
-                            <p className='text-muted-foreground text-xs'>{t('webSpaces.settings.wafDenyPathsHelp')}</p>
-                            <textarea
-                                value={form.wafDenyPaths}
-                                onChange={(e) => setForm({ ...form, wafDenyPaths: e.target.value })}
-                                rows={4}
-                                placeholder='/xmlrpc.php&#10;/wp-config.php'
-                                className='bg-secondary/50 border-border/10 focus:border-primary/50 w-full rounded-xl border p-3 font-mono text-sm'
-                            />
-                        </div>
-                        <Button loading={saving} onClick={() => void saveWaf()} size='sm' data-fp-save-shortcut>
-                            <Save className='mr-2 h-4 w-4' />
-                            {t('webSpaces.settings.saveSettings')}
-                        </Button>
-                    </div>
-                </PageCard>
-
-                <UnsavedChangesBar
-                    dirty={dirty}
-                    saving={saving}
-                    onSave={() => void saveWaf()}
-                    onDiscard={() => setForm(savedForm)}
-                />
+                <WebSpaceWafDashboard uuidShort={uuidShort} onDenyIp={denyIp} />
             </div>
         </WebSpacePageWidgets>
     );
