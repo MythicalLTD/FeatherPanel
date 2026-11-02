@@ -15,10 +15,8 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import axios from 'axios';
-import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { WebSpacePageHeader as PageHeader } from '@/components/webspace/WebSpacePageHeader';
 import { getApiErrorMessage } from '@/lib/api-errors';
@@ -31,49 +29,27 @@ export default function WebSpaceWafPage() {
     const uuidShort = String(params.uuidShort || '');
     const { t } = useTranslation();
 
-    const [loading, setLoading] = useState(true);
-    const [deniedIps, setDeniedIps] = useState<string[]>([]);
-
-    const load = useCallback(async () => {
+    // Reads the stored list right before writing it, so a list that changed elsewhere (or a failed read)
+    // can never be overwritten with a shorter one.
+    const denyIp = async (ip: string) => {
         try {
             const { data } = await axios.get(`/api/user/webspaces/${uuidShort}`);
-            const ws = data.data.webspace as { waf_deny_ips?: string[] };
-            setDeniedIps(ws.waf_deny_ips || []);
-        } catch (error) {
-            console.error(error);
-            toast.error(getApiErrorMessage(error, t, 'webSpaces.settings.loadFailed'));
-        } finally {
-            setLoading(false);
-        }
-    }, [uuidShort, t]);
-
-    useEffect(() => {
-        void load();
-    }, [load]);
-
-    const denyIp = async (ip: string) => {
-        if (deniedIps.includes(ip)) {
-            toast.info(t('webSpaces.wafDashboard.alreadyDenied'));
-            return;
-        }
-        const next = [...deniedIps, ip];
-        try {
-            await axios.patch(`/api/user/webspaces/${uuidShort}`, { waf_deny_ips: next });
-            setDeniedIps(next);
+            const stored: unknown = data?.data?.webspace?.waf_deny_ips;
+            if (!Array.isArray(stored)) {
+                toast.error(t('webSpaces.settings.loadFailed'));
+                return;
+            }
+            const current = stored.filter((value): value is string => typeof value === 'string');
+            if (current.includes(ip)) {
+                toast.info(t('webSpaces.wafDashboard.alreadyDenied'));
+                return;
+            }
+            await axios.patch(`/api/user/webspaces/${uuidShort}`, { waf_deny_ips: [...current, ip] });
             toast.success(t('webSpaces.wafDashboard.ipDenied'));
         } catch (error) {
             toast.error(getApiErrorMessage(error, t, 'webSpaces.settings.saveFailed'));
         }
     };
-
-    if (loading) {
-        return (
-            <div className='flex flex-col items-center justify-center py-24'>
-                <Loader2 className='text-primary h-12 w-12 animate-spin opacity-50' />
-                <p className='text-muted-foreground mt-4 font-medium'>{t('common.loading')}</p>
-            </div>
-        );
-    }
 
     return (
         <WebSpacePageWidgets pageId='webspace-waf'>

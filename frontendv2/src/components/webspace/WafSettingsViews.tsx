@@ -333,6 +333,17 @@ export function NumberField({
     max: number;
     onChange: (v: number) => void;
 }) {
+    // Keep what the user is typing as text; "2" on the way to "240" must not jump to the minimum.
+    const [draft, setDraft] = useState<string | null>(null);
+    const commit = () => {
+        if (draft === null) return;
+        const n = Number(draft);
+        if (draft.trim() !== '' && Number.isFinite(n)) {
+            onChange(Math.min(max, Math.max(min, Math.round(n))));
+        }
+        setDraft(null);
+    };
+
     return (
         <label className='block text-sm'>
             <span className='text-muted-foreground mb-1 block text-xs'>{label}</span>
@@ -340,8 +351,17 @@ export function NumberField({
                 type='number'
                 min={min}
                 max={max}
-                value={value}
-                onChange={(e) => onChange(Math.min(max, Math.max(min, Number(e.target.value) || min)))}
+                value={draft ?? String(value)}
+                onChange={(e) => {
+                    setDraft(e.target.value);
+                    const n = Number(e.target.value);
+                    // A value that is already valid goes to the form at once (Ctrl+S while the field is focused).
+                    if (e.target.value.trim() !== '' && Number.isInteger(n) && n >= min && n <= max) onChange(n);
+                }}
+                onBlur={commit}
+                onKeyDown={(e) => {
+                    if (e.key === 'Enter') commit();
+                }}
                 className='bg-secondary/40 border-border/50 focus:border-primary w-full rounded-lg border px-3 py-2 outline-none'
             />
         </label>

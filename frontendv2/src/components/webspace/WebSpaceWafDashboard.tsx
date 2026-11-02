@@ -489,6 +489,11 @@ export function WebSpaceWafDashboard({
 
     const base = `/api/user/webspaces/${uuidShort}/waf`;
 
+    // Bumped when a save starts and again when it ends, so a settings GET that began before (or during)
+    // a save can never replace newer data with an older snapshot.
+    const settingsGeneration = useRef(0);
+    const pendingSaves = useRef(0);
+
     const load = useCallback(
         async (silent = false) => {
             if (!silent && !hasData.current) setLoading(true);
@@ -501,8 +506,11 @@ export function WebSpaceWafDashboard({
                 hasData.current = true;
                 setEvents((ev.data.data?.events as WafEvent[]) ?? []);
                 try {
+                    const generation = settingsGeneration.current;
                     const st = await axios.get(`${base}/settings`);
-                    setSettings(normalizeSettings(st.data.data as Partial<WafSettings>));
+                    if (generation === settingsGeneration.current && pendingSaves.current === 0) {
+                        setSettings(normalizeSettings(st.data.data as Partial<WafSettings>));
+                    }
                 } catch {
                     /* settings are optional until the backend ships them */
                 }
@@ -553,6 +561,8 @@ export function WebSpaceWafDashboard({
         const next = normalizeSettings({ ...current, ...patch });
         settingsRef.current = next;
         setSettings(next);
+        pendingSaves.current += 1;
+        settingsGeneration.current += 1;
         try {
             await axios.patch(`${base}/settings`, patch);
             toast.success(t('webSpaces.wafDashboard.saved'));
@@ -566,6 +576,9 @@ export function WebSpaceWafDashboard({
                     ? t('webSpaces.settings.noPermission')
                     : t('webSpaces.wafDashboard.saveFailed'),
             );
+        } finally {
+            pendingSaves.current -= 1;
+            settingsGeneration.current += 1;
         }
     };
 

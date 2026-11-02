@@ -298,6 +298,13 @@ function Arc({ from, to, color, offset }) {
             ),
         [curve, color],
     );
+    useEffect(
+        () => () => {
+            line.geometry.dispose();
+            line.material.dispose();
+        },
+        [line],
+    );
     const dot = useRef(null);
     useFrame(({ clock }) => {
         const t = (clock.elapsedTime * 0.22 + offset) % 1;
