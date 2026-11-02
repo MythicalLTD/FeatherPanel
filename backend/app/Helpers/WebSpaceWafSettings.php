@@ -204,32 +204,20 @@ final class WebSpaceWafSettings
         return [null, 'Unknown setting'];
     }
 
+    /**
+     * Same rule as the deny lists use everywhere else in the panel (WebSpaceWafRules), so one
+     * definition decides what may end up in a generated proxy config.
+     */
     public static function isValidIp(string $value): bool
     {
-        $value = trim($value);
-        if ($value === '' || strlen($value) > 45) {
-            return false;
-        }
-        if (!str_contains($value, '/')) {
-            return filter_var($value, FILTER_VALIDATE_IP) !== false;
-        }
-        [$ip, $prefix] = explode('/', $value, 2);
-        if (!ctype_digit($prefix) || filter_var($ip, FILTER_VALIDATE_IP) === false) {
-            return false;
-        }
-        $max = str_contains($ip, ':') ? 128 : 32;
-
-        return (int) $prefix >= 0 && (int) $prefix <= $max;
+        return WebSpaceWafRules::isValidIp(trim($value));
     }
 
     public static function isValidPath(string $path): bool
     {
-        return $path !== ''
-            && strlen($path) <= 200
-            && $path[0] === '/'
-            && preg_match('/[\x00-\x20\x7f"\'`<>\\\\]/', $path) !== 1;
+        // The shared pattern ends in "$", which also matches before one trailing newline.
+        return WebSpaceWafRules::isValidPath($path) && preg_match('/[\x00-\x20\x7f]/', $path) !== 1;
     }
-
     /**
      * The daemon engine (Coraza/Go) uses RE2, which has no lookaround or backreferences.
      * Reject those here so the panel never accepts a rule the node cannot load.

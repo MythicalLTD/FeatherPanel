@@ -86,7 +86,9 @@ class WebSpaceWafSettingsTest extends TestCase
         return [
             'ok' => ['/wp-admin/install.php', true], 'root' => ['/', true], 'no slash' => ['admin', false],
             'space' => ['/a b', false], 'quote' => ['/a"b', false], 'newline' => ["/a\nb", false], 'brace' => ['/a`b', false],
-            'backslash' => ['/a\\b', false], 'too long' => ['/' . str_repeat('a', 200), false],
+            'backslash' => ['/a\\b', false], 'too long' => ['/' . str_repeat('a', 256), false],
+            'wildcard' => ['/wp-*', true], 'parent dir' => ['/a/../b', false], 'well-known' => ['/.well-known/acme', false],
+            'trailing newline' => ["/a\n", false], 'unicode' => ["/caf\u{e9}", false],
         ];
     }
 
