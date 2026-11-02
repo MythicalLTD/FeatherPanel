@@ -303,14 +303,9 @@ class WebSpaceWafController
     private function effective(array $space): array
     {
         $stored = is_array($space['waf_settings'] ?? null) ? $space['waf_settings'] : [];
-        $settings = WebSpaceWafSettings::withDefaults($stored);
+        $settings = WebSpaceWafSettings::withLegacyMode($stored, !empty($space['waf_enabled']));
         $settings['deny_ips'] = is_array($space['waf_deny_ips'] ?? null) ? array_values($space['waf_deny_ips']) : [];
         $settings['deny_paths'] = is_array($space['waf_deny_paths'] ?? null) ? array_values($space['waf_deny_paths']) : [];
-        // Legacy switch without stored mode: waf_enabled on = detect-only first, never block silently.
-        if (!array_key_exists('mode', $stored)) {
-            $settings['mode'] = !empty($space['waf_enabled']) ? 'detect' : 'off';
-        }
-
         return $settings;
     }
 

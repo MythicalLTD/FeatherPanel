@@ -82,6 +82,25 @@ final class WebSpaceWafSettings
      *
      * @return array<string, mixed>
      */
+    /**
+     * Stored settings merged with the defaults, with the legacy fallback applied: a webspace that
+     * only has the old on/off switch (no stored mode) is detect-only when on and off when off.
+     * The panel UI and the payload for the daemon both use this, so they can never disagree.
+     *
+     * @param array<string, mixed> $stored
+     *
+     * @return array<string, mixed>
+     */
+    public static function withLegacyMode(array $stored, bool $legacyEnabled): array
+    {
+        $settings = self::withDefaults($stored);
+        if (!array_key_exists('mode', $stored)) {
+            $settings['mode'] = $legacyEnabled ? 'detect' : 'off';
+        }
+
+        return $settings;
+    }
+
     public static function withDefaults(array $stored): array
     {
         $d = self::defaults();
@@ -217,11 +236,7 @@ final class WebSpaceWafSettings
      */
     public static function isValidRegex(string $pattern): bool
     {
-        if ($pattern === '' || strlen($pattern) > 200) {
-            return false;
-        }
-        // lookahead/lookbehind, numbered backreferences, atomic groups
-        if (preg_match('/\(\?<?[=!]|\\\\[1-9]|\(\?>/', $pattern) === 1) {
+        if ($pattern === '' || strlen($pattern) > 200 || !self::usesOnlyRe2Syntax($pattern)) {
             return false;
         }
         set_error_handler(static fn () => true);
@@ -232,6 +247,85 @@ final class WebSpaceWafSettings
         }
 
         return $ok;
+    }
+
+    /**
+     * Walks the pattern token by token (escaped characters and character classes are skipped, so
+     * "\\\\1" or "[(?=]" are not mistaken for syntax) and rejects what PCRE accepts but RE2 does not:
+     * lookaround, backreferences, atomic / conditional / recursive groups, possessive quantifiers
+     * and escapes RE2 does not know (\Z \G \h \R \K ...).
+     */
+    private static function usesOnlyRe2Syntax(string $p): bool
+    {
+        $len = strlen($p);
+        $inClass = false;
+        $quantified = false;
+        for ($i = 0; $i < $len; ++$i) {
+            $c = $p[$i];
+            if ($c === '\\') {
+                $n = $p[$i + 1] ?? '';
+                if ($n === '') {
+                    return false;
+                }
+                if (!$inClass && $n === 'Q') {
+                    $end = strpos($p, '\\E', $i + 2);
+                    $i = $end === false ? $len : $end + 1;
+                    $quantified = false;
+                    continue;
+                }
+                if (ctype_digit($n) ? $n !== '0' : (ctype_alpha($n) && strpos('AzbBdDsSwWpPEafnrtvx', $n) === false)) {
+                    return false;
+                }
+                ++$i;
+                $quantified = false;
+                continue;
+            }
+            if ($inClass) {
+                if ($c === '[' && ($p[$i + 1] ?? '') === ':') {
+                    $end = strpos($p, ':]', $i + 2);
+                    if ($end !== false) {
+                        $i = $end + 1;
+                    }
+                } elseif ($c === ']') {
+                    $inClass = false;
+                    $quantified = false;
+                }
+                continue;
+            }
+            if ($c === '[') {
+                $inClass = true;
+                if (($p[$i + 1] ?? '') === '^') {
+                    ++$i;
+                }
+                if (($p[$i + 1] ?? '') === ']') {
+                    ++$i;
+                }
+                continue;
+            }
+            if ($c === '(' && ($p[$i + 1] ?? '') === '?') {
+                if (preg_match('/\G\(\?(?:[imsU]*(?:-[imsU]+)?[:)]|P?<[A-Za-z_]\w*>)/', $p, $m, 0, $i) !== 1) {
+                    return false;
+                }
+                $i += strlen($m[0]) - 1;
+                $quantified = false;
+                continue;
+            }
+            if ($c === '*' || $c === '+' || $c === '?') {
+                if ($quantified && $c === '+') {
+                    return false;
+                }
+                $quantified = !$quantified || $c !== '?';
+                continue;
+            }
+            if ($c === '{' && preg_match('/\G\{\d+(?:,\d*)?\}/', $p, $m, 0, $i) === 1) {
+                $i += strlen($m[0]) - 1;
+                $quantified = true;
+                continue;
+            }
+            $quantified = false;
+        }
+
+        return true;
     }
 
     /** @return array{0: list<string>|null, 1: ?string} */
@@ -281,16 +375,18 @@ final class WebSpaceWafSettings
     /** @return array{0: array<string, mixed>|null, 1: ?string} */
     private static function limit(mixed $v, string $a, int $aMin, int $aMax, string $b, int $bMin, int $bMax, array $current): array
     {
-        if (!is_array($v) || !is_bool($v['enabled'] ?? null)) {
+        // A partial patch (for example only "enabled") keeps the stored values of the other fields.
+        $enabled = is_array($v) ? ($v['enabled'] ?? $current['enabled'] ?? null) : null;
+        if (!is_array($v) || !is_bool($enabled)) {
             return [null, 'Invalid limit settings'];
         }
-        $x = self::int($v[$a] ?? null, $aMin, $aMax);
-        $y = self::int($v[$b] ?? null, $bMin, $bMax);
+        $x = self::int($v[$a] ?? $current[$a] ?? null, $aMin, $aMax);
+        $y = self::int($v[$b] ?? $current[$b] ?? null, $bMin, $bMax);
         if ($x === null || $y === null) {
             return [null, 'Limit out of range'];
         }
 
-        return [['enabled' => $v['enabled'], $a => $x, $b => $y], null];
+        return [['enabled' => $enabled, $a => $x, $b => $y], null];
     }
 
     /** @return array{0: array<string, mixed>|null, 1: ?string} */

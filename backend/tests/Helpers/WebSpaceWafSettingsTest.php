@@ -21,9 +21,12 @@ use App\Helpers\WebSpaceWafSettings;
 
 class WebSpaceWafSettingsTest extends TestCase
 {
-    private function apply(array $patch): array
+    /**
+     * @param array<string, mixed> $stored settings already saved for the webspace
+     */
+    private function apply(array $patch, array $stored = []): array
     {
-        return WebSpaceWafSettings::apply(WebSpaceWafSettings::defaults(), $patch);
+        return WebSpaceWafSettings::apply(WebSpaceWafSettings::withDefaults($stored), $patch);
     }
 
     public function testDefaultsAreValidAndRoundTrip(): void
@@ -112,6 +115,29 @@ class WebSpaceWafSettingsTest extends TestCase
         $this->assertNotNull($rl(['enabled' => true, 'per_minute' => 240, 'ban_minutes' => 99999])['error']);
     }
 
+    public function testPartialLimitPatchKeepsTheStoredNumbers(): void
+    {
+        $stored = ['rate_limit' => ['enabled' => false, 'per_minute' => 333, 'ban_minutes' => 7], 'login' => ['enabled' => false, 'per_minute' => 9, 'ban_minutes' => 30, 'paths' => ['/login']]];
+        $r = $this->apply(['rate_limit' => ['enabled' => true]], $stored);
+        $this->assertNull($r['error']);
+        $this->assertSame(['enabled' => true, 'per_minute' => 333, 'ban_minutes' => 7], $r['settings']['rate_limit']);
+        $r = $this->apply(['login' => ['enabled' => true]], $stored);
+        $this->assertNull($r['error']);
+        $this->assertSame(9, $r['settings']['login']['per_minute']);
+        $this->assertSame(['/login'], $r['settings']['login']['paths']);
+        $r = $this->apply(['rate_limit' => ['per_minute' => 500]], $stored);
+        $this->assertSame([false, 500, 7], [$r['settings']['rate_limit']['enabled'], $r['settings']['rate_limit']['per_minute'], $r['settings']['rate_limit']['ban_minutes']]);
+        $this->assertNotNull($this->apply(['rate_limit' => ['enabled' => true, 'per_minute' => 5]], $stored)['error'], 'a bad number is still refused');
+    }
+
+    public function testLegacySwitchResolvesTheSameForPanelAndDaemon(): void
+    {
+        $this->assertSame('off', WebSpaceWafSettings::withLegacyMode([], false)['mode']);
+        $this->assertSame('detect', WebSpaceWafSettings::withLegacyMode([], true)['mode']);
+        $this->assertSame('block', WebSpaceWafSettings::withLegacyMode(['mode' => 'block'], false)['mode'], 'a stored mode always wins');
+        $this->assertSame('off', WebSpaceWafSettings::withLegacyMode(['mode' => 'off'], true)['mode']);
+    }
+
     public function testExceptionsRejectRootAndUnknownCategories(): void
     {
         $ok = $this->apply(['exceptions' => [['id' => 'a', 'path' => '/wp-login.php', 'categories' => ['scanner']]]]);
@@ -145,6 +171,13 @@ class WebSpaceWafSettingsTest extends TestCase
             'lookahead' => ['a(?=b)', false], 'neg lookahead' => ['a(?!b)', false], 'lookbehind' => ['(?<=a)b', false],
             'backref' => ['(a)\1', false], 'atomic' => ['(?>a+)b', false], 'empty' => ['', false], 'long' => [str_repeat('a', 201), false],
             'tilde' => ['a~b', true], 'escaped plus' => ['\++', true],
+            'escaped backslash then digit' => ['C:\\\\1', true], 'lazy' => ['a+?b', true], 'bounded' => ['a{2,5}b', true],
+            'flags' => ['(?i)admin', true], 'non capturing' => ['(?:a|b)c', true], 'named group' => ['(?P<x>a)', true],
+            'lookaround chars in class' => ['[(?=]x', true], 'posix class' => ['[[:alpha:]+]x', true], 'escapes' => ['\\d+\\.\\w', true],
+            'possessive plus' => ['a++', false], 'possessive star' => ['a*+', false], 'possessive bounded' => ['a{2}+', false],
+            'possessive class' => ['[a-z]++', false], 'end anchor Z' => ['a\\Z', false], 'G anchor' => ['\\Ga', false],
+            'h class' => ['\\h+', false], 'R newline' => ['a\\R', false], 'K reset' => ['a\\Kb', false],
+            'conditional' => ['(?(1)a|b)', false], 'recursion' => ['(?R)', false], 'comment group' => ['(?#x)a', false],
         ];
     }
 

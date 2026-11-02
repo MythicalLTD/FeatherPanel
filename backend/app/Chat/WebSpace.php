@@ -930,7 +930,7 @@ class WebSpace
      */
     private static function daemonWafSettings(array $row): array
     {
-        $settings = \App\Helpers\WebSpaceWafSettings::withDefaults(is_array($row['waf_settings'] ?? null) ? $row['waf_settings'] : []);
+        $settings = \App\Helpers\WebSpaceWafSettings::withLegacyMode(is_array($row['waf_settings'] ?? null) ? $row['waf_settings'] : [], !empty($row['waf_enabled']));
         unset($settings['deny_ips'], $settings['deny_paths']);
 
         return $settings;
