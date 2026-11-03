@@ -617,16 +617,21 @@ export function WebSpaceWafDashboard({
             toast.error(t('webSpaces.wafDashboard.exceptionRoot'));
             return;
         }
-        if (!window.confirm(t('webSpaces.wafDashboard.allowConfirm', { path }))) return;
         const cat = (CATEGORY_IDS as string[]).includes(e.category) ? [e.category as WafCategory] : [];
+        // An empty category list means "every check". An event without a known category must never create
+        // one by accident: such an exception is added deliberately under Exceptions.
+        if (cat.length === 0) {
+            toast.error(t('webSpaces.wafDashboard.allowUnknownCategory'));
+            return;
+        }
+        if (!window.confirm(t('webSpaces.wafDashboard.allowConfirm', { path }))) return;
         const same = current.exceptions.find((x) => x.path === path);
-        // An empty list means "every category": never narrow it to one, and never widen a scoped exception
-        // because the event's category is unknown.
-        let merged: WafCategory[];
-        if (!same) merged = cat;
-        else if (same.categories.length === 0) merged = [];
-        else if (cat.length === 0) merged = same.categories;
-        else merged = [...new Set([...same.categories, ...cat])];
+        // An existing "all categories" exception is never narrowed to one.
+        const merged: WafCategory[] = !same
+            ? cat
+            : same.categories.length === 0
+              ? []
+              : [...new Set([...same.categories, ...cat])];
         if (same && merged.length === same.categories.length && merged.every((c) => same.categories.includes(c))) {
             toast.info(t('webSpaces.wafDashboard.allowNoChange'));
             return;

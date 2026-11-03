@@ -17374,6 +17374,7 @@
             "allowThis": "Allow this",
             "allowConfirm": "Skip the checks for {path} and everything under it? You can undo this under Exceptions.",
             "allowNoChange": "No change: an exception for this path already exists.",
+            "allowUnknownCategory": "This event has no known attack category. Add an exception for it under Exceptions if you really want to skip checks for this path.",
             "protectionTitle": "Protection status",
             "fixIt": "Fix",
             "check_mode": "Blocking is on",
