@@ -516,6 +516,11 @@ export function WebSpaceWafDashboard({
     // Every load takes a ticket; only the newest one may write state, so a slow older response
     // (other range, earlier poll) can never overwrite newer data.
     const loadSeq = useRef(0);
+    // Last settings the server confirmed (loaded or saved). A failed save rolls back to this, never to a
+    // snapshot taken while another save of the same field was still in flight.
+    const confirmedRef = useRef<WafSettings | null>(null);
+    const saveQueue = useRef<Promise<void>>(Promise.resolve());
+    const pendingByField = useRef<Record<string, number>>({});
 
     const load = useCallback(
         async (silent = false) => {
@@ -548,7 +553,9 @@ export function WebSpaceWafDashboard({
             }
 
             if (st.status === 'fulfilled' && generation === settingsGeneration.current && pendingSaves.current === 0) {
-                setSettings(normalizeSettings(st.value.data.data as Partial<WafSettings>));
+                const fresh = normalizeSettings(st.value.data.data as Partial<WafSettings>);
+                confirmedRef.current = fresh;
+                setSettings(fresh);
             }
             setLoading(false);
         },
@@ -590,23 +597,41 @@ export function WebSpaceWafDashboard({
         setSettings(next);
         pendingSaves.current += 1;
         settingsGeneration.current += 1;
-        try {
-            await axios.patch(`${base}/settings`, patch);
-            toast.success(t('webSpaces.wafDashboard.saved'));
-        } catch (error) {
-            // Undo only this change, keep anything saved in the meantime.
-            const reverted = normalizeSettings({ ...(settingsRef.current ?? current), ...pick(current, patch) });
-            settingsRef.current = reverted;
-            setSettings(reverted);
-            toast.error(
-                isAxiosError(error) && error.response?.status === 403
-                    ? t('webSpaces.settings.noPermission')
-                    : t('webSpaces.wafDashboard.saveFailed'),
-            );
-        } finally {
-            pendingSaves.current -= 1;
-            settingsGeneration.current += 1;
-        }
+        const keys = Object.keys(patch);
+        for (const key of keys) pendingByField.current[key] = (pendingByField.current[key] ?? 0) + 1;
+
+        // Saves run one after another so they cannot overtake each other on the server.
+        const run = async () => {
+            try {
+                await axios.patch(`${base}/settings`, patch);
+                if (confirmedRef.current)
+                    confirmedRef.current = normalizeSettings({ ...confirmedRef.current, ...patch });
+                toast.success(t('webSpaces.wafDashboard.saved'));
+            } catch (error) {
+                // Undo only the fields no newer save touches; those fall back to what the server last confirmed.
+                const stale = keys.filter((key) => (pendingByField.current[key] ?? 0) <= 1);
+                const restore = pick(
+                    confirmedRef.current ?? current,
+                    Object.fromEntries(stale.map((key) => [key, true])) as SettingsPatch,
+                );
+                const reverted = normalizeSettings({ ...(settingsRef.current ?? current), ...restore });
+                settingsRef.current = reverted;
+                setSettings(reverted);
+                toast.error(
+                    isAxiosError(error) && error.response?.status === 403
+                        ? t('webSpaces.settings.noPermission')
+                        : t('webSpaces.wafDashboard.saveFailed'),
+                );
+            } finally {
+                for (const key of keys)
+                    pendingByField.current[key] = Math.max(0, (pendingByField.current[key] ?? 1) - 1);
+                pendingSaves.current -= 1;
+                settingsGeneration.current += 1;
+            }
+        };
+        const task = saveQueue.current.then(run);
+        saveQueue.current = task;
+        await task;
     };
 
     const allowEvent = async (e: WafEvent) => {
