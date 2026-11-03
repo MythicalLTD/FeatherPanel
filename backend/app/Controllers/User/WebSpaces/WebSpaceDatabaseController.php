@@ -20,6 +20,7 @@ namespace App\Controllers\User\WebSpaces;
 use App\Helpers\ApiResponse;
 use App\Chat\DatabaseInstance;
 use App\Chat\WebSpaceDatabase;
+use App\Config\ConfigInterface;
 use App\Helpers\WebSpaceGateway;
 use App\WebSpaceSubuserPermissions;
 use App\Helpers\FeatherQuilldClient;
@@ -430,7 +431,7 @@ class WebSpaceDatabaseController
 
         $app = \App\App::getInstance(true);
         $config = $app->getConfig();
-        $appUrl = $config->getSetting('APP_URL', 'https://featherpanel.mythical.systems');
+        $appUrl = $config->getSetting(ConfigInterface::APP_URL, 'https://featherpanel.mythical.systems');
         if (!preg_match('/^https?:\/\//', $appUrl)) {
             $appUrl = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http')
                 . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost');
@@ -512,7 +513,7 @@ class WebSpaceDatabaseController
 
         $app = \App\App::getInstance(true);
         $config = $app->getConfig();
-        $appUrl = $config->getSetting('APP_URL', 'https://featherpanel.mythical.systems');
+        $appUrl = $config->getSetting(ConfigInterface::APP_URL, 'https://featherpanel.mythical.systems');
         if (!preg_match('/^https?:\/\//', $appUrl)) {
             $appUrl = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http')
                 . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost');
