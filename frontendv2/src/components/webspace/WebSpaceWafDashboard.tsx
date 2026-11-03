@@ -171,6 +171,21 @@ interface WafEvent {
 
 const RANGES: Range[] = ['24h', '7d', '30d'];
 const REFRESH_MS = 15000;
+
+function emptyOverview(mode: WafMode): Overview {
+    return {
+        mode,
+        engine_available: false,
+        daemon_unreachable: true,
+        bucket_seconds: 3600,
+        totals: { requests: 0, blocked: 0, detected: 0, unique_ips: 0, blocked_ips: 0, status_4xx: 0, status_5xx: 0 },
+        series: [],
+        status_codes: [],
+        top_ips: [],
+        top_categories: [],
+        top_paths: [],
+    };
+}
 const TEAL = 'hsl(var(--primary))';
 const RED = '#f87171';
 const BLUE = '#60a5fa';
@@ -471,12 +486,17 @@ export function WebSpaceWafDashboard({
     const { t } = useTranslation();
     const [tab, setTab] = useState<Tab>('traffic');
     const [range, setRange] = useState<Range>('24h');
-    const [overview, setOverview] = useState<Overview | null>(null);
+    const [overviewData, setOverview] = useState<Overview | null>(null);
     const [events, setEvents] = useState<WafEvent[]>([]);
     const [loading, setLoading] = useState(true);
-    const [unavailable, setUnavailable] = useState(false);
     const [savingMode, setSavingMode] = useState(false);
     const [settings, setSettings] = useState<WafSettings | null>(null);
+    // Without statistics (older node, 404/501) the page still works: an empty overview carries the mode from
+    // the settings and flags the node as unreachable, which the page already explains in a banner.
+    const overview = useMemo(
+        () => overviewData ?? emptyOverview(settings?.mode ?? 'off'),
+        [overviewData, settings?.mode],
+    );
     const hasData = useRef(false);
     const [closed, setClosed] = useState<Set<string>>(new Set());
     const toggleGroup = (id: string) =>
@@ -493,37 +513,44 @@ export function WebSpaceWafDashboard({
     // a save can never replace newer data with an older snapshot.
     const settingsGeneration = useRef(0);
     const pendingSaves = useRef(0);
+    // Every load takes a ticket; only the newest one may write state, so a slow older response
+    // (other range, earlier poll) can never overwrite newer data.
+    const loadSeq = useRef(0);
 
     const load = useCallback(
         async (silent = false) => {
+            const ticket = ++loadSeq.current;
             if (!silent && !hasData.current) setLoading(true);
-            try {
-                const [ov, ev] = await Promise.all([
+            const generation = settingsGeneration.current;
+            // Statistics and settings are independent: one failing must not hide the other.
+            const [stats, st] = await Promise.allSettled([
+                Promise.all([
                     axios.get(`${base}/overview`, { params: { range } }),
                     axios.get(`${base}/events`, { params: { range, limit: 50 } }),
-                ]);
+                ]),
+                axios.get(`${base}/settings`),
+            ]);
+            if (ticket !== loadSeq.current) return;
+
+            if (stats.status === 'fulfilled') {
+                const [ov, ev] = stats.value;
                 setOverview(ov.data.data as Overview);
                 hasData.current = true;
                 setEvents((ev.data.data?.events as WafEvent[]) ?? []);
-                try {
-                    const generation = settingsGeneration.current;
-                    const st = await axios.get(`${base}/settings`);
-                    if (generation === settingsGeneration.current && pendingSaves.current === 0) {
-                        setSettings(normalizeSettings(st.data.data as Partial<WafSettings>));
-                    }
-                } catch {
-                    /* settings are optional until the backend ships them */
-                }
-                setUnavailable(false);
-            } catch (error) {
+            } else {
+                const error = stats.reason;
                 if (isAxiosError(error) && (error.response?.status === 404 || error.response?.status === 501)) {
-                    setUnavailable(true);
+                    setOverview(null);
+                    setEvents([]);
                 } else if (!silent) {
                     toast.error(t('webSpaces.wafDashboard.loadFailed'));
                 }
-            } finally {
-                setLoading(false);
             }
+
+            if (st.status === 'fulfilled' && generation === settingsGeneration.current && pendingSaves.current === 0) {
+                setSettings(normalizeSettings(st.value.data.data as Partial<WafSettings>));
+            }
+            setLoading(false);
         },
         [base, range, t],
     );
@@ -535,7 +562,7 @@ export function WebSpaceWafDashboard({
     }, [load]);
 
     const setMode = async (mode: WafMode) => {
-        if (!overview || overview.mode === mode) return;
+        if (overview.mode === mode) return;
         setSavingMode(true);
         try {
             await axios.patch(`${base}/mode`, { mode });
@@ -593,8 +620,17 @@ export function WebSpaceWafDashboard({
         if (!window.confirm(t('webSpaces.wafDashboard.allowConfirm', { path }))) return;
         const cat = (CATEGORY_IDS as string[]).includes(e.category) ? [e.category as WafCategory] : [];
         const same = current.exceptions.find((x) => x.path === path);
-        const merged =
-            same && same.categories.length > 0 && cat.length > 0 ? [...new Set([...same.categories, ...cat])] : cat;
+        // An empty list means "every category": never narrow it to one, and never widen a scoped exception
+        // because the event's category is unknown.
+        let merged: WafCategory[];
+        if (!same) merged = cat;
+        else if (same.categories.length === 0) merged = [];
+        else if (cat.length === 0) merged = same.categories;
+        else merged = [...new Set([...same.categories, ...cat])];
+        if (same && merged.length === same.categories.length && merged.every((c) => same.categories.includes(c))) {
+            toast.info(t('webSpaces.wafDashboard.allowNoChange'));
+            return;
+        }
         const next = { id: same?.id ?? makeId(), path, categories: merged };
         await saveSettings({
             exceptions: same
@@ -659,7 +695,7 @@ export function WebSpaceWafDashboard({
         );
     }
 
-    if (unavailable || !overview) {
+    if (!overviewData && !settings) {
         return (
             <Panel title={t('webSpaces.wafDashboard.title')}>
                 <p className='text-muted-foreground flex items-center gap-2 text-sm'>

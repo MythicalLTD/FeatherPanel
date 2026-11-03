@@ -17373,6 +17373,7 @@
             "exceptionsNone": "No exceptions. Everything is checked.",
             "allowThis": "Allow this",
             "allowConfirm": "Skip the checks for {path} and everything under it? You can undo this under Exceptions.",
+            "allowNoChange": "No change: an exception for this path already exists.",
             "protectionTitle": "Protection status",
             "fixIt": "Fix",
             "check_mode": "Blocking is on",
