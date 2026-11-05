@@ -26,6 +26,7 @@ use App\Chat\ServerDatabase;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Chat\DatabaseInstance;
+use App\Config\ConfigInterface;
 use App\Helpers\ServerGateway;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -1158,7 +1159,7 @@ class ServerDatabaseController
         // Get app URL from config
         $app = App::getInstance(true);
         $config = $app->getConfig();
-        $appUrl = $config->getSetting('APP_URL', 'https://featherpanel.mythical.systems');
+        $appUrl = $config->getSetting(ConfigInterface::APP_URL, 'https://featherpanel.mythical.systems');
 
         // Ensure app URL is absolute (starts with http:// or https://)
         if (!preg_match('/^https?:\/\//', $appUrl)) {
