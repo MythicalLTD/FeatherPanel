@@ -94,6 +94,10 @@ class RealtimeController
             return PermissionHelper::hasPermission((string) $user['uuid'], Permissions::ADMIN_WEBSPACES_VIEW, $user);
         }
 
+        if ($topic === Mercure::TOPIC_ADMIN_ACTIVITY) {
+            return PermissionHelper::hasPermission((string) $user['uuid'], Permissions::ADMIN_USERS_VIEW, $user);
+        }
+
         if (preg_match('#^/servers/([A-Za-z0-9-]{1,64})$#', $topic, $m) === 1) {
             $server = Server::getServerByUuidShort($m[1]);
             if (!$server) {

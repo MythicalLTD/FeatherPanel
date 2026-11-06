@@ -4,6 +4,7 @@
 
 ### Added
 
+- Live activity feed on the user dashboard and admin home: new panel activity is pushed over Mercure (`activity.updated` on `/users/{uuid}` and `/admin/activity`), the widgets refetch without a full page reload, and a Live badge shows when the stream is connected. Falls back to a 60s poll when Mercure is off. by @nayskutzu
 - FrankenPHP on low-RAM panel hosts (≤2 GB): `frankenphp-env.sh` no longer clamps `FRANKENPHP_MAX_THREADS` to 4 and then collapses the API pool to a single worker. That starvation made server create (and other Wings calls) hang until cURL error 28. Auto sizing now uses the worker heap target, floors max threads at 8, keeps at least 2 API workers with scale-up room, and shrinks the slow pool first. by @nayskutzu
 - WebSpaces: subuser invite links with permission presets, a 7 day schedule calendar, backup schedule retention (keep last N) and push-to-deploy webhooks that run a schedule from GitHub, GitLab or any CI. by @nayskutzu
 - Web hosting notifications: install results, backups, malware findings and disk, traffic or memory limit alerts (90%) now reach the inbox, email and Discord. Each one can be turned off under Account > Notifications. The Analytics page also shows CPU, memory and disk graphs for the last 1, 6 or 24 hours (needs FeatherQuilld with usage history). by @nayskutzu

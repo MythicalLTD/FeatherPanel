@@ -2011,7 +2011,8 @@
         "activity": {
             "title": "Recent Activity",
             "view_all": "View All",
-            "no_activity": "No recent activity"
+            "no_activity": "No recent activity",
+            "live": "Live"
         },
         "knowledgebase": {
             "title": "Knowledge Base",
@@ -2834,7 +2835,8 @@
             "showingActivities": "Showing {from} to {to} of {total} activities",
             "totalActivities": "{count} activities",
             "noSearchResults": "No search results",
-            "tryDifferentSearch": "Try a different search term"
+            "tryDifferentSearch": "Try a different search term",
+            "live": "Live"
         },
         "mail": {
             "title": "Mail List",
@@ -10265,7 +10267,9 @@
             "error_desc": "Something went wrong fetching recent events.",
             "retry": "Try again",
             "no_permission_title": "Activity unavailable",
-            "no_permission_desc": "You need users view permission to see the activity feed."
+            "no_permission_desc": "You need users view permission to see the activity feed.",
+            "live": "Live",
+            "description_live": "Updating live as panel events happen"
         },
         "attention": {
             "title": "Needs Attention",

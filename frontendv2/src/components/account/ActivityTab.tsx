@@ -17,6 +17,9 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { useSession } from '@/contexts/SessionContext';
+import { useLiveRefresh } from '@/hooks/useLiveRefresh';
+import { realtimeTopics } from '@/lib/realtime';
 import { useDateFormatOptions } from '@/contexts/PreferencesContext';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
@@ -41,6 +44,7 @@ interface PaginationInfo {
 
 export default function ActivityTab() {
     const { t } = useTranslation();
+    const { user } = useSession();
     const dateOpts = useDateFormatOptions();
     const [activities, setActivities] = useState<Activity[]>([]);
     const [loading, setLoading] = useState(true);
@@ -49,8 +53,9 @@ export default function ActivityTab() {
     const [currentPage, setCurrentPage] = useState(1);
 
     const fetchActivities = useCallback(
-        async (page: number = 1) => {
-            setLoading(true);
+        async (page: number = 1, opts?: { silent?: boolean }) => {
+            const silent = opts?.silent === true;
+            if (!silent) setLoading(true);
             try {
                 const params = new URLSearchParams({
                     page: page.toString(),
@@ -68,17 +73,28 @@ export default function ActivityTab() {
                 }
             } catch (error) {
                 console.error('Error fetching activities:', error);
-                toast.error(t('account.activity.loadFailed'));
+                if (!silent) toast.error(t('account.activity.loadFailed'));
             } finally {
-                setLoading(false);
+                if (!silent) setLoading(false);
             }
         },
         [searchQuery, t],
     );
 
     useEffect(() => {
-        fetchActivities();
+        void fetchActivities();
     }, [fetchActivities]);
+
+    const liveStatus = useLiveRefresh({
+        topics: [user?.uuid && realtimeTopics.user(user.uuid)],
+        types: ['activity.updated'],
+        refresh: () => {
+            // Keep the current page/search; only silent-refresh so the list updates in place.
+            void fetchActivities(currentPage, { silent: true });
+        },
+        pollMs: 60_000,
+        enabled: Boolean(user?.uuid),
+    });
 
     useEffect(() => {
         const timeout = setTimeout(() => {
@@ -121,7 +137,15 @@ export default function ActivityTab() {
     return (
         <div className='space-y-5'>
             <div className='border-border/50 bg-muted/20 rounded-xl border p-4'>
-                <h3 className='text-foreground text-lg font-semibold'>{t('account.activity.title')}</h3>
+                <div className='flex flex-wrap items-center gap-2'>
+                    <h3 className='text-foreground text-lg font-semibold'>{t('account.activity.title')}</h3>
+                    {liveStatus === 'open' && (
+                        <span className='bg-emerald-500/12 text-emerald-600 dark:text-emerald-400 inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-semibold tracking-wide uppercase'>
+                            <span className='bg-emerald-500 h-1.5 w-1.5 rounded-full' aria-hidden />
+                            {t('account.activity.live')}
+                        </span>
+                    )}
+                </div>
                 <p className='text-muted-foreground mt-1 text-sm'>{t('account.activity.description')}</p>
             </div>
 

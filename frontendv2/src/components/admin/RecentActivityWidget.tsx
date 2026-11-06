@@ -27,6 +27,8 @@ import { formatRelativeTime } from '@/lib/dateUtils';
 import { useDateFormatOptions } from '@/contexts/PreferencesContext';
 import { cn } from '@/lib/utils';
 import { useAdminWidgetList } from '@/hooks/useAdminWidgetList';
+import { useLiveRefresh } from '@/hooks/useLiveRefresh';
+import { realtimeTopics } from '@/lib/realtime';
 
 interface ActivityItem {
     id: number;
@@ -68,22 +70,41 @@ export function RecentActivityWidget() {
         items: activities,
         state,
         retry: retryFetchActivities,
+        refreshSilent,
     } = useAdminWidgetList(fetchActivities, extractActivities);
+
+    const liveStatus = useLiveRefresh({
+        topics: [realtimeTopics.adminActivity],
+        types: ['activity.updated'],
+        refresh: refreshSilent,
+        pollMs: 60_000,
+        enabled: state !== 'forbidden',
+    });
 
     return (
         <PageCard
             title={t('admin.activity.title')}
-            description={t('admin.activity.description')}
+            description={
+                liveStatus === 'open' ? t('admin.activity.description_live') : t('admin.activity.description')
+            }
             icon={Activity}
             className='space-y-4 p-4 sm:p-5 [&>div:first-child]:flex-wrap [&>div:first-child]:gap-3 [&>div:first-child]:pb-4'
             action={
                 state !== 'forbidden' ? (
-                    <Link
-                        href='/admin/analytics/activity'
-                        className='text-muted-foreground hover:text-foreground hover:bg-accent inline-flex min-h-11 items-center rounded-lg px-2 text-xs font-medium transition-colors'
-                    >
-                        {t('admin.activity.view_all')}
-                    </Link>
+                    <div className='flex items-center gap-2'>
+                        {liveStatus === 'open' && (
+                            <span className='bg-emerald-500/12 text-emerald-600 dark:text-emerald-400 inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-semibold tracking-wide uppercase'>
+                                <span className='bg-emerald-500 h-1.5 w-1.5 rounded-full' aria-hidden />
+                                {t('admin.activity.live')}
+                            </span>
+                        )}
+                        <Link
+                            href='/admin/analytics/activity'
+                            className='text-muted-foreground hover:text-foreground hover:bg-accent inline-flex min-h-11 items-center rounded-lg px-2 text-xs font-medium transition-colors'
+                        >
+                            {t('admin.activity.view_all')}
+                        </Link>
+                    </div>
                 ) : undefined
             }
         >
