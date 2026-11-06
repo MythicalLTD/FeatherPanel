@@ -18,12 +18,20 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import { useCallback, useEffect, useState } from 'react';
 import axios from 'axios';
 import { toast } from 'sonner';
-import { Bell, Mail, Send } from 'lucide-react';
+import { Bell, Mail, Send, Smartphone } from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { useSettings } from '@/contexts/SettingsContext';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { Switch } from '@/components/ui/switch';
 import { getApiErrorMessage } from '@/lib/api-errors';
+import {
+    getLocalPushSubscription,
+    pushSupported,
+    registerPanelServiceWorker,
+    subscribeWebPush,
+    unsubscribeWebPush,
+} from '@/lib/web-push';
 
 type EventKey =
     | 'server_crashed'
@@ -47,6 +55,7 @@ type EventKey =
 interface NotificationSettings {
     email_enabled: boolean;
     discord_enabled: boolean;
+    push_enabled: boolean;
     discord_webhook_url: string;
     events: Record<EventKey, boolean>;
 }
@@ -74,6 +83,7 @@ const EVENTS: EventKey[] = [
 const DEFAULTS: NotificationSettings = {
     email_enabled: true,
     discord_enabled: true,
+    push_enabled: false,
     discord_webhook_url: '',
     events: {
         server_crashed: true,
@@ -102,12 +112,14 @@ function Row({
     checked,
     onChange,
     id,
+    disabled,
 }: {
     title: string;
     description?: string;
     checked: boolean;
     onChange: (v: boolean) => void;
     id: string;
+    disabled?: boolean;
 }) {
     return (
         <div className='flex items-start justify-between gap-4 py-3'>
@@ -115,22 +127,39 @@ function Row({
                 <span className='text-foreground block text-sm font-medium'>{title}</span>
                 {description && <span className='text-muted-foreground block text-xs'>{description}</span>}
             </label>
-            <Switch id={id} checked={checked} onCheckedChange={onChange} />
+            <Switch id={id} checked={checked} onCheckedChange={onChange} disabled={disabled} />
         </div>
     );
 }
 
 export default function NotificationsTab() {
     const { t } = useTranslation();
+    const { settings: panelSettings } = useSettings();
+    const pushAdminEnabled =
+        panelSettings?.app_pwa_enabled === 'true' && panelSettings?.app_pwa_push_enabled === 'true';
+
     const [settings, setSettings] = useState<NotificationSettings>(DEFAULTS);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [testing, setTesting] = useState(false);
+    const [pushBusy, setPushBusy] = useState(false);
+    const [pushTesting, setPushTesting] = useState(false);
+    const [hasLocalSub, setHasLocalSub] = useState(false);
+    const supported = pushSupported();
+
+    const refreshLocalSub = useCallback(async () => {
+        if (!supported) {
+            setHasLocalSub(false);
+            return;
+        }
+        const sub = await getLocalPushSubscription();
+        setHasLocalSub(Boolean(sub));
+    }, [supported]);
 
     const load = useCallback(async () => {
         try {
             const { data } = await axios.get('/api/user/notification-settings');
-            if (data?.data) setSettings({ ...DEFAULTS, ...data.data });
+            if (data?.data) setSettings({ ...DEFAULTS, ...data.data, events: { ...DEFAULTS.events, ...(data.data.events || {}) } });
         } catch (err) {
             toast.error(getApiErrorMessage(err, t, 'account.notifications.loadFailed'));
         } finally {
@@ -140,13 +169,17 @@ export default function NotificationsTab() {
 
     useEffect(() => {
         void load();
-    }, [load]);
+        void refreshLocalSub();
+        if (pushAdminEnabled && supported && process.env.NODE_ENV === 'production') {
+            void registerPanelServiceWorker();
+        }
+    }, [load, refreshLocalSub, pushAdminEnabled, supported]);
 
     const save = async () => {
         setSaving(true);
         try {
             const { data } = await axios.put('/api/user/notification-settings', settings);
-            if (data?.data) setSettings({ ...DEFAULTS, ...data.data });
+            if (data?.data) setSettings({ ...DEFAULTS, ...data.data, events: { ...DEFAULTS.events, ...(data.data.events || {}) } });
             toast.success(t('account.notifications.saved'));
         } catch (err) {
             toast.error(getApiErrorMessage(err, t, 'account.notifications.saveFailed'));
@@ -167,8 +200,54 @@ export default function NotificationsTab() {
         }
     };
 
+    const enablePush = async () => {
+        setPushBusy(true);
+        try {
+            const sub = await subscribeWebPush();
+            if (!sub) {
+                toast.error(t('account.notifications.pushPermissionDenied'));
+                return;
+            }
+            setSettings((s) => ({ ...s, push_enabled: true }));
+            setHasLocalSub(true);
+            toast.success(t('account.notifications.pushEnabled'));
+        } catch (err) {
+            toast.error(getApiErrorMessage(err, t, 'account.notifications.pushEnableFailed'));
+        } finally {
+            setPushBusy(false);
+        }
+    };
+
+    const disablePush = async () => {
+        setPushBusy(true);
+        try {
+            await unsubscribeWebPush();
+            setSettings((s) => ({ ...s, push_enabled: false }));
+            setHasLocalSub(false);
+            toast.success(t('account.notifications.pushDisabled'));
+        } catch (err) {
+            toast.error(getApiErrorMessage(err, t, 'account.notifications.pushDisableFailed'));
+        } finally {
+            setPushBusy(false);
+        }
+    };
+
+    const testPush = async () => {
+        setPushTesting(true);
+        try {
+            await axios.post('/api/user/push/test');
+            toast.success(t('account.notifications.pushTestSent'));
+        } catch (err) {
+            toast.error(getApiErrorMessage(err, t, 'account.notifications.pushTestFailed'));
+        } finally {
+            setPushTesting(false);
+        }
+    };
+
     const setEvent = (key: EventKey, value: boolean) =>
         setSettings((s) => ({ ...s, events: { ...s.events, [key]: value } }));
+
+    const pushActive = settings.push_enabled || hasLocalSub;
 
     return (
         <div className='space-y-6'>
@@ -218,6 +297,45 @@ export default function NotificationsTab() {
                         </Button>
                     </div>
                 </div>
+
+                {pushAdminEnabled ? (
+                    <div className='space-y-3 py-3'>
+                        <div className='flex items-start justify-between gap-4'>
+                            <div className='min-w-0'>
+                                <p className='text-foreground flex items-center gap-2 text-sm font-medium'>
+                                    <Smartphone className='h-4 w-4 shrink-0' />
+                                    {t('account.notifications.push')}
+                                </p>
+                                <p className='text-muted-foreground mt-0.5 text-xs'>
+                                    {!supported
+                                        ? t('account.notifications.pushUnsupported')
+                                        : t('account.notifications.pushDescription')}
+                                </p>
+                            </div>
+                            <Switch
+                                id='notif-push'
+                                checked={pushActive}
+                                disabled={!supported || pushBusy}
+                                onCheckedChange={(v) => {
+                                    if (v) void enablePush();
+                                    else void disablePush();
+                                }}
+                            />
+                        </div>
+                        {pushActive ? (
+                            <Button
+                                type='button'
+                                variant='outline'
+                                onClick={() => void testPush()}
+                                disabled={pushTesting || pushBusy}
+                                className='gap-1.5'
+                            >
+                                <Send className='h-4 w-4' />
+                                {t('account.notifications.pushSendTest')}
+                            </Button>
+                        ) : null}
+                    </div>
+                ) : null}
             </section>
 
             <section className='border-border/60 bg-card/40 rounded-xl border px-4 py-2'>

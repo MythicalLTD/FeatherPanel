@@ -426,6 +426,7 @@ class InboxNotifier
                 continue;
             }
             ExternalNotifier::deliver($user, $kind, $data, $link);
+            WebPushNotifier::deliver($user, $kind, $data, $link);
             if (!empty($user['uuid']) && Mercure::isEnabled()) {
                 Mercure::publish(Mercure::userTopic((string) $user['uuid']), self::REALTIME_TYPE);
             }

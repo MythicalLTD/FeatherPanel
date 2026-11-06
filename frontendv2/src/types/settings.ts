@@ -153,6 +153,8 @@ export interface AppSettings {
     app_pwa_description: string;
     app_pwa_theme_color: string;
     app_pwa_bg_color: string;
+    app_pwa_push_enabled: string;
+    app_pwa_vapid_public: string;
     /** Optional: default background image URL for all users (used as a starting point, users can still customize unless locked). */
     app_background_image_url?: string;
     /** When 'true', force the configured background image URL for all users. */
