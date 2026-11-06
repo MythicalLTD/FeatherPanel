@@ -18,6 +18,7 @@
 namespace App\Controllers\Admin;
 
 use App\Chat\Node;
+use App\Chat\Location;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Helpers\NodeStatusHelper;
@@ -69,6 +70,10 @@ class NodeStatusController
     {
         $allNodes = Node::getAllNodes();
         $probes = NodeStatusHelper::probeNodesUtilization($allNodes);
+        $locations = Location::getByIds(array_map(
+            static fn (array $node): int => (int) ($node['location_id'] ?? 0),
+            $allNodes
+        ));
 
         $globalStats = [
             'total_nodes' => count($allNodes),
@@ -80,10 +85,13 @@ class NodeStatusController
             'used_disk' => 0,
             'avg_cpu_percent' => 0.0,
             'total_cpu_percent' => 0.0,
+            'avg_latency_ms' => null,
         ];
 
         $nodesWithStatus = [];
         $healthyNodeCount = 0;
+        $latencySum = 0;
+        $latencyCount = 0;
 
         foreach ($allNodes as $node) {
             $nodeId = (int) $node['id'];
@@ -91,16 +99,37 @@ class NodeStatusController
                 'status' => 'unhealthy',
                 'utilization' => null,
                 'error' => 'Probe result missing',
+                'latency_ms' => null,
             ];
 
             $servers = NodeStatusHelper::buildServersForNode($nodeId, true);
+            $locationId = (int) ($node['location_id'] ?? 0);
+            $location = $locations[$locationId] ?? null;
+            $latitude = isset($location['latitude']) && $location['latitude'] !== null && $location['latitude'] !== ''
+                ? (float) $location['latitude']
+                : null;
+            $longitude = isset($location['longitude']) && $location['longitude'] !== null && $location['longitude'] !== ''
+                ? (float) $location['longitude']
+                : null;
+            $latencyMs = isset($probe['latency_ms']) && $probe['latency_ms'] !== null
+                ? (int) $probe['latency_ms']
+                : null;
+            if ($latencyMs !== null) {
+                $latencySum += $latencyMs;
+                ++$latencyCount;
+            }
 
             $nodeData = [
                 'id' => $nodeId,
                 'uuid' => $node['uuid'],
                 'name' => $node['name'],
                 'fqdn' => $node['fqdn'],
-                'location_id' => $node['location_id'],
+                'location_id' => $locationId,
+                'location_name' => $location['name'] ?? null,
+                'flag_code' => $location['flag_code'] ?? null,
+                'latitude' => $latitude,
+                'longitude' => $longitude,
+                'latency_ms' => $latencyMs,
                 'status' => $probe['status'],
                 'utilization' => $probe['utilization'],
                 'error' => $probe['error'],
@@ -142,6 +171,10 @@ class NodeStatusController
 
         if ($healthyNodeCount > 0) {
             $globalStats['avg_cpu_percent'] = round($globalStats['total_cpu_percent'] / $healthyNodeCount, 2);
+        }
+
+        if ($latencyCount > 0) {
+            $globalStats['avg_latency_ms'] = (int) round($latencySum / $latencyCount);
         }
 
         unset($globalStats['total_cpu_percent']);

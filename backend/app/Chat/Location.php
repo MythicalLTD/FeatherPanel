@@ -132,7 +132,7 @@ class Location
 
     public static function create(array $data): int | false
     {
-        $fields = ['name', 'description', 'flag_code', 'type'];
+        $fields = ['name', 'description', 'flag_code', 'latitude', 'longitude', 'type'];
         $insert = [];
         foreach ($fields as $field) {
             $insert[$field] = $data[$field] ?? null;
@@ -162,7 +162,7 @@ class Location
 
     public static function update(int $id, array $data): bool
     {
-        $fields = ['name', 'description', 'flag_code', 'type'];
+        $fields = ['name', 'description', 'flag_code', 'latitude', 'longitude', 'type'];
         $set = [];
         $params = ['id' => $id];
         foreach ($fields as $field) {
