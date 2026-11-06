@@ -109,6 +109,8 @@ class PublicConfig extends ConfigFactory
             ConfigInterface::APP_PWA_DESCRIPTION => '',
             ConfigInterface::APP_PWA_THEME_COLOR => '#000000',
             ConfigInterface::APP_PWA_BG_COLOR => '#ffffff',
+            ConfigInterface::APP_PWA_PUSH_ENABLED => 'false',
+            ConfigInterface::APP_PWA_VAPID_PUBLIC => '',
 
             // Social Media Links
             ConfigInterface::LINKEDIN_URL => '',

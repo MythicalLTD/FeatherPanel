@@ -14,7 +14,7 @@ by the Free Software Foundation, either version 3 of the License, or
 See the LICENSE file or <https://www.gnu.org/licenses/>.
 */
 
-const CACHE = 'fp-pwa-v3';
+const CACHE = 'fp-pwa-v4';
 const PRECACHE = ['/offline.html'];
 
 self.addEventListener('install', (event) => {
@@ -83,6 +83,63 @@ self.addEventListener('fetch', (event) => {
                     if (offline) return offline;
                 }
                 return new Response('', { status: 504, statusText: 'Offline' });
+            }
+        })(),
+    );
+});
+
+self.addEventListener('push', (event) => {
+    let data = { title: 'FeatherPanel', body: '', url: '/dashboard', tag: 'fp-push' };
+    try {
+        if (event.data) {
+            const parsed = event.data.json();
+            if (parsed && typeof parsed === 'object') {
+                data = { ...data, ...parsed };
+            }
+        }
+    } catch {
+        try {
+            const text = event.data ? event.data.text() : '';
+            if (text) data.body = text;
+        } catch {
+            /* ignore */
+        }
+    }
+
+    const title = typeof data.title === 'string' && data.title ? data.title : 'FeatherPanel';
+    const options = {
+        body: typeof data.body === 'string' ? data.body : '',
+        tag: typeof data.tag === 'string' && data.tag ? data.tag : 'fp-push',
+        renotify: true,
+        data: { url: typeof data.url === 'string' && data.url ? data.url : '/dashboard' },
+        icon: '/assets/logo.png',
+        badge: '/assets/logo.png',
+    };
+
+    event.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener('notificationclick', (event) => {
+    event.notification.close();
+    const target = (event.notification && event.notification.data && event.notification.data.url) || '/dashboard';
+    event.waitUntil(
+        (async () => {
+            const all = await clients.matchAll({ type: 'window', includeUncontrolled: true });
+            for (const client of all) {
+                if ('focus' in client) {
+                    try {
+                        await client.focus();
+                        if ('navigate' in client && typeof client.navigate === 'function') {
+                            await client.navigate(target);
+                        }
+                        return;
+                    } catch {
+                        /* try next */
+                    }
+                }
+            }
+            if (clients.openWindow) {
+                await clients.openWindow(target);
             }
         })(),
     );
