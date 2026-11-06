@@ -1284,6 +1284,18 @@ class FeatherQuilldClient
         return self::request($webNode, 'GET', '/api/webspaces/' . $uuid . '/proxy-logs?' . http_build_query($queryParams));
     }
 
+    /**
+     * Firewall dashboard numbers (overview + recent events) computed by the daemon for one WebSpace.
+     *
+     * @return array{ok: bool, status: int, body: mixed, error: ?string}
+     */
+    public static function getWebSpaceWafStats(array $webNode, string $uuid, string $range = '24h', int $events = 50): array
+    {
+        $query = ['range' => $range, 'events' => max(1, min(200, $events))];
+
+        return self::request($webNode, 'GET', '/api/webspaces/' . $uuid . '/waf/stats?' . http_build_query($query), null, 20);
+    }
+
     /** @return array{ok: bool, status: int, body: mixed, error: ?string} */
     public static function rotateWebSpaceProxyLogs(array $webNode, string $uuid, ?string $domain = null): array
     {
