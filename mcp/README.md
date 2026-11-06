@@ -1,6 +1,6 @@
 # FeatherPanel MCP Server
 
-Model Context Protocol server for [FeatherPanel](https://github.com/mythicalltd/FeatherPanel). Lets Claude, Cursor, and other MCP clients manage servers, files, console, networking, VDS, and more through the panel REST API.
+Model Context Protocol server for [FeatherPanel](https://github.com/mythicalltd/FeatherPanel). Lets Claude, Cursor, and other MCP clients manage servers, files, console, networking, VDS, and (for admin API keys) the full admin area through the panel REST API.
 
 ## Auth (everything)
 
@@ -110,6 +110,14 @@ Tools are registered from panel public settings (`GET /api/system/settings`, see
 - `search_knowledgebase`, `get_knowledgebase_article`, `list_knowledgebase_categories`
 
 Permissions match the API key’s user and webspace/server/VDS subuser ACLs.
+
+### Admin (`admin.*` on the API key)
+
+Registered only when `GET /api/user/session` returns at least one `admin.*` permission (including `admin.root`). Non-admin keys never see these in `tools/list`. Every call still goes through the existing `/api/admin/*` PHP routes and `AdminMiddleware` permission checks.
+
+- **Discovery:** `admin_capabilities`, `admin_list_routes` (catalog generated from `backend/app/routes/admin`, regenerate with `python3 mcp/scripts/generate-admin-routes.py`)
+- **Full coverage:** `admin_api` — `method` + `/api/admin/...` path (+ query/body). Prefer this for anything without a named helper.
+- **Named helpers:** dashboard, health, users CRUD, roles, Wings nodes (+ global status), servers CRUD, settings get/update, database hosts, webspaces, locations, allocations, audit log, node alerts (overview/history/settings/test), user sessions, permission nodes
 
 ## Security
 
