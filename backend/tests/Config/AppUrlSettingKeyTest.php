@@ -50,16 +50,33 @@ class AppUrlSettingKeyTest extends TestCase
 
     public function testLinkBuildersUseTheConstant(): void
     {
+        // Mailbox / apps still build absolute links from APP_URL.
         $controllers = [
             'Controllers/User/WebSpaces/WebSpaceMailboxController.php',
-            'Controllers/User/WebSpaces/WebSpaceDatabaseController.php',
             'Controllers/User/WebSpaces/WebSpaceAppsController.php',
-            'Controllers/User/Server/ServerDatabaseController.php',
         ];
         foreach ($controllers as $controller) {
             $source = (string) file_get_contents(self::APP_DIR . '/' . $controller);
             $this->assertStringContainsString('getSetting(ConfigInterface::APP_URL', $source, $controller);
             $this->assertStringContainsString('use App\Config\ConfigInterface;', $source, $controller);
+        }
+    }
+
+    public function testPhpMyAdminTokenUrlsAreSameOriginRelative(): void
+    {
+        // Absolute APP_URL (especially the seeded demo host) used to send browsers
+        // to featherpanel.mythical.systems. Token URLs must stay same-origin.
+        foreach ([
+            'Controllers/User/Server/ServerDatabaseController.php',
+            'Controllers/User/WebSpaces/WebSpaceDatabaseController.php',
+        ] as $controller) {
+            $source = (string) file_get_contents(self::APP_DIR . '/' . $controller);
+            $this->assertStringContainsString("'/pma/token.php?'", $source, $controller);
+            $this->assertDoesNotMatchRegularExpression(
+                "/getSetting\(\s*ConfigInterface::APP_URL\s*,\s*['\"]https?:\/\/featherpanel\.mythical\.systems['\"]/",
+                $source,
+                $controller . ' must not fall back to the demo APP_URL for PMA links'
+            );
         }
     }
 }

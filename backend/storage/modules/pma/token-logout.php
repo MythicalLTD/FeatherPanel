@@ -26,7 +26,7 @@ session_destroy();
 $pmaPageMode = 'logout';
 $pmaErrorMessage = null;
 $pmaRedirectUrl = null;
-$pmaRedirectDelay = 500;
-$pmaPostLoadScript = 'setTimeout(function() { window.close(); }, 1000);';
+$pmaRedirectDelay = 0;
+$pmaPostLoadScript = 'setTimeout(function() { window.close(); }, 300);';
 
 require __DIR__ . '/auth-page.php';

@@ -48,6 +48,7 @@
 
 ### Improved
 
+- phpMyAdmin opens faster: successful sign-on uses a 302 straight into phpMyAdmin (no branded interstitial and no 500 ms wait), the databases page only checks whether PMA is installed instead of re-copying bridge files on every load, signon hardening is refreshed at most once an hour, and stale SSO token cleanup runs at most once a minute. by @nayskutzu
 - The settings editor was improved so you can know what you are chaning and what you have changed by @nayskutzu
 - Admin audit log: the target filter no longer evaluates the category CASE on every row. The distinct action names are classified once and the filter becomes an indexed `name IN (...)`, so `?target=auth` on 300k rows drops from ~200 ms to ~11 ms with identical results. by @nayskutzu
 - Admin audit log: filtering by user now resolves the username/email first and uses the activity index (750 ms to 3 ms on 300k rows), and the total count skips the users join unless a search needs it (36 ms to 26 ms). by @nayskutzu
@@ -95,6 +96,7 @@
 
 ### Fixed
 
+- phpMyAdmin no longer redirects to `https://featherpanel.mythical.systems` when `APP_URL` is still the seeded demo value or empty: server and webspace Open links return a same-origin `/pma/token.php` URL, `AppUrlHelper` treats the demo host as unset and falls back to the request host, and the auth interstitial never links the logo home to the demo host. by @nayskutzu
 - Async runner Docker image: build and run on Debian Trixie (`rust:slim-trixie` + `debian:trixie-slim`) so glibc matches. The old Bookworm runtime only had glibc 2.36 while unpinned `rust:slim` linked against GLIBC_2.38+, which crashed on start with `version GLIBC_2.38 not found`. by @nayskutzu
 - Admin spell editor: two-column field groups collapse to one column on phones, and image field labels match the other form labels. by @nayskutzu
 - Account sessions: header and "sign out other sessions" button sit on one row on desktop and stack on phones, a skeleton shows while loading, the button is disabled when there are no other sessions, and the ticket signature placeholder no longer shows a literal \\n. by @nayskutzu
