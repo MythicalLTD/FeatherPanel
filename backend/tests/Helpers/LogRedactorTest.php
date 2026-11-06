@@ -47,4 +47,16 @@ class LogRedactorTest extends TestCase
     {
         $this->assertStringNotContainsString('placeholder-value', LogRedactor::json(['password' => 'placeholder-value', 'id' => 5]));
     }
+
+    public function testRedactTextMasksSecrets(): void
+    {
+        $raw = "DB_PASSWORD=example-secret-value\nAuthorization: Bearer examplebearertokenvalue\nmysql://root:exampledbpass@db/game\nAPI_KEY=example_api_key_value_123456\nnormal line";
+        $out = LogRedactor::redactText($raw);
+        $this->assertStringNotContainsString('example-secret-value', $out);
+        $this->assertStringNotContainsString('examplebearertokenvalue', $out);
+        $this->assertStringNotContainsString('exampledbpass', $out);
+        $this->assertStringNotContainsString('example_api_key_value_123456', $out);
+        $this->assertStringContainsString('[redacted]', $out);
+        $this->assertStringContainsString('normal line', $out);
+    }
 }

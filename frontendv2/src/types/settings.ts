@@ -22,6 +22,8 @@ export interface AppSettings {
     cache_driver: string;
     chatbot_ai_provider: string;
     chatbot_enabled: string;
+    /** Optional AI helper in file editor / crash console. Default true when chatbot is on. */
+    chatbot_editor_helper_enabled?: string;
     knowledgebase_enabled: string;
     knowledgebase_public_enabled: string;
     /** Panel modules, 'false' turns a module off. Missing means enabled. */
