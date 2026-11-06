@@ -30,6 +30,10 @@ final class RequestContext
     private static ?string $id = null;
     private static ?float $startTime = null;
     private static int $generation = 0;
+    private static ?string $impersonatorUuid = null;
+    private static ?string $impersonatorUsername = null;
+    private static ?string $effectiveUserUuid = null;
+    private static ?string $effectiveUsername = null;
 
     /**
      * Start a new HTTP request with a fresh id and start time.
@@ -39,6 +43,50 @@ final class RequestContext
         self::$id = bin2hex(random_bytes(16));
         self::$startTime = $startTime ?? microtime(true);
         ++self::$generation;
+        self::$impersonatorUuid = null;
+        self::$impersonatorUsername = null;
+        self::$effectiveUserUuid = null;
+        self::$effectiveUsername = null;
+    }
+
+    /**
+     * Remember that this request is an admin acting as another user.
+     *
+     * @param array<string, mixed> $admin
+     * @param array<string, mixed> $target
+     */
+    public static function setImpersonation(array $admin, array $target): void
+    {
+        self::$impersonatorUuid = isset($admin['uuid']) ? (string) $admin['uuid'] : null;
+        self::$impersonatorUsername = isset($admin['username']) ? (string) $admin['username'] : null;
+        self::$effectiveUserUuid = isset($target['uuid']) ? (string) $target['uuid'] : null;
+        self::$effectiveUsername = isset($target['username']) ? (string) $target['username'] : null;
+    }
+
+    public static function impersonatorUuid(): ?string
+    {
+        return self::$impersonatorUuid;
+    }
+
+    public static function impersonatorUsername(): ?string
+    {
+        return self::$impersonatorUsername;
+    }
+
+    public static function effectiveUserUuid(): ?string
+    {
+        return self::$effectiveUserUuid;
+    }
+
+    public static function effectiveUsername(): ?string
+    {
+        return self::$effectiveUsername;
+    }
+
+    public static function isImpersonating(): bool
+    {
+        return self::$impersonatorUuid !== null && self::$effectiveUserUuid !== null
+            && self::$impersonatorUuid !== self::$effectiveUserUuid;
     }
 
     /**

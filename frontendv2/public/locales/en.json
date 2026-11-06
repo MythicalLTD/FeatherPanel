@@ -1622,10 +1622,9 @@
             "INVALID_IP_ALLOW_LIST": "The IP allow list has an invalid entry",
             "IP_ALLOW_LIST_SELF_LOCKOUT": "Your current IP is not in the allow list, saving would lock you out",
             "SECURITY_POLICY_SAVE_FAILED": "Failed to save the security policy",
-            "IMPERSONATION_READ_ONLY": "Viewing as another user is read only. Stop viewing as this user to make changes.",
-            "IMPERSONATION_ACTIVE": "Stop viewing as the current user first",
-            "IMPERSONATION_SESSION_REQUIRED": "Viewing as a user needs a browser session",
-            "IMPERSONATION_NOT_ALLOWED": "You are not allowed to view the panel as this user",
+            "IMPERSONATION_ACTIVE": "Stop impersonating the current user first",
+            "IMPERSONATION_SESSION_REQUIRED": "Impersonating a user needs a browser session",
+            "IMPERSONATION_NOT_ALLOWED": "You are not allowed to impersonate this user",
             "INVALID_AUTO_RESTART": "Auto restart must be turned on or off",
             "INVITE_INVALID": "This invite link is invalid, expired or used up.",
             "INVITE_OWN_SERVER": "You already own this server.",
@@ -1709,7 +1708,8 @@
             "PUSH_NOT_CONFIGURED": "Web push is not configured yet",
             "INVALID_PUSH_SUBSCRIPTION": "Invalid push subscription",
             "PUSH_SUBSCRIBE_FAILED": "Failed to save push subscription",
-            "PUSH_TEST_FAILED": "Could not send a test push"
+            "PUSH_TEST_FAILED": "Could not send a test push",
+            "IMPERSONATION_ACTION_BLOCKED": "This action is not allowed while impersonating another user. Stop impersonating first."
         },
         "global": {}
     },
@@ -16010,8 +16010,12 @@
                 "plugin": "Plugins",
                 "security": "Security",
                 "settings": "Settings",
-                "other": "Other"
-            }
+                "other": "Other",
+                "impersonation": "Impersonation"
+            },
+            "actor": "Actor (admin)",
+            "actor_uuid": "Actor UUID",
+            "actor_as_user": "admin {admin} as user {user}"
         },
         "vdsIsos": {
             "title": "VDS ISO Library",
@@ -20465,13 +20469,13 @@
         }
     },
     "impersonation": {
-        "viewAsUser": "View as user",
-        "confirm": "View the panel as {username}? This is logged on both accounts and the view is read only.",
-        "startFailed": "Could not start viewing as this user",
-        "stopFailed": "Could not stop viewing as this user",
-        "bannerTitle": "You are viewing the panel as {username}",
-        "bannerDescription": "Signed in as {admin}. This view is read only and every visit is audit logged.",
-        "stop": "Stop viewing"
+        "viewAsUser": "Impersonate user",
+        "confirm": "Impersonate {username}? Every action you take is audit logged as you acting as this user. Destructive account actions stay blocked.",
+        "startFailed": "Could not start impersonating this user",
+        "stopFailed": "Could not stop impersonating this user",
+        "bannerTitle": "You are impersonating {username}",
+        "bannerDescription": "Signed in as {admin}. Every action is audit logged as admin {admin} as this user. Stop when you are done.",
+        "stop": "Stop impersonating"
     },
     "adminNodeAlerts": {
         "title": "Alerts",

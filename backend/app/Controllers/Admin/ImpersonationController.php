@@ -29,10 +29,10 @@ class ImpersonationController
     {
         $admin = $request->attributes->get('impersonator') ?? $request->attributes->get('user');
         if ($request->attributes->has('impersonator')) {
-            return ApiResponse::error('Stop viewing as the current user first', 'IMPERSONATION_ACTIVE', 409);
+            return ApiResponse::error('Stop impersonating the current user first', 'IMPERSONATION_ACTIVE', 409);
         }
         if ($request->attributes->get('auth_type') !== 'session') {
-            return ApiResponse::error('Viewing as a user needs a browser session', 'IMPERSONATION_SESSION_REQUIRED', 400);
+            return ApiResponse::error('Impersonating a user needs a browser session', 'IMPERSONATION_SESSION_REQUIRED', 400);
         }
         $target = User::getUserByUuid($uuid);
         if (!$target) {
@@ -47,7 +47,7 @@ class ImpersonationController
         }
         Impersonation::start($admin, $target);
 
-        return ApiResponse::success(['uuid' => $target['uuid'], 'username' => $target['username']], 'Now viewing the panel as ' . $target['username'], 200);
+        return ApiResponse::success(['uuid' => $target['uuid'], 'username' => $target['username']], 'Now impersonating ' . $target['username'], 200);
     }
 
     public function stop(Request $request): Response
@@ -56,10 +56,10 @@ class ImpersonationController
         if (!is_array($admin)) {
             Impersonation::stop($request->attributes->get('user') ?? [], null);
 
-            return ApiResponse::success([], 'Not viewing as another user', 200);
+            return ApiResponse::success([], 'Not impersonating another user', 200);
         }
         Impersonation::stop($admin, $request->attributes->get('user'));
 
-        return ApiResponse::success([], 'Stopped viewing as this user', 200);
+        return ApiResponse::success([], 'Stopped impersonating this user', 200);
     }
 }

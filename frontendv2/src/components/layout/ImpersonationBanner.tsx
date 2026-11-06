@@ -24,7 +24,7 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { Button } from '@/components/featherui/Button';
 import { getApiErrorMessage } from '@/lib/api-errors';
 
-/** Shown on every page while a staff member is viewing the panel as this user. */
+/** Shown on every page while a staff member is impersonating this user. */
 export function ImpersonationBanner() {
     const { user } = useSession();
     const { t } = useTranslation();

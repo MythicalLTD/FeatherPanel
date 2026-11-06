@@ -18,6 +18,7 @@
 namespace App\Chat;
 
 use App\App;
+use App\Runtime\RequestContext;
 use App\Realtime\Events;
 
 class Activity
@@ -26,6 +27,22 @@ class Activity
 
     public static function createActivity(array $data): int | false
     {
+        // While an admin is impersonating, attribute the row to the admin (actor)
+        // and keep user_uuid as the effective (impersonated) user. Callers may set
+        // actor_uuid themselves (start/stop/request logs); we only fill it in when missing.
+        if (RequestContext::isImpersonating()) {
+            if (empty($data['actor_uuid'])) {
+                $data['actor_uuid'] = RequestContext::impersonatorUuid();
+            }
+            $adminName = RequestContext::impersonatorUsername() ?? RequestContext::impersonatorUuid();
+            $userName = RequestContext::effectiveUsername() ?? RequestContext::effectiveUserUuid();
+            $tag = 'admin ' . $adminName . ' as user ' . $userName;
+            $context = isset($data['context']) ? (string) $data['context'] : '';
+            if ($context === '' || !str_contains($context, ' as user ')) {
+                $data['context'] = $context === '' ? $tag : ($context . ' (' . $tag . ')');
+            }
+        }
+
         $pdo = Database::getPdoConnection();
         $data = Database::filterColumns(self::$table, $data);
         if ($data === []) {
