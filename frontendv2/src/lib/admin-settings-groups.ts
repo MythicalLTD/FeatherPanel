@@ -361,6 +361,7 @@ export const CATEGORY_GROUPS: Record<string, SettingsGroupDef[]> = {
             master: 'chatbot_enabled',
             match: oneOf(
                 'chatbot_enabled',
+                'chatbot_editor_helper_enabled',
                 'chatbot_ai_provider',
                 'chatbot_temperature',
                 'chatbot_max_tokens',
