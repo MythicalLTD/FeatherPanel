@@ -3,6 +3,7 @@
 ## v1.5.3 STABLE
 
 ### Added
+- Admin node status map and latency: locations can store optional latitude/longitude, the status page shows an OpenStreetMap/CARTO map of nodes (flag-based approximate pins when exact coords are missing), and each node reports panel→Wings RTT from the existing utilization probe (plus average latency in the summary). No Google Maps billing. by @nayskutzu
 
 - Live activity feed on the user dashboard and admin home: new panel activity is pushed over Mercure (`activity.updated` on `/users/{uuid}` and `/admin/activity`), the widgets refetch without a full page reload, and a Live badge shows when the stream is connected. Falls back to a 60s poll when Mercure is off. by @nayskutzu
 - FrankenPHP on low-RAM panel hosts (≤2 GB): `frankenphp-env.sh` no longer clamps `FRANKENPHP_MAX_THREADS` to 4 and then collapses the API pool to a single worker. That starvation made server create (and other Wings calls) hang until cURL error 28. Auto sizing now uses the worker heap target, floors max threads at 8, keeps at least 2 API workers with scale-up room, and shrinks the slow pool first. by @nayskutzu

@@ -1703,7 +1703,8 @@
             "ADMIN_SESSIONS_SELF": "Manage your own sessions from your account page.",
             "INVITE_ALREADY_MEMBER": "You already have access to this.",
             "DEPLOY_HOOK_NOT_FOUND": "Unknown deploy hook",
-            "WEBSPACE_UNAVAILABLE": "This WebSpace is not available right now."
+            "WEBSPACE_UNAVAILABLE": "This WebSpace is not available right now.",
+            "INVALID_COORDINATES": "Latitude and longitude must both be set (within range) or both be empty."
         },
         "global": {}
     },
@@ -7970,7 +7971,10 @@
                 "webhosting_alpha_description": "Bugs, outages, or data loss may occur. To the extent permitted by applicable law, FeatherPanel and its developers are not liable for damages, losses, or issues arising from use of this alpha feature. Please report problems so we can fix them. Thank you for supporting FeatherPanel!",
                 "webhosting_alpha_consent": "I understand the alpha risks and agree to the notice above.",
                 "webhosting_alpha_required": "Please agree to the WebHosting alpha notice before creating this location.",
-                "type_immutable_notice": "Location type is permanent and was set when this location was created."
+                "type_immutable_notice": "Location type is permanent and was set when this location was created.",
+                "latitude": "Latitude",
+                "longitude": "Longitude",
+                "coordinates_help": "Optional. Used on Admin → Nodes → Status to place this region on the map. Leave both blank to clear. A country flag alone places an approximate pin."
             },
             "type": {
                 "game": {
@@ -10918,7 +10922,18 @@
             "disk": "Disk",
             "swap": "Swap",
             "error": "Failed to load node status",
-            "retry": "Try Again"
+            "retry": "Try Again",
+            "avg_latency": "Avg panel→node latency",
+            "latency_value": "{ms} ms",
+            "latency_unknown": "Latency n/a",
+            "map_title": "Nodes map",
+            "map_subtitle": "Multi-region overview with live panel→Wings latency. OpenStreetMap tiles, no Google Maps billing.",
+            "map_mapped": "{count} on map",
+            "map_unmapped": "{count} without coordinates",
+            "map_empty": "No locations have map coordinates yet. Set latitude and longitude on a location (or pick a country flag for an approximate pin).",
+            "map_set_coordinates": "Edit locations",
+            "map_approximate": "approximate",
+            "map_open_node": "Open node"
         },
         "marketplace": {
             "title": "FeatherCloud Marketplace",

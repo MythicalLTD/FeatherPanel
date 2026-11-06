@@ -88,13 +88,14 @@ class NodeStatusHelper
      * @param array<int, array<string, mixed>> $nodes Node database rows
      * @param int $timeout Per-request timeout in seconds
      *
-     * @return array<int, array{status: string, utilization: ?array, error: ?string}>
+     * @return array<int, array{status: string, utilization: ?array, error: ?string, latency_ms: ?int}>
      */
     public static function probeNodesUtilization(array $nodes, int $timeout = self::STATUS_PROBE_TIMEOUT): array
     {
         $results = [];
         $promises = [];
         $clients = [];
+        $startedAt = [];
 
         foreach ($nodes as $node) {
             $nodeId = (int) ($node['id'] ?? 0);
@@ -106,11 +107,13 @@ class NodeStatusHelper
                 'status' => 'unhealthy',
                 'utilization' => null,
                 'error' => null,
+                'latency_ms' => null,
             ];
 
             try {
                 $wings = Wings::fromNode($node, $timeout);
                 $clients[$nodeId] = $wings;
+                $startedAt[$nodeId] = microtime(true);
                 $promises[$nodeId] = $wings->getConnection()->getAsync('/api/system/utilization');
             } catch (\Throwable $e) {
                 $results[$nodeId]['error'] = $e->getMessage();
@@ -126,6 +129,7 @@ class NodeStatusHelper
 
         foreach ($settled as $nodeId => $outcome) {
             $nodeId = (int) $nodeId;
+            self::recordProbeLatency($results, $startedAt, $nodeId);
 
             if (($outcome['state'] ?? '') === 'fulfilled') {
                 $utilization = $outcome['value'] ?? null;
@@ -142,6 +146,7 @@ class NodeStatusHelper
 
             // FeatherWings /utilization may be missing - try Calagopus /stats first.
             if ($reason instanceof WingsRequestException && (int) $reason->getCode() === 404 && isset($clients[$nodeId])) {
+                $startedAt[$nodeId] = microtime(true);
                 $fallbackPromises[$nodeId] = $clients[$nodeId]->getConnection()->getAsync('/api/system/stats');
                 continue;
             }
@@ -157,6 +162,7 @@ class NodeStatusHelper
 
             foreach ($fallbackSettled as $nodeId => $outcome) {
                 $nodeId = (int) $nodeId;
+                self::recordProbeLatency($results, $startedAt, $nodeId);
 
                 if (($outcome['state'] ?? '') === 'fulfilled' && is_array($outcome['value'] ?? null)) {
                     $results[$nodeId]['status'] = 'healthy';
@@ -171,6 +177,7 @@ class NodeStatusHelper
                 // Only escalate on a 404 (endpoint missing); other errors should stop here
                 // to avoid burning an extra timeout window on a probe that won't help.
                 if ($reason instanceof WingsRequestException && (int) $reason->getCode() === 404 && isset($clients[$nodeId])) {
+                    $startedAt[$nodeId] = microtime(true);
                     $systemFallbackPromises[$nodeId] = $clients[$nodeId]->getConnection()->getAsync('/api/system?v=2');
                     continue;
                 }
@@ -185,6 +192,7 @@ class NodeStatusHelper
 
                 foreach ($systemSettled as $nodeId => $outcome) {
                     $nodeId = (int) $nodeId;
+                    self::recordProbeLatency($results, $startedAt, $nodeId);
 
                     if (($outcome['state'] ?? '') === 'fulfilled' && is_array($outcome['value'] ?? null)) {
                         $results[$nodeId]['status'] = 'healthy';
@@ -201,6 +209,22 @@ class NodeStatusHelper
         }
 
         return $results;
+    }
+
+    /**
+     * Record panel→Wings RTT for a settled probe (successful or failed).
+     *
+     * @param array<int, array<string, mixed>> $results
+     * @param array<int, float> $startedAt
+     */
+    private static function recordProbeLatency(array &$results, array &$startedAt, int $nodeId): void
+    {
+        if (!isset($startedAt[$nodeId], $results[$nodeId])) {
+            return;
+        }
+
+        $results[$nodeId]['latency_ms'] = (int) max(0, round((microtime(true) - $startedAt[$nodeId]) * 1000));
+        unset($startedAt[$nodeId]);
     }
 
     /**
