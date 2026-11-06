@@ -57,18 +57,35 @@ class AuthMiddleware implements MiddlewareInterface
             $request->attributes->set('user', $userInfo);
             $request->attributes->set('auth_type', 'session');
 
-            // "View as user": swap in the target for this request, keep the admin for audit.
+            // Impersonation: swap in the target for this request, keep the admin for audit.
             if (isset($_COOKIE[\App\Helpers\Impersonation::COOKIE])) {
                 $impersonation = \App\Helpers\Impersonation::resolve($userInfo);
                 $path = $request->getPathInfo();
-                if ($impersonation === null || $path === '/api/user/auth/logout') {
+                if ($path === '/api/user/auth/logout') {
+                    // Ending the session also ends impersonation; log with the target when known.
+                    \App\Helpers\Impersonation::stop($userInfo, is_array($impersonation) ? $impersonation['target'] : null);
+                } elseif ($impersonation === null) {
                     \App\Helpers\Impersonation::stop($userInfo, null);
                 } else {
-                    if (\App\Helpers\Impersonation::isBlockedWrite($request->getMethod(), $path)) {
-                        return ApiResponse::error('Viewing as another user is read only. Stop viewing as this user to make changes.', 'IMPERSONATION_READ_ONLY', 403);
+                    if (\App\Helpers\Impersonation::isBlockedAction($request->getMethod(), $path)) {
+                        $blocked = ApiResponse::error(
+                            'This action is not allowed while impersonating another user. Stop impersonating first.',
+                            'IMPERSONATION_ACTION_BLOCKED',
+                            403
+                        );
+                        $request->attributes->set('user', $impersonation['target']);
+                        $request->attributes->set('impersonator', $userInfo);
+                        \App\Runtime\RequestContext::setImpersonation($userInfo, $impersonation['target']);
+                        try {
+                            \App\Helpers\Impersonation::logRequest($request, $blocked);
+                        } catch (\Throwable) {
+                        }
+
+                        return $blocked;
                     }
                     $request->attributes->set('user', $impersonation['target']);
                     $request->attributes->set('impersonator', $userInfo);
+                    \App\Runtime\RequestContext::setImpersonation($userInfo, $impersonation['target']);
                 }
             }
         } else {
@@ -172,7 +189,18 @@ class AuthMiddleware implements MiddlewareInterface
             }
         }
 
-        return $next($request);
+        $response = $next($request);
+
+        // Audit every mutating request made while impersonating (admin X as user Y).
+        if ($request->attributes->has('impersonator')) {
+            try {
+                \App\Helpers\Impersonation::logRequest($request, $response);
+            } catch (\Throwable) {
+                // Audit logging must never break the response.
+            }
+        }
+
+        return $response;
     }
 
     /**
