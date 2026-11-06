@@ -20,7 +20,7 @@ import { useRouter } from 'next/navigation';
 import type { OnMount } from '@monaco-editor/react';
 import { filesApi, isFileNotFoundError } from '@/lib/files-api';
 import { toast } from 'sonner';
-import { Save, Loader2, Lock, CheckCircle2, Boxes, Monitor, Smartphone } from 'lucide-react';
+import { Save, Loader2, Lock, CheckCircle2, Boxes, Monitor, Smartphone, Sparkles } from 'lucide-react';
 import { useServerPermissions } from '@/hooks/useServerPermissions';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { useFileEditorEngine } from '@/hooks/useFileEditorEngine';
@@ -44,6 +44,8 @@ import { CommandsEditor } from '@/components/server/files/editors/CommandsEditor
 import { isBinaryLikeFileName } from '@/lib/binary-like-file-names';
 import { safeBack } from '@/lib/safe-back';
 import { joinServerFilePath } from '@/lib/server-switch';
+import { AiHelperDialog, useAiHelperAvailable } from '@/components/server/AiHelperDialog';
+import type { AiHelperRequest } from '@/lib/api/aiEditorHelper';
 
 export default function FileEditorPage({
     params,
@@ -73,6 +75,8 @@ export default function FileEditorPage({
     const [useBukkitEditor, setUseBukkitEditor] = useState(false);
     const [useCommandsEditor, setUseCommandsEditor] = useState(false);
     const [useRawEditor, setUseRawEditor] = useState(false);
+    const [aiOpen, setAiOpen] = useState(false);
+    const [aiRequest, setAiRequest] = useState<AiHelperRequest | null>(null);
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const editorRef = useRef<any>(null);
@@ -81,6 +85,8 @@ export default function FileEditorPage({
 
     const { hasPermission } = useServerPermissions(uuidShort);
     const canEdit = hasPermission('file.update');
+    const canReadContent = hasPermission('file.read-content');
+    const aiHelperAvailable = useAiHelperAvailable();
 
     const { fetchWidgets, getWidgets } = usePluginWidgets('server-file-editor');
 
@@ -540,6 +546,27 @@ export default function FileEditorPage({
                             >
                                 {t('files.editor.cancel')}
                             </Button>
+                            {aiHelperAvailable && canReadContent && (
+                                <Button
+                                    size='sm'
+                                    variant='outline'
+                                    className='gap-2'
+                                    disabled={loading || !content}
+                                    onClick={() => {
+                                        setAiRequest({
+                                            file_path: fullPath || fileName,
+                                            file_content: content,
+                                            question:
+                                                'Explain any issues in this file and suggest a safe fix as a full file body if needed.',
+                                        });
+                                        setAiOpen(true);
+                                    }}
+                                    title={t('servers.aiHelper.askAi')}
+                                >
+                                    <Sparkles className='h-4 w-4' />
+                                    <span className='hidden sm:inline'>{t('servers.aiHelper.askAi')}</span>
+                                </Button>
+                            )}
                             <Button
                                 className='bg-primary hover:bg-primary/90 text-primary-foreground transition-all active:scale-95'
                                 size='sm'
@@ -579,6 +606,17 @@ export default function FileEditorPage({
                 </div>
             )}
             <WidgetRenderer widgets={getWidgets('server-file-editor', 'bottom-of-page')} />
+            <AiHelperDialog
+                uuidShort={uuidShort}
+                open={aiOpen}
+                onOpenChange={setAiOpen}
+                request={aiRequest}
+                canApply={canEdit}
+                onApplySuggestion={(next) => {
+                    setContent(next);
+                }}
+            />
         </div>
     );
 }
+

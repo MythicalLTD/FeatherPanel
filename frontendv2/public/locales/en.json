@@ -1703,7 +1703,10 @@
             "ADMIN_SESSIONS_SELF": "Manage your own sessions from your account page.",
             "INVITE_ALREADY_MEMBER": "You already have access to this.",
             "DEPLOY_HOOK_NOT_FOUND": "Unknown deploy hook",
-            "WEBSPACE_UNAVAILABLE": "This WebSpace is not available right now."
+            "WEBSPACE_UNAVAILABLE": "This WebSpace is not available right now.",
+            "AI_HELPER_DISABLED": "The AI editor helper is disabled by the administrator.",
+            "AI_HELPER_ERROR": "The AI helper failed. Please try again.",
+            "CHATBOT_DISABLED": "The AI chatbot is currently disabled."
         },
         "global": {}
     },
@@ -3372,6 +3375,22 @@
             "syncPending": "Saved. The node could not be reached, so it applies on the next sync.",
             "saveFailed": "Could not update crash settings",
             "settingsTitle": "Crash detection"
+        },
+        "aiHelper": {
+            "title": "AI helper",
+            "description": "Explains console errors and suggests a file change. Secrets are redacted before they leave the panel. Nothing is written until you confirm.",
+            "askAi": "Ask AI",
+            "explainCrash": "Explain with AI",
+            "thinking": "Asking the AI…",
+            "suggestedDiff": "Suggested change",
+            "applyToEditor": "Apply to editor",
+            "applied": "Suggestion loaded into the editor. Save when you are ready.",
+            "confirmNotice": "Applying only updates the editor buffer. Review the change, then save the file yourself.",
+            "redactedNotice": "Some passwords, tokens or API keys were redacted before this was sent to the AI.",
+            "model": "Model: {model}",
+            "close": "Close",
+            "retry": "Try again",
+            "error": "The AI helper failed. Check that the chatbot is enabled with a real provider."
         }
     },
     "serverConsole": {

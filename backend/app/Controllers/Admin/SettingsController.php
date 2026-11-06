@@ -533,6 +533,7 @@ class SettingsController
             'icon' => 'bot',
             'settings' => [
                 ConfigInterface::CHATBOT_ENABLED,
+                ConfigInterface::CHATBOT_EDITOR_HELPER_ENABLED,
                 ConfigInterface::CHATBOT_AI_PROVIDER,
                 ConfigInterface::CHATBOT_TEMPERATURE,
                 ConfigInterface::CHATBOT_MAX_TOKENS,
@@ -3629,6 +3630,19 @@ class SettingsController
                 'type' => 'select',
                 'required' => true,
                 'placeholder' => 'false',
+                'validation' => 'required|string|max:255',
+                'options' => ['true', 'false'],
+                'category' => 'chatbot',
+            ],
+            ConfigInterface::CHATBOT_EDITOR_HELPER_ENABLED => [
+                'name' => ConfigInterface::CHATBOT_EDITOR_HELPER_ENABLED,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::CHATBOT_EDITOR_HELPER_ENABLED, 'true'),
+                'description' => 'Enable the optional AI helper in the server file editor and crash console (explains errors and suggests a diff; never auto-writes files). Requires the chatbot to be enabled with a real AI provider.',
+                'type' => 'select',
+                'required' => true,
+                'placeholder' => 'true',
                 'validation' => 'required|string|max:255',
                 'options' => ['true', 'false'],
                 'category' => 'chatbot',

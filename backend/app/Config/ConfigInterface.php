@@ -442,6 +442,8 @@ interface ConfigInterface
      * Chatbot AI Settings.
      */
     public const CHATBOT_ENABLED = 'chatbot_enabled';
+    /** Optional: AI helper in the server file editor / crash console (suggests diffs, never auto-writes). */
+    public const CHATBOT_EDITOR_HELPER_ENABLED = 'chatbot_editor_helper_enabled';
     public const CHATBOT_AI_PROVIDER = 'chatbot_ai_provider';
     public const CHATBOT_TEMPERATURE = 'chatbot_temperature';
     public const CHATBOT_MAX_TOKENS = 'chatbot_max_tokens';
