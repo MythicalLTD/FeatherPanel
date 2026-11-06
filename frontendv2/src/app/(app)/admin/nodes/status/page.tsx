@@ -34,6 +34,8 @@ import {
     Users,
     Archive,
     Activity,
+    Timer,
+    MapPin,
 } from 'lucide-react';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { PageCard } from '@/components/featherui/PageCard';
@@ -45,6 +47,8 @@ import { formatBytes } from '@/lib/format';
 import { NodeServersList, type NodeStatusServer } from '@/components/admin/NodeServersList';
 import { useIpMask } from '@/hooks/useIpMask';
 import { NodeAlertsPanel, type NodeAlert } from '@/components/admin/node-alerts/NodeAlertsPanel';
+import { NodesMapDynamic } from '@/components/admin/nodes-map/NodesMapDynamic';
+import { LatencyBadge } from '@/components/admin/nodes-map/LatencyBadge';
 import { useDateFormatOptions } from '@/contexts/PreferencesContext';
 import { formatRelativeTime } from '@/lib/dateUtils';
 import Link from 'next/link';
@@ -77,6 +81,7 @@ interface GlobalStats {
     total_disk: number;
     used_disk: number;
     avg_cpu_percent: number;
+    avg_latency_ms?: number | null;
 }
 
 interface NodeUtilization {
@@ -98,6 +103,11 @@ interface NodeStatus {
     name: string;
     fqdn: string;
     location_id: number;
+    location_name?: string | null;
+    flag_code?: string | null;
+    latitude?: number | null;
+    longitude?: number | null;
+    latency_ms?: number | null;
     status: 'healthy' | 'unhealthy';
     server_count: number;
     total_players: number;
@@ -262,6 +272,15 @@ export default function NodeStatusPage() {
                                 icon: Cpu,
                                 tone: 'text-primary bg-primary/10 border-primary/20',
                             },
+                            {
+                                value:
+                                    globalStats.avg_latency_ms != null
+                                        ? `${globalStats.avg_latency_ms} ms`
+                                        : t('common.nA'),
+                                label: t('admin.nodes.avg_latency'),
+                                icon: Timer,
+                                tone: 'text-sky-600 dark:text-sky-400 bg-sky-500/10 border-sky-500/20',
+                            },
                         ].map(({ value, label, icon: StatIcon, tone }, i) => (
                             <div
                                 key={label}
@@ -353,6 +372,8 @@ export default function NodeStatusPage() {
                         />
                     )}
 
+                    <NodesMapDynamic nodes={nodes} />
+
                     <div className='space-y-4'>
                         <h2 className='text-lg font-bold tracking-tight sm:text-2xl'>
                             {t('admin.nodes.individual_nodes')}
@@ -398,6 +419,20 @@ export default function NodeStatusPage() {
                                                     </span>
                                                     {t('dashboard.status.playersOnline')}
                                                 </span>
+                                                <span className='bg-muted-foreground/30 h-1 w-1 shrink-0 rounded-full' />
+                                                <span className='flex shrink-0 items-center gap-1'>
+                                                    <Timer className='h-3 w-3' />
+                                                    <LatencyBadge ms={node.latency_ms} />
+                                                </span>
+                                                {node.location_name && (
+                                                    <>
+                                                        <span className='bg-muted-foreground/30 h-1 w-1 shrink-0 rounded-full' />
+                                                        <span className='flex min-w-0 items-center gap-1'>
+                                                            <MapPin className='h-3 w-3 shrink-0' />
+                                                            <span className='truncate'>{node.location_name}</span>
+                                                        </span>
+                                                    </>
+                                                )}
                                                 {alerts?.health[node.id]?.last_seen_at && (
                                                     <>
                                                         <span className='bg-muted-foreground/30 h-1 w-1 shrink-0 rounded-full' />
