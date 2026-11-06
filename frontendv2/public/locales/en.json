@@ -1704,7 +1704,12 @@
             "INVITE_ALREADY_MEMBER": "You already have access to this.",
             "DEPLOY_HOOK_NOT_FOUND": "Unknown deploy hook",
             "WEBSPACE_UNAVAILABLE": "This WebSpace is not available right now.",
-            "INVALID_COORDINATES": "Latitude and longitude must both be set (within range) or both be empty."
+            "INVALID_COORDINATES": "Latitude and longitude must both be set (within range) or both be empty.",
+            "PUSH_NOT_ENABLED": "Web push is not enabled on this panel",
+            "PUSH_NOT_CONFIGURED": "Web push is not configured yet",
+            "INVALID_PUSH_SUBSCRIPTION": "Invalid push subscription",
+            "PUSH_SUBSCRIBE_FAILED": "Failed to save push subscription",
+            "PUSH_TEST_FAILED": "Could not send a test push"
         },
         "global": {}
     },
@@ -2929,7 +2934,18 @@
             "saveFailed": "Failed to save notification settings",
             "loadFailed": "Failed to load notification settings",
             "testSent": "Test message sent to Discord",
-            "testFailed": "Discord did not accept the test message"
+            "testFailed": "Discord did not accept the test message",
+            "push": "Browser push",
+            "pushDescription": "Show alerts on this device even when the panel tab is closed. Needs the panel installed or opened over HTTPS.",
+            "pushUnsupported": "This browser does not support Web Push.",
+            "pushEnabled": "Push notifications enabled on this device",
+            "pushDisabled": "Push notifications turned off on this device",
+            "pushEnableFailed": "Could not enable push notifications",
+            "pushDisableFailed": "Could not turn off push notifications",
+            "pushPermissionDenied": "Notification permission was denied or Web Push is unavailable",
+            "pushSendTest": "Send test push",
+            "pushTestSent": "Test push sent",
+            "pushTestFailed": "Could not send a test push"
         },
         "storage": {
             "title": "Backup storage",

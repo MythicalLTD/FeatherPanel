@@ -224,6 +224,14 @@ interface ConfigInterface
     public const APP_PWA_BG_COLOR = 'app_pwa_bg_color';
 
     /**
+     * Web Push (requires PWA enabled). VAPID private key is never public.
+     */
+    public const APP_PWA_PUSH_ENABLED = 'app_pwa_push_enabled';
+    public const APP_PWA_VAPID_PUBLIC = 'app_pwa_vapid_public';
+    public const APP_PWA_VAPID_PRIVATE = 'app_pwa_vapid_private';
+    public const APP_PWA_VAPID_SUBJECT = 'app_pwa_vapid_subject';
+
+    /**
      * Discord OAuth.
      */
     public const DISCORD_OAUTH_ENABLED = 'discord_oauth_enabled';
