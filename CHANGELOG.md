@@ -4,6 +4,7 @@
 
 ### Added
 
+- MCP admin full coverage: when the API key has any `admin.*` permission, the MCP server registers `admin_*` tools that mirror `/api/admin/*` (`admin_list_routes` catalog + `admin_api` catch-all + named helpers for users, roles, nodes, servers, settings, databases, webspaces, audit log, node alerts, sessions, health). Non-admins never see them; each call still hits AdminMiddleware. (`mcp` 1.4.0) by @nayskutzu
 - Live activity feed on the user dashboard and admin home: new panel activity is pushed over Mercure (`activity.updated` on `/users/{uuid}` and `/admin/activity`), the widgets refetch without a full page reload, and a Live badge shows when the stream is connected. Falls back to a 60s poll when Mercure is off. by @nayskutzu
 - FrankenPHP on low-RAM panel hosts (≤2 GB): `frankenphp-env.sh` no longer clamps `FRANKENPHP_MAX_THREADS` to 4 and then collapses the API pool to a single worker. That starvation made server create (and other Wings calls) hang until cURL error 28. Auto sizing now uses the worker heap target, floors max threads at 8, keeps at least 2 API workers with scale-up room, and shrinks the slow pool first. by @nayskutzu
 - WebSpaces: subuser invite links with permission presets, a 7 day schedule calendar, backup schedule retention (keep last N) and push-to-deploy webhooks that run a schedule from GitHub, GitLab or any CI. by @nayskutzu
