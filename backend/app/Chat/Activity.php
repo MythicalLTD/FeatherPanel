@@ -18,6 +18,7 @@
 namespace App\Chat;
 
 use App\App;
+use App\Realtime\Events;
 
 class Activity
 {
@@ -35,7 +36,14 @@ class Activity
         $sql = 'INSERT INTO ' . self::$table . ' (`' . implode('`, `', $fields) . '`) VALUES (' . implode(',', $placeholders) . ')';
         $stmt = $pdo->prepare($sql);
         if ($stmt->execute($data)) {
-            return (int) $pdo->lastInsertId();
+            $id = (int) $pdo->lastInsertId();
+            try {
+                Events::activityChanged((string) ($data['user_uuid'] ?? ''));
+            } catch (\Throwable) {
+                // Realtime is best-effort.
+            }
+
+            return $id;
         }
 
         return false;

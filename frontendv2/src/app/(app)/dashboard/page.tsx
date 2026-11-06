@@ -22,6 +22,8 @@ import axios from 'axios';
 import { BookOpen, Gamepad2, Globe, History, LayoutGrid, LifeBuoy, MonitorCog, Server, Settings2 } from 'lucide-react';
 
 import { useTranslation } from '@/contexts/TranslationContext';
+import { useLiveRefresh } from '@/hooks/useLiveRefresh';
+import { realtimeTopics } from '@/lib/realtime';
 import { useSession } from '@/contexts/SessionContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useDateFormatOptions } from '@/contexts/PreferencesContext';
@@ -173,6 +175,30 @@ export default function DashboardPage() {
     const canViewOthers = hasPermission(Permissions.ADMIN_SERVERS_VIEW);
     const canSaveDefault = hasPermission(Permissions.ADMIN_SETTINGS_EDIT);
 
+    const fetchActivities = useCallback((opts?: { silent?: boolean }) => {
+        const silent = opts?.silent === true;
+        if (!silent) setLoadingActivity(true);
+        return axios
+            .get('/api/user/activities?limit=5')
+            .then(({ data }) => setActivities(data?.data?.activities || []))
+            .catch(() => {
+                if (!silent) setActivities([]);
+            })
+            .finally(() => {
+                if (!silent) setLoadingActivity(false);
+            });
+    }, []);
+
+    const activityLiveStatus = useLiveRefresh({
+        topics: [user?.uuid && realtimeTopics.user(user.uuid)],
+        types: ['activity.updated'],
+        refresh: () => {
+            void fetchActivities({ silent: true });
+        },
+        pollMs: 60_000,
+        enabled: Boolean(user?.uuid),
+    });
+
     const startArranging = () => {
         setArrangeSnapshot(config);
         setArranging(true);
@@ -232,11 +258,7 @@ export default function DashboardPage() {
         };
         void load();
 
-        axios
-            .get('/api/user/activities?limit=5')
-            .then(({ data }) => setActivities(data?.data?.activities || []))
-            .catch(() => setActivities([]))
-            .finally(() => setLoadingActivity(false));
+        void fetchActivities();
 
         return () => disconnectAll();
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -765,6 +787,14 @@ export default function DashboardPage() {
         return id === 'servers' ? serversBlock : id === 'vds' ? vdsBlock : webspacesBlock;
     };
 
+    const activityLiveBadge =
+        activityLiveStatus === 'open' ? (
+            <span className='bg-emerald-500/12 text-emerald-600 dark:text-emerald-400 inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-semibold tracking-wide uppercase'>
+                <span className='bg-emerald-500 h-1.5 w-1.5 rounded-full' aria-hidden />
+                {t('dashboard.activity.live')}
+            </span>
+        ) : null;
+
     const activityBlock = loadingActivity ? (
         <div className='fp-surface space-y-2 rounded-xl border p-4' aria-busy='true'>
             <div className='bg-muted h-4 w-28 animate-pulse rounded' />
@@ -772,15 +802,24 @@ export default function DashboardPage() {
                 <div key={i} className='bg-muted/40 h-10 animate-pulse rounded-lg' />
             ))}
         </div>
-    ) : activities.length > 0 ? (
+    ) : (
         <DashboardPanel
             title={t('dashboard.activity.title')}
             icon={History}
+            badge={activityLiveBadge}
             action={{ label: t('dashboard.activity.view_all'), href: '/dashboard/account?tab=activity' }}
         >
-            <ActivityFeed compact activities={activities} formatDate={(value) => formatRelativeTime(value, dateOpts)} />
+            {activities.length > 0 ? (
+                <ActivityFeed
+                    compact
+                    activities={activities}
+                    formatDate={(value) => formatRelativeTime(value, dateOpts)}
+                />
+            ) : (
+                <p className='text-muted-foreground px-1 py-2 text-sm'>{t('dashboard.activity.no_activity')}</p>
+            )}
         </DashboardPanel>
-    ) : null;
+    );
 
     const profileBlock = user ? (
         <Link

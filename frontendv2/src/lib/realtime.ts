@@ -55,8 +55,10 @@ const MAX_BACKOFF_MS = 30_000;
 export const realtimeTopics = {
     notifications: '/notifications',
     adminWebspaces: '/admin/webspaces',
+    /** Panel-wide activity feed for admins with users.view. */
+    adminActivity: '/admin/activity',
     server: (uuidShort: string) => `/servers/${uuidShort}`,
-    /** Per user stream (inbox updates); the token grants only the signed-in user's own topic. */
+    /** Per user stream (inbox + activity); the token grants only the signed-in user's own topic. */
     user: (uuid: string) => `/users/${uuid}`,
 };
 
