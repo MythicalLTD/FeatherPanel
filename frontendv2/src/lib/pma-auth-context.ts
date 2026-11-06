@@ -48,6 +48,16 @@ export type PmaAuthContext = {
 
 type TranslateFn = (key: string, params?: Record<string, string>) => string;
 
+function sanitizePmaAppUrl(url: string): string {
+    const trimmed = (url || '').trim();
+    if (!trimmed || trimmed.includes('featherpanel.mythical.systems')) {
+        return '/';
+    }
+    return trimmed;
+}
+
+
+
 export function preparePmaAuthContext(
     settings: AppSettings | null | undefined,
     t: TranslateFn,
@@ -67,7 +77,8 @@ export function preparePmaAuthContext(
             appName: settings?.app_name?.trim() || 'Panel',
             logoDark: settings?.app_logo_dark?.trim() || '',
             logoWhite: settings?.app_logo_white?.trim() || '',
-            appUrl: settings?.website_url?.trim() || settings?.app_url?.trim() || '/',
+            // Prefer same-origin; never hand the demo placeholder host to the PMA interstitial.
+            appUrl: sanitizePmaAppUrl(settings?.website_url?.trim() || settings?.app_url?.trim() || '/'),
             showPoweredBy: (settings?.branding_show_powered_by ?? 'true') === 'true',
         },
         strings: {

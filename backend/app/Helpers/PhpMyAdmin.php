@@ -191,8 +191,9 @@ class PhpMyAdmin
     {
         if (self::isInstalled()) {
             self::writeInstalledMarker();
-            // Keep signon bridge + hardened config in sync on every check (panel updates).
-            self::refreshSignonHardening();
+            // Re-copy bridge files at most once an hour — every databases page used to
+            // hit this path and rewrote token.php/config on disk (felt very slow).
+            self::refreshSignonHardening(false);
 
             return;
         }
@@ -211,8 +212,10 @@ class PhpMyAdmin
 
     /**
      * Re-copy token bridge files and ensure AllowArbitraryServer stays off.
+     *
+     * @param bool $force When false, skip if we refreshed within the last hour.
      */
-    public static function refreshSignonHardening(): void
+    public static function refreshSignonHardening(bool $force = true): void
     {
         $publicDir = dirname(__DIR__, 2) . '/public';
         $targetPath = $publicDir . '/pma';
@@ -220,23 +223,35 @@ class PhpMyAdmin
             return;
         }
 
+        $stampPath = dirname(__DIR__, 2) . '/storage/config/phpmyadmin.hardened';
+        if (!$force && is_file($stampPath)) {
+            $mtime = @filemtime($stampPath);
+            if ($mtime !== false && (time() - $mtime) < 3600) {
+                return;
+            }
+        }
+
         $logger = App::getInstance(true)->getLogger();
         self::copyTokenFiles($targetPath, $logger);
 
         $configPath = $targetPath . '/config.inc.php';
-        if (!is_file($configPath) || !is_writable($configPath)) {
-            return;
+        if (is_file($configPath) && is_writable($configPath)) {
+            $configContent = (string) file_get_contents($configPath);
+            $updated = preg_replace(
+                "/\\\$cfg\\['AllowArbitraryServer'\\]\\s*=\\s*true;?/",
+                "\$cfg['AllowArbitraryServer'] = false;",
+                $configContent
+            );
+            if (is_string($updated) && $updated !== $configContent) {
+                @file_put_contents($configPath, $updated);
+            }
         }
 
-        $configContent = (string) file_get_contents($configPath);
-        $updated = preg_replace(
-            "/\\\$cfg\\['AllowArbitraryServer'\\]\\s*=\\s*true;?/",
-            "\$cfg['AllowArbitraryServer'] = false;",
-            $configContent
-        );
-        if (is_string($updated) && $updated !== $configContent) {
-            @file_put_contents($configPath, $updated);
+        $stampDir = dirname($stampPath);
+        if (!is_dir($stampDir)) {
+            @mkdir($stampDir, 0755, true);
         }
+        @file_put_contents($stampPath, (string) time());
     }
 
     /**

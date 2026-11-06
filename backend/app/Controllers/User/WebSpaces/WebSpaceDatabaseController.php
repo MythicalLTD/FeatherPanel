@@ -20,7 +20,6 @@ namespace App\Controllers\User\WebSpaces;
 use App\Helpers\ApiResponse;
 use App\Chat\DatabaseInstance;
 use App\Chat\WebSpaceDatabase;
-use App\Config\ConfigInterface;
 use App\Helpers\WebSpaceGateway;
 use App\WebSpaceSubuserPermissions;
 use App\Helpers\FeatherQuilldClient;
@@ -381,8 +380,7 @@ class WebSpaceDatabaseController
             return $resolved;
         }
 
-        \App\Helpers\PhpMyAdmin::ensureInstalled();
-
+        // Cheap status check only — avoid ensureInstalled() file copies on every page load.
         return ApiResponse::success([
             'installed' => \App\Helpers\PhpMyAdmin::isInstalled(),
         ], 'OK', 200);
@@ -429,14 +427,7 @@ class WebSpaceDatabaseController
             return ApiResponse::success(['url' => $mongoUrl], 'OK', 200);
         }
 
-        $app = \App\App::getInstance(true);
-        $config = $app->getConfig();
-        $appUrl = $config->getSetting(ConfigInterface::APP_URL, 'https://featherpanel.mythical.systems');
-        if (!preg_match('/^https?:\/\//', $appUrl)) {
-            $appUrl = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http')
-                . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost');
-        }
-
+        // Same-origin relative URL: never depend on APP_URL (placeholder demo host).
         try {
             $token = \App\Helpers\DatabaseSignonToken::mint([
                 'db' => $record['database'],
@@ -449,7 +440,7 @@ class WebSpaceDatabaseController
             return ApiResponse::error('Failed to prepare phpMyAdmin session', 'PHPMYADMIN_TOKEN_FAILED', 500);
         }
 
-        $pmaUrl = rtrim($appUrl, '/') . '/pma/token.php?' . http_build_query([
+        $pmaUrl = '/pma/token.php?' . http_build_query([
             'token' => $token,
         ]);
 
@@ -465,8 +456,6 @@ class WebSpaceDatabaseController
         if ($resolved instanceof Response) {
             return $resolved;
         }
-
-        \App\Helpers\PhpPgAdmin::ensureInstalled();
 
         return ApiResponse::success([
             'installed' => \App\Helpers\PhpPgAdmin::isInstalled(),
@@ -511,14 +500,6 @@ class WebSpaceDatabaseController
             return ApiResponse::error('phpPgAdmin is only available for PostgreSQL databases', 'NOT_POSTGRES', 400);
         }
 
-        $app = \App\App::getInstance(true);
-        $config = $app->getConfig();
-        $appUrl = $config->getSetting(ConfigInterface::APP_URL, 'https://featherpanel.mythical.systems');
-        if (!preg_match('/^https?:\/\//', $appUrl)) {
-            $appUrl = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http')
-                . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost');
-        }
-
         try {
             $token = \App\Helpers\DatabaseSignonToken::mint([
                 'db' => $record['database'],
@@ -531,7 +512,7 @@ class WebSpaceDatabaseController
             return ApiResponse::error('Failed to prepare phpPgAdmin session', 'PHPPGADMIN_TOKEN_FAILED', 500);
         }
 
-        $ppaUrl = rtrim($appUrl, '/') . '/ppa/token.php?' . http_build_query([
+        $ppaUrl = '/ppa/token.php?' . http_build_query([
             'token' => $token,
         ]);
 
