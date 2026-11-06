@@ -43,9 +43,10 @@ export function useAdminWidgetList<T>(
     const [state, setState] = useState<AdminWidgetListState>('loading');
     const requestIdRef = useRef(0);
 
-    const load = useCallback(async () => {
+    const load = useCallback(async (opts?: { silent?: boolean }) => {
         const requestId = ++requestIdRef.current;
-        setState('loading');
+        const silent = opts?.silent === true;
+        if (!silent) setState('loading');
         try {
             const response = await fetcher();
             if (requestId !== requestIdRef.current) return;
@@ -53,11 +54,12 @@ export function useAdminWidgetList<T>(
                 const list = extract(response.data.data) || [];
                 setItems(list);
                 setState(list.length ? 'ready' : 'empty');
-            } else {
+            } else if (!silent) {
                 setState('error');
             }
         } catch (err) {
             if (requestId !== requestIdRef.current) return;
+            if (silent) return;
             if (axios.isAxiosError(err) && err.response?.status === 403) {
                 setState('forbidden');
             } else {
@@ -67,8 +69,16 @@ export function useAdminWidgetList<T>(
     }, [fetcher, extract]);
 
     useEffect(() => {
-        load();
+        void load();
     }, [load]);
 
-    return { items, state, retry: load };
+    const retry = useCallback(() => {
+        void load();
+    }, [load]);
+
+    const refreshSilent = useCallback(() => {
+        void load({ silent: true });
+    }, [load]);
+
+    return { items, state, retry, refreshSilent };
 }
