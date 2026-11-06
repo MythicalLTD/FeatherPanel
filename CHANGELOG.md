@@ -3,6 +3,7 @@
 ## v1.5.3 STABLE
 
 ### Added
+- Admin node status map and latency: locations can store optional latitude/longitude, the status page shows an OpenStreetMap/CARTO map of nodes (flag-based approximate pins when exact coords are missing), and each node reports panel→Wings RTT from the existing utilization probe (plus average latency in the summary). No Google Maps billing. by @nayskutzu
 
 - Optional AI helper in the server file editor and crash console: explains console errors and suggests a file diff for you to review and apply (never auto-writes). Reuses the panel chatbot / OpenRouter (or other configured provider), is off when the chatbot is off (`chatbot_editor_helper_enabled`), permission-gated, and redacts passwords, API keys and tokens before anything leaves the panel. by @nayskutzu
 - Live activity feed on the user dashboard and admin home: new panel activity is pushed over Mercure (`activity.updated` on `/users/{uuid}` and `/admin/activity`), the widgets refetch without a full page reload, and a Live badge shows when the stream is connected. Falls back to a 60s poll when Mercure is off. by @nayskutzu
