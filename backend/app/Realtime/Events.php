@@ -34,6 +34,7 @@ final class Events
     public const SERVER_UPDATED = 'server.updated';
     public const NOTIFICATIONS_UPDATED = 'notifications.updated';
     public const WEBSPACES_UPDATED = 'webspaces.updated';
+    public const ACTIVITY_UPDATED = 'activity.updated';
 
     /**
      * Run $publish only when $response is a 2xx, then hand the response back.
@@ -49,6 +50,22 @@ final class Events
         }
 
         return $response;
+    }
+
+    /**
+     * A row was written to featherpanel_activity. Clients refetch through the
+     * normal activity APIs; the hub only carries the nudge.
+     */
+    public static function activityChanged(string $userUuid = ''): void
+    {
+        if (!Mercure::isEnabled()) {
+            return;
+        }
+        $topics = [Mercure::TOPIC_ADMIN_ACTIVITY];
+        if ($userUuid !== '') {
+            $topics[] = Mercure::userTopic($userUuid);
+        }
+        Mercure::publish($topics, self::ACTIVITY_UPDATED);
     }
 
     public static function backupsChangedForServerUuid(string $serverUuid): void
