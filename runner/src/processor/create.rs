@@ -5,6 +5,7 @@ use serde_json::{json, Value};
 use tracing::{info, warn};
 
 use crate::proxmox::{ProxmoxClient, VmType};
+use crate::processor::cidr;
 
 /// Handle the create task with state machine
 pub async fn handle_create_task(
@@ -378,14 +379,18 @@ async fn apply_create_config(
     
     // Get IP info
     let ip_id = meta["vm_ip_id"].as_i64().unwrap_or(0);
-    let ip_row = sqlx::query("SELECT * FROM featherpanel_vm_ips WHERE id = ?")
+    // CAST cidr to SIGNED so sqlx can also decode the tinyint UNSIGNED column as i64.
+    // cidr_from_mysql_row still accepts the native tinyint type if CAST is stripped.
+    let ip_row = sqlx::query(
+        "SELECT ip, CAST(cidr AS SIGNED) AS cidr, gateway, assignment_mode FROM featherpanel_vm_ips WHERE id = ?",
+    )
         .bind(ip_id)
         .fetch_optional(pool)
         .await?;
     
     let ip_row = ip_row.ok_or_else(|| anyhow::anyhow!("IP not found"))?;
     let ip: String = ip_row.try_get("ip")?;
-    let cidr: i32 = ip_row.try_get("cidr").unwrap_or(24);
+    let cidr: i32 = cidr::cidr_from_mysql_row(&ip_row);
     let gateway: String = ip_row.try_get("gateway").unwrap_or_default();
     let assignment_mode: String = ip_row
         .try_get("assignment_mode")
@@ -403,10 +408,8 @@ async fn apply_create_config(
         let ci_password = meta["ci_password"].as_str().unwrap_or("changeme");
         let ipconfig = if use_dhcp {
             "ip=dhcp".to_string()
-        } else if gateway.is_empty() {
-            format!("ip={}/{}", ip, cidr)
         } else {
-            format!("ip={}/{},gw={}", ip, cidr, gateway)
+            cidr::format_qemu_ipconfig(&ip, cidr, &gateway)
         };
         
         json!({
@@ -425,11 +428,7 @@ async fn apply_create_config(
         })
     } else {
         // LXC: DHCP assignment is unsupported (FeatherTail MAC resolve is QEMU-only).
-        let net0 = if gateway.is_empty() {
-            format!("name=eth0,bridge={},ip={}/{}", bridge, ip, cidr)
-        } else {
-            format!("name=eth0,bridge={},ip={}/{},gw={}", bridge, ip, cidr, gateway)
-        };
+        let net0 = cidr::format_lxc_net(bridge, &ip, cidr, &gateway);
         
         json!({
             "memory": memory,
@@ -815,7 +814,7 @@ async fn apply_reinstall_config(
     let hostname = meta["hostname"].as_str().unwrap_or(&default_hostname);
     
     let ip_address = meta["ip_address"].as_str().unwrap_or("");
-    let ip_cidr = meta["ip_cidr"].as_i64().unwrap_or(24);
+    let ip_cidr = cidr::cidr_from_json(&meta["ip_cidr"]);
     let gateway = meta["gateway"].as_str().unwrap_or("");
     let memory = meta["memory"].as_i64().unwrap_or(512);
     let cpus = meta["cpus"].as_i64().unwrap_or(1);
@@ -825,11 +824,7 @@ async fn apply_reinstall_config(
         let ci_user = meta["ci_user"].as_str().unwrap_or("debian");
         let ci_password = meta["ci_password"].as_str().unwrap_or("changeme");
         let root_disk = meta["root_disk"].as_str().unwrap_or("scsi0");
-        let ipconfig = if gateway.is_empty() {
-            format!("ip={}/{}", ip_address, ip_cidr)
-        } else {
-            format!("ip={}/{},gw={}", ip_address, ip_cidr, gateway)
-        };
+        let ipconfig = cidr::format_qemu_ipconfig(ip_address, ip_cidr, gateway);
         
         json!({
             "memory": memory,
@@ -846,11 +841,7 @@ async fn apply_reinstall_config(
         })
     } else {
         let bridge = meta["bridge"].as_str().unwrap_or("vmbr0");
-        let net0 = if gateway.is_empty() {
-            format!("name=eth0,bridge={},ip={}/{}", bridge, ip_address, ip_cidr)
-        } else {
-            format!("name=eth0,bridge={},ip={}/{},gw={}", bridge, ip_address, ip_cidr, gateway)
-        };
+        let net0 = cidr::format_lxc_net(bridge, ip_address, ip_cidr, gateway);
         
         json!({
             "memory": memory,
