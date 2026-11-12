@@ -33,6 +33,7 @@ use App\Chat\VmInstance;
 use App\Config\ConfigInterface;
 use App\Services\Vm\VmInstanceUtil;
 use App\Helpers\ModerationReasonHelper;
+use App\Services\Server\WingsSuspensionSync;
 use App\Cli\Utils\MinecraftColorCodeSupport;
 use App\Services\Notifications\InboxNotifier;
 
@@ -137,6 +138,10 @@ class ZCheckExpiredServers implements TimeTask
 
                 if ($success) {
                     ++$suspendedCount;
+                    $fresh = Server::getServerById((int) $server['id']);
+                    if ($fresh && !WingsSuspensionSync::afterSuspend($fresh)) {
+                        $logger->warning('Auto-suspended expired server in the panel, but Wings could not be updated: ' . $server['name'] . ' (ID: ' . $server['id'] . ')');
+                    }
                     $logger->info('Auto-suspended expired server: ' . $server['name'] . ' (ID: ' . $server['id'] . ', Expired: ' . $server['expires_at'] . ')');
                 } else {
                     $logger->error('Failed to suspend expired server: ' . $server['name'] . ' (ID: ' . $server['id'] . ')');
