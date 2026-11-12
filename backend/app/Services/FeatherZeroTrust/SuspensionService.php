@@ -21,11 +21,10 @@ use App\App;
 use App\Chat\Node;
 use App\Chat\User;
 use App\Chat\Server;
-use App\Services\Wings\Wings;
 use App\Config\ConfigInterface;
-use App\Helpers\WingsUrlHelper;
 use App\Mail\templates\ServerBanned;
 use App\Helpers\ModerationReasonHelper;
+use App\Services\Server\WingsSuspensionSync;
 use App\Plugins\Events\Events\ServerEvent;
 
 /**
@@ -90,21 +89,10 @@ class SuspensionService
                 return false;
             }
 
-            // Kill server in Wings
-            $wings = new Wings(
-                $node['fqdn'],
-                $node['daemonListen'],
-                $node['scheme'],
-                $node['daemon_token'],
-                30,
-                WingsUrlHelper::isBehindProxy($node)
-            );
-
-            $response = $wings->getServer()->killServer($serverUuid);
-
-            if (!$response->isSuccessful()) {
-                App::getInstance(true)->getLogger()->warning("FeatherZeroTrust: Failed to kill server {$serverUuid} in Wings: " . $response->getError());
-                // Server is already marked as suspended in DB, so we consider it successful
+            // Sync the suspended flag to Wings (stops the process and closes consoles).
+            // Fall back to a kill if the sync fails; the DB change is already committed.
+            if (!WingsSuspensionSync::afterSuspend($server)) {
+                App::getInstance(true)->getLogger()->warning("FeatherZeroTrust: Failed to sync or kill server {$serverUuid} in Wings");
             }
 
             // Emit event

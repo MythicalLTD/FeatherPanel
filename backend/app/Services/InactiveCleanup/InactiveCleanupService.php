@@ -30,6 +30,7 @@ use App\Chat\UserNotification;
 use App\Config\ConfigInterface;
 use App\CloudFlare\CloudFlareRealIP;
 use App\Helpers\ModerationReasonHelper;
+use App\Services\Server\WingsSuspensionSync;
 use App\Services\Storage\StorageSettings;
 use App\Controllers\Admin\ServersController;
 use Symfony\Component\HttpFoundation\Request;
@@ -251,14 +252,12 @@ class InactiveCleanupService
         }
         $this->serverActivity($item, 'inactivity_suspended', []);
         $note = 'suspended';
-        try {
-            $wings = $this->wingsFor($item['node_id']);
-            $response = $wings?->getServer()->killServer($this->uuidOf($item['server_id']));
-            if ($response !== null && !$response->isSuccessful()) {
-                $note = 'suspended (node did not stop it: ' . mb_substr((string) $response->getError(), 0, 100) . ')';
-            }
-        } catch (\Throwable $e) {
-            $note = 'suspended (node unreachable)';
+        $server = Server::getServerById($item['server_id']) ?? [
+            'uuid' => $this->uuidOf($item['server_id']),
+            'node_id' => $item['node_id'],
+        ];
+        if (!WingsSuspensionSync::afterSuspend($server, 15)) {
+            $note = 'suspended (node could not be updated)';
         }
 
         return $note;
