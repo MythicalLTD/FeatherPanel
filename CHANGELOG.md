@@ -1,15 +1,29 @@
 # Changelog
 
-## v1.5.3 STABLE
+## v1.5.4 STABLE
 
 ### Added
 - Admin node status map and latency: locations can store optional latitude/longitude, the status page shows an OpenStreetMap/CARTO map of nodes (flag-based approximate pins when exact coords are missing), and each node reports panel→Wings RTT from the existing utilization probe (plus average latency in the summary). No Google Maps billing. by @nayskutzu
-
 - Admin impersonation is no longer read-only: staff with `admin.users.impersonate` can act as a user (writes allowed, account deletion still blocked), every mutating request and activity row is audit logged as `admin X as user Y` (`actor_uuid` on `featherpanel_activity`), the audit log shows the actor, self/nested impersonation and privilege escalation onto root staff stay refused, and the banner / Stop button stay clear. by @nayskutzu
 - Optional AI helper in the server file editor and crash console: explains console errors and suggests a file diff for you to review and apply (never auto-writes). Reuses the panel chatbot / OpenRouter (or other configured provider), is off when the chatbot is off (`chatbot_editor_helper_enabled`), permission-gated, and redacts passwords, API keys and tokens before anything leaves the panel. by @nayskutzu
 - PWA Web Push: when PWA is on, admins can enable browser push (`app_pwa_push_enabled`); VAPID keys are generated automatically. Users opt in under Account → Notifications (permission + subscription). Inbox events (same event toggles as email/Discord, plus tickets and other inbox kinds) are delivered to subscribed devices. The service worker now registers in installed/standalone mode so push works after Install app. by @nayskutzu
 - MCP admin full coverage: when the API key has any `admin.*` permission, the MCP server registers `admin_*` tools that mirror `/api/admin/*` (`admin_list_routes` catalog + `admin_api` catch-all + named helpers for users, roles, nodes, servers, settings, databases, webspaces, audit log, node alerts, sessions, health). Non-admins never see them; each call still hits AdminMiddleware. (`mcp` 1.4.0) by @nayskutzu
 - Live activity feed on the user dashboard and admin home: new panel activity is pushed over Mercure (`activity.updated` on `/users/{uuid}` and `/admin/activity`), the widgets refetch without a full page reload, and a Live badge shows when the stream is connected. Falls back to a 60s poll when Mercure is off. by @nayskutzu
+
+### Improved
+- phpMyAdmin opens faster: successful sign-on uses a 302 straight into phpMyAdmin (no branded interstitial and no 500 ms wait), the databases page only checks whether PMA is installed instead of re-copying bridge files on every load, signon hardening is refreshed at most once an hour, and stale SSO token cleanup runs at most once a minute. by @nayskutzu
+
+### Fixed
+- VDS cloud-init `ipconfig0` now uses the CIDR from the node's IP pool instead of always writing `/24`. The async runner was decoding `featherpanel_vm_ips.cidr` (`tinyint UNSIGNED`) as `i32`, which sqlx rejects, so it silently fell back to `/24` even when the pool and create form showed `/27`. Guests now get the pool prefix (for example `ip=203.0.113.2/27,gw=203.0.113.1`). (#460) by @nayskutzu
+- phpMyAdmin no longer redirects to `https://featherpanel.mythical.systems` when `APP_URL` is still the seeded demo value or empty: server and webspace Open links return a same-origin `/pma/token.php` URL, `AppUrlHelper` treats the demo host as unset and falls back to the request host, and the auth interstitial never links the logo home to the demo host. (#462) by @nayskutzu
+- Discord (and other OAuth) sign-in no longer fails with `Class App\Helpers\OAuthStateCookie not found`. The license header in `OAuthStateCookie.php` was missing the closing `*/`, which commented out the class so Composer could not autoload it. A syntax/header integrity test now catches the same typo in other PHP files. (#459) by @nayskutzu
+- Webmail links look up the configured URL with `app_url` (`ConfigInterface::APP_URL`) instead of the uppercase `APP_URL` key, so they no longer fall back to `https://featherpanel.mythical.systems`. (#448) by @nayskutzu
+- Webmail SSO token defaults stay valid when optional mailbox fields are missing, so the sign-on page no longer breaks on incomplete mailbox rows. (#449) by @nayskutzu
+
+## v1.5.3 STABLE
+
+### Added
+
 - FrankenPHP on low-RAM panel hosts (≤2 GB): `frankenphp-env.sh` no longer clamps `FRANKENPHP_MAX_THREADS` to 4 and then collapses the API pool to a single worker. That starvation made server create (and other Wings calls) hang until cURL error 28. Auto sizing now uses the worker heap target, floors max threads at 8, keeps at least 2 API workers with scale-up room, and shrinks the slow pool first. by @nayskutzu
 - WebSpaces: subuser invite links with permission presets, a 7 day schedule calendar, backup schedule retention (keep last N) and push-to-deploy webhooks that run a schedule from GitHub, GitLab or any CI. by @nayskutzu
 - Web hosting notifications: install results, backups, malware findings and disk, traffic or memory limit alerts (90%) now reach the inbox, email and Discord. Each one can be turned off under Account > Notifications. The Analytics page also shows CPU, memory and disk graphs for the last 1, 6 or 24 hours (needs FeatherQuilld with usage history). by @nayskutzu
@@ -54,7 +68,6 @@
 
 ### Improved
 
-- phpMyAdmin opens faster: successful sign-on uses a 302 straight into phpMyAdmin (no branded interstitial and no 500 ms wait), the databases page only checks whether PMA is installed instead of re-copying bridge files on every load, signon hardening is refreshed at most once an hour, and stale SSO token cleanup runs at most once a minute. by @nayskutzu
 - The settings editor was improved so you can know what you are chaning and what you have changed by @nayskutzu
 - Admin audit log: the target filter no longer evaluates the category CASE on every row. The distinct action names are classified once and the filter becomes an indexed `name IN (...)`, so `?target=auth` on 300k rows drops from ~200 ms to ~11 ms with identical results. by @nayskutzu
 - Admin audit log: filtering by user now resolves the username/email first and uses the activity index (750 ms to 3 ms on 300k rows), and the total count skips the users join unless a search needs it (36 ms to 26 ms). by @nayskutzu
@@ -102,7 +115,6 @@
 
 ### Fixed
 
-- phpMyAdmin no longer redirects to `https://featherpanel.mythical.systems` when `APP_URL` is still the seeded demo value or empty: server and webspace Open links return a same-origin `/pma/token.php` URL, `AppUrlHelper` treats the demo host as unset and falls back to the request host, and the auth interstitial never links the logo home to the demo host. by @nayskutzu
 - Async runner Docker image: build and run on Debian Trixie (`rust:slim-trixie` + `debian:trixie-slim`) so glibc matches. The old Bookworm runtime only had glibc 2.36 while unpinned `rust:slim` linked against GLIBC_2.38+, which crashed on start with `version GLIBC_2.38 not found`. by @nayskutzu
 - Admin spell editor: two-column field groups collapse to one column on phones, and image field labels match the other form labels. by @nayskutzu
 - Account sessions: header and "sign out other sessions" button sit on one row on desktop and stack on phones, a skeleton shows while loading, the button is disabled when there are no other sessions, and the ticket signature placeholder no longer shows a literal \\n. by @nayskutzu
