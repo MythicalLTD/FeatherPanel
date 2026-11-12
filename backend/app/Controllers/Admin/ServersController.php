@@ -2843,6 +2843,13 @@ class ServersController
             return ApiResponse::error('Failed to unsuspend server', 'FAILED_TO_UNSUSPEND', 500);
         }
 
+        Activity::createActivity([
+            'user_uuid' => $request->attributes->get('user')['uuid'],
+            'name' => 'unsuspend_server',
+            'context' => 'Unsuspended server ' . $server['name'],
+            'ip_address' => CloudFlareRealIP::getRealIP(),
+        ]);
+
         // Wings has no periodic config refresh; without a sync it keeps the
         // suspended flag and consoles stay closed until something else syncs
         // (for example reassigning subusers).
@@ -2852,13 +2859,6 @@ class ServersController
 
         $config = App::getInstance(true)->getConfig();
         $user = User::getUserById($server['owner_id']);
-
-        Activity::createActivity([
-            'user_uuid' => $request->attributes->get('user')['uuid'],
-            'name' => 'unsuspend_server',
-            'context' => 'Unsuspended server ' . $server['name'],
-            'ip_address' => CloudFlareRealIP::getRealIP(),
-        ]);
 
         // Emit event
         global $eventManager;

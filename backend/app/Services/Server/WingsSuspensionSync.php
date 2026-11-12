@@ -71,7 +71,8 @@ class WingsSuspensionSync
     /**
      * After the server is marked suspended in the database, sync that state to
      * Wings (which stops the process and closes websockets). If the sync fails,
-     * fall back to a kill so the process still stops.
+     * a kill is attempted so the process still stops, but this still returns
+     * false: a successful kill does not mean Wings has the suspended flag.
      *
      * @param array<string, mixed> $server Must include uuid and node_id
      */
@@ -81,7 +82,9 @@ class WingsSuspensionSync
             return true;
         }
 
-        return self::kill($server, $timeout);
+        self::kill($server, $timeout);
+
+        return false;
     }
 
     /**
