@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.5.5 STABLE
+
+### Fixed
+- Suspend and unsuspend now sync the new state to Wings. Before, unsuspend only updated the database, so the daemon kept treating the server as suspended and consoles stayed closed with "server is suspended" until something else synced (for example reassigning subusers). Suspend without a sync also left Wings able to crash-auto-restart the process. The same sync runs for inactive-cleanup, FeatherZeroTrust and expiry auto-suspend. If the sync fails, suspend still tries to kill the process but reports the failure so callers can retry (a kill alone is no longer counted as a successful sync), and unsuspend writes its activity record before the sync so a Wings 502 no longer drops the audit entry. (#464, refs #461) by @nayskutzu
+
 ## v1.5.4 STABLE
 
 ### Added
@@ -14,7 +19,6 @@
 - phpMyAdmin opens faster: successful sign-on uses a 302 straight into phpMyAdmin (no branded interstitial and no 500 ms wait), the databases page only checks whether PMA is installed instead of re-copying bridge files on every load, signon hardening is refreshed at most once an hour, and stale SSO token cleanup runs at most once a minute. by @nayskutzu
 
 ### Fixed
-- Suspend and unsuspend now sync the new state to Wings. Before, unsuspend only updated the database, so the daemon kept treating the server as suspended and consoles stayed closed with "server is suspended" until something else synced (for example reassigning subusers). Suspend without a sync also left Wings able to crash-auto-restart the process. The same sync runs for inactive-cleanup, FeatherZeroTrust and expiry auto-suspend. (#461) by @nayskutzu
 - VDS cloud-init `ipconfig0` now uses the CIDR from the node's IP pool instead of always writing `/24`. The async runner was decoding `featherpanel_vm_ips.cidr` (`tinyint UNSIGNED`) as `i32`, which sqlx rejects, so it silently fell back to `/24` even when the pool and create form showed `/27`. Guests now get the pool prefix (for example `ip=203.0.113.2/27,gw=203.0.113.1`). (#460) by @nayskutzu
 - phpMyAdmin no longer redirects to `https://featherpanel.mythical.systems` when `APP_URL` is still the seeded demo value or empty: server and webspace Open links return a same-origin `/pma/token.php` URL, `AppUrlHelper` treats the demo host as unset and falls back to the request host, and the auth interstitial never links the logo home to the demo host. (#462) by @nayskutzu
 - Discord (and other OAuth) sign-in no longer fails with `Class App\Helpers\OAuthStateCookie not found`. The license header in `OAuthStateCookie.php` was missing the closing `*/`, which commented out the class so Composer could not autoload it. A syntax/header integrity test now catches the same typo in other PHP files. (#459) by @nayskutzu
