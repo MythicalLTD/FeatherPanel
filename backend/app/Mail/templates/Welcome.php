@@ -20,6 +20,7 @@ namespace App\Mail\templates;
 use App\Chat\MailList;
 use App\Chat\MailQueue;
 use App\Chat\MailTemplate;
+use App\Mail\MailTemplateRenderer;
 
 class Welcome
 {
@@ -50,17 +51,7 @@ class Welcome
      */
     public static function parseTemplate(string $template, array $data): string
     {
-        $template = str_replace('{app_name}', $data['app_name'], $template);
-        $template = str_replace('{app_url}', $data['app_url'], $template);
-        $template = str_replace('{first_name}', $data['first_name'], $template);
-        $template = str_replace('{last_name}', $data['last_name'], $template);
-        $template = str_replace('{email}', $data['email'], $template);
-        $template = str_replace('{username}', $data['username'], $template);
-        $template = str_replace('{password}', $data['password'] ?? '', $template);
-        $template = str_replace('{dashboard_url}', $data['dashboard_url'], $template);
-        $template = str_replace('{support_url}', $data['support_url'], $template);
-
-        return $template;
+        return MailTemplateRenderer::renderHtml($template, $data);
     }
 
     /**
@@ -119,7 +110,7 @@ class Welcome
             return $data['subject'] ?? '';
         }
 
-        return self::parseTemplate($subjectTemplate, [
+        return MailTemplateRenderer::renderText($subjectTemplate, [
             'app_name' => $data['app_name'],
             'app_url' => $data['app_url'],
             'first_name' => $data['first_name'],

@@ -25,6 +25,7 @@ use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
 use App\Telemetry\UmamiTelemetry;
+use App\Mail\MailTemplateRenderer;
 use App\CloudFlare\CloudFlareRealIP;
 use App\Telemetry\UmamiTelemetryState;
 use App\Plugins\Events\Events\SettingsEvent;
@@ -5273,6 +5274,12 @@ class SettingsController
 
         // Create test email content
         $subject = '[TEST] Email Configuration Test from ' . $appName;
+        $mailUser = [
+            'username' => MailTemplateRenderer::escape($user['username'] ?? ''),
+            'email' => MailTemplateRenderer::escape($user['email'] ?? ''),
+        ];
+        $mailAppName = MailTemplateRenderer::escape($appName);
+        $mailAppUrl = MailTemplateRenderer::escape($appUrl);
         $body = <<<HTML
         <!DOCTYPE html>
         <html>
@@ -5294,10 +5301,10 @@ class SettingsController
                             <tr>
                                 <td style="padding: 40px;">
                                     <p style="margin: 0 0 20px 0; color: #374151; font-size: 16px; line-height: 1.6;">
-                                        Hello <strong>{$user['username']}</strong>,
+                                        Hello <strong>{$mailUser['username']}</strong>,
                                     </p>
                                     <p style="margin: 0 0 20px 0; color: #374151; font-size: 16px; line-height: 1.6;">
-                                        This is a test email from <strong>{$appName}</strong> to verify that your email configuration is working correctly.
+                                        This is a test email from <strong>{$mailAppName}</strong> to verify that your email configuration is working correctly.
                                     </p>
                                     <div style="background-color: #f0fdf4; border-left: 4px solid #10b981; padding: 16px; margin: 20px 0; border-radius: 4px;">
                                         <p style="margin: 0; color: #065f46; font-size: 14px; line-height: 1.5;">
@@ -5306,19 +5313,19 @@ class SettingsController
                                     </div>
                                     <p style="margin: 20px 0 0 0; color: #6b7280; font-size: 14px; line-height: 1.6;">
                                         <strong>Email Details:</strong><br>
-                                        • Recipient: {$user['email']}<br>
+                                        • Recipient: {$mailUser['email']}<br>
                                         • Sent at: {date('Y-m-d H:i:s')}<br>
-                                        • From: {$appName}
+                                        • From: {$mailAppName}
                                     </p>
                                 </td>
                             </tr>
                             <tr>
                                 <td style="padding: 30px 40px; background-color: #f9fafb; border-top: 1px solid #e5e7eb; border-radius: 0 0 8px 8px;">
                                     <p style="margin: 0 0 10px 0; color: #6b7280; font-size: 13px; text-align: center;">
-                                        This is an automated test email from {$appName}
+                                        This is an automated test email from {$mailAppName}
                                     </p>
                                     <p style="margin: 0; color: #9ca3af; font-size: 12px; text-align: center;">
-                                        <a href="{$appUrl}" style="color: #8b5cf6; text-decoration: none;">{$appUrl}</a>
+                                        <a href="{$mailAppUrl}" style="color: #8b5cf6; text-decoration: none;">{$mailAppUrl}</a>
                                     </p>
                                 </td>
                             </tr>

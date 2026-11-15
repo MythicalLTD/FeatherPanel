@@ -20,6 +20,7 @@ namespace App\Mail\templates;
 use App\Chat\MailList;
 use App\Chat\MailQueue;
 use App\Chat\MailTemplate;
+use App\Mail\MailTemplateRenderer;
 
 class TicketAdminAlert
 {
@@ -45,11 +46,7 @@ class TicketAdminAlert
 
     public static function parseTemplate(string $template, array $data): string
     {
-        foreach ($data as $key => $value) {
-            $template = str_replace('{' . $key . '}', (string) $value, $template);
-        }
-
-        return $template;
+        return MailTemplateRenderer::renderHtml($template, $data);
     }
 
     public static function send(array $data): void
@@ -100,7 +97,7 @@ class TicketAdminAlert
                 : '[' . $data['app_name'] . '] New support ticket';
         }
 
-        return self::parseTemplate($subjectTemplate, self::placeholderData($data));
+        return MailTemplateRenderer::renderText($subjectTemplate, self::placeholderData($data));
     }
 
     /**
@@ -121,11 +118,11 @@ class TicketAdminAlert
             'username' => $data['username'],
             'dashboard_url' => $data['app_url'] . '/dashboard',
             'support_url' => $data['app_support_url'],
-            'ticket_title' => htmlspecialchars((string) $data['ticket_title'], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'),
-            'ticket_url' => htmlspecialchars((string) $data['ticket_url'], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'),
-            'ticket_owner' => htmlspecialchars((string) $data['ticket_owner'], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'),
+            'ticket_title' => (string) $data['ticket_title'],
+            'ticket_url' => (string) $data['ticket_url'],
+            'ticket_owner' => (string) $data['ticket_owner'],
             'event_label' => $eventLabel,
-            'open_tickets_count' => htmlspecialchars((string) ($data['open_tickets_count'] ?? '0'), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'),
+            'open_tickets_count' => (string) ($data['open_tickets_count'] ?? '0'),
         ];
     }
 }
