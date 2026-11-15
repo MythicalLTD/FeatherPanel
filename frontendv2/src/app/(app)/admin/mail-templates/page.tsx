@@ -15,7 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import MailHtmlFrame, { MAIL_FRAME_SANDBOX } from '@/components/common/MailHtmlFrame';
+import MailHtmlFrame, { MAIL_FRAME_SANDBOX, buildMailFrameDocument } from '@/components/common/MailHtmlFrame';
 import { TipCard } from '@/components/featherui/TipCard';
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
@@ -517,7 +517,7 @@ export default function MailTemplatesPage() {
                                 </Label>
                                 <div className='border-border/50 relative flex-1 overflow-hidden rounded-2xl border bg-white shadow-xl'>
                                     <iframe
-                                        srcDoc={formData.body}
+                                        srcDoc={buildMailFrameDocument(formData.body)}
                                         sandbox={MAIL_FRAME_SANDBOX}
                                         className='h-full w-full border-none'
                                         title={t('admin.mail_templates.form.live_preview')}
@@ -589,7 +589,7 @@ export default function MailTemplatesPage() {
                                 </Label>
                                 <div className='border-border/50 relative flex-1 overflow-hidden rounded-2xl border bg-white shadow-xl'>
                                     <iframe
-                                        srcDoc={formData.body}
+                                        srcDoc={buildMailFrameDocument(formData.body)}
                                         sandbox={MAIL_FRAME_SANDBOX}
                                         className='h-full w-full border-none'
                                         title={t('admin.mail_templates.form.live_preview')}

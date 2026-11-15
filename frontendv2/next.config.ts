@@ -73,7 +73,7 @@ const nextConfig: NextConfig = {
             { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
         ];
         const pageSource =
-            '/((?!_next/static)(?!_next/image)(?!api)(?!mcp)(?!attachments)(?!addons)(?!components)(?!pma)(?!status).*)';
+            '/((?!_next/static)(?!_next/image)(?!api)(?!mcp)(?!attachments)(?!addons)(?!components)(?!pma)(?!status$)(?!status/).*)';
 
         if (process.env.NODE_ENV === 'development') {
             return [

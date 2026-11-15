@@ -73,6 +73,7 @@ export function DashboardRecentMails() {
 			<head>
 				<meta charset="utf-8">
 				<meta name="viewport" content="width=device-width, initial-scale=1.0">
+				<base target="_blank">
 				<style>
 					body {
 						font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;

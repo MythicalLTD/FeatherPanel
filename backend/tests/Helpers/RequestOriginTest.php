@@ -107,6 +107,30 @@ class RequestOriginTest extends TestCase
         }
     }
 
+    public function testCorsNeedsTheExactOrigin(): void
+    {
+        foreach (['https://panel.example.com:8443', 'http://panel.example.com', 'https://sub.panel.example.com'] as $origin) {
+            $r = $this->request('GET', '/api/user/session', ['Origin' => $origin]);
+            $res = RequestOrigin::applyCors($r, ApiResponse::success(), self::APP_URL);
+
+            $this->assertSame('*', $res->headers->get('Access-Control-Allow-Origin'), $origin);
+            $this->assertFalse($res->headers->has('Access-Control-Allow-Credentials'), $origin);
+        }
+
+        // Explicit default port is the same origin.
+        $r = $this->request('GET', '/api/user/session', ['Origin' => 'https://panel.example.com:443']);
+        $this->assertTrue(RequestOrigin::isTrustedCorsOrigin('https://panel.example.com:443', $r, self::APP_URL));
+
+        // Request origin behind a proxy (forwarded host and scheme).
+        $proxied = Request::create('http://backend/api/user/x', 'GET', [], [], [], [
+            'HTTP_HOST' => 'backend',
+            'HTTP_X_FORWARDED_HOST' => 'panel.example.org',
+            'HTTP_X_FORWARDED_PROTO' => 'https',
+        ]);
+        $this->assertTrue(RequestOrigin::isTrustedCorsOrigin('https://panel.example.org', $proxied, null));
+        $this->assertFalse(RequestOrigin::isTrustedCorsOrigin('http://panel.example.org', $proxied, null));
+    }
+
     public function testCorsLeavesOtherResponsesAlone(): void
     {
         $r = $this->request('GET', '/api/x', ['Origin' => 'https://other.example.net']);

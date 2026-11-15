@@ -29,8 +29,8 @@ use Symfony\Component\HttpFoundation\Response;
  *   host (APP_URL or the host the request was sent to). Requests that carry an
  *   Authorization header, or no Origin/Referer at all (CLI tools, daemons,
  *   server-to-server callbacks), are not affected.
- * - CORS: the panel's own origin is echoed back with credentials; any other
- *   origin keeps the wildcard without credentials.
+ * - CORS: the panel's own origin (scheme, host and port all equal) is echoed
+ *   back with credentials; any other origin keeps the wildcard without credentials.
  */
 final class RequestOrigin
 {
@@ -73,7 +73,7 @@ final class RequestOrigin
         }
 
         $origin = trim((string) $request->headers->get('Origin', ''));
-        if ($origin !== '' && self::matchesPanel($origin, $request, $appUrl)) {
+        if ($origin !== '' && self::isTrustedCorsOrigin($origin, $request, $appUrl ?? self::configuredAppUrl())) {
             $response->headers->set('Access-Control-Allow-Origin', $origin);
             $response->headers->set('Access-Control-Allow-Credentials', 'true');
         } else {
@@ -83,6 +83,49 @@ final class RequestOrigin
         $response->setVary(array_values(array_unique(array_merge($response->getVary(), ['Origin']))));
 
         return $response;
+    }
+
+    /**
+     * Exact origin match (scheme, host, effective port) against APP_URL or the
+     * origin this request was addressed to (Host / X-Forwarded-Host with the
+     * forwarded or request scheme).
+     */
+    public static function isTrustedCorsOrigin(string $origin, Request $request, ?string $appUrl): bool
+    {
+        $wanted = self::normalizeOrigin($origin);
+        if ($wanted === null) {
+            return false;
+        }
+
+        $trusted = [];
+        if (is_string($appUrl) && trim($appUrl) !== '') {
+            $url = trim($appUrl);
+            if (!preg_match('#^[a-z][a-z0-9+.-]*://#i', $url)) {
+                $url = 'https://' . ltrim($url, '/');
+            }
+            $trusted[] = self::normalizeOrigin($url);
+        }
+
+        $proto = strtolower(trim(explode(',', (string) $request->headers->get('X-Forwarded-Proto', ''))[0]));
+        $scheme = in_array($proto, ['http', 'https'], true) ? $proto : $request->getScheme();
+        $hosts = [(string) $request->headers->get('Host', '')];
+        $forwarded = (string) $request->headers->get('X-Forwarded-Host', '');
+        if ($forwarded !== '') {
+            $hosts[] = trim(explode(',', $forwarded)[0]);
+        }
+        foreach ($hosts as $host) {
+            if ($host !== '') {
+                $trusted[] = self::normalizeOrigin($scheme . '://' . $host);
+            }
+        }
+
+        foreach ($trusted as $candidate) {
+            if ($candidate !== null && hash_equals($candidate, $wanted)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public static function needsOriginCheck(Request $request): bool
@@ -171,6 +214,22 @@ final class RequestOrigin
         }
 
         return array_values(array_unique($hosts));
+    }
+
+    /** scheme://host:port with the default port filled in, or null for anything that is not http(s). */
+    private static function normalizeOrigin(string $url): ?string
+    {
+        $parts = parse_url(trim($url));
+        if (!is_array($parts) || empty($parts['scheme']) || empty($parts['host'])) {
+            return null;
+        }
+        $scheme = strtolower($parts['scheme']);
+        if ($scheme !== 'http' && $scheme !== 'https') {
+            return null;
+        }
+        $port = isset($parts['port']) ? (int) $parts['port'] : ($scheme === 'https' ? 443 : 80);
+
+        return $scheme . '://' . strtolower(trim($parts['host'], '[]')) . ':' . $port;
     }
 
     /** Request host first; APP_URL is only read from config when that does not match. */

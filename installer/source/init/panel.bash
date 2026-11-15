@@ -579,6 +579,10 @@ server {
         add_header X-Content-Type-Options "nosniff" always;
         add_header Content-Security-Policy "default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; sandbox" always;
         add_header Content-Disposition "attachment" always;
+        location ~* (\.php\$|\.secret\$|/\.ht) {
+            deny all;
+            return 403;
+        }
         location ~* \.(png|jpe?g|gif|webp|bmp|ico)\$ {
             add_header X-Content-Type-Options "nosniff" always;
             add_header Content-Security-Policy "default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; sandbox" always;
@@ -671,6 +675,10 @@ server {
         add_header X-Content-Type-Options "nosniff" always;
         add_header Content-Security-Policy "default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; sandbox" always;
         add_header Content-Disposition "attachment" always;
+        location ~* (\.php\$|\.secret\$|/\.ht) {
+            deny all;
+            return 403;
+        }
         location ~* \.(png|jpe?g|gif|webp|bmp|ico)\$ {
             add_header X-Content-Type-Options "nosniff" always;
             add_header Content-Security-Policy "default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; sandbox" always;
@@ -776,6 +784,10 @@ server {
         add_header X-Content-Type-Options "nosniff" always;
         add_header Content-Security-Policy "default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; sandbox" always;
         add_header Content-Disposition "attachment" always;
+        location ~* (\.php\$|\.secret\$|/\.ht) {
+            deny all;
+            return 403;
+        }
         location ~* \.(png|jpe?g|gif|webp|bmp|ico)\$ {
             add_header X-Content-Type-Options "nosniff" always;
             add_header Content-Security-Policy "default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; sandbox" always;
