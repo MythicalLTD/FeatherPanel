@@ -98,6 +98,8 @@ function isPluginPublicRoute(pathname: string, pluginPaths: string[]): boolean {
     return pluginPaths.some((path) => normalized === path || normalized.startsWith(path + '/'));
 }
 
+const STATUS_PAGE_CSP_BASE = "object-src 'none'; base-uri 'self'";
+
 async function applyStatusPageIframeHeaders(request: NextRequest, response: NextResponse): Promise<NextResponse> {
     try {
         const origin = request.nextUrl.origin;
@@ -112,15 +114,21 @@ async function applyStatusPageIframeHeaders(request: NextRequest, response: Next
 
             if (allowIframe) {
                 response.headers.delete('X-Frame-Options');
-                response.headers.set('Content-Security-Policy', 'frame-ancestors *');
+                response.headers.set('Content-Security-Policy', `frame-ancestors *; ${STATUS_PAGE_CSP_BASE}`);
             } else {
                 response.headers.set('X-Frame-Options', 'SAMEORIGIN');
+                response.headers.set('Content-Security-Policy', `frame-ancestors 'self'; ${STATUS_PAGE_CSP_BASE}`);
             }
+        } else {
+            response.headers.set('Content-Security-Policy', `frame-ancestors 'self'; ${STATUS_PAGE_CSP_BASE}`);
         }
     } catch {
         // On error, keep default SAMEORIGIN behavior
         response.headers.set('X-Frame-Options', 'SAMEORIGIN');
+        response.headers.set('Content-Security-Policy', `frame-ancestors 'self'; ${STATUS_PAGE_CSP_BASE}`);
     }
+    response.headers.set('X-Content-Type-Options', 'nosniff');
+    response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
 
     return response;
 }
