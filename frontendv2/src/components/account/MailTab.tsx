@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { MAIL_FRAME_SANDBOX } from '@/components/common/MailHtmlFrame';
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { Dialog, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
@@ -368,7 +369,7 @@ export default function MailTab() {
                         <iframe
                             srcDoc={getIframeContent(selectedMail.body)}
                             className='h-full min-h-[60vh] w-full rounded border-0 bg-white'
-                            sandbox='allow-same-origin'
+                            sandbox={MAIL_FRAME_SANDBOX}
                             title={t('account.mail.mailContent')}
                         />
                     )}

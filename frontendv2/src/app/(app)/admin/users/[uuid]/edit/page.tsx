@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import MailHtmlFrame from '@/components/common/MailHtmlFrame';
 import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from '@/contexts/TranslationContext';
@@ -1708,10 +1709,11 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                             {mailPreview?.status}
                         </DialogDescription>
                     </DialogHeader>
-                    <div className='bg-muted/50 mt-4 max-h-[60vh] overflow-auto rounded-xl border p-4'>
-                        <div
-                            className='prose prose-sm dark:prose-invert max-w-none'
-                            dangerouslySetInnerHTML={{ __html: mailPreview?.body || '' }}
+                    <div className='mt-4 h-[60vh] overflow-hidden rounded-xl border'>
+                        <MailHtmlFrame
+                            html={mailPreview?.body || ''}
+                            title={mailPreview?.subject || ''}
+                            className='h-full'
                         />
                     </div>
                 </DialogContent>

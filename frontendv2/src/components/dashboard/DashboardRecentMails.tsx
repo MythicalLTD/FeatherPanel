@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { MAIL_FRAME_SANDBOX } from '@/components/common/MailHtmlFrame';
 import { toast } from 'sonner';
 import { getApiErrorMessage } from '@/lib/api-errors';
 import { useState, useEffect, useCallback } from 'react';
@@ -232,7 +233,7 @@ export function DashboardRecentMails() {
                         <iframe
                             srcDoc={getIframeContent(selectedMail.body)}
                             className='min-h-[50vh] w-full rounded border-0 bg-white'
-                            sandbox='allow-same-origin'
+                            sandbox={MAIL_FRAME_SANDBOX}
                             title={t('account.mail.mailContent')}
                         />
                     )}
