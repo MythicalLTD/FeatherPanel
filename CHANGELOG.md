@@ -1,5 +1,17 @@
 # Changelog
 
+## v1.5.5 STABLE
+
+### Improved
+- Mail templates go through one shared renderer: placeholder values (names, usernames, emails, ticket titles, replier and server names and the rest) are HTML-encoded in mail bodies, subjects stay plain text, and placeholders are filled in a single pass. Only fragments the panel builds itself (reply preview, warning server clause) are inserted as markup. by @nayskutzu
+- Stored mail is shown in a sandboxed frame everywhere it is previewed (account mail, dashboard recent mail, admin user and ticket mail previews, mail template previews); links open in a new tab. by @nayskutzu
+- Stricter default response headers: panel pages send a default `frame-ancestors 'self'; object-src 'none'; base-uri 'self'` policy (the status page keeps its iframe option), `X-Content-Type-Options: nosniff` and `Referrer-Policy: strict-origin-when-cross-origin`. API responses echo the panel's own origin for credentialed CORS instead of `*`; other origins get `*` without credentials. by @nayskutzu
+- Cookie-signed API writes (POST/PUT/PATCH/DELETE) must come from the panel host (`APP_URL` or the host the request was sent to), checked with `Origin`/`Referer`. API key (Bearer) requests, Wings/FeatherQuilld callbacks, webhooks and clients that send neither header are unchanged. New error code `ORIGIN_NOT_ALLOWED`. by @nayskutzu
+
+### Fixed
+- Ticket attachments are served as downloads: files under `/attachments` other than raster images (png, jpg, gif, webp, bmp, ico) get `Content-Disposition: attachment`, plus `X-Content-Type-Options: nosniff` and a `sandbox` content policy for every file (backend Caddyfile, legacy `nginx.conf` and installer nginx sites). SVG is no longer accepted as a ticket attachment, and the type detected from the file content must match its extension (a `.png` must be a PNG). Avatar and FeatherOS wallpaper uploads use the same extension check. by @nayskutzu
+- The account unsuspended mail fills `{unsuspension_time}` again, and the test mail from Admin, Settings encodes the username and email it shows. by @nayskutzu
+
 ## v1.5.4 STABLE
 
 ### Added
