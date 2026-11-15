@@ -32,6 +32,7 @@ use OpenApi\Attributes as OA;
 use App\Chat\TicketAttachment;
 use App\Config\ConfigInterface;
 use App\Helpers\PermissionHelper;
+use App\Helpers\UploadedFileType;
 use App\Middleware\AuthMiddleware;
 use App\CloudFlare\CloudFlareRealIP;
 use App\Plugins\Events\Events\TicketEvent;
@@ -629,45 +630,12 @@ class TicketsController
             return ApiResponse::error('File size too large. Maximum size is 50MB', 'FILE_TOO_LARGE', 400);
         }
 
-        // Define allowed MIME types for ticket attachments
-        $allowedMimeTypes = [
-            // Images (for screenshots)
-            'image/jpeg',
-            'image/png',
-            'image/gif',
-            'image/webp',
-            'image/bmp',
-            // Documents
-            'application/pdf',
-            'application/msword',
-            'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
-            'text/plain',
-            'text/csv',
-            // Spreadsheets
-            'application/vnd.ms-excel',
-            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
-            // Archives
-            'application/zip',
-            'application/x-rar-compressed',
-            'application/x-tar',
-            'application/gzip',
-        ];
+        // Extension and detected content type must both match the ticket attachment list.
+        $allowedTypes = UploadedFileType::TICKET_ATTACHMENT_TYPES;
+        $originalExtension = UploadedFileType::extensionOf((string) $originalName);
 
-        // Define allowed file extensions (must match MIME types)
-        $allowedExtensions = [
-            'jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg',
-            'pdf', 'doc', 'docx', 'txt', 'csv',
-            'xls', 'xlsx',
-            'zip', 'rar', 'tar', 'gz',
-        ];
-
-        // Get file extension from original filename
-        $originalExtension = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
-        $originalExtension = preg_replace('/[^a-zA-Z0-9]/', '', $originalExtension);
-
-        // Validate extension
-        if (empty($originalExtension) || !in_array($originalExtension, $allowedExtensions, true)) {
-            $allowedList = implode(', ', array_map('strtoupper', $allowedExtensions));
+        if ($originalExtension === '' || !isset($allowedTypes[$originalExtension])) {
+            $allowedList = implode(', ', array_map('strtoupper', array_keys($allowedTypes)));
 
             return ApiResponse::error(
                 'File type not allowed. Allowed file types: ' . $allowedList,
@@ -676,24 +644,8 @@ class TicketsController
             );
         }
 
-        // Get MIME type using reliable server-side detection
-        // Use finfo_file for more reliable detection than getMimeType()
-        $detectedMimeType = null;
-        if (extension_loaded('fileinfo')) {
-            $finfo = finfo_open(FILEINFO_MIME_TYPE);
-            $tempPath = $file->getPathname();
-            if ($tempPath && file_exists($tempPath)) {
-                $detectedMimeType = finfo_file($finfo, $tempPath);
-            }
-        }
-
-        // Fallback to uploaded file's MIME type if finfo failed
-        if (!$detectedMimeType) {
-            $detectedMimeType = $file->getMimeType();
-        }
-
-        // Validate MIME type
-        if (empty($detectedMimeType) || !in_array($detectedMimeType, $allowedMimeTypes, true)) {
+        $detectedMimeType = UploadedFileType::detect($file);
+        if (!UploadedFileType::matches($originalExtension, $detectedMimeType, $allowedTypes)) {
             return ApiResponse::error(
                 'File type not allowed. Please upload a valid file type (images, documents, PDF, archives).',
                 'INVALID_MIME_TYPE',

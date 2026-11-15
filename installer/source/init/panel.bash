@@ -574,7 +574,15 @@ server {
     }
 
     location ^~ /attachments/ {
-        alias ${BACKEND_DIR}/public/attachments/;
+        root ${BACKEND_DIR}/public;
+        # Uploaded files: raster images display inline, everything else is a download.
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header Content-Security-Policy "default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; sandbox" always;
+        add_header Content-Disposition "attachment" always;
+        location ~* \.(png|jpe?g|gif|webp|bmp|ico)\$ {
+            add_header X-Content-Type-Options "nosniff" always;
+            add_header Content-Security-Policy "default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; sandbox" always;
+        }
     }
 
     location ^~ /addons/ {
@@ -658,7 +666,15 @@ server {
     }
 
     location ^~ /attachments/ {
-        alias ${BACKEND_DIR}/public/attachments/;
+        root ${BACKEND_DIR}/public;
+        # Uploaded files: raster images display inline, everything else is a download.
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header Content-Security-Policy "default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; sandbox" always;
+        add_header Content-Disposition "attachment" always;
+        location ~* \.(png|jpe?g|gif|webp|bmp|ico)\$ {
+            add_header X-Content-Type-Options "nosniff" always;
+            add_header Content-Security-Policy "default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; sandbox" always;
+        }
     }
 
     location ^~ /addons/ {
@@ -755,7 +771,15 @@ server {
     }
 
     location ^~ /attachments/ {
-        alias ${BACKEND_DIR}/public/attachments/;
+        root ${BACKEND_DIR}/public;
+        # Uploaded files: raster images display inline, everything else is a download.
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header Content-Security-Policy "default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; sandbox" always;
+        add_header Content-Disposition "attachment" always;
+        location ~* \.(png|jpe?g|gif|webp|bmp|ico)\$ {
+            add_header X-Content-Type-Options "nosniff" always;
+            add_header Content-Security-Policy "default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; sandbox" always;
+        }
     }
 
     location ^~ /addons/ {

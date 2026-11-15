@@ -23,10 +23,11 @@ use App\Chat\FeatherOsNote;
 use App\Chat\FeatherOsState;
 use App\Chat\FeatherOsTrash;
 use App\Helpers\ApiResponse;
-use App\Helpers\ServerGateway;
 use OpenApi\Attributes as OA;
 use App\Chat\FeatherOsSession;
+use App\Helpers\ServerGateway;
 use App\Config\ConfigInterface;
+use App\Helpers\UploadedFileType;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -432,7 +433,11 @@ class FeatherOsController
         if (!$detectedMimeType) {
             $detectedMimeType = $uploadedFile->getMimeType();
         }
-        if (empty($detectedMimeType) || !in_array($detectedMimeType, $allowedMimeTypes, true)) {
+        if (
+            empty($detectedMimeType)
+            || !in_array($detectedMimeType, $allowedMimeTypes, true)
+            || !UploadedFileType::matches($originalExtension, $detectedMimeType, UploadedFileType::IMAGE_TYPES)
+        ) {
             return ApiResponse::error('Invalid file type. Only JPEG, PNG, GIF, and WebP images are allowed.', 'INVALID_MIME_TYPE', 400);
         }
 
