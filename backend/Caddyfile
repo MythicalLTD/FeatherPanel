@@ -76,6 +76,18 @@
 	@static_assets path /addons/* /components/* /attachments/*
 	header @static_assets ?Cache-Control "public, max-age=3600"
 
+	# Uploaded files: raster images display inline, everything else is a download.
+	@attachments path /attachments/*
+	header @attachments {
+		X-Content-Type-Options "nosniff"
+		Content-Security-Policy "default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; sandbox"
+	}
+	@attachment_downloads {
+		path /attachments/*
+		not path_regexp (?i)\.(png|jpe?g|gif|webp|bmp|ico)$
+	}
+	header @attachment_downloads Content-Disposition "attachment"
+
 	# Live updates (Mercure), a no-op snippet unless enabled.
 	import caddy/mercure-{$FEATHERPANEL_MERCURE:off}.caddyfile
 

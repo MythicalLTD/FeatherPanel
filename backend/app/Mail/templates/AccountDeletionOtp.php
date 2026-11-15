@@ -20,6 +20,7 @@ namespace App\Mail\templates;
 use App\Chat\MailList;
 use App\Chat\MailQueue;
 use App\Chat\MailTemplate;
+use App\Mail\MailTemplateRenderer;
 
 class AccountDeletionOtp
 {
@@ -57,24 +58,7 @@ class AccountDeletionOtp
 
     public static function parseTemplate(string $template, array $data): string
     {
-        foreach (
-            [
-                'app_name',
-                'app_url',
-                'first_name',
-                'last_name',
-                'email',
-                'username',
-                'dashboard_url',
-                'support_url',
-                'otp_code',
-            ] as $key
-        ) {
-            $template = str_replace('{' . $key . '}', (string) ($data[$key] ?? ''), $template);
-        }
-        $template = str_replace('{expires_minutes}', (string) ($data['expires_minutes'] ?? 10), $template);
-
-        return $template;
+        return MailTemplateRenderer::renderHtml($template, $data);
     }
 
     public static function send(array $data): void
@@ -123,7 +107,7 @@ class AccountDeletionOtp
             return 'Your account deletion code for ' . $data['app_name'];
         }
 
-        return self::parseTemplate($subjectTemplate, [
+        return MailTemplateRenderer::renderText($subjectTemplate, [
             'app_name' => $data['app_name'],
             'app_url' => $data['app_url'],
             'first_name' => $data['first_name'],

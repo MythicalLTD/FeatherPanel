@@ -20,6 +20,7 @@ namespace App\Mail\templates;
 use App\Chat\MailList;
 use App\Chat\MailQueue;
 use App\Chat\MailTemplate;
+use App\Mail\MailTemplateRenderer;
 
 class AccountDeletionScheduled
 {
@@ -58,24 +59,7 @@ class AccountDeletionScheduled
 
     public static function parseTemplate(string $template, array $data): string
     {
-        foreach (
-            [
-                'app_name',
-                'app_url',
-                'first_name',
-                'last_name',
-                'email',
-                'username',
-                'dashboard_url',
-                'support_url',
-                'scheduled_at',
-                'deletion_mode_label',
-            ] as $key
-        ) {
-            $template = str_replace('{' . $key . '}', (string) ($data[$key] ?? ''), $template);
-        }
-
-        return $template;
+        return MailTemplateRenderer::renderHtml($template, $data);
     }
 
     public static function send(array $data): void
@@ -133,7 +117,7 @@ class AccountDeletionScheduled
             return 'Your ' . $data['app_name'] . ' account is scheduled for deletion';
         }
 
-        return self::parseTemplate($subjectTemplate, [
+        return MailTemplateRenderer::renderText($subjectTemplate, [
             'app_name' => $data['app_name'],
             'app_url' => $data['app_url'],
             'first_name' => $data['first_name'],

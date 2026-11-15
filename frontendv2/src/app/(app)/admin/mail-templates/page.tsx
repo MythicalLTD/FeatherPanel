@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import MailHtmlFrame, { MAIL_FRAME_SANDBOX, buildMailFrameDocument } from '@/components/common/MailHtmlFrame';
 import { TipCard } from '@/components/featherui/TipCard';
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
@@ -516,7 +517,8 @@ export default function MailTemplatesPage() {
                                 </Label>
                                 <div className='border-border/50 relative flex-1 overflow-hidden rounded-2xl border bg-white shadow-xl'>
                                     <iframe
-                                        srcDoc={formData.body}
+                                        srcDoc={buildMailFrameDocument(formData.body)}
+                                        sandbox={MAIL_FRAME_SANDBOX}
                                         className='h-full w-full border-none'
                                         title={t('admin.mail_templates.form.live_preview')}
                                     />
@@ -587,7 +589,8 @@ export default function MailTemplatesPage() {
                                 </Label>
                                 <div className='border-border/50 relative flex-1 overflow-hidden rounded-2xl border bg-white shadow-xl'>
                                     <iframe
-                                        srcDoc={formData.body}
+                                        srcDoc={buildMailFrameDocument(formData.body)}
+                                        sandbox={MAIL_FRAME_SANDBOX}
                                         className='h-full w-full border-none'
                                         title={t('admin.mail_templates.form.live_preview')}
                                     />
@@ -632,9 +635,10 @@ export default function MailTemplatesPage() {
                                     {t('admin.mail_templates.form.body')}
                                 </Label>
                                 <div className='border-border/50 min-h-[400px] overflow-hidden rounded-xl border bg-white dark:bg-zinc-950'>
-                                    <div
-                                        className='prose prose-sm dark:prose-invert max-w-none p-6'
-                                        dangerouslySetInnerHTML={{ __html: selectedTemplate?.body || '' }}
+                                    <MailHtmlFrame
+                                        html={selectedTemplate?.body || ''}
+                                        title={selectedTemplate?.name || ''}
+                                        className='min-h-[400px]'
                                     />
                                 </div>
                             </div>

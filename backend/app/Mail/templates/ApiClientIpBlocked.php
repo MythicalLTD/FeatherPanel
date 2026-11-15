@@ -20,6 +20,7 @@ namespace App\Mail\templates;
 use App\Chat\MailList;
 use App\Chat\MailQueue;
 use App\Chat\MailTemplate;
+use App\Mail\MailTemplateRenderer;
 
 class ApiClientIpBlocked
 {
@@ -62,27 +63,15 @@ class ApiClientIpBlocked
             'username' => $data['username'],
             'dashboard_url' => $data['app_url'] . '/dashboard',
             'support_url' => $data['app_support_url'],
-            'api_client_name' => htmlspecialchars($data['api_client_name'], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'),
-            'api_client_id' => htmlspecialchars((string) $data['api_client_id'], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'),
-            'blocked_ip' => htmlspecialchars($data['blocked_ip'], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'),
+            'api_client_name' => $data['api_client_name'],
+            'api_client_id' => (string) $data['api_client_id'],
+            'blocked_ip' => $data['blocked_ip'],
         ]);
     }
 
     public static function parseTemplate(string $template, array $data): string
     {
-        $template = str_replace('{app_name}', $data['app_name'], $template);
-        $template = str_replace('{app_url}', $data['app_url'], $template);
-        $template = str_replace('{first_name}', $data['first_name'], $template);
-        $template = str_replace('{last_name}', $data['last_name'], $template);
-        $template = str_replace('{email}', $data['email'], $template);
-        $template = str_replace('{username}', $data['username'], $template);
-        $template = str_replace('{dashboard_url}', $data['dashboard_url'], $template);
-        $template = str_replace('{support_url}', $data['support_url'], $template);
-        $template = str_replace('{api_client_name}', $data['api_client_name'], $template);
-        $template = str_replace('{api_client_id}', $data['api_client_id'], $template);
-        $template = str_replace('{blocked_ip}', $data['blocked_ip'], $template);
-
-        return $template;
+        return MailTemplateRenderer::renderHtml($template, $data);
     }
 
     public static function send(array $data): void
