@@ -85,6 +85,8 @@ export function MailDnsProviderDialog({ uuidShort, domains, open, onOpenChange, 
         generation.current += 1;
         setResult(null);
         setBusy(false);
+        // Consent to replace records is given for one previewed target only.
+        setOverwrite(false);
     };
 
     useEffect(() => {

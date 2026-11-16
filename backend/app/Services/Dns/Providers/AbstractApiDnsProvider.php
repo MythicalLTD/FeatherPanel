@@ -341,7 +341,12 @@ abstract class AbstractApiDnsProvider implements DnsProviderInterface, MailRecor
     {
         $value = trim($value);
         if (preg_match_all('/"((?:[^"\\\\]|\\\\.)*)"/', $value, $m) >= 1 && preg_replace('/"(?:[^"\\\\]|\\\\.)*"|\s+/', '', $value) === '') {
-            return stripcslashes(implode('', $m[1]));
+            // Zone file escapes: "\DDD" is a decimal byte value, "\X" is X itself.
+            return (string) preg_replace_callback(
+                '/\\\\(\d{3}|.)/s',
+                static fn (array $e): string => strlen($e[1]) === 3 ? chr(min(255, (int) $e[1])) : $e[1],
+                implode('', $m[1]),
+            );
         }
 
         return $value;
@@ -405,14 +410,15 @@ abstract class AbstractApiDnsProvider implements DnsProviderInterface, MailRecor
                 if (isset($body[$key])) {
                     $value = $body[$key];
 
-                    return mb_substr(is_string($value) ? $value : (string) json_encode($value), 0, 300);
+                    // Scrub before shortening, a cut through the token could not be matched any more.
+                    return mb_substr($this->scrub(is_string($value) ? $value : (string) json_encode($value, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)), 0, 300);
                 }
             }
 
-            return mb_substr((string) json_encode($body), 0, 300);
+            return mb_substr($this->scrub((string) json_encode($body, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)), 0, 300);
         }
 
-        return mb_substr((string) $body, 0, 300);
+        return mb_substr($this->scrub((string) $body), 0, 300);
     }
 
     /**
@@ -420,11 +426,20 @@ abstract class AbstractApiDnsProvider implements DnsProviderInterface, MailRecor
      */
     protected function clean(string $message): string
     {
-        if ($this->token !== '') {
-            $message = str_replace($this->token, '***', $message);
-        }
+        return mb_substr($this->scrub($message), 0, 400);
+    }
 
-        return mb_substr($message, 0, 400);
+    /**
+     * Replaces the token, also in its JSON-escaped form, without shortening the text.
+     */
+    private function scrub(string $message): string
+    {
+        if ($this->token === '') {
+            return $message;
+        }
+        $forms = array_unique([$this->token, trim((string) json_encode($this->token), '"'), trim((string) json_encode($this->token, JSON_UNESCAPED_SLASHES), '"')]);
+
+        return str_replace($forms, '***', $message);
     }
 
     /**

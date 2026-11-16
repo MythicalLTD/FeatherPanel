@@ -214,6 +214,33 @@ class ApiDnsProvidersTest extends TestCase
         $this->assertStringContainsString('record value is invalid', (string) $res['error']);
     }
 
+    public function testZoneFileEscapesAreDecimal(): void
+    {
+        $p = DnsProviderRegistry::create('desec', 'tok', new FakeDnsApi('desec', ['example.com']));
+        $unquote = Closure::bind(fn (string $v): string => $this->unquoteTxt($v), $p, $p);
+
+        $this->assertSame('verification=ABC', $unquote('"verification=\\065BC"'));
+        $this->assertSame('say "hi" \\ ok', $unquote('"say \\"hi\\" \\\\ ok"'));
+    }
+
+    public function testTokenIsScrubbedBeforeTheErrorTextIsShortened(): void
+    {
+        $secret = 'tok/' . str_repeat('S', 40);
+        $fake = new FakeDnsApi('cloudflare', ['example.com']);
+        $fake->failWith = 400;
+        $fake->echoHeadersInError = true;
+        $fake->errorPrefix = str_repeat('x', 200);
+        $p = DnsProviderRegistry::create('cloudflare', $secret, $fake);
+
+        try {
+            $p->findZoneForDomain('example.com');
+            $this->fail('expected an exception');
+        } catch (Throwable $e) {
+            $this->assertStringNotContainsString(str_repeat('S', 10), $e->getMessage());
+            $this->assertStringContainsString('***', $e->getMessage());
+        }
+    }
+
     public function testTxtChunksNeverSplitAnEscapeAndRoundTrip(): void
     {
         $p = DnsProviderRegistry::create('hetzner', 'tok', new FakeDnsApi('hetzner', ['example.com']));
@@ -355,6 +382,7 @@ class FakeDnsApi
     /** Hetzner: final status of write actions ('success' or 'error'); null answers without a running action */
     public ?string $hetznerActionStatus = null;
     public int $hetznerActionPolls = 0;
+    public string $errorPrefix = '';
     /** @var list<string> */
     public array $requests = [];
     /** @var array<string, list<string>> raw provider values (Hetzner/deSEC style) */
@@ -392,7 +420,7 @@ class FakeDnsApi
         $isWrite = $method !== 'GET';
         $this->requests[] = $method . ' ' . preg_replace('#^/(client/v4|v1|dns/v1|api/v1|v2)#', '', rawurldecode($path));
         if ($this->failWith > 0) {
-            return ['status' => $this->failWith, 'body' => ['error' => 'denied' . ($this->echoHeadersInError ? ' for ' . json_encode($headers) : '')]];
+            return ['status' => $this->failWith, 'body' => ['error' => $this->errorPrefix . 'denied' . ($this->echoHeadersInError ? ' for ' . json_encode($headers) : '')]];
         }
         if ($isWrite) {
             ++$this->writes;
