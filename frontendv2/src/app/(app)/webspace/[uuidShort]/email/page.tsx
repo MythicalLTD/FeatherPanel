@@ -116,6 +116,7 @@ interface DnsInfo {
     }>;
     can_provision?: boolean;
     can_provision_api?: boolean;
+    provision_domains?: string[];
     client_settings: {
         imap_host: string;
         imap_port: number;
@@ -966,7 +967,7 @@ export default function WebSpaceEmailPage() {
 
                 <MailDnsProviderDialog
                     uuidShort={uuidShort}
-                    domains={domains}
+                    domains={dns?.provision_domains ?? domains}
                     open={dnsApiOpen}
                     onOpenChange={setDnsApiOpen}
                     onDone={() => void load()}

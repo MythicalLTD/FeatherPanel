@@ -240,9 +240,9 @@ class DnsProvisioner
      * @param array<string, mixed> $webSpace
      * @param array<string, mixed> $mailHost
      * @param array{provider: DnsProviderInterface, zone_id: string, source?: string}|null $context
-     *                                                                                      a DNS zone to write to instead of the linked one (customer API token)
-     * @param bool                                                                         $overwrite when false an existing different SPF/DKIM/DMARC/MX value is kept and reported as a conflict
-     * @param bool                                                                         $dryRun    only report what would change
+     *                                                                                              a DNS zone to write to instead of the linked one (customer API token)
+     * @param bool $overwrite when false an existing different SPF/DKIM/DMARC/MX value is kept and reported as a conflict
+     * @param bool $dryRun only report what would change
      *
      * @return array{ok: bool, results: list<array{type: string, name: string, ok: bool, action?: string, error?: string}>, skipped?: bool, error?: string}
      */
@@ -307,7 +307,7 @@ class DnsProvisioner
                 $upsert = $provider instanceof \App\Services\Dns\NodeDnsProvider
                     ? $provider->upsertMxRecord($zoneId, $name === '@' ? $domain : $name, $value, $priority)
                     : ($apiProvider
-                        ? $provider->upsertMxRecord($zoneId, $name === '@' ? $domain : $name, $value, $priority, 300, $overwrite)
+                        ? $provider->upsertMxRecord($zoneId, $name === '@' ? $domain : ($name . '.' . $domain), $value, $priority, 300, $overwrite)
                         : ['ok' => false, 'error' => 'MX provisioning requires node DNS provider']);
             } elseif ($type === 'TXT') {
                 $txtName = $name === '@' ? $domain : ($name . '.' . $domain);
@@ -363,7 +363,8 @@ class DnsProvisioner
                 if (
                     ($result['type'] ?? '') === 'TXT'
                     && ($result['name'] ?? '') === '_dmarc'
-                    && !empty($result['ok'])
+                    // API token providers already reported this record (written, unchanged or kept as a conflict).
+                    && ($apiProvider || !empty($result['ok']))
                 ) {
                     $hasDmarc = true;
                     break;

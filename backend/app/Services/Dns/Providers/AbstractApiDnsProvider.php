@@ -61,31 +61,6 @@ abstract class AbstractApiDnsProvider implements DnsProviderInterface, MailRecor
      */
     abstract public static function help(): string;
 
-    /**
-     * @return array<string, string>
-     */
-    abstract protected function authHeaders(): array;
-
-    /**
-     * @return list<array{id: string, name: string}>
-     */
-    abstract protected function fetchZones(): array;
-
-    /**
-     * Reads one record set. Content is normalised: TXT without quotes, MX host without trailing dot.
-     *
-     * @return array{ttl: ?int, records: list<array{content: string, priority: ?int, id: ?string}>}
-     */
-    abstract protected function fetchRrset(string $zoneId, string $zoneName, string $type, string $fqdn): array;
-
-    /**
-     * Makes the record set equal to $desired (empty = remove the set).
-     *
-     * @param list<array{content: string, priority: ?int}>                           $desired
-     * @param array{ttl: ?int, records: list<array{content: string, priority: ?int, id: ?string}>} $existing
-     */
-    abstract protected function storeRrset(string $zoneId, string $zoneName, string $type, string $fqdn, array $desired, int $ttl, array $existing): void;
-
     public function setDryRun(bool $dryRun): void
     {
         $this->dryRun = $dryRun;
@@ -250,6 +225,43 @@ abstract class AbstractApiDnsProvider implements DnsProviderInterface, MailRecor
     }
 
     /**
+     * `v=spf1`, `v=DKIM1`, `v=DMARC1`, ... : the part that says what kind of TXT record it is.
+     */
+    public static function txtTag(string $value): ?string
+    {
+        if (preg_match('/^\s*v=([A-Za-z0-9]+)/', $value, $m) === 1) {
+            return strtolower($m[1]);
+        }
+
+        return null;
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    abstract protected function authHeaders(): array;
+
+    /**
+     * @return list<array{id: string, name: string}>
+     */
+    abstract protected function fetchZones(): array;
+
+    /**
+     * Reads one record set. Content is normalised: TXT without quotes, MX host without trailing dot.
+     *
+     * @return array{ttl: ?int, records: list<array{content: string, priority: ?int, id: ?string}>}
+     */
+    abstract protected function fetchRrset(string $zoneId, string $zoneName, string $type, string $fqdn): array;
+
+    /**
+     * Makes the record set equal to $desired (empty = remove the set).
+     *
+     * @param list<array{content: string, priority: ?int}> $desired
+     * @param array{ttl: ?int, records: list<array{content: string, priority: ?int, id: ?string}>} $existing
+     */
+    abstract protected function storeRrset(string $zoneId, string $zoneName, string $type, string $fqdn, array $desired, int $ttl, array $existing): void;
+
+    /**
      * @return list<array{id: string, name: string}>
      */
     protected function zones(): array
@@ -308,18 +320,6 @@ abstract class AbstractApiDnsProvider implements DnsProviderInterface, MailRecor
     }
 
     /**
-     * `v=spf1`, `v=DKIM1`, `v=DMARC1`, ... : the part that says what kind of TXT record it is.
-     */
-    public static function txtTag(string $value): ?string
-    {
-        if (preg_match('/^\s*v=([A-Za-z0-9]+)/', $value, $m) === 1) {
-            return strtolower($m[1]);
-        }
-
-        return null;
-    }
-
-    /**
      * Provider output -> plain value: strips the quotes and joins the 255-byte chunks.
      */
     protected function unquoteTxt(string $value): string
@@ -337,15 +337,27 @@ abstract class AbstractApiDnsProvider implements DnsProviderInterface, MailRecor
      */
     protected function quoteTxt(string $value): string
     {
-        $chunks = str_split(str_replace(['\\', '"'], ['\\\\', '\\"'], $value), 250) ?: [''];
+        // Each chunk holds at most 255 bytes of the value; escaping happens per byte so a chunk never ends in the
+        // middle of an escape sequence.
+        $chunks = [''];
+        $bytes = 0;
+        $length = strlen($value);
+        for ($i = 0; $i < $length; ++$i) {
+            if ($bytes === 255) {
+                $chunks[] = '';
+                $bytes = 0;
+            }
+            $char = $value[$i];
+            $chunks[count($chunks) - 1] .= ($char === '\\' || $char === '"') ? '\\' . $char : $char;
+            ++$bytes;
+        }
 
         return '"' . implode('" "', $chunks) . '"';
     }
 
     /**
-     * @param array<string, string>  $headers
-     * @param array<mixed>|null      $json
-     * @param list<int>              $okStatuses  extra statuses that are not an error (404 for "not found" reads)
+     * @param array<mixed>|null $json
+     * @param list<int> $okStatuses extra statuses that are not an error (404 for "not found" reads)
      *
      * @return array{status: int, body: mixed}
      */
@@ -402,7 +414,7 @@ abstract class AbstractApiDnsProvider implements DnsProviderInterface, MailRecor
 
     /**
      * @param array<string, string> $headers
-     * @param array<mixed>|null     $json
+     * @param array<mixed>|null $json
      *
      * @return array{status: int, body: mixed}
      */

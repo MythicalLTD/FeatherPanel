@@ -40,9 +40,11 @@ abstract class AbstractRecordDnsProvider extends AbstractApiDnsProvider
             $matched = false;
             foreach ($existing['records'] as $record) {
                 $id = $record['id'] ?? '';
-                if (($keep[$id] ?? false) === false
+                if (
+                    ($keep[$id] ?? false) === false
                     && $record['content'] === $want['content']
-                    && ($want['priority'] === null || (int) $record['priority'] === (int) $want['priority'])) {
+                    && ($want['priority'] === null || (int) $record['priority'] === (int) $want['priority'])
+                ) {
                     $keep[$id] = true;
                     $matched = true;
                     break;

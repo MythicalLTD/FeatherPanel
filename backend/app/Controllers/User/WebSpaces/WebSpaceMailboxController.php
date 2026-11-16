@@ -20,12 +20,11 @@ namespace App\Controllers\User\WebSpaces;
 use App\Chat\MailHost;
 use App\Helpers\ApiResponse;
 use App\Chat\WebSpaceMailbox;
+use App\Config\ConfigInterface;
 use App\Helpers\DnsProvisioner;
-use App\Services\Dns\Providers\DnsProviderRegistry;
 use App\Helpers\WebSpaceGateway;
 use App\Chat\WebSpaceMailingList;
 use App\Chat\WebSpaceMailForwarder;
-use App\Config\ConfigInterface;
 use App\WebSpaceSubuserPermissions;
 use App\Helpers\FeatherQuilldClient;
 use App\Helpers\WebSpacePluginEvents;
@@ -36,6 +35,7 @@ use App\Helpers\MailDeliverabilityChecker;
 use App\Plugins\Events\Events\WebSpaceEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use App\Services\Dns\Providers\DnsProviderRegistry;
 
 class WebSpaceMailboxController
 {
@@ -194,6 +194,8 @@ class WebSpaceMailboxController
             'domains' => $records,
             'can_provision_api' => $primary
                 && strtolower(trim((string) ($primary['provision_mode'] ?? ''))) === 'node',
+            // Domains the API token flow accepts (routed domains, redirects excluded).
+            'provision_domains' => DnsProvisioner::collectProvisionDomains($space),
             'can_provision' => $dnsContext !== null
                 && $primary
                 && strtolower(trim((string) ($primary['provision_mode'] ?? ''))) === 'node',
@@ -348,6 +350,11 @@ class WebSpaceMailboxController
             $message = str_replace($token, '***', $e->getMessage());
 
             return ApiResponse::error('DNS provider request failed: ' . mb_substr($message, 0, 300), 'DNS_PROVIDER_FAILED', 502);
+        }
+
+        if ($result['results'] === [] && !empty($result['error'])) {
+            // Nothing was looked at (for example the mail DNS hints could not be read from the node).
+            return ApiResponse::error((string) $result['error'], 'MAIL_DNS_RECORDS_UNAVAILABLE', 502);
         }
 
         if ($apply) {

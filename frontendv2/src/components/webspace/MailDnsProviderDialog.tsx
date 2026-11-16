@@ -224,11 +224,7 @@ export function MailDnsProviderDialog({ uuidShort, domains, open, onOpenChange, 
                 <Button variant='outline' loading={busy} disabled={!canRun} onClick={() => void run('preview')}>
                     {t('webSpaces.email.dnsApi.preview')}
                 </Button>
-                <Button
-                    loading={busy}
-                    disabled={!canRun || !previewed || (hasConflict && !overwrite)}
-                    onClick={() => void run('apply')}
-                >
+                <Button loading={busy} disabled={!canRun || !previewed} onClick={() => void run('apply')}>
                     {t('webSpaces.email.dnsApi.apply')}
                 </Button>
             </DialogFooter>

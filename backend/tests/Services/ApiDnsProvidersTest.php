@@ -15,8 +15,8 @@
  * See the LICENSE file or <https://www.gnu.org/licenses/>.
  */
 
-use App\Services\Dns\Providers\DnsProviderRegistry;
 use PHPUnit\Framework\TestCase;
+use App\Services\Dns\Providers\DnsProviderRegistry;
 
 /**
  * The providers are tested against an in-memory fake of each documented API. The fake keeps real state, so
@@ -58,7 +58,7 @@ class ApiDnsProvidersTest extends TestCase
         $this->assertNull($p->findZoneForDomain('other.org'));
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('providers')]
+    #[PHPUnit\Framework\Attributes\DataProvider('providers')]
     public function testMailRecordsAreCreatedAndKeepEveryOtherTxtValue(string $id): void
     {
         $fake = new FakeDnsApi($id, ['example.com']);
@@ -79,7 +79,7 @@ class ApiDnsProvidersTest extends TestCase
         $this->assertSame(self::DMARC, $fake->state('example.com', 'TXT', '_dmarc.example.com')[0]['content']);
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('providers')]
+    #[PHPUnit\Framework\Attributes\DataProvider('providers')]
     public function testSecondRunChangesNothing(string $id): void
     {
         $fake = new FakeDnsApi($id, ['example.com']);
@@ -94,7 +94,7 @@ class ApiDnsProvidersTest extends TestCase
         $this->assertSame(0, $fake->writes, 'an unchanged record must not cause a write');
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('providers')]
+    #[PHPUnit\Framework\Attributes\DataProvider('providers')]
     public function testDifferentSpfIsKeptUnlessOverwriteIsAsked(string $id): void
     {
         $fake = new FakeDnsApi($id, ['example.com']);
@@ -114,7 +114,7 @@ class ApiDnsProvidersTest extends TestCase
         $this->assertEqualsCanonicalizing([self::SPF, 'other=1'], $values);
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('providers')]
+    #[PHPUnit\Framework\Attributes\DataProvider('providers')]
     public function testDifferentMxIsKeptWithoutOverwrite(string $id): void
     {
         $fake = new FakeDnsApi($id, ['example.com']);
@@ -128,7 +128,7 @@ class ApiDnsProvidersTest extends TestCase
         $this->assertSame([['content' => 'mail.example.net', 'priority' => 10]], $fake->state('example.com', 'MX', 'example.com'));
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('providers')]
+    #[PHPUnit\Framework\Attributes\DataProvider('providers')]
     public function testDryRunWritesNothing(string $id): void
     {
         $fake = new FakeDnsApi($id, ['example.com']);
@@ -141,7 +141,7 @@ class ApiDnsProvidersTest extends TestCase
         $this->assertSame(0, $fake->writes);
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('providers')]
+    #[PHPUnit\Framework\Attributes\DataProvider('providers')]
     public function testLongDkimValueSurvivesTheChunking(string $id): void
     {
         $dkim = 'v=DKIM1; k=rsa; p=' . str_repeat('MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8A', 22);
@@ -155,7 +155,25 @@ class ApiDnsProvidersTest extends TestCase
         $this->assertSame($dkim, $fake->state('example.com', 'TXT', 'mail._domainkey.example.com')[0]['content']);
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('providers')]
+    public function testTxtChunksNeverSplitAnEscapeAndRoundTrip(): void
+    {
+        $p = DnsProviderRegistry::create('hetzner', 'tok', new FakeDnsApi('hetzner', ['example.com']));
+        $quote = Closure::bind(fn (string $v): string => $this->quoteTxt($v), $p, $p);
+        $unquote = Closure::bind(fn (string $v): string => $this->unquoteTxt($v), $p, $p);
+
+        // A quote and a backslash right at the 255 byte boundary.
+        $value = str_repeat('a', 254) . '"\\' . str_repeat('b', 300);
+        $wire = $quote($value);
+        $this->assertSame($value, $unquote($wire));
+        preg_match_all('/"((?:[^"\\\\]|\\\\.)*)"/', $wire, $m);
+        $this->assertCount(3, $m[1]);
+        foreach ($m[1] as $chunk) {
+            $this->assertLessThanOrEqual(255, strlen(stripcslashes($chunk)));
+        }
+        $this->assertSame('""', $quote(''));
+    }
+
+    #[PHPUnit\Framework\Attributes\DataProvider('providers')]
     public function testTokenNeverAppearsInAnErrorMessage(string $id): void
     {
         $secret = 'SeCrEt-TOKEN-1234567890';
@@ -167,7 +185,7 @@ class ApiDnsProvidersTest extends TestCase
         try {
             $p->findZoneForDomain('example.com');
             $this->fail('expected an exception');
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $this->assertStringNotContainsString($secret, $e->getMessage());
             $this->assertStringContainsString('403', $e->getMessage());
         }
@@ -281,8 +299,7 @@ class FakeDnsApi
     public array $raw = [];
     /** @var list<array<string, mixed>> */
     public array $created = [];
-    /** @var mixed */
-    public $lastBody = null;
+    public $lastBody;
     /** @var array<string, string> */
     public array $lastHeaders = [];
     /** @var array<string, list<array{content: string, priority?: int, id?: string}>> */
@@ -294,6 +311,38 @@ class FakeDnsApi
      */
     public function __construct(private string $provider, private array $zones)
     {
+    }
+
+    /**
+     * @param array<string, string> $headers
+     * @param array<mixed>|null $json
+     *
+     * @return array{status: int, body: mixed}
+     */
+    public function __invoke(string $method, string $url, array $headers, ?array $json): array
+    {
+        $path = (string) parse_url($url, PHP_URL_PATH);
+        parse_str((string) parse_url($url, PHP_URL_QUERY), $q);
+        $this->lastHeaders = $headers;
+        if ($json !== null) {
+            $this->lastBody = $json;
+        }
+        $isWrite = $method !== 'GET';
+        $this->requests[] = $method . ' ' . preg_replace('#^/(client/v4|v1|dns/v1|api/v1|v2)#', '', rawurldecode($path));
+        if ($this->failWith > 0) {
+            return ['status' => $this->failWith, 'body' => ['error' => 'denied' . ($this->echoHeadersInError ? ' for ' . json_encode($headers) : '')]];
+        }
+        if ($isWrite) {
+            ++$this->writes;
+        }
+
+        return match ($this->provider) {
+            'cloudflare' => $this->cloudflare($method, $path, $q, $json),
+            'digitalocean' => $this->digitalocean($method, $path, $q, $json),
+            'ionos' => $this->ionos($method, $path, $json),
+            'hetzner' => $this->hetzner($method, rawurldecode($path), $json),
+            'desec' => $this->desec($method, rawurldecode($path), $json),
+        };
     }
 
     /**
@@ -323,38 +372,6 @@ class FakeDnsApi
         }
 
         return $out;
-    }
-
-    /**
-     * @param array<string, string>  $headers
-     * @param array<mixed>|null      $json
-     *
-     * @return array{status: int, body: mixed}
-     */
-    public function __invoke(string $method, string $url, array $headers, ?array $json): array
-    {
-        $path = (string) parse_url($url, PHP_URL_PATH);
-        parse_str((string) parse_url($url, PHP_URL_QUERY), $q);
-        $this->lastHeaders = $headers;
-        if ($json !== null) {
-            $this->lastBody = $json;
-        }
-        $isWrite = $method !== 'GET';
-        $this->requests[] = $method . ' ' . preg_replace('#^/(client/v4|v1|dns/v1|api/v1|v2)#', '', rawurldecode($path));
-        if ($this->failWith > 0) {
-            return ['status' => $this->failWith, 'body' => ['error' => 'denied' . ($this->echoHeadersInError ? ' for ' . json_encode($headers) : '')]];
-        }
-        if ($isWrite) {
-            ++$this->writes;
-        }
-
-        return match ($this->provider) {
-            'cloudflare' => $this->cloudflare($method, $path, $q, $json),
-            'digitalocean' => $this->digitalocean($method, $path, $q, $json),
-            'ionos' => $this->ionos($method, $path, $json),
-            'hetzner' => $this->hetzner($method, rawurldecode($path), $json),
-            'desec' => $this->desec($method, rawurldecode($path), $json),
-        };
     }
 
     private function key(string $zone, string $type, string $fqdn): string
