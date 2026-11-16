@@ -108,6 +108,14 @@ $imapHost = match ($enc) {
     default => $host,
 };
 
+// Define IMAP defaults for this SSO hop before Roundcube boots.
+$featherSso = [
+    'user' => $user,
+    'pass' => $pass,
+    'host' => $imapHost,
+    'port' => $port > 0 ? $port : 993,
+];
+
 define('INSTALL_PATH', realpath(__DIR__) . '/');
 
 if (!file_exists(__DIR__ . '/program/include/iniset.php')) {

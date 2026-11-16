@@ -38,6 +38,7 @@ use OpenApi\Attributes as OA;
 use App\Helpers\CaptchaHelper;
 use App\Config\ConfigInterface;
 use App\Helpers\PermissionHelper;
+use App\Helpers\UploadedFileType;
 use App\Middleware\AuthMiddleware;
 use App\CloudFlare\CloudFlareRealIP;
 use App\Helpers\EmailDomainValidator;
@@ -137,6 +138,22 @@ class SessionController
         $app = App::getInstance(true);
         $config = $app->getConfig();
         $data = json_decode($request->getContent(), true);
+
+        // The password, e-mail and 2FA are what the confirmation step checks, so
+        // changing them needs a confirmed session (a stolen session cannot swap them).
+        // Checked before the captcha so the retried request can still use its token.
+        $current = AuthMiddleware::getCurrentUser($request);
+        if (is_array($data) && $current !== null) {
+            $securityChange = (isset($data['password']) && is_scalar($data['password']) && (string) $data['password'] !== '')
+                || (isset($data['email']) && is_scalar($data['email']) && (string) $data['email'] !== (string) ($current['email'] ?? ''))
+                || (($data['two_fa_enabled'] ?? null) === false && ($current['two_fa_enabled'] ?? 'false') === 'true');
+            if ($securityChange) {
+                $reauth = \App\Helpers\StepUpAuth::require($request, \App\Helpers\StepUpAuth::ACTION_ACCOUNT_SECURITY);
+                if ($reauth !== null) {
+                    return $reauth;
+                }
+            }
+        }
 
         if ($config->getSetting(ConfigInterface::TURNSTILE_ENABLED, 'false') == 'true') {
             if (!isset($data['turnstile_token']) || !is_scalar($data['turnstile_token']) || trim((string) $data['turnstile_token']) === '') {
@@ -727,8 +744,12 @@ class SessionController
             $detectedMimeType = $uploadedFile->getMimeType();
         }
 
-        // Validate MIME type
-        if (empty($detectedMimeType) || !in_array($detectedMimeType, $allowedMimeTypes, true)) {
+        // Validate MIME type (and that it matches the extension)
+        if (
+            empty($detectedMimeType)
+            || !in_array($detectedMimeType, $allowedMimeTypes, true)
+            || !UploadedFileType::matches($originalExtension, $detectedMimeType, UploadedFileType::IMAGE_TYPES)
+        ) {
             return ApiResponse::error(
                 'Invalid file type. Only JPEG, PNG, GIF, and WebP images are allowed.',
                 'INVALID_MIME_TYPE',
@@ -989,6 +1010,7 @@ class SessionController
         // Process mails to format them properly
         $mails = [];
         foreach ($mailList as $mail) {
+            $mail = MailQueue::redactOneTimeCode($mail);
             $mailData = [
                 'id' => (int) $mail['id'],
                 'subject' => $mail['subject'] ?? '',

@@ -25,6 +25,7 @@ use App\Services\Dns\Providers\DnsProviderRegistry;
 use App\Helpers\WebSpaceGateway;
 use App\Chat\WebSpaceMailingList;
 use App\Chat\WebSpaceMailForwarder;
+use App\Config\ConfigInterface;
 use App\WebSpaceSubuserPermissions;
 use App\Helpers\FeatherQuilldClient;
 use App\Helpers\WebSpacePluginEvents;
@@ -740,7 +741,7 @@ class WebSpaceMailboxController
         }
 
         $app = \App\App::getInstance(true);
-        $appUrl = $app->getConfig()->getSetting('APP_URL', 'https://featherpanel.mythical.systems');
+        $appUrl = $app->getConfig()->getSetting(ConfigInterface::APP_URL, 'https://featherpanel.mythical.systems');
         if (!preg_match('/^https?:\/\//', $appUrl)) {
             $appUrl = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http')
                 . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost');

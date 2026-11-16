@@ -187,6 +187,22 @@ class VmSubuser
     }
 
     /**
+     * Delete a subuser only if it belongs to the given VM instance.
+     */
+    public static function deleteForVmInstance(int $id, int $vmInstanceId): bool
+    {
+        if ($id <= 0 || $vmInstanceId <= 0) {
+            return false;
+        }
+
+        $pdo = Database::getPdoConnection();
+        $stmt = $pdo->prepare('DELETE FROM ' . self::$table . ' WHERE id = :id AND vm_instance_id = :vm_instance_id');
+        $stmt->execute(['id' => $id, 'vm_instance_id' => $vmInstanceId]);
+
+        return $stmt->rowCount() > 0;
+    }
+
+    /**
      * Delete all subusers for a VM instance.
      */
     public static function deleteByVmInstance(int $vmInstanceId): bool

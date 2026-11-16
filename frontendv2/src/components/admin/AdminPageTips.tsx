@@ -41,6 +41,7 @@ import {
     MailX,
     Package,
     Puzzle,
+    Radar,
     Server,
     Settings,
     ShieldAlert,
@@ -154,6 +155,10 @@ const PAGE_TIPS: Record<string, Tip[]> = {
     analytics: [
         { icon: BarChart3, title: 'admin.tips.analytics.t1_title', body: 'admin.tips.analytics.t1_body' },
         { icon: Info, title: 'admin.tips.analytics.t2_title', body: 'admin.tips.analytics.t2_body' },
+    ],
+    observability: [
+        { icon: Radar, title: 'admin.tips.observability.t1_title', body: 'admin.tips.observability.t1_body' },
+        { icon: ShieldCheck, title: 'admin.tips.observability.t2_title', body: 'admin.tips.observability.t2_body' },
     ],
     abuseipdb: [
         { icon: ShieldAlert, title: 'admin.tips.abuseipdb.t1_title', body: 'admin.tips.abuseipdb.t1_body' },

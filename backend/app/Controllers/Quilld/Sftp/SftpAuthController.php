@@ -120,31 +120,7 @@ class SftpAuthController
      */
     public static function userHasMatchingPublicKey(int $userId, string $keyMaterial): bool
     {
-        $keyMaterial = trim($keyMaterial);
-        if ($userId <= 0 || $keyMaterial === '') {
-            return false;
-        }
-
-        $fingerprint = UserSshKey::generateFingerprint($keyMaterial);
-        if ($fingerprint !== '' && UserSshKey::getUserSshKeyByFingerprint($fingerprint, $userId)) {
-            return true;
-        }
-
-        // Daemon may send raw base64 of the wire key; also try wrapping common type prefixes.
-        if (!str_contains($keyMaterial, ' ')) {
-            foreach (['ssh-ed25519', 'ssh-rsa', 'ecdsa-sha2-nistp256', 'ecdsa-sha2-nistp384', 'ecdsa-sha2-nistp521'] as $algo) {
-                $wrapped = $algo . ' ' . $keyMaterial;
-                if (!UserSshKey::isValidSshPublicKey($wrapped)) {
-                    continue;
-                }
-                $fp = UserSshKey::generateFingerprint($wrapped);
-                if ($fp !== '' && UserSshKey::getUserSshKeyByFingerprint($fp, $userId)) {
-                    return true;
-                }
-            }
-        }
-
-        return false;
+        return UserSshKey::userHasMatchingPublicKey($userId, $keyMaterial);
     }
 
     /**

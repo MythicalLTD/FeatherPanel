@@ -115,6 +115,8 @@ class ExternalNotifier
         return [
             'email_enabled' => !array_key_exists('email_enabled', $input) || (bool) $input['email_enabled'],
             'discord_enabled' => !array_key_exists('discord_enabled', $input) || (bool) $input['discord_enabled'],
+            // Push stays off until the user grants permission and registers a subscription.
+            'push_enabled' => array_key_exists('push_enabled', $input) && (bool) $input['push_enabled'],
             'discord_webhook_url' => $webhook,
             'events' => $events,
         ];
@@ -179,7 +181,7 @@ class ExternalNotifier
     }
 
     /** @return string[] */
-    private static function describe(string $kind, array $data): array
+    public static function describe(string $kind, array $data): array
     {
         $lines = [];
         if (!empty($data['server_name'])) {

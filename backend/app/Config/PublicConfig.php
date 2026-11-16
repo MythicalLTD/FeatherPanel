@@ -109,6 +109,8 @@ class PublicConfig extends ConfigFactory
             ConfigInterface::APP_PWA_DESCRIPTION => '',
             ConfigInterface::APP_PWA_THEME_COLOR => '#000000',
             ConfigInterface::APP_PWA_BG_COLOR => '#ffffff',
+            ConfigInterface::APP_PWA_PUSH_ENABLED => 'false',
+            ConfigInterface::APP_PWA_VAPID_PUBLIC => '',
 
             // Social Media Links
             ConfigInterface::LINKEDIN_URL => '',
@@ -209,6 +211,7 @@ class PublicConfig extends ConfigFactory
 
             // Chatbot related settings
             ConfigInterface::CHATBOT_ENABLED => 'false',
+            ConfigInterface::CHATBOT_EDITOR_HELPER_ENABLED => 'true',
             ConfigInterface::CHATBOT_AI_PROVIDER => 'basic',
             ConfigInterface::CHATBOT_TEMPERATURE => '0.7',
             ConfigInterface::CHATBOT_MAX_TOKENS => '2048',

@@ -39,6 +39,7 @@ import SystemHealthCheck from '@/components/SystemHealthCheck';
 import PluginAssets from '@/components/common/PluginAssets';
 import ChunkLoadErrorHandler from '@/components/common/ChunkLoadErrorHandler';
 import { PwaInstaller } from '@/components/common/PwaInstaller';
+import ReauthDialog from '@/components/auth/ReauthDialog';
 import AnalyticsScript from '@/components/common/AnalyticsScript';
 
 export async function generateViewport(): Promise<Viewport> {
@@ -285,6 +286,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                                                     <ChunkLoadErrorHandler />
                                                     <SystemHealthCheck />
                                                     <PwaInstaller />
+                                                    <ReauthDialog />
                                                     <AppContent>{children}</AppContent>
                                                     {/* Below the floating top bar, not on top of its buttons. */}
                                                     <Toaster

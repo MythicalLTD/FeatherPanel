@@ -1053,8 +1053,8 @@ class ServerDatabaseController
             return $permissionCheck;
         }
 
-        // Check if phpMyAdmin is installed (also syncs the persisted install marker)
-        \App\Helpers\PhpMyAdmin::ensureInstalled();
+        // Cheap status check only — do not reinstall / re-copy bridge files on every
+        // databases page load (that was a major source of "phpMyAdmin is slow").
         $isInstalled = \App\Helpers\PhpMyAdmin::isInstalled();
 
         return ApiResponse::success([
@@ -1155,19 +1155,9 @@ class ServerDatabaseController
             return ApiResponse::error('Database host not found', 'DATABASE_HOST_NOT_FOUND', 404);
         }
 
-        // Get app URL from config
-        $app = App::getInstance(true);
-        $config = $app->getConfig();
-        $appUrl = $config->getSetting('APP_URL', 'https://featherpanel.mythical.systems');
-
-        // Ensure app URL is absolute (starts with http:// or https://)
-        if (!preg_match('/^https?:\/\//', $appUrl)) {
-            // If not absolute, use current request URL as fallback
-            $appUrl = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http')
-                . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost');
-        }
-
         // Keep credentials out of the URL: mint a single-use token exchanged server-side by token.php.
+        // Return a same-origin relative URL so a stale/placeholder APP_URL
+        // (seeded demo APP_URL) can never redirect the browser off-panel.
         try {
             $token = \App\Helpers\DatabaseSignonToken::mint([
                 'db' => $database['database'],
@@ -1180,7 +1170,7 @@ class ServerDatabaseController
             return ApiResponse::error('Failed to prepare phpMyAdmin session', 'PHPMYADMIN_TOKEN_FAILED', 500);
         }
 
-        $pmaUrl = rtrim($appUrl, '/') . '/pma/token.php?' . http_build_query([
+        $pmaUrl = '/pma/token.php?' . http_build_query([
             'token' => $token,
         ]);
 

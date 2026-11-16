@@ -124,6 +124,9 @@ class NodeStatusController
                     'id' => $nodeId,
                     'name' => $node['name'],
                     'status' => $probe['status'] === 'healthy' ? 'healthy' : 'unhealthy',
+                    'latency_ms' => isset($probe['latency_ms']) && $probe['latency_ms'] !== null
+                        ? (int) $probe['latency_ms']
+                        : null,
                 ];
 
                 if ($showIndividualNodes) {

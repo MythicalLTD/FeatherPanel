@@ -45,6 +45,7 @@ final class Mercure
 {
     public const TOPIC_NOTIFICATIONS = '/notifications';
     public const TOPIC_ADMIN_WEBSPACES = '/admin/webspaces';
+    public const TOPIC_ADMIN_ACTIVITY = '/admin/activity';
 
     /** Subscriber tokens are valid for one hour; the client refreshes on reconnect. */
     public const TOKEN_TTL = 3600;

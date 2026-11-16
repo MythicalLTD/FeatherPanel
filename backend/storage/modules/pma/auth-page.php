@@ -10,7 +10,7 @@
  * - $pmaPostLoadScript (?string) extra JS after branding setup
  */
 $pmaPageMode = $pmaPageMode ?? 'connect';
-$pmaRedirectDelay = $pmaRedirectDelay ?? 500;
+$pmaRedirectDelay = $pmaRedirectDelay ?? 0;
 $pmaErrorMessage = $pmaErrorMessage ?? null;
 $pmaRedirectUrl = $pmaRedirectUrl ?? null;
 $pmaPostLoadScript = $pmaPostLoadScript ?? '';
@@ -378,6 +378,12 @@ $pmaPostLoadScript = $pmaPostLoadScript ?? '';
                     ? !!context.branding.showPoweredBy
                     : String((settings && settings.branding_show_powered_by) || 'true') === 'true'
             };
+
+            // Never send users to the seeded demo host from the auth interstitial.
+            if (!branding.appUrl
+                || branding.appUrl.indexOf('featherpanel.mythical.systems') !== -1) {
+                branding.appUrl = '/';
+            }
 
             var strings = resolveStrings(context, translations, locale, branding.appName);
 

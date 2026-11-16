@@ -12,6 +12,8 @@
  * by the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
+ * See the LICENSE file or <https://www.gnu.org/licenses/>.
+ */
 
 namespace App\Helpers;
 

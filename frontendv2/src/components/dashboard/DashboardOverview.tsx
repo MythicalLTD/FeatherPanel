@@ -25,6 +25,7 @@ export function DashboardPanel({
     title,
     icon: Icon,
     count,
+    badge,
     action,
     children,
     flush = false,
@@ -33,6 +34,8 @@ export function DashboardPanel({
     title: string;
     icon?: LucideIcon;
     count?: number;
+    /** Small chip next to the title (e.g. live indicator). */
+    badge?: ReactNode;
     action?: { label: string; href: string };
     children: ReactNode;
     /** Rows run edge to edge (dividers) instead of sitting in a padded body. */
@@ -50,6 +53,7 @@ export function DashboardPanel({
                             {count}
                         </span>
                     )}
+                    {badge}
                 </div>
                 {action && (
                     <Link

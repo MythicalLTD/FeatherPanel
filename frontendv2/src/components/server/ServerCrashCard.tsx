@@ -18,12 +18,14 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import { useCallback, useEffect, useState } from 'react';
 import axios from 'axios';
 import { toast } from 'sonner';
-import { RotateCcw, TriangleAlert, X } from 'lucide-react';
+import { RotateCcw, Sparkles, TriangleAlert, X } from 'lucide-react';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Button } from '@/components/featherui/Button';
 import { Switch } from '@/components/ui/switch';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { getApiErrorMessage } from '@/lib/api-errors';
+import { AiHelperDialog, useAiHelperAvailable } from '@/components/server/AiHelperDialog';
+import type { AiHelperRequest } from '@/lib/api/aiEditorHelper';
 
 interface CrashInfo {
     auto_restart: boolean;
@@ -113,6 +115,9 @@ export function ServerCrashCard({
 }) {
     const { t, locale } = useTranslation();
     const { info, setInfo, url } = useCrashInfo(uuidShort, status);
+    const aiHelperAvailable = useAiHelperAvailable();
+    const [aiOpen, setAiOpen] = useState(false);
+    const [aiRequest, setAiRequest] = useState<AiHelperRequest | null>(null);
 
     const dismiss = useCallback(async () => {
         try {
@@ -147,7 +152,31 @@ export function ServerCrashCard({
                 ) : (
                     <p className='text-muted-foreground text-sm'>{t('servers.crash.noLines')}</p>
                 )}
+                {aiHelperAvailable && info.last_crash.lines.length > 0 && (
+                    <Button
+                        size='sm'
+                        variant='outline'
+                        className='gap-2'
+                        onClick={() => {
+                            setAiRequest({
+                                console_log: info.last_crash!.lines.join('\n'),
+                                question: 'Explain this crash and suggest which config or code file to fix.',
+                            });
+                            setAiOpen(true);
+                        }}
+                    >
+                        <Sparkles className='h-4 w-4' />
+                        {t('servers.aiHelper.explainCrash')}
+                    </Button>
+                )}
                 <AutoRestartSwitch uuidShort={uuidShort} info={info} onChange={setInfo} disabled={!canToggle} />
+                <AiHelperDialog
+                    uuidShort={uuidShort}
+                    open={aiOpen}
+                    onOpenChange={setAiOpen}
+                    request={aiRequest}
+                    canApply={false}
+                />
             </div>
         </PageCard>
     );

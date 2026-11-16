@@ -7,6 +7,7 @@ use crate::database;
 use crate::mail;
 pub mod vm;
 pub mod create;
+pub mod cidr;
 
 pub use vm::process_vm_task;
 

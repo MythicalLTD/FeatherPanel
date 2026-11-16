@@ -17,16 +17,17 @@
 
 use App\App;
 use RateLimit\Rate;
+use App\Controllers\User\Auth\SsoController;
 use App\Controllers\User\Auth\OidcController;
 use Symfony\Component\HttpFoundation\Request;
 use App\Controllers\User\Auth\LoginController;
 use Symfony\Component\Routing\RouteCollection;
+use App\Controllers\User\Auth\ReauthController;
 use App\Controllers\User\Auth\DiscordController;
 use App\Controllers\User\Auth\QrLoginController;
 use App\Controllers\User\Auth\RegisterController;
 use App\Controllers\User\Auth\TwoFactorController;
 use App\Controllers\User\Auth\AuthLogoutController;
-use App\Controllers\User\Auth\SsoController;
 use App\Controllers\User\Auth\EmailLoginController;
 use App\Controllers\User\Auth\VerifyEmailController;
 use App\Controllers\User\Auth\ResetPasswordController;
@@ -170,6 +171,53 @@ return function (RouteCollection $routes): void {
         ['POST'],
         Rate::perMinute(10), // Default: Admin can override in ratelimit.json
         'user-auth'
+    );
+
+    // Step-up re-authentication for sensitive actions
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'auth-reauth-status',
+        '/api/user/auth/reauth',
+        function (Request $request) {
+            return (new ReauthController())->status($request);
+        },
+        ['GET']
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'auth-reauth-confirm',
+        '/api/user/auth/reauth',
+        function (Request $request) {
+            return (new ReauthController())->confirm($request);
+        },
+        ['POST'],
+        Rate::perMinute(10), // Default: Admin can override in ratelimit.json
+        'user-auth-reauth'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'auth-reauth-revoke',
+        '/api/user/auth/reauth',
+        function (Request $request) {
+            return (new ReauthController())->revoke($request);
+        },
+        ['DELETE'],
+        Rate::perMinute(30),
+        'user-auth-reauth'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'auth-reauth-email',
+        '/api/user/auth/reauth/email',
+        function (Request $request) {
+            return (new ReauthController())->sendEmailCode($request);
+        },
+        ['POST'],
+        Rate::perMinute(3),
+        'user-auth-reauth'
     );
 
     // Discord OAuth routes

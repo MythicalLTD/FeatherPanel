@@ -20,6 +20,7 @@ namespace App\Mail\templates;
 use App\Chat\MailList;
 use App\Chat\MailQueue;
 use App\Chat\MailTemplate;
+use App\Mail\MailTemplateRenderer;
 
 class TicketReopened
 {
@@ -34,11 +35,7 @@ class TicketReopened
 
     public static function parseTemplate(string $template, array $data): string
     {
-        foreach ($data as $key => $value) {
-            $template = str_replace('{' . $key . '}', (string) $value, $template);
-        }
-
-        return $template;
+        return MailTemplateRenderer::renderHtml($template, $data);
     }
 
     public static function send(array $data): void
@@ -81,7 +78,7 @@ class TicketReopened
             return $data['subject'] ?? '';
         }
 
-        return self::parseTemplate($subjectTemplate, self::templateData($data));
+        return MailTemplateRenderer::renderText($subjectTemplate, self::templateData($data));
     }
 
     /**

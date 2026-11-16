@@ -54,6 +54,7 @@ use App\Services\Backup\BackupFifoEviction;
 use Symfony\Component\HttpFoundation\Request;
 use App\Services\Notifications\WarningService;
 use Symfony\Component\HttpFoundation\Response;
+use App\Services\Server\WingsSuspensionSync;
 use App\Services\Subdomain\SubdomainCleanupService;
 
 #[OA\Schema(
@@ -2652,42 +2653,10 @@ class ServersController
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
 
-        $nodeInfo = Node::getNodeById($server['node_id']);
-        $scheme = $nodeInfo['scheme'];
-        $host = $nodeInfo['fqdn'];
-        $port = $nodeInfo['daemonListen'];
-        $token = $nodeInfo['daemon_token'];
-
-        $timeout = (int) 30;
-        try {
-            $wings = new Wings(
-                $host,
-                $port,
-                $scheme,
-                $token,
-                $timeout,
-                WingsUrlHelper::isBehindProxy($nodeInfo)
-            );
-
-            $response = $wings->getServer()->killServer($server['uuid']);
-            if (!$response->isSuccessful()) {
-                $error = $response->getError();
-                if ($response->getStatusCode() === 400) {
-                    return ApiResponse::error('Invalid server configuration: ' . $error, 'INVALID_SERVER_CONFIG', 400);
-                } elseif ($response->getStatusCode() === 401) {
-                    return ApiResponse::error('Unauthorized access to Wings daemon', 'WINGS_UNAUTHORIZED', 401);
-                } elseif ($response->getStatusCode() === 403) {
-                    return ApiResponse::error('Forbidden access to Wings daemon', 'WINGS_FORBIDDEN', 403);
-                } elseif ($response->getStatusCode() === 422) {
-                    return ApiResponse::error('Invalid server data: ' . $error, 'INVALID_SERVER_DATA', 422);
-                }
-
-                return ApiResponse::error('Failed to create server in Wings: ' . $error, 'WINGS_ERROR', $response->getStatusCode());
-            }
-        } catch (\Exception $e) {
-            App::getInstance(true)->getLogger()->error('Failed to create server in Wings: ' . $e->getMessage());
-
-            return ApiResponse::error('Failed to create server in Wings: ' . $e->getMessage(), 'FAILED_TO_CREATE_SERVER_IN_WINGS', 500);
+        // Sync first so Wings learns the server is suspended, stops the process,
+        // and closes websockets. A kill-only call left the daemon able to auto-restart.
+        if (!WingsSuspensionSync::afterSuspend($server)) {
+            return ApiResponse::error('Server was marked as suspended, but Wings could not be updated. Retry or sync the server.', 'WINGS_SYNC_FAILED', 502);
         }
 
         // Emit event
@@ -2874,15 +2843,22 @@ class ServersController
             return ApiResponse::error('Failed to unsuspend server', 'FAILED_TO_UNSUSPEND', 500);
         }
 
-        $config = App::getInstance(true)->getConfig();
-        $user = User::getUserById($server['owner_id']);
-
         Activity::createActivity([
             'user_uuid' => $request->attributes->get('user')['uuid'],
             'name' => 'unsuspend_server',
             'context' => 'Unsuspended server ' . $server['name'],
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
+
+        // Wings has no periodic config refresh; without a sync it keeps the
+        // suspended flag and consoles stay closed until something else syncs
+        // (for example reassigning subusers).
+        if (!WingsSuspensionSync::afterUnsuspend($server)) {
+            return ApiResponse::error('Server was unsuspended in the panel, but Wings could not be updated. Retry unsuspend or sync the server.', 'WINGS_SYNC_FAILED', 502);
+        }
+
+        $config = App::getInstance(true)->getConfig();
+        $user = User::getUserById($server['owner_id']);
 
         // Emit event
         global $eventManager;

@@ -224,6 +224,14 @@ interface ConfigInterface
     public const APP_PWA_BG_COLOR = 'app_pwa_bg_color';
 
     /**
+     * Web Push (requires PWA enabled). VAPID private key is never public.
+     */
+    public const APP_PWA_PUSH_ENABLED = 'app_pwa_push_enabled';
+    public const APP_PWA_VAPID_PUBLIC = 'app_pwa_vapid_public';
+    public const APP_PWA_VAPID_PRIVATE = 'app_pwa_vapid_private';
+    public const APP_PWA_VAPID_SUBJECT = 'app_pwa_vapid_subject';
+
+    /**
      * Discord OAuth.
      */
     public const DISCORD_OAUTH_ENABLED = 'discord_oauth_enabled';
@@ -442,6 +450,8 @@ interface ConfigInterface
      * Chatbot AI Settings.
      */
     public const CHATBOT_ENABLED = 'chatbot_enabled';
+    /** Optional: AI helper in the server file editor / crash console (suggests diffs, never auto-writes). */
+    public const CHATBOT_EDITOR_HELPER_ENABLED = 'chatbot_editor_helper_enabled';
     public const CHATBOT_AI_PROVIDER = 'chatbot_ai_provider';
     public const CHATBOT_TEMPERATURE = 'chatbot_temperature';
     public const CHATBOT_MAX_TOKENS = 'chatbot_max_tokens';

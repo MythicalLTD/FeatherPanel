@@ -46,6 +46,11 @@ import {
 import { MassTransferServersDialog } from '@/components/admin/MassTransferServersDialog';
 import { useIpMask } from '@/hooks/useIpMask';
 import { ListPagination } from '@/components/featherui/ListPagination';
+import {
+    DaemonHealthBadge,
+    useDaemonHealthSummaries,
+    type DaemonHealthSummary,
+} from '@/components/admin/daemon-health';
 
 interface Node {
     id: number;
@@ -99,12 +104,13 @@ function formatNodeMb(mb: number): string {
     return `${mb} MB`;
 }
 
-function NodeHealth({ node, health }: { node: Node; health: string }) {
+function NodeHealth({ node, health, daemon }: { node: Node; health: string; daemon?: DaemonHealthSummary }) {
     const { t } = useTranslation();
     const tone = health === 'online' ? 'success' : health === 'offline' ? 'danger' : 'muted';
     return (
         <div className='flex flex-wrap items-center gap-2'>
             <StatusDot tone={tone}>{t(`admin.node.health.${health}`)}</StatusDot>
+            {daemon ? <DaemonHealthBadge status={daemon.status} failingChecks={daemon.failing_checks} /> : null}
             {node.maintenance_mode ? (
                 <span className='rounded-md border border-yellow-500/25 bg-yellow-500/10 px-1.5 py-0.5 text-[11px] font-medium text-yellow-600 dark:text-yellow-400'>
                     {t('ui.admin.nodes.maintenance')}
@@ -138,6 +144,10 @@ export default function NodesPage() {
     const [nodeHealth, setNodeHealth] = useState<Record<number, string>>({});
     const [isCheckingHealth, setIsCheckingHealth] = useState(false);
     const [refreshKey, setRefreshKey] = useState(0);
+    const { summaries: daemonHealth } = useDaemonHealthSummaries(
+        'wings',
+        nodes.map((node) => node.id),
+    );
     const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
     const [deleting, setDeleting] = useState(false);
     const [massTransferNode, setMassTransferNode] = useState<Node | null>(null);
@@ -413,7 +423,13 @@ export default function NodesPage() {
                         {
                             key: 'status',
                             header: t('admin.node.table.status'),
-                            cell: (node) => <NodeHealth node={node} health={getNodeHealthStatus(node.id)} />,
+                            cell: (node) => (
+                                <NodeHealth
+                                    node={node}
+                                    health={getNodeHealthStatus(node.id)}
+                                    daemon={daemonHealth[node.id]}
+                                />
+                            ),
                         },
                         {
                             key: 'location',
@@ -447,7 +463,11 @@ export default function NodesPage() {
                         <div className='space-y-2.5'>
                             <TableIdentity title={node.name} subtitle={privacyMask.text(node.fqdn)} icon={Server} />
                             <div className='text-muted-foreground flex flex-wrap items-center gap-3 text-xs'>
-                                <NodeHealth node={node} health={getNodeHealthStatus(node.id)} />
+                                <NodeHealth
+                                    node={node}
+                                    health={getNodeHealthStatus(node.id)}
+                                    daemon={daemonHealth[node.id]}
+                                />
                                 <span className='inline-flex items-center gap-1.5'>
                                     <MapPin className='h-3.5 w-3.5' />
                                     {getLocationName(node.location_id)}

@@ -104,6 +104,8 @@ class WingsConnection
             'User-Agent' => 'FeatherPanel/v1.0.0',
             'Content-Type' => 'application/json',
             'Connection' => 'keep-alive',
+            // Lets daemon logs be correlated with the panel request that caused them.
+            'X-Request-Id' => \App\Runtime\RequestContext::id(),
         ];
 
         if (!empty($this->authToken)) {

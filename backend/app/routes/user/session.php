@@ -22,6 +22,7 @@ use Symfony\Component\Routing\RouteCollection;
 use App\Controllers\User\User\SessionController;
 use App\Controllers\User\User\UiPreferencesController;
 use App\Controllers\User\User\NotificationSettingsController;
+use App\Controllers\User\User\PushSubscriptionController;
 
 return function (RouteCollection $routes): void {
     App::getInstance(true)->registerAuthRoute(
@@ -108,7 +109,64 @@ return function (RouteCollection $routes): void {
         Rate::perMinute(5), // Default: Admin can override in ratelimit.json
         'user-session'
     );
+    
     App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'push-vapid',
+        '/api/user/push/vapid',
+        function (Request $request) {
+            return (new PushSubscriptionController())->vapid($request);
+        },
+        ['GET'],
+        Rate::perMinute(60),
+        'user-session'
+    );
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'push-subscriptions-list',
+        '/api/user/push/subscriptions',
+        function (Request $request) {
+            return (new PushSubscriptionController())->index($request);
+        },
+        ['GET'],
+        Rate::perMinute(60),
+        'user-session'
+    );
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'push-subscriptions-store',
+        '/api/user/push/subscriptions',
+        function (Request $request) {
+            return (new PushSubscriptionController())->store($request);
+        },
+        ['POST'],
+        Rate::perMinute(20),
+        'user-session'
+    );
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'push-subscriptions-destroy',
+        '/api/user/push/subscriptions',
+        function (Request $request) {
+            return (new PushSubscriptionController())->destroy($request);
+        },
+        ['DELETE'],
+        Rate::perMinute(20),
+        'user-session'
+    );
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'push-test',
+        '/api/user/push/test',
+        function (Request $request) {
+            return (new PushSubscriptionController())->test($request);
+        },
+        ['POST'],
+        Rate::perMinute(5),
+        'user-session'
+    );
+
+App::getInstance(true)->registerAuthRoute(
         $routes,
         'preferences-ui',
         '/api/user/preferences/ui',

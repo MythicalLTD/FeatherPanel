@@ -37,6 +37,8 @@ use Symfony\Component\HttpFoundation\Response;
         new OA\Property(property: 'name', type: 'string', description: 'Location name'),
         new OA\Property(property: 'description', type: 'string', nullable: true, description: 'Location description'),
         new OA\Property(property: 'flag_code', type: 'string', nullable: true, description: 'ISO 3166-1 alpha-2 country code for flag display'),
+        new OA\Property(property: 'latitude', type: 'number', nullable: true, description: 'Map latitude (-90 to 90)'),
+        new OA\Property(property: 'longitude', type: 'number', nullable: true, description: 'Map longitude (-180 to 180)'),
         new OA\Property(property: 'type', type: 'string', enum: ['game', 'vps', 'web'], description: 'Location purpose type (immutable after creation)'),
         new OA\Property(property: 'created_at', type: 'string', format: 'date-time', description: 'Creation timestamp'),
         new OA\Property(property: 'updated_at', type: 'string', format: 'date-time', description: 'Last update timestamp'),
@@ -64,6 +66,8 @@ use Symfony\Component\HttpFoundation\Response;
         new OA\Property(property: 'name', type: 'string', description: 'Location name', minLength: 2, maxLength: 255),
         new OA\Property(property: 'description', type: 'string', nullable: true, description: 'Location description'),
         new OA\Property(property: 'flag_code', type: 'string', nullable: true, description: 'ISO 3166-1 alpha-2 country code (e.g., "us", "ua") for flag display'),
+        new OA\Property(property: 'latitude', type: 'number', nullable: true, description: 'Map latitude (-90 to 90). Set with longitude to place this location on the node map.'),
+        new OA\Property(property: 'longitude', type: 'number', nullable: true, description: 'Map longitude (-180 to 180). Set with latitude to place this location on the node map.'),
         new OA\Property(property: 'type', type: 'string', enum: ['game', 'vps', 'web'], description: 'Location purpose: game hosting, VPS/VDS, or web hosting (immutable after creation)'),
         new OA\Property(property: 'webhosting_alpha_accepted', type: 'boolean', description: 'Required to be true when creating a Web Hosting location'),
         new OA\Property(property: 'id', type: 'integer', nullable: true, description: 'Optional location ID (useful for migrations from other platforms)'),
@@ -76,6 +80,8 @@ use Symfony\Component\HttpFoundation\Response;
         new OA\Property(property: 'name', type: 'string', description: 'Location name', minLength: 2, maxLength: 255),
         new OA\Property(property: 'description', type: 'string', nullable: true, description: 'Location description'),
         new OA\Property(property: 'flag_code', type: 'string', nullable: true, description: 'ISO 3166-1 alpha-2 country code (e.g., "us", "ua") for flag display. Set to null to remove the flag.'),
+        new OA\Property(property: 'latitude', type: 'number', nullable: true, description: 'Map latitude (-90 to 90). Set to null with longitude to clear map coordinates.'),
+        new OA\Property(property: 'longitude', type: 'number', nullable: true, description: 'Map longitude (-180 to 180). Set to null with latitude to clear map coordinates.'),
         new OA\Property(property: 'type', type: 'string', enum: ['game', 'vps', 'web'], description: 'Location purpose: game hosting, VPS/VDS, or web hosting (immutable after creation)'),
     ]
 )]
@@ -277,6 +283,11 @@ class LocationsController
                 $data['flag_code'] = null;
             }
         }
+        $coords = self::normalizeCoordinates($data);
+        if ($coords instanceof Response) {
+            return $coords;
+        }
+        $data = array_merge($data, $coords);
         if (strlen($data['name']) < 2 || strlen($data['name']) > 255) {
             return ApiResponse::error('Name must be between 2 and 255 characters', 'INVALID_DATA_LENGTH');
         }
@@ -417,6 +428,13 @@ class LocationsController
                 }
             }
         }
+        if (array_key_exists('latitude', $data) || array_key_exists('longitude', $data)) {
+            $coords = self::normalizeCoordinates($data, true);
+            if ($coords instanceof Response) {
+                return $coords;
+            }
+            $data = array_merge($data, $coords);
+        }
         if (isset($data['type'])) {
             $validTypes = ['game', 'vps', 'web'];
             if (!in_array($data['type'], $validTypes, true)) {
@@ -535,5 +553,59 @@ class LocationsController
         }
 
         return ApiResponse::success([], 'Location deleted successfully', 200);
+    }
+
+    /**
+     * Normalize optional map coordinates.
+     *
+     * Both latitude and longitude must be provided together (or both cleared).
+     *
+     * @param array<string, mixed> $data
+     * @param bool $allowClear When true, null/empty clears both coordinates
+     *
+     * @return array{latitude: ?float, longitude: ?float}|Response
+     */
+    private static function normalizeCoordinates(array $data, bool $allowClear = false): array|Response
+    {
+        $hasLat = array_key_exists('latitude', $data);
+        $hasLng = array_key_exists('longitude', $data);
+
+        if (!$hasLat && !$hasLng) {
+            return [];
+        }
+
+        $latRaw = $hasLat ? $data['latitude'] : null;
+        $lngRaw = $hasLng ? $data['longitude'] : null;
+
+        $latEmpty = $latRaw === null || $latRaw === '';
+        $lngEmpty = $lngRaw === null || $lngRaw === '';
+
+        if ($latEmpty && $lngEmpty) {
+            if ($allowClear || ($hasLat && $hasLng)) {
+                return ['latitude' => null, 'longitude' => null];
+            }
+
+            return ApiResponse::error('Latitude and longitude must both be set or both be empty', 'INVALID_COORDINATES', 400);
+        }
+
+        if ($latEmpty || $lngEmpty) {
+            return ApiResponse::error('Latitude and longitude must both be set or both be empty', 'INVALID_COORDINATES', 400);
+        }
+
+        if (!is_numeric($latRaw) || !is_numeric($lngRaw)) {
+            return ApiResponse::error('Latitude and longitude must be numbers', 'INVALID_DATA_TYPE', 400);
+        }
+
+        $latitude = (float) $latRaw;
+        $longitude = (float) $lngRaw;
+
+        if ($latitude < -90.0 || $latitude > 90.0 || $longitude < -180.0 || $longitude > 180.0) {
+            return ApiResponse::error('Latitude must be between -90 and 90 and longitude between -180 and 180', 'INVALID_COORDINATES', 400);
+        }
+
+        return [
+            'latitude' => round($latitude, 7),
+            'longitude' => round($longitude, 7),
+        ];
     }
 }

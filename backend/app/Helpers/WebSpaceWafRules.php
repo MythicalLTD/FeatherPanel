@@ -23,7 +23,9 @@ namespace App\Helpers;
  */
 class WebSpaceWafRules
 {
-    public const PATH_PATTERN = '#^/[A-Za-z0-9._~\-/%*+@=]{0,255}$#';
+    // The D modifier makes $ match only at the very end: without it a trailing newline passes and would
+    // end up as a new line in the generated proxy config.
+    public const PATH_PATTERN = '#^/[A-Za-z0-9._~\-/%*+@=]{0,255}$#D';
 
     public static function isValidIp(string $value): bool
     {

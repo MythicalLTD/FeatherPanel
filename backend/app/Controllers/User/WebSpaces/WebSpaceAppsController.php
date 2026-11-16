@@ -19,6 +19,7 @@ namespace App\Controllers\User\WebSpaces;
 
 use App\Chat\WebNode;
 use App\Chat\WebSpaceDatabase;
+use App\Config\ConfigInterface;
 use App\Helpers\WebSpaceLimits;
 use App\Helpers\ApiResponse;
 use App\Helpers\WebSpaceGateway;
@@ -732,7 +733,7 @@ class WebSpaceAppsController
 
         $config = \App\Helpers\WebSpaceGitDeployer::loadWebhookConfig($space, $webNode);
         $app = \App\App::getInstance(true);
-        $appUrl = rtrim((string) $app->getConfig()->getSetting('APP_URL', ''), '/');
+        $appUrl = rtrim((string) $app->getConfig()->getSetting(ConfigInterface::APP_URL, ''), '/');
         $uuid = (string) $space['uuid'];
 
         return ApiResponse::success([
@@ -772,7 +773,7 @@ class WebSpaceAppsController
         }
 
         $app = \App\App::getInstance(true);
-        $appUrl = rtrim((string) $app->getConfig()->getSetting('APP_URL', ''), '/');
+        $appUrl = rtrim((string) $app->getConfig()->getSetting(ConfigInterface::APP_URL, ''), '/');
 
         return ApiResponse::success([
             'config' => $config,

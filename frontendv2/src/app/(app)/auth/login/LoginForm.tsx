@@ -423,11 +423,33 @@ export default function LoginForm() {
                         authProcessed.current = false;
                     }
                 })
-                .catch((err: { response?: { data?: { message?: string } } }) => {
-                    setIsDiscordLogin(false);
-                    setError(getApiErrorMessage(err, t, 'common.error'));
-                    authProcessed.current = false;
-                })
+                .catch(
+                    (err: {
+                        response?: {
+                            data?: {
+                                message?: string;
+                                error_code?: string;
+                                data?: { email?: string; challenge?: string };
+                            };
+                        };
+                    }) => {
+                        const payload = err.response?.data;
+                        if (payload?.error_code === 'TWO_FACTOR_REQUIRED' && payload.data?.email) {
+                            if (payload.data.challenge) {
+                                try {
+                                    sessionStorage.setItem('fp_2fa_challenge', payload.data.challenge);
+                                } catch {
+                                    /* ignore */
+                                }
+                            }
+                            router.push(`/auth/verify-2fa?username_or_email=${encodeURIComponent(payload.data.email)}`);
+                            return;
+                        }
+                        setIsDiscordLogin(false);
+                        setError(getApiErrorMessage(err, t, 'common.error'));
+                        authProcessed.current = false;
+                    },
+                )
                 .finally(() => setLoading(false));
         }
 
@@ -570,6 +592,15 @@ export default function LoginForm() {
             if (json.success) {
                 setSuccess(t('common.success'));
                 await completeLoginNavigation({ delayMs: 1000 });
+            } else if (json.error_code === 'TWO_FACTOR_REQUIRED' && json.data?.email) {
+                if (json.data.challenge) {
+                    try {
+                        sessionStorage.setItem('fp_2fa_challenge', json.data.challenge);
+                    } catch {
+                        /* ignore */
+                    }
+                }
+                router.push(`/auth/verify-2fa?username_or_email=${encodeURIComponent(json.data.email)}`);
             } else {
                 setError(getApiErrorMessageFromPayload(json, t, 'common.error'));
 

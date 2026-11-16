@@ -18,6 +18,7 @@ import {
 } from "./auth.js";
 import { FeatherPanelClient } from "./client.js";
 import { resolvePanelFeatures } from "./features.js";
+import { resolveAdminAccess } from "./tools/admin-common.js";
 import { createFeatherPanelMcpServer } from "./server.js";
 import { mountOAuthRoutes } from "./oauth/routes.js";
 import { oauthProvider } from "./oauth/provider.js";
@@ -152,8 +153,10 @@ async function beginMcpSession(
     }
   };
 
-  const features = await resolvePanelFeatures(new FeatherPanelClient(apiKey));
-  const server = createFeatherPanelMcpServer(features);
+  const client = new FeatherPanelClient(apiKey);
+  const features = await resolvePanelFeatures(client);
+  const admin = await resolveAdminAccess(client);
+  const server = createFeatherPanelMcpServer(features, admin);
   await server.connect(transport);
   await transport.handleRequest(req, res, req.body);
 }

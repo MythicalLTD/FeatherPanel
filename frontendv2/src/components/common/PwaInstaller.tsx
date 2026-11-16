@@ -23,6 +23,7 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { cn } from '@/lib/utils';
 import { clearDevelopmentCaches } from '@/lib/development-cache';
+import { registerPanelServiceWorker, SW_PATH } from '@/lib/web-push';
 
 interface BeforeInstallPromptEvent extends Event {
     prompt: () => Promise<void>;
@@ -30,7 +31,6 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 const DISMISS_KEY = 'fp:pwa:install-dismissed';
-const SW_PATH = '/sw.js';
 
 function isIosDevice(): boolean {
     if (typeof navigator === 'undefined') return false;
@@ -72,6 +72,7 @@ export function PwaInstaller() {
     const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null);
     const [visible, setVisible] = useState(false);
     const [iosHint, setIosHint] = useState(false);
+    const standalone = typeof window !== 'undefined' ? isStandaloneDisplay() : false;
 
     const dismiss = useCallback(() => {
         try {
@@ -96,7 +97,7 @@ export function PwaInstaller() {
             void navigator.serviceWorker.getRegistrations().then((regs) => {
                 for (const reg of regs) {
                     const script = reg.active?.scriptURL || reg.installing?.scriptURL || reg.waiting?.scriptURL || '';
-                    if (script.includes('/sw.js')) {
+                    if (script.includes(SW_PATH)) {
                         void reg.unregister();
                     }
                 }
@@ -108,18 +109,10 @@ export function PwaInstaller() {
             return;
         }
 
-        // In development the worker would sit between the browser and hot reload / dev chunks;
-        // drop any worker left over from a production build instead of registering one.
-        const isDev = process.env.NODE_ENV !== 'production';
-        if (isDev) unregisterPanelWorker();
+        // Always register when PWA is on (including installed/standalone) so Web Push works.
+        void registerPanelServiceWorker();
 
         if (isStandaloneDisplay()) return;
-
-        if (!isDev && 'serviceWorker' in navigator) {
-            void navigator.serviceWorker.register(SW_PATH).catch((error) => {
-                console.warn('SW register failed', error);
-            });
-        }
 
         const onBeforeInstall = (event: Event) => {
             event.preventDefault();
@@ -154,7 +147,7 @@ export function PwaInstaller() {
         }
     };
 
-    if (!enabled || isStandaloneDisplay()) return null;
+    if (!enabled || standalone || isStandaloneDisplay()) return null;
     if (!visible && !iosHint) return null;
 
     return (

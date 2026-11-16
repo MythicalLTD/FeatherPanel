@@ -25,6 +25,7 @@ use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
 use App\Telemetry\UmamiTelemetry;
+use App\Mail\MailTemplateRenderer;
 use App\CloudFlare\CloudFlareRealIP;
 use App\Telemetry\UmamiTelemetryState;
 use App\Plugins\Events\Events\SettingsEvent;
@@ -205,6 +206,7 @@ class SettingsController
         ConfigInterface::FRIENDLY_CAPTCHA_SECRET_KEY,
         ConfigInterface::ABUSEIPDB_API_KEY,
         ConfigInterface::TEMP_FILES_API_TOKEN,
+        ConfigInterface::APP_PWA_VAPID_PRIVATE,
         // Add other sensitive settings here
     ];
 
@@ -533,6 +535,7 @@ class SettingsController
             'icon' => 'bot',
             'settings' => [
                 ConfigInterface::CHATBOT_ENABLED,
+                ConfigInterface::CHATBOT_EDITOR_HELPER_ENABLED,
                 ConfigInterface::CHATBOT_AI_PROVIDER,
                 ConfigInterface::CHATBOT_TEMPERATURE,
                 ConfigInterface::CHATBOT_MAX_TOKENS,
@@ -586,6 +589,9 @@ class SettingsController
                 ConfigInterface::APP_PWA_DESCRIPTION,
                 ConfigInterface::APP_PWA_THEME_COLOR,
                 ConfigInterface::APP_PWA_BG_COLOR,
+                ConfigInterface::APP_PWA_PUSH_ENABLED,
+                ConfigInterface::APP_PWA_VAPID_SUBJECT,
+                ConfigInterface::APP_PWA_VAPID_PUBLIC,
             ],
         ],
         'other' => [
@@ -3633,6 +3639,19 @@ class SettingsController
                 'options' => ['true', 'false'],
                 'category' => 'chatbot',
             ],
+            ConfigInterface::CHATBOT_EDITOR_HELPER_ENABLED => [
+                'name' => ConfigInterface::CHATBOT_EDITOR_HELPER_ENABLED,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::CHATBOT_EDITOR_HELPER_ENABLED, 'true'),
+                'description' => 'Enable the optional AI helper in the server file editor and crash console (explains errors and suggests a diff; never auto-writes files). Requires the chatbot to be enabled with a real AI provider.',
+                'type' => 'select',
+                'required' => true,
+                'placeholder' => 'true',
+                'validation' => 'required|string|max:255',
+                'options' => ['true', 'false'],
+                'category' => 'chatbot',
+            ],
             // SEO Settings
             ConfigInterface::APP_SEO_TITLE => [
                 'name' => ConfigInterface::APP_SEO_TITLE,
@@ -3767,6 +3786,45 @@ class SettingsController
                 'required' => true,
                 'placeholder' => '#ffffff',
                 'validation' => 'required|string|max:7',
+                'options' => [],
+                'category' => 'pwa',
+            ],
+            ConfigInterface::APP_PWA_PUSH_ENABLED => [
+                'name' => ConfigInterface::APP_PWA_PUSH_ENABLED,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::APP_PWA_PUSH_ENABLED, 'false'),
+                'description' => 'Allow users to enable Web Push notifications (requires PWA on; VAPID keys are generated automatically)',
+                'type' => 'select',
+                'required' => true,
+                'placeholder' => 'false',
+                'validation' => 'required|string|max:255',
+                'options' => ['true', 'false'],
+                'category' => 'pwa',
+            ],
+            ConfigInterface::APP_PWA_VAPID_SUBJECT => [
+                'name' => ConfigInterface::APP_PWA_VAPID_SUBJECT,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::APP_PWA_VAPID_SUBJECT, ''),
+                'description' => 'VAPID contact (mailto:you@example.com or https://your.panel). Leave blank to use mailto:noreply@APP_URL host',
+                'type' => 'text',
+                'required' => false,
+                'placeholder' => 'mailto:admin@example.com',
+                'validation' => 'nullable|string|max:255',
+                'options' => [],
+                'category' => 'pwa',
+            ],
+            ConfigInterface::APP_PWA_VAPID_PUBLIC => [
+                'name' => ConfigInterface::APP_PWA_VAPID_PUBLIC,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::APP_PWA_VAPID_PUBLIC, ''),
+                'description' => 'VAPID public key (auto-generated when Web Push is enabled; read-only)',
+                'type' => 'text',
+                'required' => false,
+                'placeholder' => 'Generated automatically',
+                'validation' => 'nullable|string|max:255',
                 'options' => [],
                 'category' => 'pwa',
             ],
@@ -4830,6 +4888,19 @@ class SettingsController
             return $mailValidationError;
         }
 
+        // Custom JavaScript runs in every visitor's browser: changing it needs a confirmed session.
+        if (array_key_exists(ConfigInterface::CUSTOM_JS, $data) && isset($this->settings[ConfigInterface::CUSTOM_JS])) {
+            $normalizeJs = static fn (string $js): string => trim(str_replace("\r\n", "\n", $js));
+            $incomingJs = $this->normalizeSettingValueForStorage($this->settings[ConfigInterface::CUSTOM_JS], $data[ConfigInterface::CUSTOM_JS]);
+            $currentJs = (string) ($this->settings[ConfigInterface::CUSTOM_JS]['value'] ?? '');
+            if ($normalizeJs((string) $incomingJs) !== $normalizeJs($currentJs)) {
+                $reauth = \App\Helpers\StepUpAuth::require($request, \App\Helpers\StepUpAuth::ACTION_CUSTOM_JS);
+                if ($reauth !== null) {
+                    return $reauth;
+                }
+            }
+        }
+
         // Validate and update each setting
         foreach ($data as $setting => $value) {
             if (!is_string($setting) || !isset($this->settings[$setting])) {
@@ -4841,6 +4912,14 @@ class SettingsController
             }
 
             $settingConfig = $this->settings[$setting];
+
+            // VAPID keys are generated by the panel; ignore client writes to them.
+            if (
+                $setting === ConfigInterface::APP_PWA_VAPID_PUBLIC
+                || $setting === ConfigInterface::APP_PWA_VAPID_PRIVATE
+            ) {
+                continue;
+            }
 
             // Handle sensitive settings - only update if value is not masked
             if ($this->isSensitiveSetting($setting)) {
@@ -4913,6 +4992,13 @@ class SettingsController
 
         // Log the activity
         if (!empty($updatedSettings)) {
+            if (
+                in_array(ConfigInterface::APP_PWA_PUSH_ENABLED, $updatedSettings, true)
+                && $app->getConfig()->getSetting(ConfigInterface::APP_PWA_PUSH_ENABLED, 'false') === 'true'
+            ) {
+                \App\Services\Notifications\WebPushNotifier::ensureVapidKeys();
+            }
+
             if (
                 in_array(ConfigInterface::CUSTOM_CSS, $updatedSettings, true)
                 || in_array(ConfigInterface::CUSTOM_JS, $updatedSettings, true)
@@ -5201,6 +5287,12 @@ class SettingsController
 
         // Create test email content
         $subject = '[TEST] Email Configuration Test from ' . $appName;
+        $mailUser = [
+            'username' => MailTemplateRenderer::escape($user['username'] ?? ''),
+            'email' => MailTemplateRenderer::escape($user['email'] ?? ''),
+        ];
+        $mailAppName = MailTemplateRenderer::escape($appName);
+        $mailAppUrl = MailTemplateRenderer::escape($appUrl);
         $body = <<<HTML
         <!DOCTYPE html>
         <html>
@@ -5222,10 +5314,10 @@ class SettingsController
                             <tr>
                                 <td style="padding: 40px;">
                                     <p style="margin: 0 0 20px 0; color: #374151; font-size: 16px; line-height: 1.6;">
-                                        Hello <strong>{$user['username']}</strong>,
+                                        Hello <strong>{$mailUser['username']}</strong>,
                                     </p>
                                     <p style="margin: 0 0 20px 0; color: #374151; font-size: 16px; line-height: 1.6;">
-                                        This is a test email from <strong>{$appName}</strong> to verify that your email configuration is working correctly.
+                                        This is a test email from <strong>{$mailAppName}</strong> to verify that your email configuration is working correctly.
                                     </p>
                                     <div style="background-color: #f0fdf4; border-left: 4px solid #10b981; padding: 16px; margin: 20px 0; border-radius: 4px;">
                                         <p style="margin: 0; color: #065f46; font-size: 14px; line-height: 1.5;">
@@ -5234,19 +5326,19 @@ class SettingsController
                                     </div>
                                     <p style="margin: 20px 0 0 0; color: #6b7280; font-size: 14px; line-height: 1.6;">
                                         <strong>Email Details:</strong><br>
-                                        • Recipient: {$user['email']}<br>
+                                        • Recipient: {$mailUser['email']}<br>
                                         • Sent at: {date('Y-m-d H:i:s')}<br>
-                                        • From: {$appName}
+                                        • From: {$mailAppName}
                                     </p>
                                 </td>
                             </tr>
                             <tr>
                                 <td style="padding: 30px 40px; background-color: #f9fafb; border-top: 1px solid #e5e7eb; border-radius: 0 0 8px 8px;">
                                     <p style="margin: 0 0 10px 0; color: #6b7280; font-size: 13px; text-align: center;">
-                                        This is an automated test email from {$appName}
+                                        This is an automated test email from {$mailAppName}
                                     </p>
                                     <p style="margin: 0; color: #9ca3af; font-size: 12px; text-align: center;">
-                                        <a href="{$appUrl}" style="color: #8b5cf6; text-decoration: none;">{$appUrl}</a>
+                                        <a href="{$mailAppUrl}" style="color: #8b5cf6; text-decoration: none;">{$mailAppUrl}</a>
                                     </p>
                                 </td>
                             </tr>

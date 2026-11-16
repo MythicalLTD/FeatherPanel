@@ -85,9 +85,18 @@ final class DatabaseSignonToken
 
     private static function pruneStale(string $dir): void
     {
+        // At most once per minute — minting a token on every Open click used to
+        // glob+stat the whole token dir synchronously.
+        $stamp = $dir . '/.last_prune';
+        $mtime = @filemtime($stamp);
+        if ($mtime !== false && (time() - $mtime) < 60) {
+            return;
+        }
+        @touch($stamp);
+
         foreach ((glob($dir . '/*.json') ?: []) as $stale) {
-            $mtime = @filemtime($stale);
-            if ($mtime !== false && $mtime < time() - 300) {
+            $staleMtime = @filemtime($stale);
+            if ($staleMtime !== false && $staleMtime < time() - 300) {
                 @unlink($stale);
             }
         }

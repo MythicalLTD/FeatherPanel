@@ -22,6 +22,8 @@ export interface AppSettings {
     cache_driver: string;
     chatbot_ai_provider: string;
     chatbot_enabled: string;
+    /** Optional AI helper in file editor / crash console. Default true when chatbot is on. */
+    chatbot_editor_helper_enabled?: string;
     knowledgebase_enabled: string;
     knowledgebase_public_enabled: string;
     /** Panel modules, 'false' turns a module off. Missing means enabled. */
@@ -151,6 +153,8 @@ export interface AppSettings {
     app_pwa_description: string;
     app_pwa_theme_color: string;
     app_pwa_bg_color: string;
+    app_pwa_push_enabled: string;
+    app_pwa_vapid_public: string;
     /** Optional: default background image URL for all users (used as a starting point, users can still customize unless locked). */
     app_background_image_url?: string;
     /** When 'true', force the configured background image URL for all users. */

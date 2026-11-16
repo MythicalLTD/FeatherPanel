@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import MailHtmlFrame from '@/components/common/MailHtmlFrame';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import axios from 'axios';
@@ -870,9 +871,9 @@ export default function TicketViewPage() {
                         </SheetDescription>
                     </SheetHeader>
                     <div className='mt-6 h-[calc(100vh-140px)] overflow-hidden rounded-xl border p-0'>
-                        <iframe
-                            srcDoc={mailPreview?.body || t('common.no_content')}
-                            className='h-full w-full bg-white text-black'
+                        <MailHtmlFrame
+                            html={mailPreview?.body || t('common.no_content')}
+                            className='h-full text-black'
                             title={t('admin.tickets.view.email_body')}
                         />
                     </div>

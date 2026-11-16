@@ -24,17 +24,61 @@ use App\Config\ConfigInterface;
  * Builds public panel URLs from APP_URL instead of the inbound request host.
  *
  * Required for Wings/daemon clients behind reverse proxies where PHP may see localhost.
+ * The seeded demo host (featherpanel.mythical.systems) is treated as "unset" so installs
+ * that never changed APP_URL still get links on the request host (phpMyAdmin, OAuth, etc.).
  */
 class AppUrlHelper
 {
+    public const PLACEHOLDER_HOST = 'featherpanel.mythical.systems';
+
+    /**
+     * True when APP_URL is empty or still the demo/placeholder value from PublicConfig.
+     */
+    public static function isUnsetOrPlaceholder(?string $url): bool
+    {
+        $url = trim((string) $url);
+        if ($url === '') {
+            return true;
+        }
+
+        $normalized = preg_match('#^https?://#i', $url) ? $url : 'https://' . ltrim($url, '/');
+        $host = parse_url($normalized, PHP_URL_HOST);
+        if (!is_string($host) || $host === '') {
+            return true;
+        }
+
+        return strcasecmp($host, self::PLACEHOLDER_HOST) === 0;
+    }
+
     public static function baseUrl(): string
     {
-        $appUrl = App::getInstance(true)->getConfig()->getSetting(
+        $configured = trim((string) (App::getInstance(true)->getConfig()->getSetting(
             ConfigInterface::APP_URL,
-            'https://featherpanel.mythical.systems'
-        );
+            ''
+        ) ?? ''));
 
-        return rtrim((string) $appUrl, '/');
+        if (!self::isUnsetOrPlaceholder($configured)) {
+            if (!preg_match('#^https?://#i', $configured)) {
+                $configured = 'https://' . ltrim($configured, '/');
+            }
+
+            return rtrim($configured, '/');
+        }
+
+        // Prefer the inbound request host over the demo placeholder so browser-facing
+        // links (phpMyAdmin, OAuth returns, attachments) never bounce users to
+        // featherpanel.mythical.systems when APP_URL is still the seeded default.
+        try {
+            $fromRequest = rtrim(App::getInstance(true)->getBaseUrl(), '/');
+        } catch (\Throwable $e) {
+            $fromRequest = '';
+        }
+
+        if ($fromRequest !== '' && !self::isUnsetOrPlaceholder($fromRequest)) {
+            return $fromRequest;
+        }
+
+        return 'https://' . self::PLACEHOLDER_HOST;
     }
 
     /**

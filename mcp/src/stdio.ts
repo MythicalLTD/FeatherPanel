@@ -11,6 +11,7 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { setDefaultApiKey } from './auth.js';
 import { FeatherPanelClient } from './client.js';
 import { resolvePanelFeatures } from './features.js';
+import { resolveAdminAccess } from './tools/admin-common.js';
 import { createFeatherPanelMcpServer } from './server.js';
 
 const apiKey = process.env.FEATHERPANEL_API_KEY?.trim();
@@ -28,6 +29,7 @@ setDefaultApiKey(apiKey);
 
 const client = new FeatherPanelClient(apiKey);
 const features = await resolvePanelFeatures(client);
-const server = createFeatherPanelMcpServer(features);
+const admin = await resolveAdminAccess(client);
+const server = createFeatherPanelMcpServer(features, admin);
 const transport = new StdioServerTransport();
 await server.connect(transport);

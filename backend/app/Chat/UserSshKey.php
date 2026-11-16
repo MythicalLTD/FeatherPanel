@@ -331,6 +331,9 @@ class UserSshKey
 
                 return false;
             }
+            if (isset($data['public_key'])) {
+                $data['fingerprint'] = self::generateFingerprint((string) $data['public_key']);
+            }
 
             // Auto-generate fingerprint if being updated and invalid
             if (isset($data['fingerprint']) && !self::isValidFingerprint($data['fingerprint'])) {
@@ -342,7 +345,7 @@ class UserSshKey
             // Check if fingerprint already exists for another key (if fingerprint is being updated)
             if (isset($data['fingerprint'])) {
                 $existingKeyWithFingerprint = self::getUserSshKeyByFingerprint($data['fingerprint'], $existingKey['user_id']);
-                if ($existingKeyWithFingerprint && $existingKeyWithFingerprint['id'] !== $id) {
+                if ($existingKeyWithFingerprint && (int) $existingKeyWithFingerprint['id'] !== $id) {
                     App::getInstance(true)->getLogger()->error('SSH key with fingerprint already exists for user: ' . $existingKey['user_id']);
 
                     return false;
@@ -571,6 +574,70 @@ class UserSshKey
         }
 
         return $formattedHash;
+    }
+
+    /**
+     * Fingerprints a daemon-supplied public key could be stored under.
+     *
+     * Accepts an OpenSSH authorized_keys line (what Wings and Quilld send) or the
+     * bare base64 wire blob, which is tried with each supported key type prefix.
+     *
+     * @return list<string>
+     */
+    public static function candidateFingerprints(string $keyMaterial): array
+    {
+        $keyMaterial = trim($keyMaterial);
+        if ($keyMaterial === '') {
+            return [];
+        }
+
+        $candidates = [self::generateFingerprint($keyMaterial)];
+        if (str_starts_with($keyMaterial, '-----BEGIN')) {
+            // PEM keys are compared by their OpenSSH wire form, which is what daemons send
+            try {
+                $openSsh = \phpseclib3\Crypt\PublicKeyLoader::loadPublicKey($keyMaterial)->toString('OpenSSH');
+                if (is_string($openSsh) && $openSsh !== '') {
+                    $candidates[] = self::generateFingerprint($openSsh);
+                }
+            } catch (\Throwable) {
+                // Not a key phpseclib understands; keep the plain fingerprint only
+            }
+        } elseif (!preg_match('/\s/', $keyMaterial)) {
+            foreach (['ssh-ed25519', 'ssh-rsa', 'ecdsa-sha2-nistp256', 'ecdsa-sha2-nistp384', 'ecdsa-sha2-nistp521'] as $algo) {
+                $wrapped = $algo . ' ' . $keyMaterial;
+                if (self::isValidSshPublicKey($wrapped)) {
+                    $candidates[] = self::generateFingerprint($wrapped);
+                }
+            }
+        }
+
+        return array_values(array_unique(array_filter($candidates, static fn (string $fp): bool => $fp !== '')));
+    }
+
+    /**
+     * Whether the offered public key is one of the user's saved (non-deleted) SSH keys.
+     */
+    public static function userHasMatchingPublicKey(int $userId, string $keyMaterial): bool
+    {
+        if ($userId <= 0) {
+            return false;
+        }
+
+        $offered = self::candidateFingerprints($keyMaterial);
+        if ($offered === []) {
+            return false;
+        }
+
+        // Compare against the saved key material itself so an outdated fingerprint column never decides
+        foreach (self::getUserSshKeysByUserId($userId) as $saved) {
+            foreach (self::candidateFingerprints((string) ($saved['public_key'] ?? '')) as $fingerprint) {
+                if (in_array($fingerprint, $offered, true)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     /**

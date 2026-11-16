@@ -34,6 +34,7 @@ class AuditLogController
      * @var array<string, string[]>
      */
     private const TARGETS = [
+        'impersonation' => ['impersonation_%'],
         'auth' => ['login', 'logout', 'register', 'forgot_password', 'reset_password', 'two_fa_%', 'session%', 'account_deletion%', 'request_data_export'],
         'vm' => ['vm_%', '%vm_node%'],
         'allocation' => ['%allocation%'],
@@ -57,7 +58,13 @@ class AuditLogController
 
         $pdo = Database::getPdoConnection();
         // The users join is only needed when a filter references it (free-text search).
-        $join = preg_match('/\bu\./', $where) === 1 ? ' LEFT JOIN featherpanel_users u ON u.uuid = a.user_uuid' : '';
+        $join = '';
+        if (preg_match('/\bu\./', $where) === 1) {
+            $join .= ' LEFT JOIN featherpanel_users u ON u.uuid = a.user_uuid';
+        }
+        if (preg_match('/\bactor\./', $where) === 1) {
+            $join .= ' LEFT JOIN featherpanel_users actor ON actor.uuid = a.actor_uuid';
+        }
         $count = $pdo->prepare('SELECT COUNT(*) FROM featherpanel_activity a' . $join . $where);
         $count->execute($params);
         $total = (int) $count->fetchColumn();
@@ -94,10 +101,11 @@ class AuditLogController
         $rows = $this->fetchRows($where, $params, 10000, 0);
 
         $out = fopen('php://temp', 'r+');
-        fputcsv($out, ['id', 'created_at', 'username', 'email', 'user_uuid', 'action', 'target', 'context', 'ip_address'], ',', '"', '\\');
+        fputcsv($out, ['id', 'created_at', 'username', 'email', 'user_uuid', 'actor_uuid', 'actor_username', 'action', 'target', 'context', 'ip_address'], ',', '"', '\\');
         foreach ($rows as $r) {
             fputcsv($out, array_map([SpreadsheetSafe::class, 'cell'], [
                 $r['id'], $r['created_at'], $r['username'] ?? '', $r['email'] ?? '', $r['user_uuid'],
+                $r['actor_uuid'] ?? '', $r['actor_username'] ?? '',
                 $r['name'], $r['target'], $r['context'] ?? '', $r['ip_address'] ?? '',
             ]), ',', '"', '\\');
         }
@@ -121,8 +129,8 @@ class AuditLogController
 
         $search = trim((string) $request->query->get('search', ''));
         if ($search !== '') {
-            $clauses[] = '(a.name LIKE :s1 OR a.context LIKE :s2 OR a.ip_address LIKE :s3 OR u.username LIKE :s4 OR u.email LIKE :s5)';
-            for ($i = 1; $i <= 5; ++$i) {
+            $clauses[] = '(a.name LIKE :s1 OR a.context LIKE :s2 OR a.ip_address LIKE :s3 OR u.username LIKE :s4 OR u.email LIKE :s5 OR actor.username LIKE :s6 OR a.actor_uuid LIKE :s7)';
+            for ($i = 1; $i <= 7; ++$i) {
                 $params['s' . $i] = '%' . SpreadsheetSafe::likeLiteral($search) . '%';
             }
         }
@@ -142,7 +150,7 @@ class AuditLogController
                 $placeholders[] = ':user_uuid' . $i;
                 $params['user_uuid' . $i] = $uuid;
             }
-            $clauses[] = 'a.user_uuid IN (' . implode(', ', $placeholders) . ')';
+            $clauses[] = '(a.user_uuid IN (' . implode(', ', $placeholders) . ') OR a.actor_uuid IN (' . implode(', ', $placeholders) . '))';
         }
 
         $action = trim((string) $request->query->get('action', ''));
@@ -186,8 +194,11 @@ class AuditLogController
      */
     private function fetchRows(string $where, array $params, int $limit, int $offset): array
     {
-        $sql = 'SELECT a.id, a.user_uuid, a.name, a.context, a.ip_address, a.created_at, ' . $this->targetExpression() . ' AS target, '
-            . 'u.username, u.email, u.avatar FROM featherpanel_activity a LEFT JOIN featherpanel_users u ON u.uuid = a.user_uuid'
+        $sql = 'SELECT a.id, a.user_uuid, a.actor_uuid, a.name, a.context, a.ip_address, a.created_at, ' . $this->targetExpression() . ' AS target, '
+            . 'u.username, u.email, u.avatar, actor.username AS actor_username '
+            . 'FROM featherpanel_activity a '
+            . 'LEFT JOIN featherpanel_users u ON u.uuid = a.user_uuid '
+            . 'LEFT JOIN featherpanel_users actor ON actor.uuid = a.actor_uuid'
             . $where . ' ORDER BY a.created_at DESC, a.id DESC LIMIT :limit OFFSET :offset';
         $stmt = Database::getPdoConnection()->prepare($sql);
         foreach ($params as $k => $v) {

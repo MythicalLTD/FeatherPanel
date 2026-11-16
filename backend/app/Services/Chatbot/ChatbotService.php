@@ -676,6 +676,44 @@ class ChatbotService
         return in_array($route, $allowedRoutes, true) || str_starts_with($route, '/dashboard/knowledgebase/');
     }
 
+
+    /**
+     * One-shot completion without tools or conversation persistence.
+     * Used by focused helpers (editor / console explain) that need structured answers.
+     *
+     * @return array{response: string, model: string, usage?: array}
+     */
+    public function completeOnce(string $systemPrompt, string $userMessage, array $user, float $temperature = 0.2, ?int $maxTokens = null): array
+    {
+        $enabled = $this->config->getSetting(ConfigInterface::CHATBOT_ENABLED, 'true');
+        if ($enabled !== 'true') {
+            throw new \RuntimeException('The AI chatbot is currently disabled by the administrator.');
+        }
+
+        $provider = $this->config->getSetting(ConfigInterface::CHATBOT_AI_PROVIDER, 'basic');
+        $maxTokens = $maxTokens ?? (int) $this->config->getSetting(ConfigInterface::CHATBOT_MAX_TOKENS, '2048');
+        $userPreferences = UserPreference::getPreferences($user['uuid'] ?? '');
+        $providerInstance = $this->getProvider($provider, $userPreferences, $temperature, $maxTokens);
+
+        if (!$providerInstance) {
+            throw new \RuntimeException("AI provider is not configured: {$provider}");
+        }
+
+        if ($provider === 'basic') {
+            throw new \RuntimeException(
+                'The editor AI helper needs a real AI provider (OpenRouter, OpenAI, Grok, Gemini, Ollama, or Perplexity). The basic keyword bot cannot explain console errors.'
+            );
+        }
+
+        $result = $providerInstance->processMessage($userMessage, [], $systemPrompt);
+
+        return [
+            'response' => (string) ($result['response'] ?? ''),
+            'model' => (string) ($result['model'] ?? 'FeatherPanel AI'),
+            'usage' => is_array($result['usage'] ?? null) ? $result['usage'] : null,
+        ];
+    }
+
     /**
      * Get the appropriate provider instance based on configuration.
      *

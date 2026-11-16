@@ -4,6 +4,8 @@
 /caches/*.json
 /logs/*.txt
 /logs/*.log
+/logs/*.log.1
+/logs/*.ndjson
 /caches/mails/*.html
 /caches/other/
 .env
@@ -13,3 +15,4 @@ mcversionmanager/
 /telemetry/
 # phpMyAdmin / phpPgAdmin single-use signon tokens (runtime, contain credentials briefly)
 /db_signon_tokens/
+/caches/security-store/

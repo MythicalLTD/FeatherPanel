@@ -175,7 +175,13 @@ class VmUserSubuserController
             return ApiResponse::error('Only the VM owner can remove subusers', 'PERMISSION_DENIED', 403);
         }
 
-        $deleted = VmSubuser::delete($subuserId);
+        $vmInstanceId = (int) ($vmInstance['id'] ?? 0);
+        $subuser = VmSubuser::getById($subuserId);
+        if ($subuser === null || (int) ($subuser['vm_instance_id'] ?? 0) !== $vmInstanceId) {
+            return ApiResponse::error('Subuser not found', 'NOT_FOUND', 404);
+        }
+
+        $deleted = VmSubuser::deleteForVmInstance($subuserId, $vmInstanceId);
         if (!$deleted) {
             return ApiResponse::error('Subuser not found', 'NOT_FOUND', 404);
         }

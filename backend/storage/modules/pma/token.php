@@ -19,10 +19,19 @@ declare(strict_types=1);
 
 ini_set('session.use_cookies', 'true');
 
-/* Change this to false if using phpMyAdmin over http */
-$secure_cookie = true;
+$https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+    || (isset($_SERVER['SERVER_PORT']) && (int) $_SERVER['SERVER_PORT'] === 443)
+    || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https');
+$secure_cookie = $https;
 
-session_set_cookie_params(0, '/', '', $secure_cookie, true);
+session_set_cookie_params([
+    'lifetime' => 0,
+    'path' => '/',
+    'domain' => '',
+    'secure' => $secure_cookie,
+    'httponly' => true,
+    'samesite' => 'Lax',
+]);
 $session_name = 'TokenSession';
 session_name($session_name);
 @session_start();
@@ -65,21 +74,18 @@ if (isset($_GET['token']) && preg_match('/^[a-f0-9]{64}$/D', (string) $_GET['tok
 
         @session_write_close();
 
-        $pmaPageMode = 'connect';
-        $pmaErrorMessage = null;
-        $pmaRedirectUrl = 'index.php?server=1&db=' . urlencode((string) $data['db']);
-        $pmaRedirectDelay = 500;
-        $pmaPostLoadScript = '';
-
-        header('Content-Type: text/html; charset=utf-8');
-        require __DIR__ . '/auth-page.php';
+        // Fast path: skip the branded interstitial + artificial delay. Session
+        // cookie is already set; phpMyAdmin signon reads it on index.php.
+        $target = 'index.php?server=1&db=' . rawurlencode((string) $data['db']);
+        header('Cache-Control: no-store, no-cache, must-revalidate');
+        header('Location: ' . $target, true, 302);
         exit;
     }
 
     $pmaPageMode = 'error';
     $pmaErrorMessage = 'This phpMyAdmin link is invalid or has expired. Open phpMyAdmin again from the panel.';
     $pmaRedirectUrl = null;
-    $pmaRedirectDelay = 500;
+    $pmaRedirectDelay = 0;
     $pmaPostLoadScript = '';
 
     header('Content-Type: text/html; charset=utf-8');
@@ -93,7 +99,7 @@ $pmaErrorMessage = isset($_SESSION['PMA_single_signon_error_message'])
     ? htmlspecialchars($_SESSION['PMA_single_signon_error_message'])
     : null;
 $pmaRedirectUrl = null;
-$pmaRedirectDelay = 500;
+$pmaRedirectDelay = 0;
 $pmaPostLoadScript = '';
 
 header('Content-Type: text/html; charset=utf-8');
