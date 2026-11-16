@@ -212,10 +212,10 @@ class LdapController
         // Successful LDAP login: clear the failure counter for this account.
         AccountLockoutHelper::clear($lockoutId);
 
-        // Complete login using the shared method from LoginController
+        // Complete login using the shared method from LoginController (ban, deletion and 2FA rules included)
         $loginController = new LoginController();
 
-        return $loginController->completeLogin($userInfo);
+        return $loginController->completeExternalLogin($userInfo);
     }
 
     /**

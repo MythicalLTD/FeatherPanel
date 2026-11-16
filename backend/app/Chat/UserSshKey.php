@@ -574,6 +574,52 @@ class UserSshKey
     }
 
     /**
+     * Fingerprints a daemon-supplied public key could be stored under.
+     *
+     * Accepts an OpenSSH authorized_keys line (what Wings and Quilld send) or the
+     * bare base64 wire blob, which is tried with each supported key type prefix.
+     *
+     * @return list<string>
+     */
+    public static function candidateFingerprints(string $keyMaterial): array
+    {
+        $keyMaterial = trim($keyMaterial);
+        if ($keyMaterial === '') {
+            return [];
+        }
+
+        $candidates = [self::generateFingerprint($keyMaterial)];
+        if (!preg_match('/\s/', $keyMaterial)) {
+            foreach (['ssh-ed25519', 'ssh-rsa', 'ecdsa-sha2-nistp256', 'ecdsa-sha2-nistp384', 'ecdsa-sha2-nistp521'] as $algo) {
+                $wrapped = $algo . ' ' . $keyMaterial;
+                if (self::isValidSshPublicKey($wrapped)) {
+                    $candidates[] = self::generateFingerprint($wrapped);
+                }
+            }
+        }
+
+        return array_values(array_unique(array_filter($candidates, static fn (string $fp): bool => $fp !== '')));
+    }
+
+    /**
+     * Whether the offered public key is one of the user's saved (non-deleted) SSH keys.
+     */
+    public static function userHasMatchingPublicKey(int $userId, string $keyMaterial): bool
+    {
+        if ($userId <= 0) {
+            return false;
+        }
+
+        foreach (self::candidateFingerprints($keyMaterial) as $fingerprint) {
+            if (self::getUserSshKeyByFingerprint($fingerprint, $userId) !== null) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Validate fingerprint format (SHA256 hash).
      */
     private static function isValidFingerprint(string $fingerprint): bool
