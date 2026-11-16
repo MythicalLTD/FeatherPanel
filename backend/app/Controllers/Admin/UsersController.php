@@ -732,6 +732,13 @@ class UsersController
         } else {
             $data['role_id'] = 1;
         }
+        // Creating an account with admin permissions needs a confirmed session.
+        if ((int) $data['role_id'] !== 1 && \App\Helpers\StepUpAuth::roleGrantsAdmin((int) $data['role_id'])) {
+            $reauth = \App\Helpers\StepUpAuth::require($request, \App\Helpers\StepUpAuth::ACTION_ADMIN_ROLE);
+            if ($reauth !== null) {
+                return $reauth;
+            }
+        }
         $userId = User::createUser($data);
         if (!$userId) {
             return ApiResponse::error('Failed to create user', 'FAILED_TO_CREATE_USER', 500);
@@ -875,6 +882,18 @@ class UsersController
         $rankDenied = \App\Helpers\AdminRank::check($request->attributes->get('user'), $user);
         if ($rankDenied !== null) {
             return ApiResponse::error($rankDenied, 'TARGET_OUTRANKS_ACTOR', 403);
+        }
+
+        // Promoting an account to a role with admin permissions needs a confirmed session.
+        if (
+            isset($data['role_id']) && is_numeric($data['role_id'])
+            && (int) $data['role_id'] !== (int) ($user['role_id'] ?? 0)
+            && \App\Helpers\StepUpAuth::roleGrantsAdmin((int) $data['role_id'])
+        ) {
+            $reauth = \App\Helpers\StepUpAuth::require($request, \App\Helpers\StepUpAuth::ACTION_ADMIN_ROLE);
+            if ($reauth !== null) {
+                return $reauth;
+            }
         }
 
         if ($app->isDemoMode()) {

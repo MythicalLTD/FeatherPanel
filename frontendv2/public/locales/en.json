@@ -259,6 +259,29 @@
             "registrationFailed": "We could not create your account. Please contact an administrator.",
             "accountUnavailable": "This account is not available.",
             "userBanned": "This account is banned."
+        },
+        "reauth": {
+            "title": "Confirm it is you",
+            "description": "This action needs a fresh confirmation of your account.",
+            "validity": "You will not be asked again for 15 minutes.",
+            "actions": {
+                "impersonate": "Signing in as another user needs a fresh confirmation of your account.",
+                "admin_role": "Granting admin permissions needs a fresh confirmation of your account.",
+                "api_key": "Creating an API key needs a fresh confirmation of your account.",
+                "custom_js": "Changing the custom JavaScript needs a fresh confirmation of your account."
+            },
+            "password": "Password",
+            "totp": "Authenticator code",
+            "totpHint": "Enter the 6-digit code from your authenticator app.",
+            "emailCode": "Code from your e-mail",
+            "emailHint": "Send a 6-digit code to the e-mail address on your account.",
+            "codeSent": "We sent a 6-digit code to your e-mail address. It is valid for 10 minutes.",
+            "sendCode": "E-mail me a code",
+            "resendCode": "Send a new code",
+            "usePassword": "Use my password",
+            "confirm": "Confirm",
+            "confirming": "Confirming...",
+            "failed": "Could not confirm your identity."
         }
     },
     "public_portal": {
@@ -1717,7 +1740,12 @@
             "INVALID_PUSH_SUBSCRIPTION": "Invalid push subscription",
             "PUSH_SUBSCRIBE_FAILED": "Failed to save push subscription",
             "PUSH_TEST_FAILED": "Could not send a test push",
-            "IMPERSONATION_ACTION_BLOCKED": "This action is not allowed while impersonating another user. Stop impersonating first."
+            "IMPERSONATION_ACTION_BLOCKED": "This action is not allowed while impersonating another user. Stop impersonating first.",
+            "REAUTH_INVALID_CREDENTIALS": "The password or code is not correct.",
+            "REAUTH_METHOD_NOT_ALLOWED": "This confirmation method is not available for your account.",
+            "REAUTH_LOCKED": "Too many failed attempts. Try again in a few minutes.",
+            "REAUTH_NOT_APPLICABLE": "Confirmation is only needed when signed in through the browser.",
+            "REAUTH_STORE_FAILED": "Could not complete the confirmation. Please try again."
         },
         "global": {}
     },

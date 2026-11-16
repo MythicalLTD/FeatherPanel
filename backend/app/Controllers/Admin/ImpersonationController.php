@@ -45,6 +45,10 @@ class ImpersonationController
         if ($reason !== null) {
             return ApiResponse::error($reason, 'IMPERSONATION_NOT_ALLOWED', 403);
         }
+        $reauth = \App\Helpers\StepUpAuth::require($request, \App\Helpers\StepUpAuth::ACTION_IMPERSONATE);
+        if ($reauth !== null) {
+            return $reauth;
+        }
         Impersonation::start($admin, $target);
 
         return ApiResponse::success(['uuid' => $target['uuid'], 'username' => $target['username']], 'Now impersonating ' . $target['username'], 200);

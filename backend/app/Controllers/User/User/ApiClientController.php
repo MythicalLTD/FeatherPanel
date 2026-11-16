@@ -331,6 +331,12 @@ class ApiClientController
             return $notAllowed;
         }
 
+        // Minting a new API key (full access) needs a confirmed browser session.
+        $reauth = \App\Helpers\StepUpAuth::require($request, \App\Helpers\StepUpAuth::ACTION_API_KEY);
+        if ($reauth !== null) {
+            return $reauth;
+        }
+
         $data = json_decode($request->getContent(), true);
         if ($data == null) {
             return ApiResponse::error('Invalid request data', 'INVALID_REQUEST_DATA', 400);
@@ -429,6 +435,12 @@ class ApiClientController
         $notAllowed = $this->ensureApiKeyCreationAllowed($user);
         if ($notAllowed !== null) {
             return $notAllowed;
+        }
+
+        // Minting a new API key (full access) needs a confirmed browser session.
+        $reauth = \App\Helpers\StepUpAuth::require($request, \App\Helpers\StepUpAuth::ACTION_API_KEY);
+        if ($reauth !== null) {
+            return $reauth;
         }
 
         $data = json_decode($request->getContent(), true);
@@ -855,6 +867,12 @@ class ApiClientController
             return ApiResponse::error('You are not allowed to access this API client', 'UNAUTHORIZED_ACCESS', 403);
         }
 
+        // New key material is a new API key: it needs a confirmed browser session.
+        $reauth = \App\Helpers\StepUpAuth::require($request, \App\Helpers\StepUpAuth::ACTION_API_KEY);
+        if ($reauth !== null) {
+            return $reauth;
+        }
+
         // Generate new API keys
         $newPublicKey = $this->generateApiKey();
         $newPrivateKey = $this->generateApiKey();
@@ -1260,6 +1278,12 @@ class ApiClientController
             return $allowCheck;
         }
 
+        // Minting a new API key (full access) needs a confirmed browser session.
+        $reauth = \App\Helpers\StepUpAuth::require($request, \App\Helpers\StepUpAuth::ACTION_API_KEY);
+        if ($reauth !== null) {
+            return $reauth;
+        }
+
         $userCode = trim((string) $request->query->get('user_code', ''));
         if ($userCode === '') {
             return ApiResponse::error('user_code is required', 'USER_CODE_REQUIRED', 400);
@@ -1451,6 +1475,12 @@ class ApiClientController
         $allowCheck = $this->ensureApiKeyCreationAllowed($user);
         if ($allowCheck !== null) {
             return $allowCheck;
+        }
+
+        // Minting a new API key (full access) needs a confirmed browser session.
+        $reauth = \App\Helpers\StepUpAuth::require($request, \App\Helpers\StepUpAuth::ACTION_API_KEY);
+        if ($reauth !== null) {
+            return $reauth;
         }
 
         $data = json_decode($request->getContent(), true);

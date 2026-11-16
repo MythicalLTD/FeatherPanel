@@ -34,9 +34,15 @@ class RateLimitConfig
     private const DEFAULT_ENFORCED_NAMESPACES = [
         'user-auth',
         'user-auth-verify-email',
+        'user-auth-email',
+        'user-auth-reauth',
+        'user-auth-discord',
+        'user-auth-oidc',
+        'user-auth-sso',
         'user-api-clients',
         'user-api-clients-validate',
         'public-webhooks',
+        'global-api',
     ];
     private static ?array $config = null;
     /** mtime/size of the config file when it was loaded, to notice edits by other processes. */

@@ -4888,6 +4888,19 @@ class SettingsController
             return $mailValidationError;
         }
 
+        // Custom JavaScript runs in every visitor's browser: changing it needs a confirmed session.
+        if (array_key_exists(ConfigInterface::CUSTOM_JS, $data) && isset($this->settings[ConfigInterface::CUSTOM_JS])) {
+            $normalizeJs = static fn (string $js): string => trim(str_replace("\r\n", "\n", $js));
+            $incomingJs = $this->normalizeSettingValueForStorage($this->settings[ConfigInterface::CUSTOM_JS], $data[ConfigInterface::CUSTOM_JS]);
+            $currentJs = (string) ($this->settings[ConfigInterface::CUSTOM_JS]['value'] ?? '');
+            if ($normalizeJs((string) $incomingJs) !== $normalizeJs($currentJs)) {
+                $reauth = \App\Helpers\StepUpAuth::require($request, \App\Helpers\StepUpAuth::ACTION_CUSTOM_JS);
+                if ($reauth !== null) {
+                    return $reauth;
+                }
+            }
+        }
+
         // Validate and update each setting
         foreach ($data as $setting => $value) {
             if (!is_string($setting) || !isset($this->settings[$setting])) {
