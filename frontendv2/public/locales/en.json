@@ -1747,7 +1747,8 @@
             "REAUTH_METHOD_NOT_ALLOWED": "This confirmation method is not available for your account.",
             "REAUTH_LOCKED": "Too many failed attempts. Try again in a few minutes.",
             "REAUTH_NOT_APPLICABLE": "Confirmation is only needed when signed in through the browser.",
-            "REAUTH_STORE_FAILED": "Could not complete the confirmation. Please try again."
+            "REAUTH_STORE_FAILED": "Could not complete the confirmation. Please try again.",
+            "METRICS_SETTINGS_SAVE_FAILED": "Could not save the node metrics settings."
         },
         "global": {}
     },
@@ -9446,6 +9447,9 @@
                     "swap_percent": "Swap Usage %",
                     "tags": "Tags",
                     "usage": "Usage"
+                },
+                "daemon_health": {
+                    "title": "Health & metrics"
                 }
             },
             "setup": {
@@ -15481,6 +15485,9 @@
             },
             "selfUpdate": {
                 "tab": "Self-update"
+            },
+            "daemonHealth": {
+                "tab": "Health & metrics"
             }
         },
         "webPlates": {
@@ -16278,6 +16285,178 @@
                 "failures": "Failed pushes",
                 "last_success": "Last successful push",
                 "last_error": "Last error ({date})"
+            }
+        },
+        "daemonHealth": {
+            "title": "Daemon health",
+            "description_wings": "Readiness checks and live metrics read from this node's FeatherWings /health/ready and /metrics endpoints.",
+            "description_web": "Readiness checks and live metrics read from this node's FeatherQuilld /health/ready and /metrics endpoints.",
+            "loading": "Checking the daemon...",
+            "load_failed": "Could not load daemon health",
+            "auto_refresh": "Auto refresh",
+            "updated": "Updated {when}",
+            "ago": "{time} ago",
+            "latency": "{ms} ms",
+            "of": "of {total}",
+            "up": "Up",
+            "down": "Down",
+            "critical": "Critical",
+            "daemon_uptime": "Daemon uptime",
+            "failing_checks": "Failing: {checks}",
+            "checks_title": "Health checks",
+            "checks_failing": "{count} check(s) need attention",
+            "checks_passing": "All checks pass",
+            "details_hidden": "The daemon only returned check statuses. Messages are shown when it accepts the panel's node token.",
+            "metrics_title": "Live metrics",
+            "unsupported_wings": "This FeatherWings version has no health or metrics endpoints. Update Wings to see health checks and live metrics here.",
+            "unsupported_web": "This FeatherQuilld version has no health or metrics endpoints. Update FeatherQuilld to see health checks and live metrics here.",
+            "status": {
+                "healthy": "Healthy",
+                "degraded": "Degraded",
+                "unhealthy": "Unhealthy",
+                "unreachable": "Unreachable",
+                "unsupported": "Update daemon",
+                "checking": "Checking"
+            },
+            "status_hint": {
+                "healthy": "Every readiness check passes.",
+                "degraded": "A non-critical check is failing; the node still serves requests.",
+                "unhealthy": "A critical check is failing; the node may not be able to run servers.",
+                "unreachable": "The panel could not reach the daemon.",
+                "unsupported": "The daemon is online but too old for health checks."
+            },
+            "check_status": {
+                "ok": "OK",
+                "degraded": "Degraded",
+                "fail": "Failing"
+            },
+            "checks": {
+                "docker": "Docker",
+                "data_directory": "Data directory",
+                "disk_space": "Disk space",
+                "sftp": "SFTP",
+                "panel": "Panel connection",
+                "daemon": "Daemon",
+                "reverse_proxy": "Reverse proxy",
+                "storage": "Storage",
+                "disk_limiter": "Disk limiter"
+            },
+            "host": {
+                "title": "Host resources",
+                "cpu": "CPU",
+                "memory": "Memory",
+                "disk": "Disk",
+                "load": "Load {load}",
+                "threads": "{count} threads",
+                "swap": "Swap {used} / {total}"
+            },
+            "server_state": {
+                "running": "running",
+                "starting": "starting",
+                "stopping": "stopping",
+                "offline": "offline",
+                "unknown": "unknown"
+            },
+            "webspace_state": {
+                "running": "running",
+                "stopped": "stopped",
+                "starting": "starting",
+                "stopping": "stopping"
+            },
+            "wings": {
+                "title": "Wings activity",
+                "servers": "Servers",
+                "backups": "Backups running",
+                "backups_totals": "{success} done, {failure} failed since start",
+                "transfers": "Transfers running",
+                "transfers_split": "{incoming} incoming, {outgoing} outgoing",
+                "sftp": "SFTP sessions",
+                "sftp_up": "SFTP server is listening",
+                "sftp_down": "SFTP server is not listening",
+                "websockets": "Console websockets",
+                "docker": "Docker",
+                "panel_contact": "Last panel contact",
+                "panel_errors": "{count} failed panel requests since start",
+                "daemon_memory": "Wings uses {memory}",
+                "usage_title": "Server usage",
+                "usage_description": "Totals across every server on the node, with the busiest servers by CPU.",
+                "cpu_total": "CPU (all servers)",
+                "memory_total": "Memory (all servers)",
+                "disk_total": "Disk (all servers)",
+                "network": "Network received",
+                "network_tx": "{tx} sent",
+                "per_server_off": "Per-server metrics are turned off on this node (metrics.per_server: false).",
+                "table": {
+                    "server": "Server",
+                    "state": "State",
+                    "memory": "Memory",
+                    "disk": "Disk",
+                    "uptime": "Uptime"
+                }
+            },
+            "quilld": {
+                "title": "FeatherQuilld activity",
+                "webspaces": "WebSpaces",
+                "domains": "Domains",
+                "waf_enabled": "Firewall enabled",
+                "suspended": "{count} suspended",
+                "panel_unreachable": "Last panel sync failed",
+                "proxy_title": "Reverse proxy",
+                "proxy_none": "The daemon does not manage a reverse proxy.",
+                "proxy_running": "Running",
+                "proxy_stopped": "Not running",
+                "proxy_unmanaged": "Not managed",
+                "last_reload": "Last reload {when}",
+                "reload_failed": "failed",
+                "reloads": "{success} reloads ok, {failure} failed",
+                "firewall_title": "Firewall and SFTP",
+                "firewall_description": "Events since the daemon started.",
+                "events": "Firewall events",
+                "blocked": "Blocked",
+                "sftp_failures": "Failed SFTP logins",
+                "sftp_lockouts": "{count} lockouts",
+                "by_category": "By category",
+                "top_webspaces": "Most targeted WebSpaces"
+            },
+            "metrics_state": {
+                "ok": "Metrics available",
+                "unauthorized": "The daemon needs a metrics token",
+                "forbidden": "The daemon does not allow the panel to read metrics",
+                "not_enabled": "Metrics are not enabled",
+                "unsupported": "This daemon has no metrics endpoint",
+                "unreachable": "Could not reach the metrics endpoint",
+                "error": "The metrics endpoint returned an error"
+            },
+            "metrics_hint": {
+                "ok_wings": "",
+                "ok_web": "",
+                "unauthorized_wings": "Copy metrics.token from the node's config.yml into the metrics token field below. The node token is not accepted on /metrics.",
+                "unauthorized_web": "The daemon rejected the node token. Set api.metrics.token in /etc/featherquilld/config.yml and paste it below.",
+                "forbidden_wings": "Add the panel's address to metrics.allowed_ips in the node's config.yml.",
+                "forbidden_web": "Add the panel's address to api.metrics.allowed_ips in /etc/featherquilld/config.yml.",
+                "not_enabled_wings": "Set metrics.enabled: true in the node's config.yml and restart Wings. If metrics use a dedicated port, enter its URL below.",
+                "not_enabled_web": "Set api.metrics.enabled: true in /etc/featherquilld/config.yml and restart. If metrics use a dedicated port, enter its URL below.",
+                "unsupported_wings": "Update FeatherWings to get the health and metrics endpoints.",
+                "unsupported_web": "Update FeatherQuilld to get the health and metrics endpoints.",
+                "unreachable_wings": "Check the metrics URL and that the panel can reach that port.",
+                "unreachable_web": "Check the metrics URL and that the panel can reach that port.",
+                "error_wings": "Check the Wings logs on the node.",
+                "error_web": "Check the FeatherQuilld logs on the node."
+            },
+            "settings": {
+                "title": "Metrics access",
+                "description_wings": "How the panel reads /metrics on this node. Wings protects /metrics with its own token or an IP allowlist.",
+                "description_web": "How the panel reads /metrics on this node. FeatherQuilld accepts the node token, so a separate token is optional.",
+                "url": "Metrics URL",
+                "url_help": "Leave empty to use /metrics on the daemon API. Set it when metrics run on a dedicated listener.",
+                "token": "Metrics token",
+                "token_help_wings": "metrics.token from the node's config.yml. Stored encrypted.",
+                "token_help_web": "Optional api.metrics.token. Without it the node token is used. Stored encrypted.",
+                "token_saved": "A token is saved. Type a new one to replace it.",
+                "clear_token": "Remove token",
+                "saved": "Metrics settings saved",
+                "save_failed": "Could not save metrics settings",
+                "read_only": "You need permission to edit nodes to change these settings."
             }
         }
     },

@@ -22,8 +22,66 @@ use App\Controllers\Admin\NodesController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RouteCollection;
 use App\Controllers\Admin\NodeStatusController;
+use App\Controllers\Admin\NodeDaemonMetricsController;
 
 return function (RouteCollection $routes): void {
+    // Daemon health checks and live metrics (/health/ready, /metrics on the node).
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-nodes-daemon-health',
+        '/api/admin/nodes/daemon-health',
+        function (Request $request) {
+            return (new NodeDaemonMetricsController())->wingsSummaries($request);
+        },
+        Permissions::ADMIN_NODES_VIEW,
+    );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-nodes-daemon-health-show',
+        '/api/admin/nodes/{id}/daemon-health',
+        function (Request $request, array $args) {
+            $id = $args['id'] ?? null;
+            if (!$id || !is_numeric($id)) {
+                return ApiResponse::error('Missing or invalid ID', 'INVALID_ID', 400);
+            }
+
+            return (new NodeDaemonMetricsController())->wingsReport($request, (int) $id);
+        },
+        Permissions::ADMIN_NODES_VIEW,
+    );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-nodes-daemon-metrics-settings',
+        '/api/admin/nodes/{id}/daemon-metrics-settings',
+        function (Request $request, array $args) {
+            $id = $args['id'] ?? null;
+            if (!$id || !is_numeric($id)) {
+                return ApiResponse::error('Missing or invalid ID', 'INVALID_ID', 400);
+            }
+
+            return (new NodeDaemonMetricsController())->wingsSettings($request, (int) $id);
+        },
+        Permissions::ADMIN_NODES_VIEW,
+    );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-nodes-daemon-metrics-settings-update',
+        '/api/admin/nodes/{id}/daemon-metrics-settings',
+        function (Request $request, array $args) {
+            $id = $args['id'] ?? null;
+            if (!$id || !is_numeric($id)) {
+                return ApiResponse::error('Missing or invalid ID', 'INVALID_ID', 400);
+            }
+
+            return (new NodeDaemonMetricsController())->wingsUpdateSettings($request, (int) $id);
+        },
+        Permissions::ADMIN_NODES_EDIT,
+        ['PATCH']
+    );
+
     // Global node status dashboard
     App::getInstance(true)->registerAdminRoute(
         $routes,
