@@ -44,6 +44,7 @@ import {
 } from 'lucide-react';
 import { useIpMask } from '@/hooks/useIpMask';
 import { ListPagination } from '@/components/featherui/ListPagination';
+import { DAEMON_STATUS_STYLES, useDaemonHealthSummaries } from '@/components/admin/daemon-health';
 
 interface WebNode {
     id: number;
@@ -111,6 +112,10 @@ export default function WebNodesPage() {
     const [deleting, setDeleting] = useState(false);
     const [nodeHealth, setNodeHealth] = useState<Record<number, NodeHealth>>({});
     const [isCheckingHealth, setIsCheckingHealth] = useState(false);
+    const { summaries: daemonHealth } = useDaemonHealthSummaries(
+        'web',
+        webNodes.map((node) => node.id),
+    );
 
     const [pagination, setPagination] = useState<Omit<Pagination, 'page' | 'pageSize'>>({
         total: 0,
@@ -320,6 +325,14 @@ export default function WebNodesPage() {
                                           ? 'bg-red-500/10 text-red-500 border-red-500/20'
                                           : 'bg-muted text-muted-foreground border-border',
                             },
+                            ...(daemonHealth[node.id]
+                                ? [
+                                      {
+                                          label: t(`admin.daemonHealth.status.${daemonHealth[node.id].status}`),
+                                          className: DAEMON_STATUS_STYLES[daemonHealth[node.id].status]?.pill,
+                                      },
+                                  ]
+                                : []),
                             {
                                 label: getLocationName(node.location_id),
                                 className: 'bg-primary/10 text-primary border-primary/20',

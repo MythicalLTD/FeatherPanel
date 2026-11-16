@@ -27,6 +27,7 @@ use App\Helpers\ApiResponse;
 use App\Helpers\AppUrlHelper;
 use OpenApi\Attributes as OA;
 use App\Helpers\WingsUrlHelper;
+use App\Chat\NodeMetricsSetting;
 use App\Helpers\FeatherQuilldProbe;
 use App\CloudFlare\CloudFlareRealIP;
 use App\Helpers\FeatherQuilldClient;
@@ -34,6 +35,7 @@ use App\Helpers\FeatherQuilldCapabilities;
 use App\Helpers\FeatherQuilldConfigBuilder;
 use App\Plugins\Events\Events\WebNodeEvent;
 use Symfony\Component\HttpFoundation\Request;
+use App\Observability\NodeDaemonObservability;
 use Symfony\Component\HttpFoundation\Response;
 
 #[OA\Schema(
@@ -525,6 +527,8 @@ class WebNodesController
         if (!$success) {
             return ApiResponse::error('Failed to delete web node', 'WEB_NODE_DELETE_FAILED', 400);
         }
+        NodeMetricsSetting::deleteForNode(NodeMetricsSetting::KIND_WEB, $id);
+        NodeDaemonObservability::forget(NodeDaemonObservability::KIND_WEB, $id);
 
         Activity::createActivity([
             'user_uuid' => $admin['uuid'] ?? null,

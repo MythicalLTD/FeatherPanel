@@ -21,8 +21,66 @@ use App\Helpers\ApiResponse;
 use App\Controllers\Admin\WebNodesController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RouteCollection;
+use App\Controllers\Admin\NodeDaemonMetricsController;
 
 return function (RouteCollection $routes): void {
+    // Daemon health checks and live metrics (/health/ready, /metrics on the node).
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-web-nodes-daemon-health',
+        '/api/admin/web-nodes/daemon-health',
+        function (Request $request) {
+            return (new NodeDaemonMetricsController())->webSummaries($request);
+        },
+        Permissions::ADMIN_WEB_NODES_VIEW,
+    );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-web-nodes-daemon-health-show',
+        '/api/admin/web-nodes/{id}/daemon-health',
+        function (Request $request, array $args) {
+            $id = $args['id'] ?? null;
+            if (!$id || !is_numeric($id)) {
+                return ApiResponse::error('Missing or invalid ID', 'INVALID_ID', 400);
+            }
+
+            return (new NodeDaemonMetricsController())->webReport($request, (int) $id);
+        },
+        Permissions::ADMIN_WEB_NODES_VIEW,
+    );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-web-nodes-daemon-metrics-settings',
+        '/api/admin/web-nodes/{id}/daemon-metrics-settings',
+        function (Request $request, array $args) {
+            $id = $args['id'] ?? null;
+            if (!$id || !is_numeric($id)) {
+                return ApiResponse::error('Missing or invalid ID', 'INVALID_ID', 400);
+            }
+
+            return (new NodeDaemonMetricsController())->webSettings($request, (int) $id);
+        },
+        Permissions::ADMIN_WEB_NODES_VIEW,
+    );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-web-nodes-daemon-metrics-settings-update',
+        '/api/admin/web-nodes/{id}/daemon-metrics-settings',
+        function (Request $request, array $args) {
+            $id = $args['id'] ?? null;
+            if (!$id || !is_numeric($id)) {
+                return ApiResponse::error('Missing or invalid ID', 'INVALID_ID', 400);
+            }
+
+            return (new NodeDaemonMetricsController())->webUpdateSettings($request, (int) $id);
+        },
+        Permissions::ADMIN_WEB_NODES_EDIT,
+        ['PATCH']
+    );
+
     App::getInstance(true)->registerAdminRoute(
         $routes,
         'admin-web-nodes',
