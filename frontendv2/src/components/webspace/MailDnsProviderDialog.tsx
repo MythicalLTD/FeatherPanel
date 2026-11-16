@@ -84,7 +84,6 @@ export function MailDnsProviderDialog({ uuidShort, domains, open, onOpenChange, 
     const resetResult = () => {
         generation.current += 1;
         setResult(null);
-        setBusy(false);
         // Consent to replace records is given for one previewed target only.
         setOverwrite(false);
     };
@@ -149,7 +148,7 @@ export function MailDnsProviderDialog({ uuidShort, domains, open, onOpenChange, 
             setResult(null);
             toast.error(getApiErrorMessage(err, t, 'webSpaces.email.dnsApi.failed'));
         } finally {
-            if (current === generation.current) setBusy(false);
+            setBusy(false);
         }
     };
 
@@ -171,6 +170,7 @@ export function MailDnsProviderDialog({ uuidShort, domains, open, onOpenChange, 
                             resetResult();
                         }}
                         className='min-w-[180px]'
+                        disabled={busy}
                     >
                         {providers.map((p) => (
                             <option key={p.id} value={p.id}>
@@ -185,6 +185,7 @@ export function MailDnsProviderDialog({ uuidShort, domains, open, onOpenChange, 
                             resetResult();
                         }}
                         className='min-w-[200px]'
+                        disabled={busy}
                     >
                         {domains.map((d) => (
                             <option key={d} value={d}>
@@ -198,6 +199,7 @@ export function MailDnsProviderDialog({ uuidShort, domains, open, onOpenChange, 
                     type='password'
                     autoComplete='off'
                     spellCheck={false}
+                    disabled={busy}
                     placeholder={t('webSpaces.email.dnsApi.tokenPlaceholder')}
                     value={token}
                     onChange={(e) => {
