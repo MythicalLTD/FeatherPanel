@@ -102,21 +102,44 @@ class HetznerDnsProvider extends AbstractApiDnsProvider
 
         $url = $this->rrsetUrl($zoneId, $zoneName, $type, $fqdn);
         if ($values === []) {
-            $this->call('DELETE', $url);
+            $this->waitForAction($zoneId, $this->call('DELETE', $url));
 
             return;
         }
         if ($existing['records'] === []) {
-            $this->call('POST', self::BASE . '/zones/' . rawurlencode($zoneId) . '/rrsets', [
+            $this->waitForAction($zoneId, $this->call('POST', self::BASE . '/zones/' . rawurlencode($zoneId) . '/rrsets', [
                 'name' => $this->relative($fqdn, $zoneName),
                 'type' => $type,
                 'ttl' => $ttl,
                 'records' => $values,
-            ]);
+            ]));
 
             return;
         }
-        $this->call('POST', $url . '/actions/set_records', ['records' => $values]);
+        $this->waitForAction($zoneId, $this->call('POST', $url . '/actions/set_records', ['records' => $values]));
+    }
+
+    /**
+     * Writes answer with an action that can still be running; a write only counts once it finished.
+     *
+     * @param array{status: int, body: mixed} $response
+     */
+    private function waitForAction(string $zoneId, array $response): void
+    {
+        $action = is_array($response['body']) && is_array($response['body']['action'] ?? null) ? $response['body']['action'] : null;
+        for ($attempt = 0; $action !== null && $attempt < 15; ++$attempt) {
+            $status = (string) ($action['status'] ?? '');
+            if ($status === 'error') {
+                $error = is_array($action['error'] ?? null) ? (string) ($action['error']['message'] ?? $action['error']['code'] ?? '') : '';
+                throw new \RuntimeException(static::label() . ' could not apply the change' . ($error !== '' ? ': ' . $error : ''));
+            }
+            if ($status !== 'running' || !isset($action['id'])) {
+                return;
+            }
+            usleep(1000000);
+            $res = $this->call('GET', self::BASE . '/zones/' . rawurlencode($zoneId) . '/actions/' . rawurlencode((string) $action['id']));
+            $action = is_array($res['body']) && is_array($res['body']['action'] ?? null) ? $res['body']['action'] : null;
+        }
     }
 
     private function rrsetUrl(string $zoneId, string $zoneName, string $type, string $fqdn): string

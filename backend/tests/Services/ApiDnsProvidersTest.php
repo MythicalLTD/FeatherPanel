@@ -155,6 +155,65 @@ class ApiDnsProvidersTest extends TestCase
         $this->assertSame($dkim, $fake->state('example.com', 'TXT', 'mail._domainkey.example.com')[0]['content']);
     }
 
+    #[PHPUnit\Framework\Attributes\DataProvider('providers')]
+    public function testASecondSpfLeftOverFromAnEarlierRunIsAConflictAndIsRemovedOnRequest(string $id): void
+    {
+        $fake = new FakeDnsApi($id, ['example.com']);
+        $fake->seed('example.com', 'TXT', 'example.com', [['content' => 'v=spf1 include:old.example ~all'], ['content' => self::SPF], ['content' => 'google-site-verification=abc']]);
+        $p = DnsProviderRegistry::create($id, 'tok', $fake);
+        $z = $p->findZoneForDomain('example.com')['id'];
+
+        $this->assertSame('conflict', $p->upsertTxtRecord($z, 'example.com', self::SPF, 300, false)['action']);
+        $this->assertSame('updated', $p->upsertTxtRecord($z, 'example.com', self::SPF, 300, true)['action']);
+        $values = array_column($fake->state('example.com', 'TXT', 'example.com'), 'content');
+        sort($values);
+        $this->assertSame(['google-site-verification=abc', self::SPF], $values);
+    }
+
+    #[PHPUnit\Framework\Attributes\DataProvider('providers')]
+    public function testDkimKeyWithoutVersionTagIsRecognised(string $id): void
+    {
+        $fake = new FakeDnsApi($id, ['example.com']);
+        $fake->seed('example.com', 'TXT', 'mail._domainkey.example.com', [['content' => 'k=rsa; p=OLDKEY']]);
+        $p = DnsProviderRegistry::create($id, 'tok', $fake);
+        $z = $p->findZoneForDomain('example.com')['id'];
+
+        $this->assertSame('conflict', $p->upsertTxtRecord($z, 'mail._domainkey.example.com', 'v=DKIM1; k=rsa; p=NEWKEY', 300, false)['action']);
+        $this->assertSame('updated', $p->upsertTxtRecord($z, 'mail._domainkey.example.com', 'v=DKIM1; k=rsa; p=NEWKEY', 300, true)['action']);
+        $this->assertSame([['content' => 'v=DKIM1; k=rsa; p=NEWKEY']], $fake->state('example.com', 'TXT', 'mail._domainkey.example.com'));
+    }
+
+    public function testIonosEnablesADisabledRecordInsteadOfAddingASecondOne(): void
+    {
+        $fake = new FakeDnsApi('ionos', ['example.com']);
+        $fake->seed('example.com', 'TXT', 'example.com', [['content' => self::SPF, 'disabled' => true]]);
+        $p = DnsProviderRegistry::create('ionos', 'tok', $fake);
+        $z = $p->findZoneForDomain('example.com')['id'];
+
+        $this->assertSame('created', $p->upsertTxtRecord($z, 'example.com', self::SPF, 300, false)['action']);
+        $this->assertSame([['content' => self::SPF]], $fake->state('example.com', 'TXT', 'example.com'));
+        $this->assertSame('unchanged', $p->upsertTxtRecord($z, 'example.com', self::SPF, 300, false)['action']);
+    }
+
+    public function testHetznerWaitsForTheWriteActionAndReportsAFailedOne(): void
+    {
+        $fake = new FakeDnsApi('hetzner', ['example.com']);
+        $fake->seed('example.com', 'TXT', 'example.com', [['content' => 'google-site-verification=abc']]);
+        $fake->hetznerActionStatus = 'success';
+        $p = DnsProviderRegistry::create('hetzner', 'tok', $fake);
+        $z = $p->findZoneForDomain('example.com')['id'];
+        $this->assertSame('updated', $p->upsertTxtRecord($z, 'example.com', self::SPF)['action']);
+        $this->assertSame(1, $fake->hetznerActionPolls);
+
+        $fake2 = new FakeDnsApi('hetzner', ['example.com']);
+        $fake2->seed('example.com', 'TXT', 'example.com', [['content' => 'google-site-verification=abc']]);
+        $fake2->hetznerActionStatus = 'error';
+        $p2 = DnsProviderRegistry::create('hetzner', 'tok', $fake2);
+        $res = $p2->upsertTxtRecord($z, 'example.com', self::SPF);
+        $this->assertFalse($res['ok']);
+        $this->assertStringContainsString('record value is invalid', (string) $res['error']);
+    }
+
     public function testTxtChunksNeverSplitAnEscapeAndRoundTrip(): void
     {
         $p = DnsProviderRegistry::create('hetzner', 'tok', new FakeDnsApi('hetzner', ['example.com']));
@@ -293,6 +352,9 @@ class FakeDnsApi
     public int $writes = 0;
     public int $failWith = 0;
     public bool $echoHeadersInError = false;
+    /** Hetzner: final status of write actions ('success' or 'error'); null answers without a running action */
+    public ?string $hetznerActionStatus = null;
+    public int $hetznerActionPolls = 0;
     /** @var list<string> */
     public array $requests = [];
     /** @var array<string, list<string>> raw provider values (Hetzner/deSEC style) */
@@ -367,6 +429,9 @@ class FakeDnsApi
             $row = ['content' => $r['content']];
             if (isset($r['priority'])) {
                 $row['priority'] = $r['priority'];
+            }
+            if (!empty($r['disabled'])) {
+                $row['disabled'] = true;
             }
             $out[] = $row;
         }
@@ -511,7 +576,7 @@ class FakeDnsApi
                 }
                 foreach ($recs as $r) {
                     $content = $type === 'TXT' ? '"' . $r['content'] . '"' : $r['content'];
-                    $row = ['id' => $r['id'], 'name' => $fqdn, 'type' => $type, 'content' => $content, 'ttl' => 300, 'disabled' => false];
+                    $row = ['id' => $r['id'], 'name' => $fqdn, 'type' => $type, 'content' => $content, 'ttl' => 300, 'disabled' => !empty($r['disabled'])];
                     if (isset($r['priority'])) {
                         $row['prio'] = $r['priority'];
                     }
@@ -532,6 +597,18 @@ class FakeDnsApi
             }
 
             return ['status' => 201, 'body' => []];
+        }
+        if ($method === 'PUT') {
+            foreach ($this->store as $k => $rows) {
+                foreach ($rows as $i => $r) {
+                    if ($r['id'] === $m[2]) {
+                        $this->store[$k][$i]['disabled'] = (bool) ($json['disabled'] ?? false);
+                        $this->store[$k][$i]['content'] = str_contains($k, '|TXT|') ? $this->stripQuotes((string) $json['content']) : (string) $json['content'];
+                    }
+                }
+            }
+
+            return ['status' => 200, 'body' => null];
         }
         if ($method === 'DELETE') {
             foreach ($this->store as $k => $rows) {
@@ -560,6 +637,15 @@ class FakeDnsApi
 
             return ['status' => 201, 'body' => ['rrset' => []]];
         }
+        if (preg_match('#^/v1/zones/([^/]+)/actions/(\d+)$#', $path, $m) && $method === 'GET') {
+            ++$this->hetznerActionPolls;
+            $action = ['id' => (int) $m[2], 'status' => $this->hetznerActionStatus];
+            if ($this->hetznerActionStatus === 'error') {
+                $action['error'] = ['code' => 'invalid_input', 'message' => 'record value is invalid'];
+            }
+
+            return ['status' => 200, 'body' => ['action' => $action]];
+        }
         if (preg_match('#^/v1/zones/([^/]+)/rrsets/([^/]+)/([A-Z]+)(/actions/set_records)?$#', $path, $m)) {
             $key = $m[1] . '|' . $m[3] . '|' . $m[2];
             if ($method === 'GET') {
@@ -570,10 +656,14 @@ class FakeDnsApi
                 return ['status' => 200, 'body' => ['rrset' => ['ttl' => 300, 'records' => array_map(fn ($v) => ['value' => $v], $this->raw[$key])]]];
             }
             if ($method === 'POST' && !empty($m[4])) {
+                if ($this->hetznerActionStatus === 'error') {
+                    // The action fails later, nothing changes.
+                    return ['status' => 201, 'body' => ['action' => ['id' => 7, 'status' => 'running']]];
+                }
                 $this->raw[$key] = array_column($json['records'], 'value');
                 $this->syncFromRaw($m[1], $m[3], $m[2]);
 
-                return ['status' => 201, 'body' => ['action' => []]];
+                return ['status' => 201, 'body' => ['action' => $this->hetznerActionStatus === null ? [] : ['id' => 7, 'status' => 'running']]];
             }
             if ($method === 'DELETE') {
                 unset($this->raw[$key]);

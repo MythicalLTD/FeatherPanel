@@ -15,7 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import axios from 'axios';
 import { toast } from 'sonner';
 import { Dialog, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -79,12 +79,21 @@ export function MailDnsProviderDialog({ uuidShort, domains, open, onOpenChange, 
     const [overwrite, setOverwrite] = useState(false);
     const [busy, setBusy] = useState(false);
     const [result, setResult] = useState<ProvisionResult | null>(null);
+    // Bumped on every input change and on close, so a response that arrives late never shows up for other inputs.
+    const generation = useRef(0);
+    const resetResult = () => {
+        generation.current += 1;
+        setResult(null);
+        setBusy(false);
+    };
 
     useEffect(() => {
         if (!open) {
+            generation.current += 1;
             setToken('');
             setResult(null);
             setOverwrite(false);
+            setBusy(false);
 
             return;
         }
@@ -106,6 +115,7 @@ export function MailDnsProviderDialog({ uuidShort, domains, open, onOpenChange, 
     const hasConflict = !!result?.results?.some((r) => r.action === 'conflict');
 
     const run = async (mode: 'preview' | 'apply') => {
+        const current = generation.current;
         setBusy(true);
         try {
             const { data } = await axios.post(`/api/user/webspaces/${uuidShort}/mailboxes/dns/provider`, {
@@ -115,10 +125,16 @@ export function MailDnsProviderDialog({ uuidShort, domains, open, onOpenChange, 
                 mode,
                 overwrite,
             });
+            if (current !== generation.current) return;
             const res = data?.data as ProvisionResult;
             setResult(res);
             if (mode === 'apply') {
-                if (res.ok) {
+                if (res.ok && res.dkim_ready === false) {
+                    toast.success(t('webSpaces.email.dnsApi.applied'));
+                    toast.info(t('webSpaces.email.dkimPending'));
+                    setToken('');
+                    onDone();
+                } else if (res.ok) {
                     toast.success(t('webSpaces.email.dnsApi.applied'));
                     setToken('');
                     onDone();
@@ -127,10 +143,11 @@ export function MailDnsProviderDialog({ uuidShort, domains, open, onOpenChange, 
                 }
             }
         } catch (err) {
+            if (current !== generation.current) return;
             setResult(null);
             toast.error(getApiErrorMessage(err, t, 'webSpaces.email.dnsApi.failed'));
         } finally {
-            setBusy(false);
+            if (current === generation.current) setBusy(false);
         }
     };
 
@@ -149,7 +166,7 @@ export function MailDnsProviderDialog({ uuidShort, domains, open, onOpenChange, 
                         value={provider}
                         onChange={(e) => {
                             setProvider(e.target.value);
-                            setResult(null);
+                            resetResult();
                         }}
                         className='min-w-[180px]'
                     >
@@ -163,7 +180,7 @@ export function MailDnsProviderDialog({ uuidShort, domains, open, onOpenChange, 
                         value={domain}
                         onChange={(e) => {
                             setDomain(e.target.value);
-                            setResult(null);
+                            resetResult();
                         }}
                         className='min-w-[200px]'
                     >
@@ -183,7 +200,7 @@ export function MailDnsProviderDialog({ uuidShort, domains, open, onOpenChange, 
                     value={token}
                     onChange={(e) => {
                         setToken(e.target.value);
-                        setResult(null);
+                        resetResult();
                     }}
                 />
                 <p className='text-muted-foreground text-xs'>{t('webSpaces.email.dnsApi.tokenNotStored')}</p>

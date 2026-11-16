@@ -65,25 +65,30 @@ class DigitalOceanDnsProvider extends AbstractRecordDnsProvider
 
     protected function fetchRrset(string $zoneId, string $zoneName, string $type, string $fqdn): array
     {
-        $res = $this->call('GET', self::BASE . '/domains/' . rawurlencode($zoneId) . '/records?per_page=200&type=' . rawurlencode($type) . '&name=' . rawurlencode($fqdn));
-        $body = is_array($res['body']) ? $res['body'] : [];
         $records = [];
         $ttl = null;
-        foreach (is_array($body['domain_records'] ?? null) ? $body['domain_records'] : [] as $row) {
-            if (!is_array($row) || strtoupper((string) ($row['type'] ?? '')) !== $type) {
-                continue;
+        for ($page = 1; $page <= 20; ++$page) {
+            $res = $this->call('GET', self::BASE . '/domains/' . rawurlencode($zoneId) . '/records?per_page=200&page=' . $page . '&type=' . rawurlencode($type) . '&name=' . rawurlencode($fqdn));
+            $body = is_array($res['body']) ? $res['body'] : [];
+            foreach (is_array($body['domain_records'] ?? null) ? $body['domain_records'] : [] as $row) {
+                if (!is_array($row) || strtoupper((string) ($row['type'] ?? '')) !== $type) {
+                    continue;
+                }
+                // The name filter is a fully qualified name; double check, the API also accepts relative names.
+                if ($this->fqdn((string) ($row['name'] ?? '@'), $zoneName) !== $fqdn) {
+                    continue;
+                }
+                $data = (string) ($row['data'] ?? '');
+                $records[] = [
+                    'content' => $type === 'TXT' ? $this->unquoteTxt($data) : ($type === 'MX' ? strtolower(rtrim($data, '.')) : $data),
+                    'priority' => isset($row['priority']) ? (int) $row['priority'] : null,
+                    'id' => (string) ($row['id'] ?? ''),
+                ];
+                $ttl = isset($row['ttl']) ? (int) $row['ttl'] : $ttl;
             }
-            // The name filter is a fully qualified name; double check, the API also accepts relative names.
-            if ($this->fqdn((string) ($row['name'] ?? '@'), $zoneName) !== $fqdn) {
-                continue;
+            if (empty($body['links']['pages']['next'])) {
+                break;
             }
-            $data = (string) ($row['data'] ?? '');
-            $records[] = [
-                'content' => $type === 'TXT' ? $this->unquoteTxt($data) : ($type === 'MX' ? strtolower(rtrim($data, '.')) : $data),
-                'priority' => isset($row['priority']) ? (int) $row['priority'] : null,
-                'id' => (string) ($row['id'] ?? ''),
-            ];
-            $ttl = isset($row['ttl']) ? (int) $row['ttl'] : $ttl;
         }
 
         return ['ttl' => $ttl, 'records' => $records];

@@ -66,21 +66,26 @@ class CloudflareDnsProvider extends AbstractRecordDnsProvider
 
     protected function fetchRrset(string $zoneId, string $zoneName, string $type, string $fqdn): array
     {
-        $res = $this->call('GET', self::BASE . '/zones/' . rawurlencode($zoneId) . '/dns_records?per_page=100&type=' . rawurlencode($type) . '&name=' . rawurlencode($fqdn));
-        $body = is_array($res['body']) ? $res['body'] : [];
         $records = [];
         $ttl = null;
-        foreach (is_array($body['result'] ?? null) ? $body['result'] : [] as $row) {
-            if (!is_array($row)) {
-                continue;
+        for ($page = 1; $page <= 20; ++$page) {
+            $res = $this->call('GET', self::BASE . '/zones/' . rawurlencode($zoneId) . '/dns_records?per_page=100&page=' . $page . '&type=' . rawurlencode($type) . '&name=' . rawurlencode($fqdn));
+            $body = is_array($res['body']) ? $res['body'] : [];
+            foreach (is_array($body['result'] ?? null) ? $body['result'] : [] as $row) {
+                if (!is_array($row)) {
+                    continue;
+                }
+                $content = (string) ($row['content'] ?? '');
+                $records[] = [
+                    'content' => $type === 'TXT' ? $this->unquoteTxt($content) : ($type === 'MX' ? strtolower(rtrim($content, '.')) : $content),
+                    'priority' => isset($row['priority']) ? (int) $row['priority'] : null,
+                    'id' => (string) ($row['id'] ?? ''),
+                ];
+                $ttl = isset($row['ttl']) ? (int) $row['ttl'] : $ttl;
             }
-            $content = (string) ($row['content'] ?? '');
-            $records[] = [
-                'content' => $type === 'TXT' ? $this->unquoteTxt($content) : ($type === 'MX' ? strtolower(rtrim($content, '.')) : $content),
-                'priority' => isset($row['priority']) ? (int) $row['priority'] : null,
-                'id' => (string) ($row['id'] ?? ''),
-            ];
-            $ttl = isset($row['ttl']) ? (int) $row['ttl'] : $ttl;
+            if ($page >= (int) ($body['result_info']['total_pages'] ?? 1)) {
+                break;
+            }
         }
 
         return ['ttl' => $ttl, 'records' => $records];

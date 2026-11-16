@@ -24,6 +24,9 @@ class IonosDnsProvider extends AbstractRecordDnsProvider
 {
     private const BASE = 'https://api.hosting.ionos.com/dns/v1';
 
+    /** @var array<string, string> disabled records seen by fetchRrset: "type|fqdn|content" => record id */
+    private array $disabled = [];
+
     public static function id(): string
     {
         return 'ionos';
@@ -67,6 +70,12 @@ class IonosDnsProvider extends AbstractRecordDnsProvider
             if (!is_array($row) || strtoupper((string) ($row['type'] ?? '')) !== $type || strtolower(rtrim((string) ($row['name'] ?? ''), '.')) !== $fqdn) {
                 continue;
             }
+            // A disabled record is not published: it neither counts as present nor as a conflict. createOne()
+            // enables it again instead of adding a second record with the same value.
+            if (!empty($row['disabled'])) {
+                $this->disabled[$type . '|' . $fqdn . '|' . ($type === 'TXT' ? $this->unquoteTxt((string) ($row['content'] ?? '')) : strtolower(rtrim((string) ($row['content'] ?? ''), '.')))] = (string) ($row['id'] ?? '');
+                continue;
+            }
             $content = (string) ($row['content'] ?? '');
             $records[] = [
                 'content' => $type === 'TXT' ? $this->unquoteTxt($content) : ($type === 'MX' ? strtolower(rtrim($content, '.')) : $content),
@@ -81,6 +90,17 @@ class IonosDnsProvider extends AbstractRecordDnsProvider
 
     protected function createOne(string $zoneId, string $zoneName, string $type, string $fqdn, string $content, ?int $priority, int $ttl): void
     {
+        $disabledId = $this->disabled[$type . '|' . $fqdn . '|' . ($type === 'MX' ? strtolower(rtrim($content, '.')) : $content)] ?? '';
+        if ($disabledId !== '') {
+            $update = ['content' => $content, 'ttl' => max(60, $ttl), 'disabled' => false];
+            if ($type === 'MX') {
+                $update['prio'] = $priority ?? 10;
+            }
+            $this->call('PUT', self::BASE . '/zones/' . rawurlencode($zoneId) . '/records/' . rawurlencode($disabledId), $update);
+            $this->disabled = array_filter($this->disabled, static fn (string $id): bool => $id !== $disabledId);
+
+            return;
+        }
         $record = ['name' => $fqdn, 'type' => $type, 'content' => $content, 'ttl' => max(60, $ttl), 'disabled' => false];
         if ($type === 'MX') {
             $record['prio'] = $priority ?? 10;

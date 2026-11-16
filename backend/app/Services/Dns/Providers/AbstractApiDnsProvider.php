@@ -175,29 +175,40 @@ abstract class AbstractApiDnsProvider implements DnsProviderInterface, MailRecor
             $existing = $this->fetchRrset($zoneId, $zoneName, 'TXT', $fqdn);
             $values = array_map(static fn (array $r): string => $r['content'], $existing['records']);
 
-            if (in_array($content, $values, true)) {
-                return ['ok' => true, 'action' => 'unchanged'];
-            }
-
+            // Values of the same kind (another SPF, DKIM or DMARC) that differ from the wanted one. There must be at
+            // most one of each kind on a name (two SPF records make SPF fail), so they are a conflict even when the
+            // wanted value is already present, for example after an earlier run that could not remove the old one.
             $tag = self::txtTag($content);
-            $sameTag = null;
+            $others = [];
             if ($tag !== null) {
                 foreach ($values as $i => $value) {
-                    if (self::txtTag($value) === $tag) {
-                        $sameTag = $i;
-                        break;
+                    if ($value !== $content && self::txtTag($value) === $tag) {
+                        $others[] = $i;
                     }
                 }
             }
+            $present = in_array($content, $values, true);
 
-            if ($sameTag !== null && !$overwrite) {
-                return ['ok' => false, 'action' => 'conflict', 'error' => 'A different ' . $tag . ' record already exists (kept)', 'existing' => $values[$sameTag]];
+            if ($others === [] && $present) {
+                return ['ok' => true, 'action' => 'unchanged'];
+            }
+            if ($others !== [] && !$overwrite) {
+                return ['ok' => false, 'action' => 'conflict', 'error' => 'A different ' . $tag . ' record already exists (kept)', 'existing' => $values[$others[0]]];
             }
 
-            $next = $values;
-            if ($sameTag !== null) {
-                $next[$sameTag] = $content;
-            } else {
+            $next = [];
+            $placed = $present;
+            foreach ($values as $i => $value) {
+                if (in_array($i, $others, true)) {
+                    if (!$placed) {
+                        $next[] = $content;
+                        $placed = true;
+                    }
+                    continue;
+                }
+                $next[] = $value;
+            }
+            if (!$placed) {
                 $next[] = $content;
             }
             $action = $values === [] ? 'created' : 'updated';
@@ -231,6 +242,10 @@ abstract class AbstractApiDnsProvider implements DnsProviderInterface, MailRecor
     {
         if (preg_match('/^\s*v=([A-Za-z0-9]+)/', $value, $m) === 1) {
             return strtolower($m[1]);
+        }
+        // "v=DKIM1" is optional (RFC 6376 3.6.1): a key record is recognised by its "p=" tag.
+        if (preg_match('/(?:^|;)\s*p=[A-Za-z0-9+\/=\s]*(?:;|$)/', $value) === 1) {
+            return 'dkim1';
         }
 
         return null;
