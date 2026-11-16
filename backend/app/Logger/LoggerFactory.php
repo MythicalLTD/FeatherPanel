@@ -34,6 +34,7 @@ class LoggerFactory
         $caller = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2)[1]['class'] ?? 'unknown';
         \App\Telemetry\SentryTelemetry::log('info', $message, $caller);
         $this->appendLog('[INFO] [' . $caller . '] ' . $message);
+        \App\Observability\StructuredLog::log('info', $message, [], $caller);
     }
 
     public function warning(string $message, bool $sendTelemetry = false): void
@@ -41,6 +42,7 @@ class LoggerFactory
         $caller = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2)[1]['class'] ?? 'unknown';
         \App\Telemetry\SentryTelemetry::log('warning', $message, $caller, $sendTelemetry);
         $this->appendLog('[WARNING] [' . $caller . '] ' . $message);
+        \App\Observability\StructuredLog::log('warning', $message, [], $caller);
     }
 
     public function error(string $message, bool $sendTelemetry = true): void
@@ -48,6 +50,7 @@ class LoggerFactory
         $caller = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2)[1]['class'] ?? 'unknown';
         \App\Telemetry\SentryTelemetry::log('error', $message, $caller, $sendTelemetry);
         $this->appendLog('[ERROR]  [' . $caller . '] ' . $message);
+        \App\Observability\StructuredLog::log('error', $message, [], $caller);
     }
 
     public function critical(string $message, bool $sendTelemetry = true): void
@@ -55,6 +58,7 @@ class LoggerFactory
         $caller = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2)[1]['class'] ?? 'unknown';
         \App\Telemetry\SentryTelemetry::log('fatal', $message, $caller, $sendTelemetry);
         $this->appendLog('[CRITICAL]  [' . $caller . '] ' . $message);
+        \App\Observability\StructuredLog::log('critical', $message, [], $caller);
     }
 
     public function debug(string $message): void
@@ -63,6 +67,7 @@ class LoggerFactory
             $caller = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2)[1]['class'] ?? 'unknown';
             \App\Telemetry\SentryTelemetry::log('debug', $message, $caller);
             $this->appendLog('[DEBUG] [' . $caller . '] ' . $message);
+            \App\Observability\StructuredLog::log('debug', $message, [], $caller);
         }
     }
 

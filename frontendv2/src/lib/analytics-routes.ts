@@ -72,6 +72,7 @@ export const ANALYTICS_ROUTES = [
     '/auth/forgot-password',
     '/admin/analytics/vds',
     '/admin/notifications',
+    '/admin/observability',
     '/admin/spells/create',
     '/admin/storage-sense',
     '/auth/reset-password',

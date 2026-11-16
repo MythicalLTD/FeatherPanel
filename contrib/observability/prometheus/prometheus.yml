@@ -1,0 +1,32 @@
+global:
+  scrape_interval: 30s
+  scrape_timeout: 15s
+  evaluation_interval: 30s
+
+rule_files:
+  - /etc/prometheus/alerts.yml
+
+scrape_configs:
+  - job_name: featherpanel
+    metrics_path: /api/system/metrics
+    # Use https and the public hostname when Prometheus runs on another machine.
+    scheme: http
+    authorization:
+      type: Bearer
+      # Token from Admin -> Observability -> Generate token, saved to
+      # contrib/observability/secrets/featherpanel-metrics-token
+      credentials_file: /etc/prometheus/featherpanel-metrics-token
+    static_configs:
+      - targets:
+          # The panel's public port (frontendv2 proxies /api to the backend).
+          - host.docker.internal:4831
+        labels:
+          instance: featherpanel
+
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  - job_name: loki
+    static_configs:
+      - targets: ["loki:3100"]

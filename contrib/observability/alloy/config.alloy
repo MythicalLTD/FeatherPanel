@@ -1,0 +1,97 @@
+// Grafana Alloy pipeline for FeatherPanel structured logs.
+//
+// Source 1: storage/logs/featherpanel.json.log (JSON log target "file" or "both").
+// Source 2: container stderr of the FeatherPanel backend (target "stderr").
+// Use one of them, not both, or every line arrives twice.
+
+loki.write "default" {
+	endpoint {
+		url = sys.env("LOKI_PUSH_URL")
+	}
+}
+
+// ---- Source 1: the JSON log file -----------------------------------------
+local.file_match "featherpanel" {
+	path_targets = [{
+		"__path__" = "/featherpanel/logs/featherpanel.json.log",
+		"job"      = "featherpanel",
+		"app"      = "featherpanel",
+		"instance" = sys.env("FEATHERPANEL_INSTANCE"),
+	}]
+}
+
+loki.source.file "featherpanel" {
+	targets    = local.file_match.featherpanel.targets
+	forward_to = [loki.process.featherpanel.receiver]
+}
+
+loki.process "featherpanel" {
+	stage.json {
+		expressions = {
+			level     = "level",
+			timestamp = "timestamp",
+		}
+	}
+
+	stage.labels {
+		values = {level = ""}
+	}
+
+	stage.timestamp {
+		source = "timestamp"
+		format = "RFC3339Nano"
+	}
+
+	forward_to = [loki.write.default.receiver]
+}
+
+// ---- Source 2: container stderr (uncomment to use) -------------------------
+// discovery.docker "containers" {
+//   host = "unix:///var/run/docker.sock"
+//   filter {
+//     name   = "name"
+//     values = ["featherpanel_backend"]
+//   }
+// }
+//
+// discovery.relabel "featherpanel" {
+//   targets = discovery.docker.containers.targets
+//   rule {
+//     target_label = "job"
+//     replacement  = "featherpanel"
+//   }
+//   rule {
+//     target_label = "app"
+//     replacement  = "featherpanel"
+//   }
+//   rule {
+//     source_labels = ["__meta_docker_container_name"]
+//     regex         = "/(.*)"
+//     target_label  = "instance"
+//   }
+// }
+//
+// loki.source.docker "featherpanel" {
+//   host       = "unix:///var/run/docker.sock"
+//   targets    = discovery.relabel.featherpanel.output
+//   forward_to = [loki.process.stderr.receiver]
+// }
+//
+// loki.process "stderr" {
+//   // Keep only the JSON lines, drop PHP/Caddy noise.
+//   stage.match {
+//     selector = "{job=\"featherpanel\"} !~ \"^\\\\{\""
+//     action   = "drop"
+//   }
+//   stage.json {
+//     expressions = { level = "level", timestamp = "timestamp" }
+//   }
+//   stage.labels {
+//     values = { level = "" }
+//   }
+//   stage.timestamp {
+//     source = "timestamp"
+//     format = "RFC3339Nano"
+//   }
+//   forward_to = [loki.write.default.receiver]
+// }

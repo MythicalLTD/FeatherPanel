@@ -1,0 +1,11 @@
+apiVersion: 1
+
+providers:
+  - name: FeatherPanel
+    folder: FeatherPanel
+    type: file
+    disableDeletion: false
+    allowUiUpdates: true
+    updateIntervalSeconds: 60
+    options:
+      path: /var/lib/grafana/dashboards
