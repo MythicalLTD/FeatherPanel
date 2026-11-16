@@ -21,9 +21,14 @@ import { acquireWingsSlot, isWingsAdminNodeRequest, releaseWingsSlot } from '@/l
 import { attachPanelApiHistoryInterceptor } from '@/lib/panel-api-history';
 import { attachPanelAnalyticsInterceptor } from '@/lib/panel-analytics';
 import { attachRequestResilience } from '@/lib/request-resilience';
+import { parseReauthMethods, REAUTH_REQUIRED_CODE, requestReauth } from '@/lib/reauth';
 
 type WingsQueuedAxiosRequestConfig = InternalAxiosRequestConfig & {
     _wingsQueued?: boolean;
+};
+
+type ReauthRetryConfig = InternalAxiosRequestConfig & {
+    _fpReauthRetried?: boolean;
 };
 
 // Same-origin panel API calls must include cookies (session). Default axios does not.
@@ -171,6 +176,52 @@ const attachCommonResponseInterceptor = (client: AxiosInstance) => {
     );
 };
 
+/**
+ * Sensitive actions answer 403 REAUTH_REQUIRED until the session confirms the account again.
+ * Show the shared re-auth dialog and retry the original request once after confirmation.
+ */
+const attachReauthInterceptor = (client: AxiosInstance) => {
+    client.interceptors.response.use(
+        (response) => response,
+        async (
+            error: AxiosError<{
+                error_code?: string;
+                data?: {
+                    methods?: unknown;
+                    action?: string;
+                    sign_in_again?: boolean;
+                    sign_in_again_seconds?: number;
+                } | null;
+            }>,
+        ) => {
+            const config = error.config as ReauthRetryConfig | undefined;
+            const body = error.response?.data;
+            if (
+                !config ||
+                config._fpReauthRetried ||
+                error.response?.status !== 403 ||
+                body?.error_code !== REAUTH_REQUIRED_CODE
+            ) {
+                return Promise.reject(error);
+            }
+            const confirmed = await requestReauth({
+                action: typeof body?.data?.action === 'string' ? body.data.action : undefined,
+                methods: parseReauthMethods(body?.data?.methods),
+                signInAgain: body?.data?.sign_in_again === true,
+                signInAgainMinutes:
+                    typeof body?.data?.sign_in_again_seconds === 'number'
+                        ? Math.max(1, Math.round(body.data.sign_in_again_seconds / 60))
+                        : 5,
+            });
+            if (!confirmed) {
+                return Promise.reject(error);
+            }
+            config._fpReauthRetried = true;
+            return client.request(config);
+        },
+    );
+};
+
 // Attach to both the custom API client and the global axios instance used across the app.
 attachRequestResilience(api);
 attachRequestResilience(axios);
@@ -184,6 +235,8 @@ attachPanelApiHistoryInterceptor(api);
 attachPanelApiHistoryInterceptor(axios);
 attachPanelAnalyticsInterceptor(api);
 attachPanelAnalyticsInterceptor(axios);
+attachReauthInterceptor(api);
+attachReauthInterceptor(axios);
 
 export type FeatherpanelApiErrorBody = {
     success?: boolean;

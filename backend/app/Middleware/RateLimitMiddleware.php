@@ -21,11 +21,10 @@ use App\App;
 use RateLimit\Rate;
 use App\Permissions;
 use App\Helpers\ApiResponse;
-use RateLimit\RedisRateLimiter;
-use App\Helpers\FileRateLimiter;
+use App\Helpers\SecurityStore;
+use App\Runtime\RequestContext;
 use App\Helpers\PermissionHelper;
 use App\CloudFlare\CloudFlareRealIP;
-use RateLimit\Exception\LimitExceeded;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -50,16 +49,12 @@ class RateLimitMiddleware implements MiddlewareInterface
             return $next($request);
         }
 
-        // Get the App instance to access Redis connection
         $app = App::getInstance(true);
-        $redisConnection = $app->getRedisConnection();
 
-        // Get the client IP address
+        // Get the client IP address (Cloudflare / trusted proxy aware)
         $clientIP = CloudFlareRealIP::getRealIP();
 
-        // Get rate limit configuration
         $rate = $rateLimitConfig['rate'] ?? null;
-        $identifier = $rateLimitConfig['identifier'] ?? $clientIP;
         $namespace = $rateLimitConfig['namespace'] ?? 'rate_limit';
 
         // If no rate is configured, skip rate limiting
@@ -74,38 +69,80 @@ class RateLimitMiddleware implements MiddlewareInterface
             return $next($request);
         }
 
-        // Without a reachable Redis the counter used to be skipped entirely,
-        // which left login/2FA/reset limits inactive during a Redis outage.
-        // The file-backed limiter keeps those counters working instead.
-        if (!$redisConnection) {
-            if (!(new FileRateLimiter($rate, $namespace))->limit($identifier)) {
-                return self::tooManyRequests($app, $clientIP, $rate->getInterval());
-            }
-
-            return $next($request);
-        }
+        // One counter per route and caller: signed-in callers are counted per
+        // account (shared office/NAT addresses do not throttle each other),
+        // guests per client IP. Routes that share a namespace no longer share
+        // one counter with different limits.
+        $identifier = $rateLimitConfig['identifier'] ?? self::callerIdentifier($request, (string) $clientIP);
+        $key = 'rl:' . $namespace . ':' . self::routeKey($request) . ':' . $identifier . ':' . $rate->getInterval();
 
         try {
-            // Create a rate limiter with the configured rate
-            $limiter = new RedisRateLimiter($rate, $redisConnection, $namespace);
-
-            // Apply rate limit
-            $limiter->limit($identifier);
-        } catch (LimitExceeded $e) {
-            // The retry-after value is in the LimitExceeded exception
-            // The limiter does not expose the remaining window; the rate's interval is a safe upper bound.
-            $retryAfter = method_exists($e, 'getRetryAfter') ? $e->getRetryAfter() : $rate->getInterval();
-
-            return self::tooManyRequests($app, $clientIP, $retryAfter, $e->getMessage());
-        } catch (\Exception $e) {
+            // Redis when available, otherwise the file-backed store, so login/2FA/reset
+            // limits keep working during a Redis outage.
+            $hit = SecurityStore::hit($key, $rate->getInterval());
+        } catch (\Throwable $e) {
             // Log the error but don't block the request if rate limiting fails
             $app->getLogger()->error('Rate limiting error: ' . $e->getMessage());
 
-            // Continue to the next middleware/controller
             return $next($request);
         }
 
+        if ($hit['count'] > $rate->getOperations()) {
+            return self::tooManyRequests($app, (string) $clientIP, $hit['ttl'], $rate->getOperations(), $namespace);
+        }
+
         return $next($request);
+    }
+
+    /**
+     * Who a per-route counter belongs to: the account for signed-in requests, the IP otherwise.
+     */
+    public static function callerIdentifier(Request $request, string $clientIP): string
+    {
+        $apiClient = $request->attributes->get('api_client');
+        if (is_array($apiClient) && isset($apiClient['id'])) {
+            return 'key:' . $apiClient['id'];
+        }
+        $user = $request->attributes->get('user');
+        if (is_array($user) && !empty($user['uuid'])) {
+            return 'user:' . $user['uuid'];
+        }
+
+        return 'ip:' . $clientIP;
+    }
+
+    /**
+     * The shared HTTP 429 answer (also used by the panel-wide API limit).
+     */
+    public static function tooManyRequests(App $app, string $clientIP, ?int $retryAfter, ?int $limit = null, ?string $context = null): Response
+    {
+        $retryAfter = max(1, $retryAfter ?? 1);
+        $app->getLogger()->warning('Rate limit exceeded for IP: ' . $clientIP . ($context !== null ? ' - ' . $context : ''));
+
+        $response = ApiResponse::error(
+            'You are being rate limited! Retry after ' . $retryAfter . ' seconds.',
+            'RATE_LIMITED',
+            429,
+            [
+                'error_code' => 'RATE_LIMITED',
+                'retry_after' => $retryAfter,
+            ]
+        );
+        // Standard header (seconds) so clients can back off without parsing the body.
+        $response->headers->set('Retry-After', (string) $retryAfter);
+        if ($limit !== null) {
+            $response->headers->set('X-RateLimit-Limit', (string) $limit);
+            $response->headers->set('X-RateLimit-Remaining', '0');
+        }
+
+        return $response;
+    }
+
+    private static function routeKey(Request $request): string
+    {
+        $route = RequestContext::route() ?? $request->getPathInfo();
+
+        return substr(hash('sha256', strtoupper($request->getMethod()) . ' ' . $route), 0, 16);
     }
 
     private static function bypassesRateLimits(Request $request): bool
@@ -120,29 +157,5 @@ class RateLimitMiddleware implements MiddlewareInterface
         } catch (\Throwable) {
             return false;
         }
-    }
-
-    /**
-     * The shared HTTP 429 answer for both limiter backends (same payload as before).
-     */
-    private static function tooManyRequests(App $app, string $clientIP, ?int $retryAfter, ?string $context = null): Response
-    {
-        $app->getLogger()->warning('Rate limit exceeded for IP: ' . $clientIP . ($context !== null ? ' - ' . $context : ''));
-
-        $response = ApiResponse::error(
-            $retryAfter !== null
-                ? 'You are being rate limited! Retry after ' . max(1, $retryAfter) . ' seconds.'
-                : 'You are being rate limited! Please try again in a few seconds.',
-            'RATE_LIMITED',
-            429,
-            [
-                'error_code' => 'RATE_LIMITED',
-                'retry_after' => $retryAfter,
-            ]
-        );
-        // Standard header (seconds) so clients can back off without parsing the body.
-        $response->headers->set('Retry-After', (string) max(1, $retryAfter ?? 1));
-
-        return $response;
     }
 }

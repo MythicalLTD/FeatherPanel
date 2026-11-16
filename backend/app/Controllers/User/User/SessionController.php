@@ -139,6 +139,22 @@ class SessionController
         $config = $app->getConfig();
         $data = json_decode($request->getContent(), true);
 
+        // The password, e-mail and 2FA are what the confirmation step checks, so
+        // changing them needs a confirmed session (a stolen session cannot swap them).
+        // Checked before the captcha so the retried request can still use its token.
+        $current = AuthMiddleware::getCurrentUser($request);
+        if (is_array($data) && $current !== null) {
+            $securityChange = (isset($data['password']) && is_scalar($data['password']) && (string) $data['password'] !== '')
+                || (isset($data['email']) && is_scalar($data['email']) && (string) $data['email'] !== (string) ($current['email'] ?? ''))
+                || (($data['two_fa_enabled'] ?? null) === false && ($current['two_fa_enabled'] ?? 'false') === 'true');
+            if ($securityChange) {
+                $reauth = \App\Helpers\StepUpAuth::require($request, \App\Helpers\StepUpAuth::ACTION_ACCOUNT_SECURITY);
+                if ($reauth !== null) {
+                    return $reauth;
+                }
+            }
+        }
+
         if ($config->getSetting(ConfigInterface::TURNSTILE_ENABLED, 'false') == 'true') {
             if (!isset($data['turnstile_token']) || !is_scalar($data['turnstile_token']) || trim((string) $data['turnstile_token']) === '') {
                 return ApiResponse::error('Captcha token is required', 'CAPTCHA_TOKEN_REQUIRED');
@@ -994,6 +1010,7 @@ class SessionController
         // Process mails to format them properly
         $mails = [];
         foreach ($mailList as $mail) {
+            $mail = MailQueue::redactOneTimeCode($mail);
             $mailData = [
                 'id' => (int) $mail['id'],
                 'subject' => $mail['subject'] ?? '',

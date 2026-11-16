@@ -109,6 +109,13 @@ class TwoFactorController
             return ApiResponse::error('Demo mode is enabled', 'DEMO_MODE_ENABLED');
         }
         global $eventManager;
+        // Setting up a new authenticator changes how this account confirms
+        // sensitive actions, so it needs a confirmed session first (checked
+        // before the captcha so the retried request can reuse its token).
+        $reauth = \App\Helpers\StepUpAuth::require($request, \App\Helpers\StepUpAuth::ACTION_ACCOUNT_SECURITY);
+        if ($reauth !== null) {
+            return $reauth;
+        }
         if ($config->getSetting(ConfigInterface::TURNSTILE_ENABLED, 'false') == 'true') {
             if (!isset($data['turnstile_token']) || !is_scalar($data['turnstile_token']) || trim((string) $data['turnstile_token']) === '') {
                 return ApiResponse::error('Captcha token is required', 'CAPTCHA_TOKEN_REQUIRED');

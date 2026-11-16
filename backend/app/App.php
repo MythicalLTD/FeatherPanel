@@ -1363,6 +1363,8 @@ class App
 
             // Use route middleware if defined, otherwise global
             $middlewareStack = $routeMiddleware ?: $this->middleware;
+            // Panel-wide request budget (per account / guest IP); daemon callbacks and webhooks are exempt.
+            $middlewareStack = Middleware\ApiRateLimitMiddleware::apply($middlewareStack, $request);
             $middlewareStack[] = function ($request) use ($controller, $parameters) {
                 // Remove special keys
                 unset($parameters['_controller'], $parameters['_route'], $parameters['_middleware']);
@@ -1849,14 +1851,6 @@ class App
      */
     private function getRouteRateLimit(string $routeName, ?Rate $defaultRate = null, ?string $defaultNamespace = null): ?array
     {
-        // Check if route exists in admin config
-        $config = RateLimitConfig::getRateLimit($routeName, null, $defaultNamespace);
-
-        // If route has config, use it
-        if ($config !== null) {
-            return $config;
-        }
-
         // If route doesn't exist in config but has a default rate limit, auto-add it to config
         // This ensures new routes automatically appear in the admin panel for configuration
         // Routes are enabled by default if they have values (admin can disable individually)
@@ -1881,7 +1875,9 @@ class App
             }
         }
 
-        // Return null - rate limiting is disabled by default unless explicitly configured
-        return null;
+        // Admin config wins. The code default is passed so authentication limits
+        // stay enforced even when ratelimit.json is missing or not writable
+        // (only for the namespaces RateLimitConfig enforces by default).
+        return RateLimitConfig::getRateLimit($routeName, $defaultRate, $defaultNamespace);
     }
 }
