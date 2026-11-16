@@ -1,0 +1,86 @@
+groups:
+  - name: featherpanel
+    rules:
+      - alert: FeatherPanelDown
+        expr: up{job="featherpanel"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: FeatherPanel metrics endpoint is unreachable
+          description: Prometheus could not scrape {{ $labels.instance }} for 2 minutes.
+
+      - alert: FeatherPanelDatabaseDown
+        expr: featherpanel_database_up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: FeatherPanel cannot reach its database
+
+      - alert: FeatherPanelRedisDown
+        expr: featherpanel_redis_up == 0
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: FeatherPanel cannot reach Redis
+
+      - alert: FeatherPanelNodeDown
+        expr: featherpanel_node_up == 0 and on(node_id) featherpanel_node_maintenance == 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: Node {{ $labels.node }} is not answering the panel
+
+      - alert: FeatherPanelHighErrorRate
+        expr: |
+          sum(rate(featherpanel_http_requests_total{status_class="5xx"}[5m]))
+            / clamp_min(sum(rate(featherpanel_http_requests_total[5m])), 1e-9) > 0.05
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: More than 5% of panel API requests fail with 5xx
+
+      - alert: FeatherPanelSlowRequests
+        expr: |
+          histogram_quantile(0.95, sum by (le) (rate(featherpanel_http_request_duration_seconds_bucket[5m]))) > 2
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: 95th percentile API latency is above 2 seconds
+
+      - alert: FeatherPanelCronStalled
+        expr: time() - featherpanel_cron_heartbeat_timestamp_seconds > 600
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: No cron task has run for 10 minutes
+
+      - alert: FeatherPanelMailQueueStuck
+        expr: featherpanel_mail_queue_oldest_pending_age_seconds > 1800
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: Mail has been waiting in the queue for more than 30 minutes
+
+      - alert: FeatherPanelStorageLow
+        expr: featherpanel_storage_disk_free_bytes / featherpanel_storage_disk_total_bytes < 0.1
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: Less than 10% disk space left on the panel storage
+
+      - alert: FeatherPanelLokiPushFailing
+        expr: increase(featherpanel_loki_push_failures_total[15m]) > 0 and featherpanel_loki_queue_length > 1000
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: Direct Loki push is failing and lines are piling up

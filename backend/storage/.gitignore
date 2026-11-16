@@ -4,6 +4,8 @@
 /caches/*.json
 /logs/*.txt
 /logs/*.log
+/logs/*.log.1
+/logs/*.ndjson
 /caches/mails/*.html
 /caches/other/
 .env

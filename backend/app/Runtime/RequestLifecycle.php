@@ -23,6 +23,7 @@ use App\Config\ConfigFactory;
 use App\Helpers\RateLimitConfig;
 use App\Helpers\PermissionHelper;
 use App\Telemetry\SentryTelemetry;
+use App\Observability\ObservabilityConfig;
 
 /**
  * Hooks that run around every HTTP request.
@@ -80,6 +81,7 @@ final class RequestLifecycle
         RateLimitConfig::refreshIfChanged();
         Cache::resetForRequest();
         SentryTelemetry::resetRequestScope();
+        ObservabilityConfig::reset();
 
         foreach (self::$resetters as $name => $resetter) {
             try {

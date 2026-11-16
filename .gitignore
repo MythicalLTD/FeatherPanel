@@ -38,6 +38,8 @@ backend/tests/*
 !backend/tests/Backup/*.php
 !backend/tests/Telemetry/
 !backend/tests/Telemetry/SentryTelemetryTest.php
+!backend/tests/Observability/
+!backend/tests/Observability/*.php
 runner/async-runner.out
 todokutzu.md
 TODO.txt

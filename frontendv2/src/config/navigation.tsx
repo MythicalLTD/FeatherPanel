@@ -74,6 +74,7 @@ import {
     Palette,
     LifeBuoy,
     Camera,
+    Radar,
 } from 'lucide-react';
 import { isEnabled, isEnabledUnlessExplicitlyFalse } from '@/lib/utils';
 import { supportsDaemonFeature, type DaemonFeature } from '@/lib/daemonCapabilities';
@@ -288,6 +289,17 @@ const buildAdminNavigationItems = (
             isActive: false,
             category: 'admin',
             permission: Permissions.ADMIN_DASHBOARD_VIEW,
+            group: 'infrastructure',
+        },
+        {
+            id: 'admin-observability',
+            name: t('navigation.items.observability'),
+            title: t('navigation.items.observability'),
+            url: '/admin/observability',
+            icon: Radar,
+            isActive: false,
+            category: 'admin',
+            permission: Permissions.ADMIN_SETTINGS_VIEW,
             group: 'infrastructure',
         },
         {

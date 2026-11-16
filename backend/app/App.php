@@ -33,10 +33,14 @@ use App\Runtime\RequestContext;
 use App\Helpers\RateLimitConfig;
 use App\Runtime\RequestLifecycle;
 use App\Middleware\AuthMiddleware;
+use App\Observability\HealthProbe;
+use App\Observability\HttpMetrics;
+use App\Observability\LokiShipper;
 use App\Telemetry\SentryTelemetry;
 use App\Middleware\AdminMiddleware;
 use App\Middleware\WingsMiddleware;
 use App\Middleware\ServerMiddleware;
+use App\Observability\StructuredLog;
 use Symfony\Component\Routing\Route;
 use App\Plugins\Events\Events\AppEvent;
 use App\Middleware\FeatherQuilldMiddleware;
@@ -271,16 +275,20 @@ class App
      */
     public function handle(?Request $request = null, ?float $startTime = null): Response
     {
-        RequestContext::begin($startTime);
+        $request ??= Request::createFromGlobals();
+        // Keep the X-Request-Id of an upstream proxy or tracing gateway so one id follows
+        // the request through every hop (it is validated, a fresh id is used otherwise).
+        RequestContext::begin($startTime, $request->headers->get('X-Request-Id'));
         if (!defined('REQUEST_ID')) {
             // Backwards compatibility for plugins; core code uses RequestContext::id().
             define('REQUEST_ID', RequestContext::id());
         }
         RequestLifecycle::reset();
 
-        $response = $this->dispatch($request ?? Request::createFromGlobals());
+        $response = $this->dispatch($request);
         $response->send();
 
+        $this->recordObservability($request, $response);
         RequestLifecycle::terminate($response->getStatusCode());
 
         return $response;
@@ -418,7 +426,20 @@ class App
      */
     public function dispatch(Request $request): Response
     {
+        $path = $request->getPathInfo();
+        if ($path === '/api/health/live') {
+            // Liveness must not depend on the database or Redis.
+            RequestContext::setRoute($path);
+
+            return HealthProbe::live();
+        }
+
         if (!$this->bootHttp() || !$this->ensureConnections()) {
+            if ($path === '/api/health/ready') {
+                RequestContext::setRoute($path);
+
+                return HealthProbe::ready($this->bootError ?? new \RuntimeException('Database connection failed'));
+            }
             $response = $this->databaseUnavailableResponse();
             $response->headers->set('X-Request-ID', RequestContext::id());
 
@@ -431,6 +452,7 @@ class App
 
         try {
             [$parameters, $routePath] = $this->matchRoute($context, $request->getPathInfo());
+            RequestContext::setRoute($routePath);
             SentryTelemetry::startRequest($request, $routePath);
             $controller = $parameters['_controller'];
             unset($parameters['_controller'], $parameters['_route']);
@@ -1404,6 +1426,21 @@ class App
             [], // schemes
             $methods
         ));
+    }
+
+    /**
+     * Request metrics, the JSON access log and the Loki queue flush, after the response
+     * was sent. Never throws: observability must not break a request.
+     */
+    private function recordObservability(Request $request, Response $response): void
+    {
+        try {
+            $seconds = max(0.0, microtime(true) - RequestContext::startTime());
+            HttpMetrics::record($request->getMethod(), RequestContext::route(), $response->getStatusCode(), $seconds);
+            StructuredLog::access($request, $response, $seconds);
+            LokiShipper::flush();
+        } catch (\Throwable) {
+        }
     }
 
     /**

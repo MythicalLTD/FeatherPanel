@@ -55,6 +55,7 @@ class AuthMiddleware implements MiddlewareInterface
             UserDeviceTracker::trackFromRequest($request, $userInfo);
             // Attach user info to the request attributes for downstream use
             $request->attributes->set('user', $userInfo);
+            \App\Runtime\RequestContext::setUserUuid(isset($userInfo['uuid']) ? (string) $userInfo['uuid'] : null);
             $request->attributes->set('auth_type', 'session');
 
             // Impersonation: swap in the target for this request, keep the admin for audit.
@@ -74,6 +75,7 @@ class AuthMiddleware implements MiddlewareInterface
                             403
                         );
                         $request->attributes->set('user', $impersonation['target']);
+                        \App\Runtime\RequestContext::setUserUuid(isset($impersonation['target']['uuid']) ? (string) $impersonation['target']['uuid'] : null);
                         $request->attributes->set('impersonator', $userInfo);
                         \App\Runtime\RequestContext::setImpersonation($userInfo, $impersonation['target']);
                         try {
@@ -84,6 +86,7 @@ class AuthMiddleware implements MiddlewareInterface
                         return $blocked;
                     }
                     $request->attributes->set('user', $impersonation['target']);
+                    \App\Runtime\RequestContext::setUserUuid(isset($impersonation['target']['uuid']) ? (string) $impersonation['target']['uuid'] : null);
                     $request->attributes->set('impersonator', $userInfo);
                     \App\Runtime\RequestContext::setImpersonation($userInfo, $impersonation['target']);
                 }
@@ -159,6 +162,7 @@ class AuthMiddleware implements MiddlewareInterface
 
                 // Attach user info and API client info to the request attributes
                 $request->attributes->set('user', $userInfo);
+                \App\Runtime\RequestContext::setUserUuid(isset($userInfo['uuid']) ? (string) $userInfo['uuid'] : null);
                 $request->attributes->set('api_client', $apiClient);
                 $decodedPermissions = null;
                 if (array_key_exists('permissions', $apiClient) && $apiClient['permissions'] !== null) {

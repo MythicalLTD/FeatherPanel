@@ -1,0 +1,85 @@
+# FeatherPanel observability stack: Prometheus + Loki + Grafana Alloy + Grafana.
+# See README.md in this folder before starting it.
+name: featherpanel-observability
+
+services:
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=${PROMETHEUS_RETENTION:-30d}
+      - --web.enable-lifecycle
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
+      - ./secrets/featherpanel-metrics-token:/etc/prometheus/featherpanel-metrics-token:ro
+      - prometheus_data:/prometheus
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "127.0.0.1:${PROMETHEUS_PORT:-9090}:9090"
+
+  loki:
+    image: grafana/loki:3.5.3
+    restart: unless-stopped
+    command: -config.file=/etc/loki/loki.yml
+    volumes:
+      - ./loki/loki.yml:/etc/loki/loki.yml:ro
+      - loki_data:/loki
+    ports:
+      - "127.0.0.1:${LOKI_PORT:-3100}:3100"
+
+  alloy:
+    image: grafana/alloy:v1.10.2
+    restart: unless-stopped
+    command:
+      - run
+      - --server.http.listen-addr=0.0.0.0:12345
+      - --storage.path=/var/lib/alloy/data
+      - /etc/alloy/config.alloy
+    environment:
+      LOKI_PUSH_URL: http://loki:3100/loki/api/v1/push
+      FEATHERPANEL_INSTANCE: ${FEATHERPANEL_INSTANCE:-featherpanel}
+    volumes:
+      - ./alloy/config.alloy:/etc/alloy/config.alloy:ro
+      # FeatherPanel's storage/logs volume (holds featherpanel.json.log).
+      - featherpanel_logs:/featherpanel/logs:ro
+      # Container stdout/stderr, for FEATHERPANEL_LOG_JSON_TARGET=stderr setups.
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - alloy_data:/var/lib/alloy/data
+    depends_on:
+      - loki
+    ports:
+      - "127.0.0.1:${ALLOY_PORT:-12345}:12345"
+
+  grafana:
+    image: grafana/grafana:12.1.1
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?set GRAFANA_ADMIN_PASSWORD in .env}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/featherpanel-overview.json
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+      - loki
+    ports:
+      - "127.0.0.1:${GRAFANA_PORT:-3000}:3000"
+
+volumes:
+  prometheus_data:
+  loki_data:
+  alloy_data:
+  grafana_data:
+  featherpanel_logs:
+    # The volume created by FeatherPanel's own docker-compose.yml. The default
+    # name assumes the panel compose project is called "featherpanel".
+    external: true
+    name: ${FEATHERPANEL_LOGS_VOLUME:-featherpanel_featherpanel_logs}
