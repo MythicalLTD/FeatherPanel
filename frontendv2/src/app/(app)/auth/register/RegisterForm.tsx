@@ -128,7 +128,23 @@ export default function RegisterForm() {
                 setError(getApiErrorMessageFromPayload(response, t, 'common.error'));
             }
         } catch (err: unknown) {
-            const error = err as { response?: { data?: { message?: string } } };
+            const error = err as {
+                response?: {
+                    data?: { message?: string; error_code?: string; data?: { email?: string; challenge?: string } };
+                };
+            };
+            const payload = error.response?.data;
+            if (payload?.error_code === 'TWO_FACTOR_REQUIRED' && payload.data?.email) {
+                if (payload.data.challenge) {
+                    try {
+                        sessionStorage.setItem('fp_2fa_challenge', payload.data.challenge);
+                    } catch {
+                        /* ignore */
+                    }
+                }
+                router.push(`/auth/verify-2fa?username_or_email=${encodeURIComponent(payload.data.email)}`);
+                return;
+            }
             setError(getApiErrorMessage(error, t, 'common.error'));
         } finally {
             setLoading(false);
