@@ -26,6 +26,7 @@ use Random\RandomException;
 use App\Helpers\ApiResponse;
 use App\Config\ConfigFactory;
 use App\Logger\LoggerFactory;
+use App\Helpers\RequestOrigin;
 use App\Runtime\WorkerRestart;
 use App\Config\ConfigInterface;
 use App\Plugins\ObsoleteAddons;
@@ -426,142 +427,13 @@ class App
      */
     public function dispatch(Request $request): Response
     {
-        $path = $request->getPathInfo();
-        if ($path === '/api/health/live') {
-            // Liveness must not depend on the database or Redis.
-            RequestContext::setRoute($path);
-
-            return HealthProbe::live();
-        }
-
-        if (!$this->bootHttp() || !$this->ensureConnections()) {
-            if ($path === '/api/health/ready') {
-                RequestContext::setRoute($path);
-
-                return HealthProbe::ready($this->bootError ?? new \RuntimeException('Database connection failed'));
-            }
-            $response = $this->databaseUnavailableResponse();
+        $refused = RequestOrigin::guard($request);
+        $response = $refused ?? $this->route($request);
+        if ($refused !== null) {
             $response->headers->set('X-Request-ID', RequestContext::id());
-
-            return $response;
         }
 
-        ++$this->handledRequests;
-        $context = new RoutingContext();
-        $context->fromRequest($request);
-
-        try {
-            [$parameters, $routePath] = $this->matchRoute($context, $request->getPathInfo());
-            RequestContext::setRoute($routePath);
-            SentryTelemetry::startRequest($request, $routePath);
-            $controller = $parameters['_controller'];
-            unset($parameters['_controller'], $parameters['_route']);
-
-            // Set route parameters as request attributes
-            // - Special keys (starting with '_') are stored without the underscore (e.g., '_permission' -> 'permission')
-            // - Regular route params (e.g., 'uuidShort') are stored as-is for middleware/controllers to consume
-            foreach ($parameters as $key => $value) {
-                if (str_starts_with($key, '_')) {
-                    $request->attributes->set(ltrim($key, '_'), $value);
-                } else {
-                    $request->attributes->set($key, $value);
-                }
-            }
-
-            // Disabled panel modules refuse their API before any controller runs.
-            $moduleRefusal = ModuleGate::check($request->getPathInfo());
-            if ($moduleRefusal !== null) {
-                $moduleRefusal->headers->set('X-Request-ID', RequestContext::id());
-                SentryTelemetry::finishRequest($moduleRefusal->getStatusCode());
-
-                return $moduleRefusal;
-            }
-
-            // Per-route middleware support
-            $routeMiddleware = [];
-            if (isset($parameters['_middleware']) && is_array($parameters['_middleware'])) {
-                foreach ($parameters['_middleware'] as $middlewareClass) {
-                    $routeMiddleware[] = new $middlewareClass();
-                }
-            }
-
-            // Use route middleware if defined, otherwise global
-            $middlewareStack = $routeMiddleware ?: $this->middleware;
-            $middlewareStack[] = function ($request) use ($controller, $parameters) {
-                // Remove special keys
-                unset($parameters['_controller'], $parameters['_route'], $parameters['_middleware']);
-
-                // Always pass parameters as a single associative array after the request
-                return call_user_func($controller, $request, $parameters);
-            };
-
-            $response = array_reduce(
-                array_reverse($middlewareStack),
-                function ($next, $middleware) {
-                    return function ($request) use ($middleware, $next) {
-                        if (is_object($middleware) && method_exists($middleware, 'handle')) {
-                            return $middleware->handle($request, $next);
-                        }
-
-                        return $middleware($request, $next);
-                    }
-                    ;
-                },
-                function ($request) {
-                    return new Response('No controller found', 500);
-                }
-            )($request);
-
-            if (!$response instanceof Response) {
-                $response = new Response($response);
-            }
-        } catch (ResourceNotFoundException $e) {
-            $response = ApiResponse::error('The api route does not exist! [' . $request->getPathInfo() . ']', 'API_ROUTE_NOT_FOUND', 404, null);
-        } catch (MethodNotAllowedException $e) {
-            $response = ApiResponse::error('Method not allowed for this route. Allowed: ' . implode(', ', $e->getAllowedMethods()), 'METHOD_NOT_ALLOWED', 405, null);
-        } catch (BadRequestException $e) {
-            // Malformed client input (e.g. ?search[]=x where a scalar is expected) is a 400, not a server error.
-            $response = ApiResponse::error('Invalid request: ' . $e->getMessage(), 'INVALID_REQUEST', 400, null);
-        } catch (WingsConnectionException $e) {
-            // An offline or unreachable node is an infrastructure state, not a panel bug: answer 502
-            // with a stable code instead of a generic 500, and keep it out of the error tracker.
-            self::getLogger()->warning('Node unreachable on ' . $request->getPathInfo() . ': ' . $e->getMessage());
-            $response = ApiResponse::error('Failed to reach the node', 'DAEMON_UNREACHABLE', 502, [
-                'request_id' => RequestContext::id(),
-            ]);
-        } catch (\Throwable $e) {
-            // Controllers sometimes wrap Guzzle/cURL failures in plain Exception/Error. Treat those
-            // as node-down instead of a panel 500 so the UI can show a clear message.
-            if (self::isLikelyNodeUnreachableError($e)) {
-                self::getLogger()->warning('Node unreachable on ' . $request->getPathInfo() . ': ' . $e->getMessage());
-                $response = ApiResponse::error('Failed to reach the node', 'DAEMON_UNREACHABLE', 502, [
-                    'request_id' => RequestContext::id(),
-                ]);
-            } else {
-                $eventId = SentryTelemetry::captureException($e);
-                self::getLogger()->error(
-                    'Exception in router: [' . get_class($e) . '] ' .
-                    'Message: ' . $e->getMessage() .
-                    ' Code: ' . $e->getCode() .
-                    ' File: ' . $e->getFile() .
-                    ' Line: ' . $e->getLine() .
-                    ' Trace: ' . $e->getTraceAsString(),
-                    false
-                );
-                $response = ApiResponse::error('Internal server error', 'INTERNAL_SERVER_ERROR', 500, [
-                    'request_id' => RequestContext::id(),
-                    'event_id' => $eventId,
-                ]);
-            }
-        }
-        $response->headers->set('X-Request-ID', RequestContext::id());
-        SentryTelemetry::finishRequest($response->getStatusCode());
-
-        if ($response->getStatusCode() < 400) {
-            WorkerRestart::requestAfterAdminChange($request);
-        }
-
-        return $response;
+        return RequestOrigin::applyCors($request, $response);
     }
 
     /**
@@ -1426,6 +1298,146 @@ class App
             [], // schemes
             $methods
         ));
+    }
+
+    private function route(Request $request): Response
+    {
+        $path = $request->getPathInfo();
+        if ($path === '/api/health/live') {
+            // Liveness must not depend on the database or Redis.
+            RequestContext::setRoute($path);
+
+            return HealthProbe::live();
+        }
+
+        if (!$this->bootHttp() || !$this->ensureConnections()) {
+            if ($path === '/api/health/ready') {
+                RequestContext::setRoute($path);
+
+                return HealthProbe::ready($this->bootError ?? new \RuntimeException('Database connection failed'));
+            }
+            $response = $this->databaseUnavailableResponse();
+            $response->headers->set('X-Request-ID', RequestContext::id());
+
+            return $response;
+        }
+
+        ++$this->handledRequests;
+        $context = new RoutingContext();
+        $context->fromRequest($request);
+
+        try {
+            [$parameters, $routePath] = $this->matchRoute($context, $request->getPathInfo());
+            RequestContext::setRoute($routePath);
+            SentryTelemetry::startRequest($request, $routePath);
+            $controller = $parameters['_controller'];
+            unset($parameters['_controller'], $parameters['_route']);
+
+            // Set route parameters as request attributes
+            // - Special keys (starting with '_') are stored without the underscore (e.g., '_permission' -> 'permission')
+            // - Regular route params (e.g., 'uuidShort') are stored as-is for middleware/controllers to consume
+            foreach ($parameters as $key => $value) {
+                if (str_starts_with($key, '_')) {
+                    $request->attributes->set(ltrim($key, '_'), $value);
+                } else {
+                    $request->attributes->set($key, $value);
+                }
+            }
+
+            // Disabled panel modules refuse their API before any controller runs.
+            $moduleRefusal = ModuleGate::check($request->getPathInfo());
+            if ($moduleRefusal !== null) {
+                $moduleRefusal->headers->set('X-Request-ID', RequestContext::id());
+                SentryTelemetry::finishRequest($moduleRefusal->getStatusCode());
+
+                return $moduleRefusal;
+            }
+
+            // Per-route middleware support
+            $routeMiddleware = [];
+            if (isset($parameters['_middleware']) && is_array($parameters['_middleware'])) {
+                foreach ($parameters['_middleware'] as $middlewareClass) {
+                    $routeMiddleware[] = new $middlewareClass();
+                }
+            }
+
+            // Use route middleware if defined, otherwise global
+            $middlewareStack = $routeMiddleware ?: $this->middleware;
+            $middlewareStack[] = function ($request) use ($controller, $parameters) {
+                // Remove special keys
+                unset($parameters['_controller'], $parameters['_route'], $parameters['_middleware']);
+
+                // Always pass parameters as a single associative array after the request
+                return call_user_func($controller, $request, $parameters);
+            };
+
+            $response = array_reduce(
+                array_reverse($middlewareStack),
+                function ($next, $middleware) {
+                    return function ($request) use ($middleware, $next) {
+                        if (is_object($middleware) && method_exists($middleware, 'handle')) {
+                            return $middleware->handle($request, $next);
+                        }
+
+                        return $middleware($request, $next);
+                    }
+                    ;
+                },
+                function ($request) {
+                    return new Response('No controller found', 500);
+                }
+            )($request);
+
+            if (!$response instanceof Response) {
+                $response = new Response($response);
+            }
+        } catch (ResourceNotFoundException $e) {
+            $response = ApiResponse::error('The api route does not exist! [' . $request->getPathInfo() . ']', 'API_ROUTE_NOT_FOUND', 404, null);
+        } catch (MethodNotAllowedException $e) {
+            $response = ApiResponse::error('Method not allowed for this route. Allowed: ' . implode(', ', $e->getAllowedMethods()), 'METHOD_NOT_ALLOWED', 405, null);
+        } catch (BadRequestException $e) {
+            // Malformed client input (e.g. ?search[]=x where a scalar is expected) is a 400, not a server error.
+            $response = ApiResponse::error('Invalid request: ' . $e->getMessage(), 'INVALID_REQUEST', 400, null);
+        } catch (WingsConnectionException $e) {
+            // An offline or unreachable node is an infrastructure state, not a panel bug: answer 502
+            // with a stable code instead of a generic 500, and keep it out of the error tracker.
+            self::getLogger()->warning('Node unreachable on ' . $request->getPathInfo() . ': ' . $e->getMessage());
+            $response = ApiResponse::error('Failed to reach the node', 'DAEMON_UNREACHABLE', 502, [
+                'request_id' => RequestContext::id(),
+            ]);
+        } catch (\Throwable $e) {
+            // Controllers sometimes wrap Guzzle/cURL failures in plain Exception/Error. Treat those
+            // as node-down instead of a panel 500 so the UI can show a clear message.
+            if (self::isLikelyNodeUnreachableError($e)) {
+                self::getLogger()->warning('Node unreachable on ' . $request->getPathInfo() . ': ' . $e->getMessage());
+                $response = ApiResponse::error('Failed to reach the node', 'DAEMON_UNREACHABLE', 502, [
+                    'request_id' => RequestContext::id(),
+                ]);
+            } else {
+                $eventId = SentryTelemetry::captureException($e);
+                self::getLogger()->error(
+                    'Exception in router: [' . get_class($e) . '] ' .
+                    'Message: ' . $e->getMessage() .
+                    ' Code: ' . $e->getCode() .
+                    ' File: ' . $e->getFile() .
+                    ' Line: ' . $e->getLine() .
+                    ' Trace: ' . $e->getTraceAsString(),
+                    false
+                );
+                $response = ApiResponse::error('Internal server error', 'INTERNAL_SERVER_ERROR', 500, [
+                    'request_id' => RequestContext::id(),
+                    'event_id' => $eventId,
+                ]);
+            }
+        }
+        $response->headers->set('X-Request-ID', RequestContext::id());
+        SentryTelemetry::finishRequest($response->getStatusCode());
+
+        if ($response->getStatusCode() < 400) {
+            WorkerRestart::requestAfterAdminChange($request);
+        }
+
+        return $response;
     }
 
     /**

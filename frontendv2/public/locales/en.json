@@ -1202,6 +1202,7 @@
             "ONLINE_INSTALL_CREATE_FAILED": "Failed to create spell from online installation",
             "ONLINE_LIST_FETCH_FAILED": "Failed to fetch Pterodactyl eggs store",
             "ONLINE_LIST_INVALID": "Invalid response from eggs store",
+            "ORIGIN_NOT_ALLOWED": "This request must be sent from the panel itself. Reload the page and try again.",
             "OTP_STORE_FAILED": "Failed to store deletion OTP",
             "OWNER_NOT_FOUND": "Owner user not found",
             "OXAPAY_DISABLED": "OxaPay add credits is disabled",

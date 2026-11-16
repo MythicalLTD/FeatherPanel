@@ -38,6 +38,7 @@ use OpenApi\Attributes as OA;
 use App\Helpers\CaptchaHelper;
 use App\Config\ConfigInterface;
 use App\Helpers\PermissionHelper;
+use App\Helpers\UploadedFileType;
 use App\Middleware\AuthMiddleware;
 use App\CloudFlare\CloudFlareRealIP;
 use App\Helpers\EmailDomainValidator;
@@ -727,8 +728,12 @@ class SessionController
             $detectedMimeType = $uploadedFile->getMimeType();
         }
 
-        // Validate MIME type
-        if (empty($detectedMimeType) || !in_array($detectedMimeType, $allowedMimeTypes, true)) {
+        // Validate MIME type (and that it matches the extension)
+        if (
+            empty($detectedMimeType)
+            || !in_array($detectedMimeType, $allowedMimeTypes, true)
+            || !UploadedFileType::matches($originalExtension, $detectedMimeType, UploadedFileType::IMAGE_TYPES)
+        ) {
             return ApiResponse::error(
                 'Invalid file type. Only JPEG, PNG, GIF, and WebP images are allowed.',
                 'INVALID_MIME_TYPE',
