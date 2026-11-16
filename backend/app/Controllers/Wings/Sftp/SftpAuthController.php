@@ -338,7 +338,8 @@ class SftpAuthController
             }
         }
 
-        return false;
+        // Bare base64 wire blob (no algorithm prefix)
+        return preg_match('/^[A-Za-z0-9+\/]{50,}={0,3}$/', $firstLine) === 1;
     }
 
     /**

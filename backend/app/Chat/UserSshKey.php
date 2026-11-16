@@ -331,6 +331,9 @@ class UserSshKey
 
                 return false;
             }
+            if (isset($data['public_key'])) {
+                $data['fingerprint'] = self::generateFingerprint((string) $data['public_key']);
+            }
 
             // Auto-generate fingerprint if being updated and invalid
             if (isset($data['fingerprint']) && !self::isValidFingerprint($data['fingerprint'])) {
@@ -342,7 +345,7 @@ class UserSshKey
             // Check if fingerprint already exists for another key (if fingerprint is being updated)
             if (isset($data['fingerprint'])) {
                 $existingKeyWithFingerprint = self::getUserSshKeyByFingerprint($data['fingerprint'], $existingKey['user_id']);
-                if ($existingKeyWithFingerprint && $existingKeyWithFingerprint['id'] !== $id) {
+                if ($existingKeyWithFingerprint && (int) $existingKeyWithFingerprint['id'] !== $id) {
                     App::getInstance(true)->getLogger()->error('SSH key with fingerprint already exists for user: ' . $existingKey['user_id']);
 
                     return false;
@@ -589,7 +592,17 @@ class UserSshKey
         }
 
         $candidates = [self::generateFingerprint($keyMaterial)];
-        if (!preg_match('/\s/', $keyMaterial)) {
+        if (str_starts_with($keyMaterial, '-----BEGIN')) {
+            // PEM keys are compared by their OpenSSH wire form, which is what daemons send
+            try {
+                $openSsh = \phpseclib3\Crypt\PublicKeyLoader::loadPublicKey($keyMaterial)->toString('OpenSSH');
+                if (is_string($openSsh) && $openSsh !== '') {
+                    $candidates[] = self::generateFingerprint($openSsh);
+                }
+            } catch (\Throwable) {
+                // Not a key phpseclib understands; keep the plain fingerprint only
+            }
+        } elseif (!preg_match('/\s/', $keyMaterial)) {
             foreach (['ssh-ed25519', 'ssh-rsa', 'ecdsa-sha2-nistp256', 'ecdsa-sha2-nistp384', 'ecdsa-sha2-nistp521'] as $algo) {
                 $wrapped = $algo . ' ' . $keyMaterial;
                 if (self::isValidSshPublicKey($wrapped)) {
@@ -610,9 +623,17 @@ class UserSshKey
             return false;
         }
 
-        foreach (self::candidateFingerprints($keyMaterial) as $fingerprint) {
-            if (self::getUserSshKeyByFingerprint($fingerprint, $userId) !== null) {
-                return true;
+        $offered = self::candidateFingerprints($keyMaterial);
+        if ($offered === []) {
+            return false;
+        }
+
+        // Compare against the saved key material itself so an outdated fingerprint column never decides
+        foreach (self::getUserSshKeysByUserId($userId) as $saved) {
+            foreach (self::candidateFingerprints((string) ($saved['public_key'] ?? '')) as $fingerprint) {
+                if (in_array($fingerprint, $offered, true)) {
+                    return true;
+                }
             }
         }
 

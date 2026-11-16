@@ -189,6 +189,7 @@ class LdapController
             // Sync attributes if enabled
             if (($provider['sync_attributes'] ?? 'false') === 'true') {
                 $this->syncUserAttributes($userInfo, $ldapUser);
+                $userInfo = User::getUserByUuid((string) $userInfo['uuid']) ?? $userInfo;
             }
         }
 
