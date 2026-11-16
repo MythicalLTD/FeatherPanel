@@ -140,7 +140,7 @@ class WebSpaceDomain
 
     public static function findOwnerId(string $domain, ?int $exceptWebspaceId = null): ?int
     {
-        $domain = strtolower(trim(rtrim(trim($domain), '.')));
+        $domain = \App\Helpers\DomainName::toAscii($domain);
         if ($domain === '') {
             return null;
         }
@@ -172,7 +172,7 @@ class WebSpaceDomain
             if (!is_array($route)) {
                 continue;
             }
-            $domain = strtolower(trim(rtrim(trim((string) ($route['domain'] ?? '')), '.')));
+            $domain = \App\Helpers\DomainName::toAscii((string) ($route['domain'] ?? ''));
             if ($domain === '') {
                 continue;
             }
@@ -214,7 +214,7 @@ class WebSpaceDomain
      */
     public static function apexFromDomain(string $domain): string
     {
-        $domain = strtolower(trim(rtrim(trim($domain), '.')));
+        $domain = \App\Helpers\DomainName::toAscii($domain);
         if (str_starts_with($domain, 'www.')) {
             return substr($domain, 4);
         }

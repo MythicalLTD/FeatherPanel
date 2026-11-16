@@ -879,7 +879,7 @@ class WebSpace
             if (!is_string($d) || trim($d) === '') {
                 continue;
             }
-            $clean[] = strtolower(rtrim(trim($d), '.'));
+            $clean[] = \App\Helpers\DomainName::toAscii($d);
         }
 
         return json_encode(array_values(array_unique($clean))) ?: '[]';
