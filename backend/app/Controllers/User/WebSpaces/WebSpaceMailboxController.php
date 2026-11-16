@@ -21,6 +21,7 @@ use App\Chat\MailHost;
 use App\Helpers\ApiResponse;
 use App\Chat\WebSpaceMailbox;
 use App\Helpers\DnsProvisioner;
+use App\Services\Dns\Providers\DnsProviderRegistry;
 use App\Helpers\WebSpaceGateway;
 use App\Chat\WebSpaceMailingList;
 use App\Chat\WebSpaceMailForwarder;
@@ -190,6 +191,8 @@ class WebSpaceMailboxController
 
         return ApiResponse::success([
             'domains' => $records,
+            'can_provision_api' => $primary
+                && strtolower(trim((string) ($primary['provision_mode'] ?? ''))) === 'node',
             'can_provision' => $dnsContext !== null
                 && $primary
                 && strtolower(trim((string) ($primary['provision_mode'] ?? ''))) === 'node',
@@ -266,6 +269,100 @@ class WebSpaceMailboxController
                 && $primary
                 && strtolower(trim((string) ($primary['provision_mode'] ?? ''))) === 'node',
         ], 'OK', 200);
+    }
+
+    /**
+     * DNS providers that can be used with a one-time API token.
+     */
+    public function dnsProviders(Request $request, string $uuidShort): Response
+    {
+        $resolved = $this->resolve($request, $uuidShort, WebSpaceSubuserPermissions::MAIL_READ);
+        if ($resolved instanceof Response) {
+            return $resolved;
+        }
+
+        return ApiResponse::success(['providers' => DnsProviderRegistry::describe()], 'OK', 200);
+    }
+
+    /**
+     * Writes the mail DNS records (MX, SPF, DKIM, DMARC) into the customer's own DNS zone with a one-time API token.
+     * The token is used for this request only. It is never stored, logged or returned.
+     *
+     * Body: provider, token, domain, mode ("preview" shows what would change, "apply" writes), overwrite (bool).
+     */
+    public function provisionDnsWithProvider(Request $request, string $uuidShort): Response
+    {
+        $resolved = $this->resolve($request, $uuidShort, WebSpaceSubuserPermissions::MAIL_CREATE);
+        if ($resolved instanceof Response) {
+            return $resolved;
+        }
+
+        $space = $resolved['space'];
+        $body = json_decode($request->getContent(), true);
+        $body = is_array($body) ? $body : [];
+        $providerId = strtolower(trim((string) ($body['provider'] ?? '')));
+        $token = trim((string) ($body['token'] ?? ''));
+        $domain = strtolower(trim((string) ($body['domain'] ?? ''), ". \t"));
+        $apply = strtolower(trim((string) ($body['mode'] ?? 'preview'))) === 'apply';
+        $overwrite = !empty($body['overwrite']);
+
+        if (!DnsProviderRegistry::has($providerId)) {
+            return ApiResponse::error('Unknown DNS provider', 'DNS_PROVIDER_UNKNOWN', 400);
+        }
+        if ($token === '' || strlen($token) > 512 || preg_match('/[\x00-\x1F\x7F\s]/', $token) === 1) {
+            return ApiResponse::error('A valid API token is required', 'DNS_TOKEN_INVALID', 400);
+        }
+        if ($domain === '' || !in_array($domain, DnsProvisioner::collectProvisionDomains($space), true)) {
+            return ApiResponse::error('The domain does not belong to this WebSpace', 'DOMAIN_NOT_IN_WEBSPACE', 400);
+        }
+
+        $hosts = MailHost::listForWebNode((int) ($space['web_node_id'] ?? 0));
+        $mailHost = null;
+        foreach ($hosts as $host) {
+            if (strtolower(trim((string) ($host['provision_mode'] ?? ''))) === 'node') {
+                $mailHost = $host;
+                break;
+            }
+        }
+        if ($mailHost === null) {
+            return ApiResponse::error('No mail host with node mode available', 'MAIL_HOST_NOT_FOUND', 404);
+        }
+
+        try {
+            $provider = DnsProviderRegistry::create($providerId, $token);
+            $zone = $provider->findZoneForDomain($domain);
+            if ($zone === null) {
+                return ApiResponse::error('No zone for this domain was found with this token', 'DNS_ZONE_NOT_FOUND', 404);
+            }
+            $result = DnsProvisioner::provisionMailRecords(
+                $space,
+                $mailHost,
+                $domain,
+                ['provider' => $provider, 'zone_id' => $zone['id'], 'source' => 'api_token'],
+                $overwrite,
+                !$apply,
+            );
+        } catch (\Throwable $e) {
+            // The provider classes strip the token from their own messages; this is the last line of defence.
+            $message = str_replace($token, '***', $e->getMessage());
+
+            return ApiResponse::error('DNS provider request failed: ' . mb_substr($message, 0, 300), 'DNS_PROVIDER_FAILED', 502);
+        }
+
+        if ($apply) {
+            WebSpaceActivityLogger::log($space, $resolved['user'], 'webspace.mail.dns_provisioned', [
+                'domain' => $domain,
+                'provider' => $providerId,
+                'zone' => $zone['name'],
+                'ok' => !empty($result['ok']),
+            ]);
+        }
+
+        $result['zone'] = $zone['name'];
+        $result['provider'] = $providerId;
+        $result['mode'] = $apply ? 'apply' : 'preview';
+
+        return ApiResponse::success($result, 'OK', 200);
     }
 
     public function provisionDns(Request $request, string $uuidShort): Response

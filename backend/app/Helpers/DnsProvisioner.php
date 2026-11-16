@@ -239,10 +239,14 @@ class DnsProvisioner
      *
      * @param array<string, mixed> $webSpace
      * @param array<string, mixed> $mailHost
+     * @param array{provider: DnsProviderInterface, zone_id: string, source?: string}|null $context
+     *                                                                                      a DNS zone to write to instead of the linked one (customer API token)
+     * @param bool                                                                         $overwrite when false an existing different SPF/DKIM/DMARC/MX value is kept and reported as a conflict
+     * @param bool                                                                         $dryRun    only report what would change
      *
      * @return array{ok: bool, results: list<array{type: string, name: string, ok: bool, action?: string, error?: string}>, skipped?: bool, error?: string}
      */
-    public static function provisionMailRecords(array $webSpace, array $mailHost, string $domain): array
+    public static function provisionMailRecords(array $webSpace, array $mailHost, string $domain, ?array $context = null, bool $overwrite = true, bool $dryRun = false): array
     {
         $mode = strtolower(trim((string) ($mailHost['provision_mode'] ?? '')));
         if ($mode !== 'node') {
@@ -254,7 +258,7 @@ class DnsProvisioner
             return ['ok' => false, 'results' => [], 'error' => 'domain is required'];
         }
 
-        $context = self::resolveProvisionerContext($webSpace);
+        $context ??= self::resolveProvisionerContext($webSpace);
         if ($context === null) {
             return ['ok' => false, 'results' => [], 'error' => 'No linked DNS zone for this WebSpace'];
         }
@@ -278,6 +282,10 @@ class DnsProvisioner
         /** @var DnsProviderInterface $provider */
         $provider = $context['provider'];
         $zoneId = (string) $context['zone_id'];
+        $apiProvider = $provider instanceof \App\Services\Dns\MailRecordCapableInterface;
+        if ($apiProvider && method_exists($provider, 'setDryRun')) {
+            $provider->setDryRun($dryRun);
+        }
 
         $results = [];
         $allOk = true;
@@ -298,12 +306,16 @@ class DnsProvisioner
             if ($type === 'MX') {
                 $upsert = $provider instanceof \App\Services\Dns\NodeDnsProvider
                     ? $provider->upsertMxRecord($zoneId, $name === '@' ? $domain : $name, $value, $priority)
-                    : ['ok' => false, 'error' => 'MX provisioning requires node DNS provider'];
+                    : ($apiProvider
+                        ? $provider->upsertMxRecord($zoneId, $name === '@' ? $domain : $name, $value, $priority, 300, $overwrite)
+                        : ['ok' => false, 'error' => 'MX provisioning requires node DNS provider']);
             } elseif ($type === 'TXT') {
                 $txtName = $name === '@' ? $domain : ($name . '.' . $domain);
-                $upsert = $provider instanceof \App\Services\Dns\AcmeDnsCapableInterface
-                    ? $provider->createTxtRecord($zoneId, $txtName, $value)
-                    : $provider->createRecord($zoneId, ['type' => 'TXT', 'name' => $txtName, 'content' => $value, 'ttl' => 120]);
+                $upsert = $apiProvider
+                    ? $provider->upsertTxtRecord($zoneId, $txtName, $value, 300, $overwrite)
+                    : ($provider instanceof \App\Services\Dns\AcmeDnsCapableInterface
+                        ? $provider->createTxtRecord($zoneId, $txtName, $value)
+                        : $provider->createRecord($zoneId, ['type' => 'TXT', 'name' => $txtName, 'content' => $value, 'ttl' => 120]));
             } else {
                 continue;
             }
@@ -326,7 +338,7 @@ class DnsProvisioner
         $dkimReady = !empty($hints['body']['dkim_ready']);
         $dkimSelector = trim((string) ($hints['body']['dkim_selector'] ?? ''));
         $dkimRecord = trim((string) ($hints['body']['dkim_record'] ?? ''));
-        if ($mailHostId > 0) {
+        if ($mailHostId > 0 && !$dryRun) {
             $update = [];
             if ($mxHost !== '') {
                 $update['mx_host'] = rtrim($mxHost, '.');
@@ -358,9 +370,11 @@ class DnsProvisioner
                 }
             }
             if (!$hasDmarc) {
-                $upsert = $provider instanceof \App\Services\Dns\AcmeDnsCapableInterface
-                    ? $provider->createTxtRecord($zoneId, '_dmarc.' . $domain, $dmarcValue)
-                    : $provider->createRecord($zoneId, ['type' => 'TXT', 'name' => '_dmarc.' . $domain, 'content' => $dmarcValue, 'ttl' => 120]);
+                $upsert = $apiProvider
+                    ? $provider->upsertTxtRecord($zoneId, '_dmarc.' . $domain, $dmarcValue, 300, $overwrite)
+                    : ($provider instanceof \App\Services\Dns\AcmeDnsCapableInterface
+                        ? $provider->createTxtRecord($zoneId, '_dmarc.' . $domain, $dmarcValue)
+                        : $provider->createRecord($zoneId, ['type' => 'TXT', 'name' => '_dmarc.' . $domain, 'content' => $dmarcValue, 'ttl' => 120]));
                 if (empty($upsert['ok'])) {
                     $allOk = false;
                 }
@@ -378,6 +392,7 @@ class DnsProvisioner
             'ok' => $allOk && $results !== [],
             'results' => $results,
             'dkim_ready' => $dkimReady,
+            'dry_run' => $dryRun,
         ];
     }
 

@@ -38,6 +38,7 @@ import {
 } from 'lucide-react';
 import { ResourceTable } from '@/components/featherui/ResourceCard';
 import { ListPagination } from '@/components/featherui/ListPagination';
+import { MailDnsProviderDialog } from '@/components/webspace/MailDnsProviderDialog';
 import { useClientPagination } from '@/hooks/useClientPagination';
 import { WebSpacePageHeader as PageHeader } from '@/components/webspace/WebSpacePageHeader';
 import { WebSpacePageTips } from '@/components/webspace/WebSpacePageTips';
@@ -114,6 +115,7 @@ interface DnsInfo {
         records: Array<{ type: string; name: string; value: string; priority?: number | null; source?: string }>;
     }>;
     can_provision?: boolean;
+    can_provision_api?: boolean;
     client_settings: {
         imap_host: string;
         imap_port: number;
@@ -165,6 +167,7 @@ export default function WebSpaceEmailPage() {
     const [arSubject, setArSubject] = useState('');
     const [arBody, setArBody] = useState('');
     const [createOpen, setCreateOpen] = useState(false);
+    const [dnsApiOpen, setDnsApiOpen] = useState(false);
     const [fwdOpen, setFwdOpen] = useState(false);
     const [listOpen, setListOpen] = useState(false);
     const [listLocal, setListLocal] = useState('');
@@ -899,7 +902,14 @@ export default function WebSpaceEmailPage() {
 
                 {dns && dns.domains.length > 0 && (
                     <div className='space-y-4'>
-                        <h2 className='text-lg font-semibold'>{t('webSpaces.email.dnsChecklist')}</h2>
+                        <div className='flex flex-wrap items-center justify-between gap-2'>
+                            <h2 className='text-lg font-semibold'>{t('webSpaces.email.dnsChecklist')}</h2>
+                            {canCreate && dns.can_provision_api && (
+                                <Button size='sm' variant='outline' onClick={() => setDnsApiOpen(true)}>
+                                    {t('webSpaces.email.dnsApi.open')}
+                                </Button>
+                            )}
+                        </div>
                         <div className='grid grid-cols-1 gap-4'>
                             {dns.domains.map((block) => (
                                 <div key={block.domain} className='fp-surface rounded-xl border p-4'>
@@ -953,6 +963,14 @@ export default function WebSpaceEmailPage() {
                         </div>
                     </div>
                 )}
+
+                <MailDnsProviderDialog
+                    uuidShort={uuidShort}
+                    domains={domains}
+                    open={dnsApiOpen}
+                    onOpenChange={setDnsApiOpen}
+                    onDone={() => void load()}
+                />
 
                 <Dialog open={createOpen} onOpenChange={setCreateOpen}>
                     <DialogHeader>

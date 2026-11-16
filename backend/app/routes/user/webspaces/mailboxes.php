@@ -93,6 +93,40 @@ return function (RouteCollection $routes): void {
 
     App::getInstance(true)->registerAuthRoute(
         $routes,
+        'user-webspaces-mailboxes-dns-providers',
+        '/api/user/webspaces/{uuidShort}/mailboxes/dns/providers',
+        function (Request $request, array $args) {
+            $uuidShort = (string) ($args['uuidShort'] ?? '');
+            if ($uuidShort === '') {
+                return ApiResponse::error('Missing uuidShort', 'INVALID_UUID_SHORT', 400);
+            }
+
+            return (new WebSpaceMailboxController())->dnsProviders($request, $uuidShort);
+        },
+        ['GET'],
+        Rate::perMinute(60),
+        'user-webspaces',
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-webspaces-mailboxes-dns-provider-apply',
+        '/api/user/webspaces/{uuidShort}/mailboxes/dns/provider',
+        function (Request $request, array $args) {
+            $uuidShort = (string) ($args['uuidShort'] ?? '');
+            if ($uuidShort === '') {
+                return ApiResponse::error('Missing uuidShort', 'INVALID_UUID_SHORT', 400);
+            }
+
+            return (new WebSpaceMailboxController())->provisionDnsWithProvider($request, $uuidShort);
+        },
+        ['POST'],
+        Rate::perMinute(10),
+        'user-webspaces',
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
         'user-webspaces-mailboxes-dns-provision',
         '/api/user/webspaces/{uuidShort}/mailboxes/dns/provision',
         function (Request $request, array $args) {
