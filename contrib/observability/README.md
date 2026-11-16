@@ -33,7 +33,7 @@ The dashboards are also importable on their own (Grafana → Dashboards → Impo
 
    ```bash
    cd contrib/observability
-   cp .env.example .env            # set GRAFANA_ADMIN_PASSWORD
+   cp .env.example .env            # set GF_SECURITY_ADMIN_PASSWORD
    printf '%s' 'fpm_...' > secrets/featherpanel-metrics-token
    chmod 600 secrets/featherpanel-metrics-token
    docker volume ls | grep logs    # put the panel's logs volume name in .env (FEATHERPANEL_LOGS_VOLUME)

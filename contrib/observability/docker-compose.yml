@@ -57,9 +57,11 @@ services:
   grafana:
     image: grafana/grafana:12.1.1
     restart: unless-stopped
+    # Grafana admin login comes from .env (GF_SECURITY_ADMIN_USER / GF_SECURITY_ADMIN_PASSWORD).
+    env_file:
+      - path: .env
+        required: true
     environment:
-      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
-      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?set GRAFANA_ADMIN_PASSWORD in .env}
       GF_USERS_ALLOW_SIGN_UP: "false"
       GF_ANALYTICS_REPORTING_ENABLED: "false"
       GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/featherpanel-overview.json
