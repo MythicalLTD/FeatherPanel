@@ -41,8 +41,10 @@ import {
     Search as SearchIcon,
     MapPin,
     ArrowLeftRight,
+    HeartPulse,
 } from 'lucide-react';
 import { MassTransferServersDialog } from '@/components/admin/MassTransferServersDialog';
+import { DaemonHealthPanel } from '@/components/admin/daemon-health';
 
 import { DetailsTab } from './DetailsTab';
 import { ConfigurationTab } from './ConfigurationTab';
@@ -117,7 +119,9 @@ export default function EditNodePage() {
     const [selectedLocationName, setSelectedLocationName] = useState<string>('');
     const [nodeData, setNodeData] = useState<NodeData | null>(null);
     const [resetting, setResetting] = useState(false);
-    const [activeTab, setActiveTab] = useState(tabFromUrl === 'wings' ? 'wings' : 'details');
+    const [activeTab, setActiveTab] = useState(
+        tabFromUrl === 'wings' || tabFromUrl === 'health' ? tabFromUrl : 'details',
+    );
     const [locationModalOpen, setLocationModalOpen] = useState(false);
     const [massTransferOpen, setMassTransferOpen] = useState(false);
 
@@ -566,6 +570,7 @@ remote: '${typeof window !== 'undefined' ? window.location.origin : 'https://pan
                 ? [{ id: 'modules', label: t('admin.node.view.modules.title'), icon: LayoutGrid }]
                 : []),
             { id: 'utilization', label: t('admin.node.view.utilization.title'), icon: Zap },
+            { id: 'health', label: t('admin.node.view.daemon_health.title'), icon: HeartPulse },
             ...(supportsDaemonFeature(caps, 'docker_disk')
                 ? [{ id: 'docker', label: t('admin.node.view.docker.title'), icon: Database }]
                 : []),
@@ -734,6 +739,12 @@ remote: '${typeof window !== 'undefined' ? window.location.origin : 'https://pan
                                     error={utilization.error}
                                     onRefresh={fetchUtilization}
                                 />
+                            ) : null}
+                        </TabsContent>
+
+                        <TabsContent value='health' className='mt-0 focus-visible:ring-0 focus-visible:outline-none'>
+                            {activeTab === 'health' && nodeId ? (
+                                <DaemonHealthPanel kind='wings' nodeId={nodeId as string} />
                             ) : null}
                         </TabsContent>
 

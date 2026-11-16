@@ -41,6 +41,7 @@ import {
     Search as SearchIcon,
     MapPin,
     HeartPulse,
+    Activity,
     Stethoscope,
     Package,
     ArrowUpCircle,
@@ -60,6 +61,7 @@ import { DiagnosticsTab } from './DiagnosticsTab';
 import { PackageManagerTab } from './PackageManagerTab';
 import { SelfUpdateTab } from './SelfUpdateTab';
 import { HostingSetupTab } from './HostingSetupTab';
+import { DaemonHealthPanel } from '@/components/admin/daemon-health';
 import {
     type WebNodeForm,
     defaultWebNodeForm,
@@ -76,6 +78,7 @@ import { ListPagination } from '@/components/featherui/ListPagination';
 
 const WEB_NODE_EDIT_TABS = new Set([
     'status',
+    'metrics',
     'diagnostics',
     'packages',
     'self-update',
@@ -292,6 +295,7 @@ export default function EditWebNodePage() {
     const tabs = useMemo(
         () => [
             { id: 'status', label: t('admin.webNodes.status.tab'), icon: HeartPulse },
+            { id: 'metrics', label: t('admin.webNodes.daemonHealth.tab'), icon: Activity },
             { id: 'diagnostics', label: t('admin.webNodes.diagnostics.tab'), icon: Stethoscope },
             { id: 'packages', label: t('admin.webNodes.packages.tab'), icon: Package },
             { id: 'self-update', label: t('admin.webNodes.selfUpdate.tab'), icon: ArrowUpCircle },
@@ -438,6 +442,10 @@ export default function EditWebNodePage() {
                     <div className='min-w-0 flex-1 space-y-6'>
                         <TabsContent value='status' className='mt-0 focus-visible:ring-0 focus-visible:outline-none'>
                             <StatusTab nodeId={id} />
+                        </TabsContent>
+
+                        <TabsContent value='metrics' className='mt-0 focus-visible:ring-0 focus-visible:outline-none'>
+                            {activeTab === 'metrics' ? <DaemonHealthPanel kind='web' nodeId={id} /> : null}
                         </TabsContent>
 
                         <TabsContent
