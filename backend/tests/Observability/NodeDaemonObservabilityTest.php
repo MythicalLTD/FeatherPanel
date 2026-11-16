@@ -236,6 +236,10 @@ class NodeDaemonObservabilityTest extends TestCase
         $this->assertSame('node_token', NodeDaemonObservability::metricsBearer('web', $wings, ['metrics_url' => null, 'metrics_token' => null])['source']);
         $this->assertSame('node_token', NodeDaemonObservability::metricsBearer('web', $wings, ['metrics_url' => 'http://NODE1.example.com:9464/metrics', 'metrics_token' => null])['source']);
         $this->assertSame('none', NodeDaemonObservability::metricsBearer('web', $wings, ['metrics_url' => 'http://prometheus.example.com/metrics', 'metrics_token' => null])['source']);
+        // An https node never sends its token to a plain http metrics URL, even on the same host.
+        $httpsNode = $wings + ['scheme' => 'https'];
+        $this->assertSame('none', NodeDaemonObservability::metricsBearer('web', $httpsNode, ['metrics_url' => 'http://node1.example.com:9464/metrics', 'metrics_token' => null])['source']);
+        $this->assertSame('node_token', NodeDaemonObservability::metricsBearer('web', $httpsNode, ['metrics_url' => 'https://node1.example.com:9464/metrics', 'metrics_token' => null])['source']);
     }
 
     public function testMetricsUrlValidation(): void

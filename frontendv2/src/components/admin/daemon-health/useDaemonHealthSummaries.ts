@@ -7,7 +7,7 @@ Copyright (C) 2025 Cassian Gherman (aka NaysKutzu)
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as published
-    40|by the Free Software Foundation, either version 3 of the License, or
+by the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
 See the LICENSE file or <https://www.gnu.org/licenses/>.
@@ -29,10 +29,11 @@ export function useDaemonHealthSummaries(kind: DaemonKind, ids: number[]) {
     const [summaries, setSummaries] = useState<Record<number, DaemonHealthSummary>>({});
     const [loading, setLoading] = useState(false);
     const key = ids.join(',');
-    const keyRef = useRef(key);
-    keyRef.current = key;
+    // Only the newest request may update state, even when the page returns to an earlier key.
+    const seqRef = useRef(0);
 
     const load = useCallback(async () => {
+        const seq = ++seqRef.current;
         if (key === '') {
             setSummaries({});
             return;
@@ -41,7 +42,7 @@ export function useDaemonHealthSummaries(kind: DaemonKind, ids: number[]) {
         try {
             const base = kind === 'wings' ? '/api/admin/nodes' : '/api/admin/web-nodes';
             const { data } = await axios.get(`${base}/daemon-health`, { params: { ids: key } });
-            if (keyRef.current !== key) return;
+            if (seqRef.current !== seq) return;
             const nodes = (data?.data?.nodes ?? {}) as Record<string, DaemonHealthSummary>;
             const next: Record<number, DaemonHealthSummary> = {};
             for (const [id, summary] of Object.entries(nodes)) {
@@ -51,7 +52,7 @@ export function useDaemonHealthSummaries(kind: DaemonKind, ids: number[]) {
         } catch {
             // Badges are optional; the list keeps working without them.
         } finally {
-            setLoading(false);
+            if (seqRef.current === seq) setLoading(false);
         }
     }, [kind, key]);
 

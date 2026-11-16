@@ -7,7 +7,7 @@ Copyright (C) 2025 Cassian Gherman (aka NaysKutzu)
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as published
-    40|by the Free Software Foundation, either version 3 of the License, or
+by the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
 See the LICENSE file or <https://www.gnu.org/licenses/>.
@@ -654,14 +654,14 @@ function MetricsSettingsCard({
     const [saving, setSaving] = useState(false);
     const loadedUrl = report?.settings.metrics_url ?? '';
     const hasToken = report?.settings.has_metrics_token ?? false;
-    const initialised = useRef(false);
-
-    useEffect(() => {
-        if (report && !initialised.current) {
-            setUrl(loadedUrl);
-            initialised.current = true;
-        }
-    }, [report, loadedUrl]);
+    // The saved URL the draft started from. An untouched draft follows newer reports, so a
+    // change made by another admin is not reverted by a later token-only save.
+    const [baseline, setBaseline] = useState<string | null>(null);
+    if (report && baseline !== loadedUrl) {
+        if (baseline === null || url === baseline) setUrl(loadedUrl);
+        setBaseline(loadedUrl);
+    }
+    const urlChanged = baseline !== null && url.trim() !== baseline;
 
     const save = async (body: Record<string, string | null>) => {
         setSaving(true);
@@ -678,7 +678,7 @@ function MetricsSettingsCard({
         }
     };
 
-    const dirty = url.trim() !== loadedUrl || token.trim() !== '';
+    const dirty = urlChanged || token.trim() !== '';
 
     return (
         <PageCard
@@ -718,7 +718,7 @@ function MetricsSettingsCard({
                         loading={saving}
                         onClick={() =>
                             void save({
-                                metrics_url: url.trim(),
+                                ...(urlChanged ? { metrics_url: url.trim() } : {}),
                                 ...(token.trim() !== '' ? { metrics_token: token.trim() } : {}),
                             })
                         }
@@ -761,21 +761,44 @@ export function DaemonHealthPanel({ kind, nodeId }: DaemonHealthPanelProps) {
     const [autoRefresh, setAutoRefresh] = useState(true);
     const [now, setNow] = useState(() => Date.now());
     const inFlight = useRef(false);
+    const pendingForce = useRef(false);
+    const seqRef = useRef(0);
 
     const load = useCallback(
         async (force = false) => {
-            if (inFlight.current) return;
+            if (inFlight.current) {
+                // A forced refresh (manual or after a settings save) runs once the active request
+                // settles, and that older response is ignored.
+                if (force) {
+                    pendingForce.current = true;
+                    seqRef.current += 1;
+                    setRefreshing(true);
+                }
+                return;
+            }
             inFlight.current = true;
-            if (force) setRefreshing(true);
+            let nextForce = force;
             try {
-                const base = kind === 'wings' ? '/api/admin/nodes' : '/api/admin/web-nodes';
-                const { data } = await axios.get(`${base}/${nodeId}/daemon-health`, {
-                    params: force ? { refresh: 1 } : undefined,
-                });
-                setReport(data.data as DaemonHealthReport);
-                setError(null);
-            } catch (err) {
-                setError(getApiErrorMessage(err, t, 'admin.daemonHealth.load_failed'));
+                do {
+                    pendingForce.current = false;
+                    const seq = ++seqRef.current;
+                    if (nextForce) setRefreshing(true);
+                    try {
+                        const base = kind === 'wings' ? '/api/admin/nodes' : '/api/admin/web-nodes';
+                        const { data } = await axios.get(`${base}/${nodeId}/daemon-health`, {
+                            params: nextForce ? { refresh: 1 } : undefined,
+                        });
+                        if (seq === seqRef.current) {
+                            setReport(data.data as DaemonHealthReport);
+                            setError(null);
+                        }
+                    } catch (err) {
+                        if (seq === seqRef.current) {
+                            setError(getApiErrorMessage(err, t, 'admin.daemonHealth.load_failed'));
+                        }
+                    }
+                    nextForce = pendingForce.current;
+                } while (nextForce);
             } finally {
                 inFlight.current = false;
                 setLoading(false);

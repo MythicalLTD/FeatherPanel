@@ -806,6 +806,7 @@ remote: '${typeof window !== 'undefined' ? window.location.origin : 'https://pan
                             'wings-config',
                             'modules',
                             'utilization',
+                            'health',
                             'docker',
                             'system-info',
                             'diagnostics',

@@ -511,7 +511,8 @@ export default function EditWebNodePage() {
                             activeTab !== 'status' &&
                             activeTab !== 'diagnostics' &&
                             activeTab !== 'packages' &&
-                            activeTab !== 'hosting' && (
+                            activeTab !== 'hosting' &&
+                            activeTab !== 'metrics' && (
                                 <div className='flex justify-end'>
                                     <Button onClick={() => handleSave()} loading={saving} data-fp-save-shortcut>
                                         <Save className='mr-2 h-4 w-4' />

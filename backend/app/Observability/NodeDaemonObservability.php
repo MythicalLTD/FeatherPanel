@@ -710,10 +710,14 @@ final class NodeDaemonObservability
             return ['token' => (string) $settings['metrics_token'], 'source' => 'metrics_token'];
         }
         if ($kind === self::KIND_WEB) {
-            // FeatherQuilld accepts the node token on /metrics; only send it to the node itself.
+            // FeatherQuilld accepts the node token on /metrics; only send it to the node itself,
+            // over the same scheme (an https node must not leak its token over plain http).
             $url = $settings['metrics_url'] ?? null;
             $sameHost = $url === null
-                || strcasecmp((string) parse_url($url, PHP_URL_HOST), trim((string) ($node['fqdn'] ?? ''), '[]/')) === 0;
+                || (
+                    strcasecmp((string) parse_url($url, PHP_URL_HOST), trim((string) ($node['fqdn'] ?? ''), '[]/')) === 0
+                    && strcasecmp((string) parse_url($url, PHP_URL_SCHEME), (string) ($node['scheme'] ?? 'http')) === 0
+                );
             $bearer = self::nodeBearer($kind, $node);
             if ($bearer !== null && $sameHost) {
                 return ['token' => $bearer, 'source' => 'node_token'];

@@ -32,11 +32,13 @@ use App\Helpers\ApiResponse;
 use App\Services\Wings\Wings;
 use OpenApi\Attributes as OA;
 use App\Helpers\WingsUrlHelper;
+use App\Chat\NodeMetricsSetting;
 use App\Helpers\DaemonCapabilities;
 use App\CloudFlare\CloudFlareRealIP;
 use App\Plugins\Events\Events\NodesEvent;
 use App\Helpers\FeatherWingsConfigBuilder;
 use Symfony\Component\HttpFoundation\Request;
+use App\Observability\NodeDaemonObservability;
 use Symfony\Component\HttpFoundation\Response;
 use App\Services\Servers\ServerTransferInitiator;
 use App\Services\Wings\Exceptions\WingsConnectionException;
@@ -689,6 +691,8 @@ class NodesController
         if (!$success) {
             return ApiResponse::error('Failed to delete node', 'NODE_DELETE_FAILED', 400);
         }
+        NodeMetricsSetting::deleteForNode(NodeMetricsSetting::KIND_WINGS, $id);
+        NodeDaemonObservability::forget(NodeDaemonObservability::KIND_WINGS, $id);
         Activity::createActivity([
             'user_uuid' => $admin['uuid'] ?? null,
             'name' => 'delete_node',
