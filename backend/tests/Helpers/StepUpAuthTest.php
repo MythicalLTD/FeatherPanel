@@ -108,6 +108,37 @@ class StepUpAuthTest extends TestCase
         $this->assertFalse(StepUpAuth::isLockedOut($user));
     }
 
+    public function testLockoutRunsItsFullLengthFromTheLastFailure(): void
+    {
+        $user = ['uuid' => 'lock-' . bin2hex(random_bytes(6))];
+        for ($i = 0; $i < StepUpAuth::MAX_FAILURES; ++$i) {
+            StepUpAuth::recordFailure($user);
+        }
+        $this->assertTrue(StepUpAuth::isLockedOut($user));
+        $this->assertGreaterThan(StepUpAuth::LOCKOUT_SECONDS - 5, StepUpAuth::lockoutSecondsLeft($user));
+        StepUpAuth::clearFailures($user);
+    }
+
+    public function testMailWithAOneTimeCodeIsHiddenInThePanel(): void
+    {
+        $hidden = App\Chat\MailQueue::redactOneTimeCode(['body' => App\Chat\MailQueue::ONE_TIME_CODE_MARKER . '<p>Your code is 123456</p>']);
+        $this->assertStringNotContainsString('123456', $hidden['body']);
+        $plain = App\Chat\MailQueue::redactOneTimeCode(['body' => '<p>Welcome</p>']);
+        $this->assertSame('<p>Welcome</p>', $plain['body']);
+    }
+
+    public function testRequiredResponseSaysWhenSigningInAgainHelps(): void
+    {
+        $request = $this->sessionRequest('token-' . bin2hex(random_bytes(6)));
+        $request->attributes->set('user', ['uuid' => 'pw-only-' . bin2hex(random_bytes(4)), 'two_fa_enabled' => 'false', 'email' => '']);
+        $body = json_decode((string) StepUpAuth::require($request, StepUpAuth::ACTION_ACCOUNT_SECURITY)->getContent(), true);
+        $this->assertSame(['password'], $body['data']['methods']);
+        $this->assertTrue($body['data']['sign_in_again']);
+
+        $twoFactor = json_decode((string) StepUpAuth::require($this->sessionRequest('token-x'), StepUpAuth::ACTION_API_KEY)->getContent(), true);
+        $this->assertFalse($twoFactor['data']['sign_in_again']);
+    }
+
     public function testAdminPermissionDetection(): void
     {
         $this->assertTrue(StepUpAuth::isAdminPermission('admin.root'));
@@ -134,7 +165,12 @@ class StepUpAuthTest extends TestCase
         $this->assertTrue(ApiRateLimitMiddleware::isExempt(Request::create('/api/wings/backups/x'), []));
         $this->assertTrue(ApiRateLimitMiddleware::isExempt(Request::create('/api/quilld-remote/sync'), []));
         $this->assertTrue(ApiRateLimitMiddleware::isExempt(Request::create('/api/webhooks/webspaces/x/git-deploy', 'POST'), []));
+        App\Runtime\RequestContext::setRoute('/api/addons/billing/webhook');
         $this->assertTrue(ApiRateLimitMiddleware::isExempt(Request::create('/api/addons/billing/webhook', 'POST'), []));
+        // A caller-chosen path segment must not opt a normal route out of the budget.
+        App\Runtime\RequestContext::setRoute('/api/user/webspaces/{uuidShort}/files/{path}');
+        $this->assertFalse(ApiRateLimitMiddleware::isExempt(Request::create('/api/user/webspaces/abc/files/webhook', 'GET'), []));
+        App\Runtime\RequestContext::setRoute(null);
         $this->assertTrue(ApiRateLimitMiddleware::isExempt(Request::create('/api/health/ready'), []));
         $this->assertTrue(ApiRateLimitMiddleware::isExempt(Request::create('/api/user/session', 'OPTIONS'), []));
         $this->assertTrue(ApiRateLimitMiddleware::isExempt(Request::create('/api/custom/daemon'), [new WingsMiddleware()]));

@@ -21,6 +21,7 @@ use App\App;
 use RateLimit\Rate;
 use App\Permissions;
 use App\Helpers\SecurityStore;
+use App\Runtime\RequestContext;
 use App\Helpers\RateLimitConfig;
 use App\Helpers\PermissionHelper;
 use App\CloudFlare\CloudFlareRealIP;
@@ -147,8 +148,11 @@ class ApiRateLimitMiddleware implements MiddlewareInterface
                 return true;
             }
         }
-        if (str_contains($path, '/webhook')) {
-            // Payment / git / addon webhooks are called by outside services in bursts.
+        // Payment / git / addon webhooks are called by outside services in bursts.
+        // Match the route template, not the raw path, so a caller-chosen path
+        // segment such as `/webhook` cannot opt a normal route out of the budget.
+        $template = RequestContext::route();
+        if ($template !== null && str_contains(strtolower($template), '/webhook')) {
             return true;
         }
         foreach ($stack as $middleware) {

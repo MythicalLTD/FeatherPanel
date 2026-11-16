@@ -183,7 +183,17 @@ const attachCommonResponseInterceptor = (client: AxiosInstance) => {
 const attachReauthInterceptor = (client: AxiosInstance) => {
     client.interceptors.response.use(
         (response) => response,
-        async (error: AxiosError<{ error_code?: string; data?: { methods?: unknown; action?: string } | null }>) => {
+        async (
+            error: AxiosError<{
+                error_code?: string;
+                data?: {
+                    methods?: unknown;
+                    action?: string;
+                    sign_in_again?: boolean;
+                    sign_in_again_seconds?: number;
+                } | null;
+            }>,
+        ) => {
             const config = error.config as ReauthRetryConfig | undefined;
             const body = error.response?.data;
             if (
@@ -197,6 +207,11 @@ const attachReauthInterceptor = (client: AxiosInstance) => {
             const confirmed = await requestReauth({
                 action: typeof body?.data?.action === 'string' ? body.data.action : undefined,
                 methods: parseReauthMethods(body?.data?.methods),
+                signInAgain: body?.data?.sign_in_again === true,
+                signInAgainMinutes:
+                    typeof body?.data?.sign_in_again_seconds === 'number'
+                        ? Math.max(1, Math.round(body.data.sign_in_again_seconds / 60))
+                        : 5,
             });
             if (!confirmed) {
                 return Promise.reject(error);

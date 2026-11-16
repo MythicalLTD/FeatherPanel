@@ -30,12 +30,16 @@ export type ReauthMethod = 'password' | 'totp' | 'email_code';
 export type ReauthRequest = {
     action?: string;
     methods: ReauthMethod[];
+    /** Password-only accounts may confirm by signing in again (OAuth/SSO accounts have no known password). */
+    signInAgain?: boolean;
+    signInAgainMinutes?: number;
 };
 
 type Handler = (request: ReauthRequest) => Promise<boolean>;
 
 let handler: Handler | null = null;
 let pending: Promise<boolean> | null = null;
+let settlePending: ((confirmed: boolean) => void) | null = null;
 
 /** Registered by the mounted dialog; returns an unregister function. */
 export function setReauthHandler(next: Handler): () => void {
@@ -43,6 +47,9 @@ export function setReauthHandler(next: Handler): () => void {
     return () => {
         if (handler === next) {
             handler = null;
+            // The dialog went away while asking: cancel so callers do not hang
+            // and a replacement dialog can open the next request.
+            settlePending?.(false);
         }
     };
 }
@@ -66,8 +73,14 @@ export function requestReauth(request: ReauthRequest): Promise<boolean> {
         return Promise.resolve(false);
     }
     if (!pending) {
-        pending = handler(request).finally(() => {
+        let settle: (confirmed: boolean) => void = () => {};
+        const cancelled = new Promise<boolean>((resolve) => {
+            settle = resolve;
+        });
+        settlePending = settle;
+        pending = Promise.race([handler(request), cancelled]).finally(() => {
             pending = null;
+            settlePending = null;
         });
     }
     return pending;

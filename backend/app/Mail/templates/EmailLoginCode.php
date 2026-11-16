@@ -101,6 +101,9 @@ class EmailLoginCode
         if ($subject === '' || $body === '') {
             return;
         }
+        if (!empty($data['hide_in_panel'])) {
+            $body = MailQueue::ONE_TIME_CODE_MARKER . $body;
+        }
 
         $id = MailQueue::create([
             'user_uuid' => $data['uuid'],

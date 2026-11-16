@@ -268,7 +268,8 @@
                 "impersonate": "Signing in as another user needs a fresh confirmation of your account.",
                 "admin_role": "Granting admin permissions needs a fresh confirmation of your account.",
                 "api_key": "Creating an API key needs a fresh confirmation of your account.",
-                "custom_js": "Changing the custom JavaScript needs a fresh confirmation of your account."
+                "custom_js": "Changing the custom JavaScript needs a fresh confirmation of your account.",
+                "account_security": "Changing your password, e-mail or two-factor setup needs a fresh confirmation of your account."
             },
             "password": "Password",
             "totp": "Authenticator code",
@@ -279,6 +280,7 @@
             "sendCode": "E-mail me a code",
             "resendCode": "Send a new code",
             "usePassword": "Use my password",
+            "signInAgain": "Signed up with Discord or single sign-on and do not know your password? Sign out and back in, then try again within {minutes} minutes.",
             "confirm": "Confirm",
             "confirming": "Confirming...",
             "failed": "Could not confirm your identity."

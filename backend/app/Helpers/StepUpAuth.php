@@ -51,15 +51,27 @@ class StepUpAuth
     /** Wrong answers allowed per account and window before re-auth is paused. */
     public const MAX_FAILURES = 5;
     public const FAILURE_WINDOW_SECONDS = 900;
+    /**
+     * Accounts that can only confirm with a password (no 2FA, no mail) may have
+     * no usable password at all (Discord/OIDC/SSO sign-ups). For them a session
+     * signed in this recently counts as confirmed.
+     */
+    public const RECENT_LOGIN_SECONDS = 300;
+    /** How long the account stays paused once MAX_FAILURES is reached. */
+    public const LOCKOUT_SECONDS = 900;
 
     public const ACTION_IMPERSONATE = 'impersonate';
     public const ACTION_ADMIN_ROLE = 'admin_role';
     public const ACTION_API_KEY = 'api_key';
     public const ACTION_CUSTOM_JS = 'custom_js';
+    /** Changing the password, e-mail or two-factor setup the confirmation itself relies on. */
+    public const ACTION_ACCOUNT_SECURITY = 'account_security';
 
     public const METHOD_PASSWORD = 'password';
     public const METHOD_TOTP = 'totp';
     public const METHOD_EMAIL_CODE = 'email_code';
+    /** Lifetime of the per-session code generation counter (outlives every code it numbers). */
+    private const CODE_GENERATION_TTL_SECONDS = 86400;
 
     /**
      * Gate a sensitive action. Returns null when the request may continue,
@@ -75,6 +87,9 @@ class StepUpAuth
             return null;
         }
         $actor = self::actor($request);
+        if (is_array($actor) && self::recentLoginCounts($request, $actor)) {
+            return null;
+        }
 
         return ApiResponse::error(
             'Confirm your identity to continue.',
@@ -85,8 +100,31 @@ class StepUpAuth
                 'action' => $action,
                 'methods' => is_array($actor) ? self::methodsFor($actor) : [self::METHOD_PASSWORD],
                 'ttl_seconds' => self::TTL_SECONDS,
+                'sign_in_again' => is_array($actor) && self::passwordOnly($request, $actor),
+                'sign_in_again_seconds' => self::RECENT_LOGIN_SECONDS,
             ]
         );
+    }
+
+    /** Whether the account can only confirm with a password (and is not being impersonated). */
+    public static function passwordOnly(Request $request, array $actor): bool
+    {
+        return !$request->attributes->has('impersonator') && self::methodsFor($actor) === [self::METHOD_PASSWORD];
+    }
+
+    /** Password-only accounts: a session created in the last RECENT_LOGIN_SECONDS counts as confirmed. */
+    public static function recentLoginCounts(Request $request, array $actor): bool
+    {
+        if (!self::passwordOnly($request, $actor)) {
+            return false;
+        }
+        $token = $request->cookies->get('remember_token');
+        if (!is_string($token) || $token === '' || !UserSession::isSessionToken($token)) {
+            return false;
+        }
+        $age = UserSession::ageSeconds($token, (int) ($actor['id'] ?? 0));
+
+        return $age !== null && $age >= 0 && $age <= self::RECENT_LOGIN_SECONDS;
     }
 
     /** The person at the keyboard: the admin while impersonating, otherwise the signed-in user. */
@@ -172,23 +210,30 @@ class StepUpAuth
     /** Whether the account has used up its wrong answers for the current window. */
     public static function isLockedOut(array $user): bool
     {
-        return SecurityStore::count(self::failureKey($user)) >= self::MAX_FAILURES;
+        return SecurityStore::exists(self::lockKey($user));
     }
 
     public static function lockoutSecondsLeft(array $user): int
     {
-        return SecurityStore::ttl(self::failureKey($user));
+        return SecurityStore::ttl(self::lockKey($user));
     }
 
     /** Count one wrong answer; returns true when the account is now locked out. */
     public static function recordFailure(array $user): bool
     {
-        return SecurityStore::hit(self::failureKey($user), self::FAILURE_WINDOW_SECONDS)['count'] >= self::MAX_FAILURES;
+        if (SecurityStore::hit(self::failureKey($user), self::FAILURE_WINDOW_SECONDS)['count'] < self::MAX_FAILURES) {
+            return false;
+        }
+        // The pause starts now, independent of when the first wrong answer was counted.
+        SecurityStore::flag(self::lockKey($user), self::LOCKOUT_SECONDS);
+        SecurityStore::delete(self::failureKey($user));
+
+        return true;
     }
 
     public static function clearFailures(array $user): void
     {
-        SecurityStore::delete(self::failureKey($user));
+        SecurityStore::delete([self::failureKey($user), self::lockKey($user)]);
     }
 
     public static function checkPassword(array $user, string $password): bool
@@ -217,7 +262,7 @@ class StepUpAuth
             return false;
         }
         $code = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
-        $generation = SecurityStore::hit(self::codeGenerationKey($user, $session), self::CODE_TTL_SECONDS)['count'];
+        $generation = SecurityStore::hit(self::codeGenerationKey($user, $session), self::CODE_GENERATION_TTL_SECONDS)['count'];
         if ($generation <= 0 || !SecurityStore::flag(self::codeKey($user, $session, $generation, $code), self::CODE_TTL_SECONDS)) {
             return false;
         }
@@ -235,6 +280,8 @@ class StepUpAuth
             'app_support_url' => $config->getSetting(ConfigInterface::APP_SUPPORT_URL, ''),
             'login_code' => $code,
             'expires_minutes' => (int) (self::CODE_TTL_SECONDS / 60),
+            // The code must only be readable from the mailbox, not from the panel's mail history.
+            'hide_in_panel' => true,
         ]);
 
         return true;
@@ -256,7 +303,8 @@ class StepUpAuth
         if (!SecurityStore::exists($key)) {
             return false;
         }
-        SecurityStore::delete([$key, self::codeGenerationKey($user, $session)]);
+        // Only burn this code: the generation counter stays so superseded codes never match again.
+        SecurityStore::delete($key);
 
         return true;
     }
@@ -301,6 +349,11 @@ class StepUpAuth
     private static function failureKey(array $user): string
     {
         return 'reauth:failures:' . ($user['uuid'] ?? '');
+    }
+
+    private static function lockKey(array $user): string
+    {
+        return 'reauth:locked:' . ($user['uuid'] ?? '');
     }
 
     private static function codeGenerationKey(array $user, string $session): string

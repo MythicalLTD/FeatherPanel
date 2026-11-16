@@ -96,6 +96,25 @@ class UserSession
     }
 
     /**
+     * Seconds since an active session was created (measured by the database clock), null when unknown.
+     */
+    public static function ageSeconds(string $token, int $userId): ?int
+    {
+        try {
+            $pdo = Database::getPdoConnection();
+            $stmt = $pdo->prepare(
+                'SELECT TIMESTAMPDIFF(SECOND, created_at, NOW()) FROM ' . self::$table . ' WHERE token_hash = :hash AND user_id = :uid AND revoked_at IS NULL LIMIT 1'
+            );
+            $stmt->execute(['hash' => self::hash($token), 'uid' => $userId]);
+            $age = $stmt->fetchColumn();
+        } catch (\Throwable) {
+            return null;
+        }
+
+        return ($age === false || $age === null) ? null : (int) $age;
+    }
+
+    /**
      * Mark the session as the one serving this request and bump last_seen_at (at most once a minute).
      */
     public static function touch(array $session, ?string $ip): void

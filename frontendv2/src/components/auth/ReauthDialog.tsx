@@ -32,6 +32,7 @@ const ACTION_KEYS: Record<string, string> = {
     admin_role: 'auth.reauth.actions.admin_role',
     api_key: 'auth.reauth.actions.api_key',
     custom_js: 'auth.reauth.actions.custom_js',
+    account_security: 'auth.reauth.actions.account_security',
 };
 
 /**
@@ -147,6 +148,11 @@ export default function ReauthDialog() {
                     {method === 'email_code' && (
                         <p className='text-muted-foreground text-xs'>
                             {codeSent ? t('auth.reauth.codeSent') : t('auth.reauth.emailHint')}
+                        </p>
+                    )}
+                    {request?.signInAgain && method === 'password' && (
+                        <p className='text-muted-foreground text-xs'>
+                            {t('auth.reauth.signInAgain', { minutes: String(request.signInAgainMinutes ?? 5) })}
                         </p>
                     )}
                     {error && (

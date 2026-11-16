@@ -1597,6 +1597,12 @@ class ApiClientController
             if ($authorization['status'] === 'approved') {
                 $approvedApiClient = ApiClient::getApiClientById((int) $authorization['api_client_id']);
                 if ($approvedApiClient !== null) {
+                    // Replaying an approved result hands out the key again.
+                    $reauth = \App\Helpers\StepUpAuth::require($request, \App\Helpers\StepUpAuth::ACTION_API_KEY);
+                    if ($reauth !== null) {
+                        return $reauth;
+                    }
+
                     return $this->buildApprovedResponse($mode, $authorization, $approvedApiClient);
                 }
             }
