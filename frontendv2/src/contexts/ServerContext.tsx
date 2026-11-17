@@ -143,7 +143,7 @@ export function ServerProvider({ children, uuidShort, initialServer }: ServerPro
                         uuid: '',
                         uuidShort,
                         identifier: uuidShort,
-                        name: 'Suspended Server',
+                        name: uuidShort,
                         description: '',
                         status: 'suspended',
                         suspended: 1,

@@ -3141,8 +3141,8 @@
             "error": "Runtime Error"
         },
         "suspended_banner": {
-            "title": "Server Suspended",
-            "message": "This server has been suspended and is not accessible. Please contact support for more information.",
+            "title": "Server suspended",
+            "message": "This server has been suspended and can't be accessed right now. If you think this is a mistake, contact support.",
             "contact_support": "Contact Support",
             "back_to_dashboard": "Back to Dashboard"
         },
@@ -16487,7 +16487,7 @@
         },
         "suspended": {
             "title": "WebSpace suspended",
-            "description": "This WebSpace is suspended. Contact an administrator for assistance.",
+            "description": "This WebSpace has been suspended and can't be accessed right now. If you think this is a mistake, contact support.",
             "back": "Back to WebSpaces"
         },
         "power": {
@@ -18138,10 +18138,11 @@
             }
         },
         "suspended_banner": {
-            "title": "This VDS is suspended",
-            "message": "Access to this VDS has been temporarily restricted. Contact support for details.",
+            "title": "VDS suspended",
+            "message": "This VDS has been suspended and can't be accessed right now. If you think this is a mistake, contact support.",
             "reason": "Reason",
-            "since": "Suspended since {date} UTC"
+            "since_label": "Suspended",
+            "since_value": "{date} UTC"
         },
         "settings": {
             "title": "VDS Settings",

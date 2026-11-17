@@ -17,11 +17,9 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { ReactNode } from 'react';
 import { useVmInstance } from '@/contexts/VmInstanceContext';
-import { AlertTriangle, Home } from 'lucide-react';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useTranslation } from '@/contexts/TranslationContext';
-import { Button } from '@/components/featherui/Button';
-import Link from 'next/link';
+import { SuspendedState } from '@/components/featherui/SuspendedState';
 
 interface VdsSuspendedWrapperProps {
     children: ReactNode;
@@ -33,67 +31,28 @@ export function VdsSuspendedWrapper({ children }: VdsSuspendedWrapperProps) {
     const { t } = useTranslation();
 
     if (instance?.suspended === 1 || instance?.status === 'suspended') {
-        const supportUrl = settings?.app_support_url;
+        const suspension = instance.suspension;
 
         return (
-            <div className='flex min-h-[60vh] items-center justify-center'>
-                <div className='mx-auto w-full max-w-2xl px-4'>
-                    <div className='group relative'>
-                        <div className='absolute -inset-0.5 rounded-xl bg-linear-to-r from-amber-500/50 to-red-500/30 opacity-20 blur transition duration-1000 group-hover:opacity-30' />
-
-                        <div className='bg-card/95 relative rounded-xl border-2 border-amber-500/20 p-8 md:p-12'>
-                            <div className='space-y-6 text-center'>
-                                <div className='mb-4 inline-flex h-24 w-24 items-center justify-center rounded-xl bg-amber-500/10'>
-                                    <AlertTriangle className='h-12 w-12 text-amber-500' />
-                                </div>
-
-                                <div className='space-y-3'>
-                                    <h2 className='text-2xl font-bold tracking-tight text-amber-500 md:text-3xl'>
-                                        {t('vds.suspended_banner.title')}
-                                    </h2>
-                                    <p className='text-muted-foreground mx-auto max-w-md text-lg whitespace-pre-line'>
-                                        {instance.suspension?.message || t('vds.suspended_banner.message')}
-                                    </p>
-                                    {instance.suspension?.reason && (
-                                        <div className='bg-muted/40 border-border/50 mx-auto max-w-md rounded-xl border p-3 text-left text-sm'>
-                                            <p className='text-muted-foreground text-xs font-medium uppercase'>
-                                                {t('vds.suspended_banner.reason')}
-                                            </p>
-                                            <p className='mt-1 break-words'>{instance.suspension.reason}</p>
-                                            {instance.suspension.suspended_at && (
-                                                <p className='text-muted-foreground mt-1 text-xs'>
-                                                    {t('vds.suspended_banner.since', {
-                                                        date: instance.suspension.suspended_at,
-                                                    })}
-                                                </p>
-                                            )}
-                                        </div>
-                                    )}
-                                </div>
-
-                                <div className='flex flex-col justify-center gap-3 pt-4 sm:flex-row'>
-                                    {supportUrl && (
-                                        <Button
-                                            variant='default'
-                                            className='bg-amber-500 text-black hover:bg-amber-600'
-                                            onClick={() => window.open(supportUrl, '_blank')}
-                                        >
-                                            <AlertTriangle className='mr-2 h-4 w-4' />
-                                            {t('servers.suspended_banner.contact_support')}
-                                        </Button>
-                                    )}
-                                    <Link href='/dashboard'>
-                                        <Button variant='outline' className='w-full sm:w-auto'>
-                                            <Home className='mr-2 h-4 w-4' />
-                                            {t('servers.suspended_banner.back_to_dashboard')}
-                                        </Button>
-                                    </Link>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <SuspendedState
+                statusLabel={t('vms.status.suspended')}
+                title={t('vds.suspended_banner.title')}
+                description={suspension?.message || t('vds.suspended_banner.message')}
+                resourceName={instance.hostname}
+                details={[
+                    { label: t('vds.suspended_banner.reason'), value: suspension?.reason ?? null },
+                    {
+                        label: t('vds.suspended_banner.since_label'),
+                        value: suspension?.suspended_at
+                            ? t('vds.suspended_banner.since_value', { date: suspension.suspended_at })
+                            : null,
+                    },
+                ]}
+                backHref='/dashboard'
+                backLabel={t('servers.suspended_banner.back_to_dashboard')}
+                supportUrl={settings?.app_support_url}
+                supportLabel={t('servers.suspended_banner.contact_support')}
+            />
         );
     }
 

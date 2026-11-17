@@ -95,7 +95,7 @@ export function VmInstanceProvider({ children, instanceId, initialInstance }: Vm
                     const suspendedVm: VmInstance = {
                         id: instanceId,
                         vmid: 0,
-                        hostname: errorData?.data?.hostname || 'Suspended VDS',
+                        hostname: errorData?.data?.hostname || null,
                         status: 'suspended',
                         vm_type: 'qemu',
                         ip_address: null,
