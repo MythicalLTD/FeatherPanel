@@ -23,8 +23,8 @@ use App\Cache\Cache;
 use App\Chat\Activity;
 use App\Helpers\UUIDUtils;
 use App\Helpers\ApiResponse;
-use App\Helpers\OAuthStateCookie;
 use App\Config\ConfigInterface;
+use App\Helpers\OAuthStateCookie;
 use App\Helpers\PanelIpBlockGuard;
 use App\CloudFlare\CloudFlareRealIP;
 use App\Helpers\EmailDomainValidator;
@@ -146,7 +146,8 @@ class DiscordController
         $discordUsername = $discordUser['username'] ?? '';
         $discordDiscriminator = $discordUser['discriminator'] ?? '0000';
         $discordName = $discordUsername . '#' . $discordDiscriminator;
-        $discordEmail = $discordUser['email'] ?? '';
+        // Only an address Discord has confirmed may be used to find or create panel accounts
+        $discordEmail = self::verifiedEmail($discordUser);
 
         if ($isLinkFlow) {
             return $this->completeAccountLink(
@@ -171,7 +172,7 @@ class DiscordController
             );
         }
 
-        // Discord OAuth proves email ownership auto-link and log in existing accounts
+        // Discord confirmed this address (see verifiedEmail) so it can sign in the matching account
         if (!empty($discordEmail) && filter_var($discordEmail, FILTER_VALIDATE_EMAIL)) {
             $emailUser = User::getUserByEmail($discordEmail);
             if ($emailUser !== null && ($emailUser['deleted'] ?? 'false') !== 'true') {
@@ -199,6 +200,7 @@ class DiscordController
                 'discord_username' => $discordUsername,
                 'discord_name' => $discordName,
                 'discord_email' => $discordEmail,
+                'discord_email_verified' => $discordEmail !== '',
                 'is_registration' => true,
             ], 10);
 
@@ -394,10 +396,10 @@ class DiscordController
         if ($existingUser !== null) {
             Cache::forget('discord_link_token_' . $token);
 
-            return (new LoginController())->completeLogin($existingUser);
+            return (new LoginController())->completeExternalLogin($existingUser);
         }
 
-        if (!empty($cached['discord_email']) && filter_var($cached['discord_email'], FILTER_VALIDATE_EMAIL)) {
+        if (($cached['discord_email_verified'] ?? false) === true && !empty($cached['discord_email']) && filter_var($cached['discord_email'], FILTER_VALIDATE_EMAIL)) {
             $emailUser = User::getUserByEmail($cached['discord_email']);
             if ($emailUser !== null && ($emailUser['deleted'] ?? 'false') !== 'true') {
                 $this->applyDiscordLink(
@@ -411,7 +413,7 @@ class DiscordController
                 Cache::forget('discord_link_token_' . $token);
                 $linkedUser = User::getUserByUuid($emailUser['uuid']);
 
-                return (new LoginController())->completeLogin($linkedUser ?? $emailUser);
+                return (new LoginController())->completeExternalLogin($linkedUser ?? $emailUser);
             }
         }
 
@@ -419,7 +421,7 @@ class DiscordController
             $cached['discord_id'],
             $cached['discord_username'],
             $cached['discord_name'],
-            $cached['discord_email'],
+            ($cached['discord_email_verified'] ?? false) === true ? (string) $cached['discord_email'] : '',
             $cached['discord_access_token']
         );
 
@@ -439,7 +441,26 @@ class DiscordController
 
         $loginController = new LoginController();
 
-        return $loginController->completeLogin($newUser);
+        return $loginController->completeExternalLogin($newUser);
+    }
+
+    /**
+     * The Discord account email, but only when Discord reports it as confirmed.
+     *
+     * @param array<string, mixed> $discordUser Response of GET /users/@me
+     */
+    public static function verifiedEmail(array $discordUser): string
+    {
+        if (($discordUser['verified'] ?? false) !== true) {
+            return '';
+        }
+        $email = $discordUser['email'] ?? '';
+        if (!is_string($email)) {
+            return '';
+        }
+        $email = trim($email);
+
+        return filter_var($email, FILTER_VALIDATE_EMAIL) ? $email : '';
     }
 
     /**

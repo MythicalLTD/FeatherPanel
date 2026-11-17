@@ -288,6 +288,14 @@ class PermissionsController
             return ApiResponse::error('Unknown field(s): ' . implode(', ', $unknownFields), 'UNKNOWN_FIELDS', 400);
         }
 
+        // Granting an admin permission to a role needs a confirmed session.
+        if (\App\Helpers\StepUpAuth::isAdminPermission((string) $data['permission'])) {
+            $reauth = \App\Helpers\StepUpAuth::require($request, \App\Helpers\StepUpAuth::ACTION_ADMIN_ROLE);
+            if ($reauth !== null) {
+                return $reauth;
+            }
+        }
+
         $id = Permission::createPermission($data);
         if (!$id) {
             return ApiResponse::error('Failed to create permission', 'PERMISSION_CREATE_FAILED', 400);
@@ -416,6 +424,20 @@ class PermissionsController
         }
         if ($data === []) {
             return ApiResponse::error('No data to update', 'NO_DATA', 400);
+        }
+
+        // Turning a row into an admin permission, or moving an admin permission to
+        // another role, hands out admin access: it needs a confirmed session.
+        $resultingPermission = (string) ($data['permission'] ?? $permission['permission']);
+        $grantsAdmin = \App\Helpers\StepUpAuth::isAdminPermission($resultingPermission) && (
+            $resultingPermission !== (string) $permission['permission']
+            || (isset($data['role_id']) && (int) $data['role_id'] !== (int) $permission['role_id'])
+        );
+        if ($grantsAdmin) {
+            $reauth = \App\Helpers\StepUpAuth::require($request, \App\Helpers\StepUpAuth::ACTION_ADMIN_ROLE);
+            if ($reauth !== null) {
+                return $reauth;
+            }
         }
 
         $success = Permission::updatePermission($id, $data);

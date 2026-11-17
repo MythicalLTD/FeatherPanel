@@ -111,8 +111,8 @@ class LoginController
                 return ApiResponse::error('Invalid or expired Discord token', 'INVALID_DISCORD_TOKEN', 400);
             }
 
-            // Use existing login flow to set session and return user data
-            return $this->completeLogin($userInfo);
+            // Same ban, deletion and 2FA rules as every other sign-in method
+            return $this->completeExternalLogin($userInfo);
         }
 
         // Handle Google / GitHub / OIDC sign-in handoff (same ban, deletion and 2FA rules as password login)
@@ -123,22 +123,9 @@ class LoginController
             if ($userInfo === null) {
                 return ApiResponse::error('Invalid or expired sign-in token', 'INVALID_SSO_LOGIN_TOKEN', 400);
             }
-            if (($userInfo['banned'] ?? 'false') === 'true') {
-                return ApiResponse::error('User is banned', 'USER_BANNED');
-            }
-            if (($userInfo['deleted'] ?? 'false') === 'true') {
-                return ApiResponse::error('Account is deleted', 'ACCOUNT_DELETED', 403);
-            }
-            if (($userInfo['two_fa_enabled'] ?? 'false') === 'true') {
-                $challenge = TwoFactorChallengeHelper::issue($userInfo['uuid']);
-                if ($challenge === null) {
-                    return ApiResponse::error('Two-factor authentication is temporarily unavailable. Please try again shortly.', '2FA_UNAVAILABLE', 503);
-                }
-
-                return ApiResponse::error('2FA required', 'TWO_FACTOR_REQUIRED', 401, [
-                    'email' => $userInfo['email'],
-                    'challenge' => $challenge,
-                ]);
+            $gate = $this->externalLoginGate($userInfo);
+            if ($gate !== null) {
+                return $gate;
             }
             SsoController::audit($userInfo['uuid'], 'sso_login', 'Signed in with ' . SsoController::label((string) $handoff['provider']));
 
@@ -339,6 +326,48 @@ class LoginController
 
         // Use the common login completion method
         return $this->completeLogin($userInfo);
+    }
+
+    /**
+     * Finish a sign-in that was proven by another system (Discord, LDAP, ...).
+     *
+     * Applies the same ban, deletion and two-factor rules as the password form
+     * before a session is created.
+     */
+    public function completeExternalLogin(array $userInfo, ?string $redirectTo = null): Response
+    {
+        $gate = $this->externalLoginGate($userInfo);
+        if ($gate !== null) {
+            return $gate;
+        }
+
+        return $this->completeLogin($userInfo, $redirectTo);
+    }
+
+    /**
+     * Return an error response when the account may not sign in yet, or null to continue.
+     */
+    public function externalLoginGate(array $userInfo): ?Response
+    {
+        if (($userInfo['banned'] ?? 'false') === 'true') {
+            return ApiResponse::error('User is banned', 'USER_BANNED');
+        }
+        if (($userInfo['deleted'] ?? 'false') === 'true') {
+            return ApiResponse::error('Account is deleted', 'ACCOUNT_DELETED', 403);
+        }
+        if (($userInfo['two_fa_enabled'] ?? 'false') === 'true') {
+            $challenge = TwoFactorChallengeHelper::issue((string) $userInfo['uuid']);
+            if ($challenge === null) {
+                return ApiResponse::error('Two-factor authentication is temporarily unavailable. Please try again shortly.', '2FA_UNAVAILABLE', 503);
+            }
+
+            return ApiResponse::error('2FA required', 'TWO_FACTOR_REQUIRED', 401, [
+                'email' => $userInfo['email'],
+                'challenge' => $challenge,
+            ]);
+        }
+
+        return null;
     }
 
     /**

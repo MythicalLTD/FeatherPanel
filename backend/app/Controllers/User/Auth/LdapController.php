@@ -189,6 +189,7 @@ class LdapController
             // Sync attributes if enabled
             if (($provider['sync_attributes'] ?? 'false') === 'true') {
                 $this->syncUserAttributes($userInfo, $ldapUser);
+                $userInfo = User::getUserByUuid((string) $userInfo['uuid']) ?? $userInfo;
             }
         }
 
@@ -212,10 +213,10 @@ class LdapController
         // Successful LDAP login: clear the failure counter for this account.
         AccountLockoutHelper::clear($lockoutId);
 
-        // Complete login using the shared method from LoginController
+        // Complete login using the shared method from LoginController (ban, deletion and 2FA rules included)
         $loginController = new LoginController();
 
-        return $loginController->completeLogin($userInfo);
+        return $loginController->completeExternalLogin($userInfo);
     }
 
     /**

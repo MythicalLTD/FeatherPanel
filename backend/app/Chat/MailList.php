@@ -147,8 +147,10 @@ class MailList
         $params = ['user_uuid' => $userUuid];
 
         if ($search !== null && trim($search) !== '') {
-            $sql .= ' AND (mq.subject LIKE :search OR mq.body LIKE :search)';
+            // Bodies holding a one-time code are not searchable (the search would reveal the code).
+            $sql .= ' AND (mq.subject LIKE :search OR (mq.body LIKE :search AND mq.body NOT LIKE :otc))';
             $params['search'] = '%' . $search . '%';
+            $params['otc'] = '%' . MailQueue::ONE_TIME_CODE_MARKER . '%';
         }
 
         $sql .= ' ORDER BY mq.created_at DESC LIMIT :limit OFFSET :offset';
@@ -174,8 +176,10 @@ class MailList
         $params = ['user_uuid' => $userUuid];
 
         if ($search !== null && trim($search) !== '') {
-            $sql .= ' AND (mq.subject LIKE :search OR mq.body LIKE :search)';
+            // Bodies holding a one-time code are not searchable (the search would reveal the code).
+            $sql .= ' AND (mq.subject LIKE :search OR (mq.body LIKE :search AND mq.body NOT LIKE :otc))';
             $params['search'] = '%' . $search . '%';
+            $params['otc'] = '%' . MailQueue::ONE_TIME_CODE_MARKER . '%';
         }
 
         $stmt = $pdo->prepare($sql);

@@ -22,6 +22,7 @@ use App\Chat\User;
 use App\Chat\Server;
 use App\Permissions;
 use App\Chat\Subuser;
+use App\Chat\UserSshKey;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Helpers\ServerGateway;
@@ -290,16 +291,16 @@ class SftpAuthController
                 return null;
             }
         } elseif ($type === 'public_key') {
-            // For now, we'll implement basic public key validation
-            // In a production environment, you'd want more sophisticated key validation
+            // The offered key must be one of the user's saved SSH keys (Account > SSH keys)
             if (!$this->validatePublicKey($password)) {
                 return null;
             }
 
-            // Check if the public key is associated with this user
-            if (!$this->userHasPublicKey($user['id'], $password)) {
+            if (!$this->userHasPublicKey((int) $user['id'], $password)) {
                 return null;
             }
+        } else {
+            return null;
         }
 
         return $user;
@@ -337,7 +338,8 @@ class SftpAuthController
             }
         }
 
-        return false;
+        // Bare base64 wire blob (no algorithm prefix)
+        return preg_match('/^[A-Za-z0-9+\/]{50,}={0,3}$/', $firstLine) === 1;
     }
 
     /**
@@ -346,13 +348,11 @@ class SftpAuthController
      * @param int $userId The user ID
      * @param string $publicKey The public key content
      *
-     * @return bool True if user has the key, false otherwise
+     * @return bool True if the key matches one of the user's saved SSH keys
      */
     private function userHasPublicKey(int $userId, string $publicKey): bool
     {
-        // For now, we'll return true for valid public key format
-        // In a production environment, you'd want to store and validate against user's actual public keys
-        return true;
+        return UserSshKey::userHasMatchingPublicKey($userId, $publicKey);
     }
 
     /**

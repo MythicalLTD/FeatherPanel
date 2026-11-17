@@ -259,6 +259,31 @@
             "registrationFailed": "We could not create your account. Please contact an administrator.",
             "accountUnavailable": "This account is not available.",
             "userBanned": "This account is banned."
+        },
+        "reauth": {
+            "title": "Confirm it is you",
+            "description": "This action needs a fresh confirmation of your account.",
+            "validity": "You will not be asked again for 15 minutes.",
+            "actions": {
+                "impersonate": "Signing in as another user needs a fresh confirmation of your account.",
+                "admin_role": "Granting admin permissions needs a fresh confirmation of your account.",
+                "api_key": "Creating an API key needs a fresh confirmation of your account.",
+                "custom_js": "Changing the custom JavaScript needs a fresh confirmation of your account.",
+                "account_security": "Changing your password, e-mail or two-factor setup needs a fresh confirmation of your account."
+            },
+            "password": "Password",
+            "totp": "Authenticator code",
+            "totpHint": "Enter the 6-digit code from your authenticator app.",
+            "emailCode": "Code from your e-mail",
+            "emailHint": "Send a 6-digit code to the e-mail address on your account.",
+            "codeSent": "We sent a 6-digit code to your e-mail address. It is valid for 10 minutes.",
+            "sendCode": "E-mail me a code",
+            "resendCode": "Send a new code",
+            "usePassword": "Use my password",
+            "signInAgain": "Signed up with Discord or single sign-on and do not know your password? Sign out and back in, then try again within {minutes} minutes.",
+            "confirm": "Confirm",
+            "confirming": "Confirming...",
+            "failed": "Could not confirm your identity."
         }
     },
     "public_portal": {
@@ -1718,7 +1743,16 @@
             "PUSH_SUBSCRIBE_FAILED": "Failed to save push subscription",
             "PUSH_TEST_FAILED": "Could not send a test push",
             "IMPERSONATION_ACTION_BLOCKED": "This action is not allowed while impersonating another user. Stop impersonating first.",
-            "METRICS_SETTINGS_SAVE_FAILED": "Could not save the node metrics settings."
+            "REAUTH_INVALID_CREDENTIALS": "The password or code is not correct.",
+            "REAUTH_METHOD_NOT_ALLOWED": "This confirmation method is not available for your account.",
+            "REAUTH_LOCKED": "Too many failed attempts. Try again in a few minutes.",
+            "REAUTH_NOT_APPLICABLE": "Confirmation is only needed when signed in through the browser.",
+            "REAUTH_STORE_FAILED": "Could not complete the confirmation. Please try again.",
+            "METRICS_SETTINGS_SAVE_FAILED": "Could not save the node metrics settings.",
+            "DNS_PROVIDER_UNKNOWN": "Unknown DNS provider",
+            "DNS_TOKEN_INVALID": "Enter a valid API token (no spaces, at most 512 characters)",
+            "DNS_ZONE_NOT_FOUND": "No DNS zone for this domain was found with this token. Check that the token can see the zone",
+            "DOMAIN_NOT_IN_WEBSPACE": "This domain does not belong to this WebSpace"
         },
         "global": {}
     },
@@ -16733,6 +16767,30 @@
             "retryDnsProvision": "Retry DNS provision",
             "provisionDns": "Provision DNS",
             "dnsProvisionedToast": "Mail DNS records provisioned",
+            "dnsApi": {
+                "open": "Set DNS with an API token",
+                "title": "Set mail DNS records at your DNS provider",
+                "description": "The MX, SPF, DKIM and DMARC records are written into your own DNS zone. Nothing is changed before you have seen the preview.",
+                "tokenPlaceholder": "API token of your DNS provider",
+                "tokenNotStored": "The token is used for this request only. It is not saved, not logged and gone when you close this window.",
+                "zone": "Zone",
+                "preview": "Preview",
+                "apply": "Write records",
+                "overwrite": "Replace the different records that already exist (an existing SPF or MX record of another service would be replaced)",
+                "applied": "Mail DNS records written",
+                "appliedPartial": "Some records could not be written, see the list",
+                "failed": "Could not reach the DNS provider",
+                "loadFailed": "Could not load the DNS providers",
+                "action": {
+                    "created": "created",
+                    "updated": "updated",
+                    "unchanged": "already correct",
+                    "would_create": "will be created",
+                    "would_update": "will be replaced",
+                    "conflict": "different record exists (kept)",
+                    "error": "failed"
+                }
+            },
             "dnsProvisionFailed": "Failed to provision mail DNS",
             "loadFailed": "Failed to load mailboxes",
             "selectHostLocalDomain": "Select a host, local part, and domain",
