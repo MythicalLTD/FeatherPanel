@@ -319,16 +319,34 @@ class WebSpaceMailboxController
             return ApiResponse::error('The domain does not belong to this WebSpace', 'DOMAIN_NOT_IN_WEBSPACE', 400);
         }
 
-        $hosts = MailHost::listForWebNode((int) ($space['web_node_id'] ?? 0));
+        // Two independent record groups: the mail records (MX/SPF/DKIM/DMARC, the default) and the web records
+        // (A/AAAA to the web node). At least one must be chosen.
+        $withMail = !array_key_exists('mail_records', $body) || !empty($body['mail_records']);
+        $withWeb = !empty($body['web_records']);
+        if (!$withMail && !$withWeb) {
+            return ApiResponse::error('Select at least one record group (mail or web)', 'DNS_NOTHING_SELECTED', 400);
+        }
+
         $mailHost = null;
-        foreach ($hosts as $host) {
-            if (strtolower(trim((string) ($host['provision_mode'] ?? ''))) === 'node') {
-                $mailHost = $host;
-                break;
+        if ($withMail) {
+            $hosts = MailHost::listForWebNode((int) ($space['web_node_id'] ?? 0));
+            foreach ($hosts as $host) {
+                if (strtolower(trim((string) ($host['provision_mode'] ?? ''))) === 'node') {
+                    $mailHost = $host;
+                    break;
+                }
+            }
+            if ($mailHost === null) {
+                return ApiResponse::error('No mail host with node mode available', 'MAIL_HOST_NOT_FOUND', 404);
             }
         }
-        if ($mailHost === null) {
-            return ApiResponse::error('No mail host with node mode available', 'MAIL_HOST_NOT_FOUND', 404);
+
+        $webNode = null;
+        if ($withWeb) {
+            $webNode = \App\Chat\WebNode::getWebNodeById((int) ($space['web_node_id'] ?? 0));
+            if (!$webNode) {
+                return ApiResponse::error('Web node not found', 'WEB_NODE_NOT_FOUND', 404);
+            }
         }
 
         try {
@@ -337,14 +355,16 @@ class WebSpaceMailboxController
             if ($zone === null) {
                 return ApiResponse::error('No zone for this domain was found with this token', 'DNS_ZONE_NOT_FOUND', 404);
             }
-            $result = DnsProvisioner::provisionMailRecords(
-                $space,
-                $mailHost,
-                $domain,
-                ['provider' => $provider, 'zone_id' => $zone['id'], 'source' => 'api_token'],
-                $overwrite,
-                !$apply,
-            );
+            $context = ['provider' => $provider, 'zone_id' => $zone['id'], 'source' => 'api_token'];
+            $result = ['ok' => true, 'results' => []];
+            if ($withMail) {
+                $result = DnsProvisioner::provisionMailRecords($space, $mailHost, $domain, $context, $overwrite, !$apply);
+            }
+            if ($withWeb) {
+                $web = DnsProvisioner::provisionWebRecords($webNode, $domain, $context, $overwrite, !$apply);
+                $result['web'] = $web;
+                $result['ok'] = !empty($result['ok']) && !empty($web['ok']);
+            }
         } catch (\Throwable $e) {
             // The provider classes strip the token from their own messages; this is the last line of defence.
             $message = str_replace($token, '***', $e->getMessage());
@@ -352,9 +372,12 @@ class WebSpaceMailboxController
             return ApiResponse::error('DNS provider request failed: ' . mb_substr($message, 0, 300), 'DNS_PROVIDER_FAILED', 502);
         }
 
-        if ($result['results'] === [] && !empty($result['error'])) {
+        if ($withMail && $result['results'] === [] && !empty($result['error'])) {
             // Nothing was looked at (for example the mail DNS hints could not be read from the node).
             return ApiResponse::error((string) $result['error'], 'MAIL_DNS_RECORDS_UNAVAILABLE', 502);
+        }
+        if ($withWeb && !$withMail && ($result['web']['results'] ?? []) === [] && !empty($result['web']['error'])) {
+            return ApiResponse::error((string) $result['web']['error'], 'WEB_DNS_RECORDS_UNAVAILABLE', 502);
         }
 
         if ($apply) {
@@ -362,6 +385,8 @@ class WebSpaceMailboxController
                 'domain' => $domain,
                 'provider' => $providerId,
                 'zone' => $zone['name'],
+                'mail' => $withMail,
+                'web' => $withWeb,
                 'ok' => !empty($result['ok']),
             ]);
         }

@@ -1754,7 +1754,8 @@
             "DNS_ZONE_NOT_FOUND": "No DNS zone for this domain was found with this token. Check that the token can see the zone",
             "DOMAIN_NOT_IN_WEBSPACE": "This domain does not belong to this WebSpace",
             "INVALID_SERVER_IDS": "Missing or invalid server IDs.",
-            "TOO_MANY_SERVER_IDS": "Too many servers requested at once."
+            "TOO_MANY_SERVER_IDS": "Too many servers requested at once.",
+            "DNS_NOTHING_SELECTED": "Select at least one group of records to write"
         },
         "global": {}
     },
@@ -16782,18 +16783,22 @@
             "dnsProvisionedToast": "Mail DNS records provisioned",
             "dnsApi": {
                 "open": "Set DNS with an API token",
-                "title": "Set mail DNS records at your DNS provider",
-                "description": "The MX, SPF, DKIM and DMARC records are written into your own DNS zone. Nothing is changed before you have seen the preview.",
+                "title": "Set DNS records at your DNS provider",
+                "description": "The records you select are written into your own DNS zone. Nothing is changed before you have seen the preview.",
                 "tokenPlaceholder": "API token of your DNS provider",
                 "tokenNotStored": "The token is used for this request only. It is not saved, not logged and gone when you close this window.",
                 "zone": "Zone",
                 "preview": "Preview",
                 "apply": "Write records",
                 "overwrite": "Replace the different records that already exist (an existing SPF or MX record of another service would be replaced)",
-                "applied": "Mail DNS records written",
+                "applied": "DNS records written",
                 "appliedPartial": "Some records could not be written, see the list",
                 "failed": "Could not reach the DNS provider",
                 "loadFailed": "Could not load the DNS providers",
+            "groups": {
+                "mail": "Mail records: MX, SPF, DKIM and DMARC",
+                "web": "Website records: A and AAAA of this domain point to this web server (a different existing address is kept unless you allow replacing it)"
+            },
                 "action": {
                     "created": "created",
                     "updated": "updated",

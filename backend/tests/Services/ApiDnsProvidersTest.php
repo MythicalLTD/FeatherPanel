@@ -16,6 +16,7 @@
  */
 
 use PHPUnit\Framework\TestCase;
+use App\Helpers\DnsProvisioner;
 use App\Services\Dns\Providers\DnsProviderRegistry;
 use App\Services\Dns\Providers\AbstractApiDnsProvider;
 
@@ -551,6 +552,108 @@ class ApiDnsProvidersTest extends TestCase
 
         $this->assertSame('conflict', $p->upsertARecord($z, 'www.example.com', '192.0.2.10')['action']);
         $this->assertSame('198.51.100.7', $fake->state('example.com', 'A', 'www.example.com')[0]['content']);
+    }
+
+    /**
+     * @return array{provider: mixed, zone_id: string}
+     */
+    private function webContext(string $id, FakeDnsApi $fake): array
+    {
+        $p = DnsProviderRegistry::create($id, 'tok', $fake);
+
+        return ['provider' => $p, 'zone_id' => $p->findZoneForDomain('example.com')['id']];
+    }
+
+    #[PHPUnit\Framework\Attributes\DataProvider('providers')]
+    public function testWebRecordsPointTheDomainAtTheNodeAndTouchNothingElse(string $id): void
+    {
+        $fake = new FakeDnsApi($id, ['example.com']);
+        $fake->seed('example.com', 'TXT', 'example.com', [['content' => 'google-site-verification=abc']]);
+        $fake->seed('example.com', 'MX', 'example.com', [['content' => 'mail.example.net', 'priority' => 10]]);
+        $ctx = $this->webContext($id, $fake);
+        $node = ['public_ip' => '192.0.2.10', 'ip' => '2001:db8::10'];
+
+        $r = DnsProvisioner::provisionWebRecords($node, 'Example.com.', $ctx);
+
+        $this->assertTrue($r['ok']);
+        $this->assertSame(['A', 'AAAA'], array_column($r['results'], 'type'));
+        $this->assertSame(['created', 'created'], array_column($r['results'], 'action'));
+        $this->assertSame('192.0.2.10', $fake->state('example.com', 'A', 'example.com')[0]['content']);
+        $this->assertSame('2001:db8::10', $fake->state('example.com', 'AAAA', 'example.com')[0]['content']);
+        $this->assertSame('google-site-verification=abc', $fake->state('example.com', 'TXT', 'example.com')[0]['content']);
+        $this->assertSame('mail.example.net', $fake->state('example.com', 'MX', 'example.com')[0]['content']);
+    }
+
+    #[PHPUnit\Framework\Attributes\DataProvider('providers')]
+    public function testWebRecordsSecondRunChangesNothing(string $id): void
+    {
+        $fake = new FakeDnsApi($id, ['example.com']);
+        $ctx = $this->webContext($id, $fake);
+        $node = ['public_ip' => '192.0.2.10'];
+        DnsProvisioner::provisionWebRecords($node, 'example.com', $ctx);
+
+        $r = DnsProvisioner::provisionWebRecords($node, 'example.com', $ctx);
+
+        $this->assertTrue($r['ok']);
+        $this->assertSame(['A'], array_column($r['results'], 'type'), 'no AAAA when the node has no IPv6 address');
+        $this->assertSame(['unchanged'], array_column($r['results'], 'action'));
+    }
+
+    #[PHPUnit\Framework\Attributes\DataProvider('providers')]
+    public function testWebRecordsKeepADifferentAddressUnlessOverwriteIsAsked(string $id): void
+    {
+        $fake = new FakeDnsApi($id, ['example.com']);
+        $fake->seed('example.com', 'A', 'example.com', [['content' => '198.51.100.7']]);
+        $ctx = $this->webContext($id, $fake);
+        $node = ['public_ip' => '192.0.2.10'];
+
+        $kept = DnsProvisioner::provisionWebRecords($node, 'example.com', $ctx);
+        $this->assertFalse($kept['ok']);
+        $this->assertSame('conflict', $kept['results'][0]['action']);
+        $this->assertSame(['198.51.100.7'], $kept['results'][0]['existing']);
+        $this->assertSame('198.51.100.7', $fake->state('example.com', 'A', 'example.com')[0]['content']);
+
+        $replaced = DnsProvisioner::provisionWebRecords($node, 'example.com', $ctx, true);
+        $this->assertTrue($replaced['ok']);
+        $this->assertSame('updated', $replaced['results'][0]['action']);
+        $this->assertSame('192.0.2.10', $fake->state('example.com', 'A', 'example.com')[0]['content']);
+    }
+
+    #[PHPUnit\Framework\Attributes\DataProvider('providers')]
+    public function testWebRecordsDryRunWritesNothing(string $id): void
+    {
+        $fake = new FakeDnsApi($id, ['example.com']);
+        $fake->seed('example.com', 'A', 'www.example.com', [['content' => '198.51.100.7']]);
+        $ctx = $this->webContext($id, $fake);
+
+        $r = DnsProvisioner::provisionWebRecords(['public_ip' => '192.0.2.10'], 'example.com', $ctx, true, true);
+
+        $this->assertTrue($r['ok']);
+        $this->assertSame('would_create', $r['results'][0]['action']);
+        $this->assertSame([], $fake->state('example.com', 'A', 'example.com'));
+        $this->assertSame('198.51.100.7', $fake->state('example.com', 'A', 'www.example.com')[0]['content'], 'other names are never touched');
+    }
+
+    public function testWebRecordsNeedAResolvableNodeAddress(): void
+    {
+        $fake = new FakeDnsApi('cloudflare', ['example.com']);
+        $ctx = $this->webContext('cloudflare', $fake);
+
+        $r = DnsProvisioner::provisionWebRecords([], 'example.com', $ctx);
+
+        $this->assertFalse($r['ok']);
+        $this->assertSame([], $r['results']);
+        $this->assertNotEmpty($r['error']);
+        $this->assertSame([], $fake->state('example.com', 'A', 'example.com'));
+    }
+
+    public function testWebRecordsRejectAnEmptyDomain(): void
+    {
+        $fake = new FakeDnsApi('cloudflare', ['example.com']);
+        $r = DnsProvisioner::provisionWebRecords(['public_ip' => '192.0.2.10'], ' . ', $this->webContext('cloudflare', $fake));
+
+        $this->assertFalse($r['ok']);
+        $this->assertSame([], $r['results']);
     }
 
     /**
