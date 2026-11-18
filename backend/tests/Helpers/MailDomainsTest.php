@@ -58,6 +58,17 @@ class MailDomainsTest extends TestCase
         $this->assertSame(['a.example.com', 'b.example.com'], DnsProvisioner::collectProvisionDomains($space));
     }
 
+    public function testALegacyFlatDomainWithoutARouteIsNotAMailDomain(): void
+    {
+        // other.org stayed in the flat list but became no route of this space (another WebSpace owns it).
+        $space = [
+            'domains' => ['example.com', 'other.org'],
+            'domain_routes' => [['domain' => 'example.com', 'type' => 'primary']],
+        ];
+
+        $this->assertSame(['example.com'], DnsProvisioner::collectMailDomains($space));
+    }
+
     public function testAnotherWebSpacesDomainIsNotAMailDomain(): void
     {
         $space = ['domains' => ['example.com'], 'domain_routes' => [['domain' => 'example.com', 'type' => 'primary']]];

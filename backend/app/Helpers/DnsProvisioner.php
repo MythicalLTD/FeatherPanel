@@ -114,15 +114,9 @@ class DnsProvisioner
      */
     public static function collectMailDomains(array $space): array
     {
-        $domains = self::collectRouteDomains($space, true);
-        foreach (is_array($space['domains'] ?? null) ? $space['domains'] : [] as $domain) {
-            $domain = strtolower(trim((string) $domain));
-            if ($domain !== '') {
-                $domains[] = $domain;
-            }
-        }
-
-        return array_values(array_unique($domains));
+        // Routes are the source of truth when they exist; the flat list is only the fallback for spaces without
+        // routes (it can still hold a legacy domain that another WebSpace owns).
+        return self::collectRouteDomains($space, true);
     }
 
     /**
