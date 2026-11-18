@@ -93,34 +93,32 @@ class DnsProvisioner
     }
 
     /**
+     * Domains that get web records (A/AAAA): every route except redirects, which the node does not serve.
+     *
      * @param array<string, mixed> $space
      *
      * @return list<string>
      */
     public static function collectProvisionDomains(array $space): array
     {
-        $domains = [];
-        $routes = is_array($space['domain_routes'] ?? null) ? $space['domain_routes'] : [];
-        if ($routes !== []) {
-            foreach ($routes as $route) {
-                if (!is_array($route)) {
-                    continue;
-                }
-                $type = strtolower(trim((string) ($route['type'] ?? 'alias')));
-                if ($type === 'redirect') {
-                    continue;
-                }
-                $domain = strtolower(trim((string) ($route['domain'] ?? '')));
-                if ($domain !== '') {
-                    $domains[] = $domain;
-                }
-            }
-        } else {
-            foreach (is_array($space['domains'] ?? null) ? $space['domains'] : [] as $domain) {
-                $domain = strtolower(trim((string) $domain));
-                if ($domain !== '') {
-                    $domains[] = $domain;
-                }
+        return self::collectRouteDomains($space, false);
+    }
+
+    /**
+     * Domains that can receive mail: every domain of the WebSpace, redirect routes included. Mail is addressed to the
+     * domain of the mailbox whatever its web route does (for example `example.com` redirecting to `www.example.com`).
+     *
+     * @param array<string, mixed> $space
+     *
+     * @return list<string>
+     */
+    public static function collectMailDomains(array $space): array
+    {
+        $domains = self::collectRouteDomains($space, true);
+        foreach (is_array($space['domains'] ?? null) ? $space['domains'] : [] as $domain) {
+            $domain = strtolower(trim((string) $domain));
+            if ($domain !== '') {
+                $domains[] = $domain;
             }
         }
 
@@ -405,6 +403,41 @@ class DnsProvisioner
     public static function provisionMailForWebSpace(array $space): array
     {
         return MailDeliverabilityChecker::provisionMailForWebSpace($space);
+    }
+
+    /**
+     * @param array<string, mixed> $space
+     *
+     * @return list<string>
+     */
+    private static function collectRouteDomains(array $space, bool $withRedirects): array
+    {
+        $domains = [];
+        $routes = is_array($space['domain_routes'] ?? null) ? $space['domain_routes'] : [];
+        if ($routes !== []) {
+            foreach ($routes as $route) {
+                if (!is_array($route)) {
+                    continue;
+                }
+                $type = strtolower(trim((string) ($route['type'] ?? 'alias')));
+                if ($type === 'redirect' && !$withRedirects) {
+                    continue;
+                }
+                $domain = strtolower(trim((string) ($route['domain'] ?? '')));
+                if ($domain !== '') {
+                    $domains[] = $domain;
+                }
+            }
+        } else {
+            foreach (is_array($space['domains'] ?? null) ? $space['domains'] : [] as $domain) {
+                $domain = strtolower(trim((string) $domain));
+                if ($domain !== '') {
+                    $domains[] = $domain;
+                }
+            }
+        }
+
+        return array_values(array_unique($domains));
     }
 
     /**

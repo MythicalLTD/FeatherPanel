@@ -18,6 +18,7 @@
 
 ### Fixed
 - Ticket attachments are served as downloads: files under `/attachments` other than raster images (png, jpg, gif, webp, bmp, ico) get `Content-Disposition: attachment`, plus `X-Content-Type-Options: nosniff` and a `sandbox` content policy for every file (backend Caddyfile, legacy `nginx.conf` and installer nginx sites). SVG is no longer accepted as a ticket attachment, and the type detected from the file content must match its extension (a `.png` must be a PNG). Avatar and FeatherOS wallpaper uploads use the same extension check. by @nayskutzu
+- Mail DNS with an API token also works for a WebSpace domain that is a redirect route, for example `example.com` redirecting to `www.example.com`: the dialog offers it and `POST .../mailboxes/dns/provider` accepts it (it answered `DOMAIN_NOT_IN_WEBSPACE`), since mail goes to the mailbox's domain whatever its web route does. Web (A/AAAA) records are still not written for redirect routes. (Fixes #476) by @nayskutzu
 - The account unsuspended mail fills `{unsuspension_time}` again, and the test mail from Admin, Settings encodes the username and email it shows. by @nayskutzu
 
 ## v1.5.4 STABLE
