@@ -66,6 +66,10 @@ class IonosDnsProvider extends AbstractRecordDnsProvider
         $body = is_array($res['body']) ? $res['body'] : [];
         $records = [];
         $ttl = null;
+        // Rebuilt from every read: a record that was disabled at an earlier read may have been enabled or changed
+        // since (for example by another client while a rate limit was waited out), so its id must not be reused.
+        $prefix = $type . '|' . $fqdn . '|';
+        $this->disabled = array_filter($this->disabled, static fn (string $key): bool => !str_starts_with($key, $prefix), ARRAY_FILTER_USE_KEY);
         foreach (is_array($body['records'] ?? null) ? $body['records'] : [] as $row) {
             if (!is_array($row) || strtoupper((string) ($row['type'] ?? '')) !== $type || strtolower(rtrim((string) ($row['name'] ?? ''), '.')) !== $fqdn) {
                 continue;
