@@ -34,9 +34,7 @@ class AdminMiddleware implements MiddlewareInterface
         }
         if (!$permission || !PermissionHelper::hasPermission($user['uuid'], $permission)) {
             return ApiResponse::error('You are not allowed to access this resource!', 'NOT_AUTHORIZED', 403, [
-                'user' => $user,
                 'permission' => $permission,
-                'userId' => $user['uuid'],
             ]);
         }
 

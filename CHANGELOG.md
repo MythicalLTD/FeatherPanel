@@ -17,6 +17,7 @@
 - Sign-in flows now follow the same rules everywhere. SFTP key sign-in on FeatherWings nodes checks the offered key against the keys saved under Account → SSH keys, like FeatherQuilld already did (add your key there if you connect with one). Discord and LDAP sign-ins go through the same banned, deleted-account and two-factor steps as the password form, and the login and Discord registration pages open the two-factor prompt when it is needed. Discord sign-in only matches or creates a panel account by e-mail when Discord reports that address as verified. Removing a VM subuser only applies to subusers of that VM (`404` otherwise). by @nayskutzu
 
 ### Fixed
+- Admin API responses that refuse a request (`403`, `NOT_AUTHORIZED`) now include only the permission name that was required, not the whole user object. by @nayskutzu
 - Ticket attachments are served as downloads: files under `/attachments` other than raster images (png, jpg, gif, webp, bmp, ico) get `Content-Disposition: attachment`, plus `X-Content-Type-Options: nosniff` and a `sandbox` content policy for every file (backend Caddyfile, legacy `nginx.conf` and installer nginx sites). SVG is no longer accepted as a ticket attachment, and the type detected from the file content must match its extension (a `.png` must be a PNG). Avatar and FeatherOS wallpaper uploads use the same extension check. by @nayskutzu
 - The account unsuspended mail fills `{unsuspension_time}` again, and the test mail from Admin, Settings encodes the username and email it shows. by @nayskutzu
 
