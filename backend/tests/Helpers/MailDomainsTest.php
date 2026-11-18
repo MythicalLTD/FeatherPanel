@@ -17,6 +17,7 @@
 
 use App\Helpers\DnsProvisioner;
 use PHPUnit\Framework\TestCase;
+use App\Helpers\MailDeliverabilityChecker;
 
 class MailDomainsTest extends TestCase
 {
@@ -74,5 +75,54 @@ class MailDomainsTest extends TestCase
         $space = ['domains' => ['example.com'], 'domain_routes' => [['domain' => 'example.com', 'type' => 'primary']]];
 
         $this->assertNotContains('other.org', DnsProvisioner::collectMailDomains($space));
+    }
+
+    public function testEachMailDomainPassesDkimWithItsOwnKey(): void
+    {
+        // The mail host row holds the key of the domain provisioned last (example.com), www has its own key.
+        $mailHost = [
+            'mx_host' => 'mail.example.com',
+            'hostname' => 'mail.example.com',
+            'spf_record' => 'v=spf1 mx -all',
+            'dkim_selector' => 'dkim',
+            'dkim_record' => 'v=DKIM1;k=rsa;p=APEXKEY',
+        ];
+        $zone = [
+            ['type' => 'TXT', 'name' => 'dkim._domainkey.example.com', 'content' => 'v=DKIM1;k=rsa;p=APEXKEY'],
+            ['type' => 'TXT', 'name' => 'dkim._domainkey.www.example.com.', 'content' => '"v=DKIM1; k=rsa; " "p=WWWKEY"'],
+        ];
+
+        $this->assertSame('pass', $this->dkimStatus('example.com', $mailHost, $zone));
+        $this->assertSame('pass', $this->dkimStatus('www.example.com', $mailHost, $zone));
+    }
+
+    public function testDkimFailsWithoutAKeyForThatDomain(): void
+    {
+        $mailHost = ['mx_host' => 'mail.example.com', 'hostname' => 'mail.example.com', 'dkim_selector' => 'dkim', 'dkim_record' => 'v=DKIM1;p=APEXKEY'];
+        $zone = [
+            ['type' => 'TXT', 'name' => 'dkim._domainkey.example.com', 'content' => 'v=DKIM1;p=APEXKEY'],
+            // Not a key: empty p= (revoked) and a key under another selector.
+            ['type' => 'TXT', 'name' => 'dkim._domainkey.shop.example.com', 'content' => 'v=DKIM1; p='],
+            ['type' => 'TXT', 'name' => 'other._domainkey.www.example.com', 'content' => 'v=DKIM1;p=WWWKEY'],
+        ];
+
+        $this->assertSame('fail', $this->dkimStatus('www.example.com', $mailHost, $zone));
+        $this->assertSame('fail', $this->dkimStatus('shop.example.com', $mailHost, $zone));
+    }
+
+    /**
+     * @param array<string, mixed> $mailHost
+     * @param list<array<string, string>> $zone
+     */
+    private function dkimStatus(string $domain, array $mailHost, array $zone): string
+    {
+        $result = MailDeliverabilityChecker::assessDomain([], $domain, $mailHost, $zone);
+        foreach ($result['checks'] as $check) {
+            if ($check['id'] === 'dkim') {
+                return $check['status'];
+            }
+        }
+
+        return 'missing';
     }
 }
