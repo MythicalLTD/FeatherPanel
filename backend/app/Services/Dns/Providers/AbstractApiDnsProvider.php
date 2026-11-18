@@ -32,10 +32,23 @@ use App\Services\Dns\MailRecordCapableInterface;
  */
 abstract class AbstractApiDnsProvider implements DnsProviderInterface, MailRecordCapableInterface
 {
+    private const MAX_ATTEMPTS = 4;
+
+    /**
+     * Upper bound for all rate-limit waits of one provider instance together, so a request that writes several
+     * records (the mail setup writes four) cannot wait longer than this in total and run into proxy timeouts.
+     */
+    private const MAX_TOTAL_WAIT = 30;
     /** @var (callable(string, string, array<string, string>, ?array<mixed>): array{status: int, body: mixed})|null */
     private $transport;
 
     private bool $dryRun = false;
+
+    /** @var (callable(int): void)|null */
+    private $sleeper;
+
+    /** Seconds already spent waiting out rate limits on this instance (one panel request). */
+    private int $waited = 0;
 
     /** @var list<array{id: string, name: string}>|null */
     private ?array $zoneCache = null;
@@ -64,6 +77,16 @@ abstract class AbstractApiDnsProvider implements DnsProviderInterface, MailRecor
     public function setDryRun(bool $dryRun): void
     {
         $this->dryRun = $dryRun;
+    }
+
+    /**
+     * Test seam: replaces the real sleep used while waiting out a rate limit.
+     *
+     * @param callable(int): void $sleeper receives the number of seconds to wait
+     */
+    public function setSleeper(callable $sleeper): void
+    {
+        $this->sleeper = $sleeper;
     }
 
     public function listZones(): array
@@ -165,64 +188,7 @@ abstract class AbstractApiDnsProvider implements DnsProviderInterface, MailRecor
 
     public function upsertTxtRecord(string $zoneId, string $name, string $content, int $ttl = 300, bool $overwrite = true): array
     {
-        try {
-            $zoneName = $this->zoneName($zoneId);
-            $fqdn = $this->fqdn($name, $zoneName);
-            $content = trim($content);
-            if ($content === '') {
-                return ['ok' => false, 'action' => 'error', 'error' => 'TXT value is empty'];
-            }
-            $existing = $this->fetchRrset($zoneId, $zoneName, 'TXT', $fqdn);
-            $values = array_map(static fn (array $r): string => $r['content'], $existing['records']);
-
-            // Values of the same kind (another SPF, DKIM or DMARC) that differ from the wanted one. There must be at
-            // most one of each kind on a name (two SPF records make SPF fail), so they are a conflict even when the
-            // wanted value is already present, for example after an earlier run that could not remove the old one.
-            $tag = self::txtTag($content);
-            $others = [];
-            if ($tag !== null) {
-                foreach ($values as $i => $value) {
-                    if ($value !== $content && self::txtTag($value) === $tag) {
-                        $others[] = $i;
-                    }
-                }
-            }
-            $present = in_array($content, $values, true);
-
-            if ($others === [] && $present) {
-                return ['ok' => true, 'action' => 'unchanged'];
-            }
-            if ($others !== [] && !$overwrite) {
-                return ['ok' => false, 'action' => 'conflict', 'error' => 'A different ' . $tag . ' record already exists (kept)', 'existing' => $values[$others[0]]];
-            }
-
-            $next = [];
-            $placed = $present;
-            foreach ($values as $i => $value) {
-                if (in_array($i, $others, true)) {
-                    if (!$placed) {
-                        $next[] = $content;
-                        $placed = true;
-                    }
-                    continue;
-                }
-                $next[] = $value;
-            }
-            if (!$placed) {
-                $next[] = $content;
-            }
-            $action = $values === [] ? 'created' : 'updated';
-            if ($this->dryRun) {
-                return ['ok' => true, 'action' => 'would_' . ($action === 'created' ? 'create' : 'update')];
-            }
-
-            $desired = array_map(static fn (string $v): array => ['content' => $v, 'priority' => null], $next);
-            $this->storeRrset($zoneId, $zoneName, 'TXT', $fqdn, $desired, max(60, $ttl), $existing);
-
-            return ['ok' => true, 'action' => $action];
-        } catch (\Throwable $e) {
-            return ['ok' => false, 'action' => 'error', 'error' => $this->clean($e->getMessage())];
-        }
+        return $this->withRateLimitRetry(fn (bool $resumed): array => $this->upsertTxtOnce($zoneId, $name, $content, $ttl, $overwrite));
     }
 
     /**
@@ -249,6 +215,26 @@ abstract class AbstractApiDnsProvider implements DnsProviderInterface, MailRecor
         }
 
         return null;
+    }
+
+    /**
+     * `Retry-After` is either a number of seconds or an HTTP date (RFC 9110 10.2.3). Null when missing or unreadable.
+     */
+    public static function parseRetryAfter(string $value, ?int $now = null): ?int
+    {
+        $value = trim($value);
+        if ($value === '') {
+            return null;
+        }
+        if (ctype_digit($value)) {
+            return (int) substr($value, 0, 9);
+        }
+        $at = strtotime($value);
+        if ($at === false) {
+            return null;
+        }
+
+        return max(0, $at - ($now ?? time()));
     }
 
     /**
@@ -387,10 +373,29 @@ abstract class AbstractApiDnsProvider implements DnsProviderInterface, MailRecor
         if ($json !== null) {
             $headers['Content-Type'] = 'application/json';
         }
-        try {
-            $response = $this->send($method, $url, $headers, $json);
-        } catch (\Throwable $e) {
-            throw new \RuntimeException($this->clean('Request to the DNS provider failed: ' . $e->getMessage()));
+        // A rate limit (429) rejects the request before anything is changed. deSEC allows only a few writes per
+        // second and the mail setup writes four records in a row.
+        // - A read is simply asked again.
+        // - A write is NOT replayed here: the request body was computed from a read that is now out of date (someone
+        //   else may have added a TXT value meanwhile, and a set-based write would remove it). The write is handed up
+        //   as DnsRateLimited and the caller waits, reads again and recomputes.
+        $attempt = 0;
+        while (true) {
+            ++$attempt;
+            try {
+                $response = $this->send($method, $url, $headers, $json);
+            } catch (\Throwable $e) {
+                throw new \RuntimeException($this->clean('Request to the DNS provider failed: ' . $e->getMessage()));
+            }
+            if ((int) $response['status'] !== 429 || in_array(429, $okStatuses, true)) {
+                break;
+            }
+            if ($method !== 'GET') {
+                throw new DnsRateLimited($this->retryDelay($response), $this->clean(static::label() . ' answered 429: ' . $this->errorText($response['body'])));
+            }
+            if ($attempt >= self::MAX_ATTEMPTS || !$this->wait($this->retryDelay($response))) {
+                break;
+            }
         }
         $status = (int) $response['status'];
         if (($status === 401 || $status === 403) && !in_array($status, $okStatuses, true)) {
@@ -430,6 +435,133 @@ abstract class AbstractApiDnsProvider implements DnsProviderInterface, MailRecor
     }
 
     /**
+     * @return array<string, mixed>
+     */
+    private function upsertTxtOnce(string $zoneId, string $name, string $content, int $ttl, bool $overwrite): array
+    {
+        try {
+            $zoneName = $this->zoneName($zoneId);
+            $fqdn = $this->fqdn($name, $zoneName);
+            $content = trim($content);
+            if ($content === '') {
+                return ['ok' => false, 'action' => 'error', 'error' => 'TXT value is empty'];
+            }
+            $existing = $this->fetchRrset($zoneId, $zoneName, 'TXT', $fqdn);
+            $values = array_map(static fn (array $r): string => $r['content'], $existing['records']);
+
+            // Values of the same kind (another SPF, DKIM or DMARC) that differ from the wanted one. There must be at
+            // most one of each kind on a name (two SPF records make SPF fail), so they are a conflict even when the
+            // wanted value is already present, for example after an earlier run that could not remove the old one.
+            $tag = self::txtTag($content);
+            $others = [];
+            if ($tag !== null) {
+                foreach ($values as $i => $value) {
+                    if ($value !== $content && self::txtTag($value) === $tag) {
+                        $others[] = $i;
+                    }
+                }
+            }
+            $present = in_array($content, $values, true);
+
+            if ($others === [] && $present) {
+                return ['ok' => true, 'action' => 'unchanged'];
+            }
+            if ($others !== [] && !$overwrite) {
+                return ['ok' => false, 'action' => 'conflict', 'error' => 'A different ' . $tag . ' record already exists (kept)', 'existing' => $values[$others[0]]];
+            }
+
+            $next = [];
+            $placed = $present;
+            foreach ($values as $i => $value) {
+                if (in_array($i, $others, true)) {
+                    if (!$placed) {
+                        $next[] = $content;
+                        $placed = true;
+                    }
+                    continue;
+                }
+                $next[] = $value;
+            }
+            if (!$placed) {
+                $next[] = $content;
+            }
+            $action = $values === [] ? 'created' : 'updated';
+            if ($this->dryRun) {
+                return ['ok' => true, 'action' => 'would_' . ($action === 'created' ? 'create' : 'update')];
+            }
+
+            $desired = array_map(static fn (string $v): array => ['content' => $v, 'priority' => null], $next);
+            $this->storeRrset($zoneId, $zoneName, 'TXT', $fqdn, $desired, max(60, $ttl), $existing);
+
+            return ['ok' => true, 'action' => $action];
+        } catch (DnsRateLimited $e) {
+            throw $e;
+        } catch (\Throwable $e) {
+            return ['ok' => false, 'action' => 'error', 'error' => $this->clean($e->getMessage())];
+        }
+    }
+
+    /**
+     * Runs one whole read, compute, write round. When the provider throttles the write, waits and runs the round
+     * again from the read, so the new write is based on the zone as it is now. Gives up after MAX_ATTEMPTS rounds
+     * or when the total wait budget is used up. The round is told whether an earlier round was throttled in the
+     * middle of its write, so it can finish what that round started.
+     *
+     * @param callable(bool): array<string, mixed> $round
+     *
+     * @return array<string, mixed>
+     */
+    private function withRateLimitRetry(callable $round): array
+    {
+        for ($attempt = 1;; ++$attempt) {
+            try {
+                return $round($attempt > 1);
+            } catch (DnsRateLimited $e) {
+                if ($attempt >= self::MAX_ATTEMPTS || !$this->wait($e->seconds)) {
+                    return ['ok' => false, 'action' => 'error', 'error' => $this->clean($e->getMessage())];
+                }
+            }
+        }
+    }
+
+    /**
+     * Seconds to wait before asking again: the provider's own number if it gives one, else 2, kept within 1 to 10.
+     *
+     * @param array{status: int, body: mixed, retry_after?: int|null} $response
+     */
+    private function retryDelay(array $response): int
+    {
+        $seconds = isset($response['retry_after']) ? (int) $response['retry_after'] : 0;
+        if ($seconds <= 0) {
+            $text = is_array($response['body']) ? (string) json_encode($response['body']) : (string) $response['body'];
+            if (preg_match('/in\s+(\d+(?:\.\d+)?)\s+second/i', $text, $m) === 1) {
+                $seconds = (int) ceil((float) $m[1]);
+            }
+        }
+
+        return max(1, min(10, $seconds > 0 ? $seconds : 2));
+    }
+
+    /**
+     * Waits $seconds, unless that would go over the total wait budget (then returns false without waiting).
+     */
+    private function wait(int $seconds): bool
+    {
+        if ($this->waited + $seconds > self::MAX_TOTAL_WAIT) {
+            return false;
+        }
+        $this->waited += $seconds;
+        if ($this->sleeper !== null) {
+            ($this->sleeper)($seconds);
+
+            return true;
+        }
+        sleep($seconds);
+
+        return true;
+    }
+
+    /**
      * Replaces the token, also in its JSON-escaped form, without shortening the text.
      */
     private function scrub(string $message): string
@@ -446,7 +578,7 @@ abstract class AbstractApiDnsProvider implements DnsProviderInterface, MailRecor
      * @param array<string, string> $headers
      * @param array<mixed>|null $json
      *
-     * @return array{status: int, body: mixed}
+     * @return array{status: int, body: mixed, retry_after?: int|null}
      */
     private function send(string $method, string $url, array $headers, ?array $json): array
     {
@@ -468,7 +600,11 @@ abstract class AbstractApiDnsProvider implements DnsProviderInterface, MailRecor
         $raw = (string) $response->getBody();
         $decoded = $raw === '' ? null : json_decode($raw, true);
 
-        return ['status' => $response->getStatusCode(), 'body' => $decoded ?? ($raw === '' ? null : $raw)];
+        return [
+            'status' => $response->getStatusCode(),
+            'body' => $decoded ?? ($raw === '' ? null : $raw),
+            'retry_after' => self::parseRetryAfter($response->getHeaderLine('Retry-After')),
+        ];
     }
 
     /**
@@ -478,16 +614,33 @@ abstract class AbstractApiDnsProvider implements DnsProviderInterface, MailRecor
      */
     private function upsertSingle(string $zoneId, string $type, string $name, string $content, ?int $priority, int $ttl, bool $overwrite): array
     {
+        return $this->withRateLimitRetry(fn (bool $resumed): array => $this->upsertSingleOnce($zoneId, $type, $name, $content, $priority, $ttl, $overwrite, $resumed));
+    }
+
+    /**
+     * @param bool $resumed an earlier round was throttled during its write. Record providers create the new record
+     *                      before deleting the old ones, so the wanted record can already be there next to the old
+     *                      one; with $overwrite the old ones are then still removed instead of reporting unchanged.
+     *
+     * @return array<string, mixed>
+     */
+    private function upsertSingleOnce(string $zoneId, string $type, string $name, string $content, ?int $priority, int $ttl, bool $overwrite, bool $resumed = false): array
+    {
         try {
             $zoneName = $this->zoneName($zoneId);
             $fqdn = $this->fqdn($name, $zoneName);
             $existing = $this->fetchRrset($zoneId, $zoneName, $type, $fqdn);
             $current = $existing['records'];
 
+            $present = false;
             foreach ($current as $record) {
                 if (strtolower(rtrim($record['content'], '.')) === strtolower(rtrim($content, '.')) && ($priority === null || (int) $record['priority'] === $priority)) {
-                    return ['ok' => true, 'action' => 'unchanged'];
+                    $present = true;
+                    break;
                 }
+            }
+            if ($present && !($resumed && $overwrite && count($current) > 1)) {
+                return ['ok' => true, 'action' => 'unchanged'];
             }
 
             if ($current !== [] && !$overwrite) {
@@ -507,6 +660,8 @@ abstract class AbstractApiDnsProvider implements DnsProviderInterface, MailRecor
             $this->storeRrset($zoneId, $zoneName, $type, $fqdn, [['content' => $content, 'priority' => $priority]], max(60, $ttl), $existing);
 
             return ['ok' => true, 'action' => $action];
+        } catch (DnsRateLimited $e) {
+            throw $e;
         } catch (\Throwable $e) {
             return ['ok' => false, 'action' => 'error', 'error' => $this->clean($e->getMessage())];
         }

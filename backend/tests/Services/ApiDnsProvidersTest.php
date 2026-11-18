@@ -17,6 +17,7 @@
 
 use PHPUnit\Framework\TestCase;
 use App\Services\Dns\Providers\DnsProviderRegistry;
+use App\Services\Dns\Providers\AbstractApiDnsProvider;
 
 /**
  * The providers are tested against an in-memory fake of each documented API. The fake keeps real state, so
@@ -286,6 +287,197 @@ class ApiDnsProvidersTest extends TestCase
         $this->assertStringNotContainsString($secret, json_encode($r));
     }
 
+    #[PHPUnit\Framework\Attributes\DataProvider('providers')]
+    public function testRateLimitedWriteIsRetriedAfterTheWaitTheProviderNames(string $id): void
+    {
+        $fake = new FakeDnsApi($id, ['example.com']);
+        $p = DnsProviderRegistry::create($id, 'tok', $fake);
+        $waits = [];
+        $p->setSleeper(function (int $s) use (&$waits): void {
+            $waits[] = $s;
+        });
+        $z = $p->findZoneForDomain('example.com')['id'];
+        $fake->throttleWrites = 2;
+
+        $r = $p->upsertTxtRecord($z, 'example.com', self::SPF);
+        $this->assertTrue($r['ok'], json_encode($r));
+        $this->assertSame('created', $r['action']);
+        $this->assertSame(2, $fake->throttled);
+        $this->assertSame([3, 3], $waits, 'the number in the provider message is used');
+        $this->assertSame(self::SPF, $fake->state('example.com', 'TXT', 'example.com')[0]['content'], 'written exactly once');
+    }
+
+    public function testRetryAfterHeaderWinsAndTheWaitIsCapped(): void
+    {
+        $fake = new FakeDnsApi('cloudflare', ['example.com']);
+        $p = DnsProviderRegistry::create('cloudflare', 'tok', $fake);
+        $waits = [];
+        $p->setSleeper(function (int $s) use (&$waits): void {
+            $waits[] = $s;
+        });
+        $z = $p->findZoneForDomain('example.com')['id'];
+        $fake->throttleWrites = 2;
+        $fake->retryAfterHeader = 2;
+        $this->assertTrue($p->upsertMxRecord($z, 'example.com', 'mail.example.net')['ok']);
+        $this->assertSame([2, 2], $waits);
+
+        $fake->throttleWrites = 1;
+        $fake->retryAfterHeader = 600;
+        $waits = [];
+        $this->assertTrue($p->upsertMxRecord($z, 'example.com', 'mail2.example.net', 10, 300, true)['ok']);
+        $this->assertSame([10], $waits, 'a long Retry-After is capped');
+    }
+
+    #[PHPUnit\Framework\Attributes\DataProvider('providers')]
+    public function testValueAddedByAnotherClientDuringTheWaitIsKept(string $id): void
+    {
+        $fake = new FakeDnsApi($id, ['example.com']);
+        $fake->seed('example.com', 'TXT', 'example.com', [['content' => 'google-site-verification=abc']]);
+        $p = DnsProviderRegistry::create($id, 'tok', $fake);
+        $z = $p->findZoneForDomain('example.com')['id'];
+        $fake->throttleWrites = 1;
+        // While the provider says "wait", somebody else adds a TXT value to the same name.
+        $p->setSleeper(function (int $s) use ($fake): void {
+            $now = $fake->state('example.com', 'TXT', 'example.com');
+            $now[] = ['content' => 'added-meanwhile=1'];
+            $fake->seed('example.com', 'TXT', 'example.com', $now);
+        });
+
+        $r = $p->upsertTxtRecord($z, 'example.com', self::SPF);
+        $this->assertTrue($r['ok'], json_encode($r));
+        $this->assertEqualsCanonicalizing(
+            ['google-site-verification=abc', 'added-meanwhile=1', self::SPF],
+            array_column($fake->state('example.com', 'TXT', 'example.com'), 'content'),
+            'the retry must be computed from a fresh read, not replay the old write'
+        );
+    }
+
+    #[PHPUnit\Framework\Attributes\DataProvider('providers')]
+    public function testThrottledReadsAreRetriedToo(string $id): void
+    {
+        $fake = new FakeDnsApi($id, ['example.com']);
+        $p = DnsProviderRegistry::create($id, 'tok', $fake);
+        $p->setSleeper(function (int $s): void {
+        });
+        $z = $p->findZoneForDomain('example.com')['id'];
+        $fake->throttleReads = 2;
+
+        $this->assertSame('created', $p->upsertMxRecord($z, 'example.com', 'mail.example.net')['action']);
+        $this->assertSame(2, $fake->throttled);
+    }
+
+    #[PHPUnit\Framework\Attributes\DataProvider('providers')]
+    public function testRateLimitThatNeverEndsGivesUpAfterFourAttempts(string $id): void
+    {
+        $fake = new FakeDnsApi($id, ['example.com']);
+        $p = DnsProviderRegistry::create($id, 'tok', $fake);
+        $waits = [];
+        $p->setSleeper(function (int $s) use (&$waits): void {
+            $waits[] = $s;
+        });
+        $z = $p->findZoneForDomain('example.com')['id'];
+        $fake->throttleWrites = 100;
+
+        $r = $p->upsertTxtRecord($z, 'example.com', self::SPF);
+        $this->assertFalse($r['ok']);
+        $this->assertSame('error', $r['action']);
+        $this->assertStringContainsString('429', $r['error']);
+        $this->assertSame(4, $fake->throttled, 'one try and three retries');
+        $this->assertCount(3, $waits);
+        $this->assertSame([], $fake->state('example.com', 'TXT', 'example.com'), 'nothing half written');
+    }
+
+    #[PHPUnit\Framework\Attributes\DataProvider('recordProviders')]
+    public function testThrottledDeleteAfterTheCreateStillRemovesTheOldRecord(string $id): void
+    {
+        $fake = new FakeDnsApi($id, ['example.com']);
+        $fake->seed('example.com', 'MX', 'example.com', [['content' => 'old.example.net', 'priority' => 10]]);
+        $p = DnsProviderRegistry::create($id, 'tok', $fake);
+        $p->setSleeper(function (int $s): void {
+        });
+        $z = $p->findZoneForDomain('example.com')['id'];
+        // The new MX is created, then deleting the old one is throttled: the retry must finish the replacement.
+        $fake->throttleDeletes = 1;
+
+        $r = $p->upsertMxRecord($z, 'example.com', 'mail.example.net', 10, 300, true);
+        $this->assertTrue($r['ok'], json_encode($r));
+        $this->assertSame(1, $fake->throttled);
+        $this->assertSame([['content' => 'mail.example.net', 'priority' => 10]], $fake->state('example.com', 'MX', 'example.com'));
+
+        // A complete replacement is still reported as unchanged on the next run.
+        $this->assertSame('unchanged', $p->upsertMxRecord($z, 'example.com', 'mail.example.net', 10, 300, true)['action']);
+    }
+
+    public function testIonosDoesNotReuseADisabledRecordThatWasChangedDuringTheWait(): void
+    {
+        $fake = new FakeDnsApi('ionos', ['example.com']);
+        $fake->seed('example.com', 'TXT', 'example.com', [['content' => self::SPF, 'disabled' => true, 'id' => 'kept1']]);
+        $p = DnsProviderRegistry::create('ionos', 'tok', $fake);
+        $z = $p->findZoneForDomain('example.com')['id'];
+        // Enabling the disabled record is throttled; meanwhile another client enables it with a different value.
+        $fake->throttleWrites = 1;
+        $p->setSleeper(function (int $s) use ($fake): void {
+            $fake->seed('example.com', 'TXT', 'example.com', [['content' => 'other=1', 'id' => 'kept1']]);
+        });
+
+        $r = $p->upsertTxtRecord($z, 'example.com', self::SPF);
+        $this->assertTrue($r['ok'], json_encode($r));
+        $this->assertEqualsCanonicalizing(
+            ['other=1', self::SPF],
+            array_column($fake->state('example.com', 'TXT', 'example.com'), 'content'),
+            'the record changed by the other client must not be overwritten'
+        );
+    }
+
+    #[PHPUnit\Framework\Attributes\DataProvider('providers')]
+    public function testAllWaitsOfOneRequestStayWithinTheBudget(string $id): void
+    {
+        $fake = new FakeDnsApi($id, ['example.com']);
+        $p = DnsProviderRegistry::create($id, 'tok', $fake);
+        $waits = [];
+        $p->setSleeper(function (int $s) use (&$waits): void {
+            $waits[] = $s;
+        });
+        $z = $p->findZoneForDomain('example.com')['id'];
+        $fake->throttleWrites = 1000;
+        $fake->retryAfterHeader = 10;
+
+        // The mail setup writes four records; a provider that never stops throttling must not hold it for minutes.
+        foreach (['example.com' => self::SPF, '_dmarc.example.com' => self::DMARC, 'mail._domainkey.example.com' => 'v=DKIM1; k=rsa; p=KEY'] as $name => $value) {
+            $this->assertFalse($p->upsertTxtRecord($z, $name, $value)['ok']);
+        }
+        $this->assertFalse($p->upsertMxRecord($z, 'example.com', 'mail.example.net')['ok']);
+        $this->assertLessThanOrEqual(30, array_sum($waits));
+        $this->assertSame([10, 10, 10], $waits);
+    }
+
+    public function testRetryAfterAcceptsSecondsAndHttpDates(): void
+    {
+        $now = 1_700_000_000;
+        $this->assertSame(5, AbstractApiDnsProvider::parseRetryAfter('5', $now));
+        $this->assertSame(0, AbstractApiDnsProvider::parseRetryAfter('0', $now));
+        $this->assertSame(7, AbstractApiDnsProvider::parseRetryAfter(gmdate('D, d M Y H:i:s', $now + 7) . ' GMT', $now));
+        $this->assertSame(0, AbstractApiDnsProvider::parseRetryAfter(gmdate('D, d M Y H:i:s', $now - 60) . ' GMT', $now));
+        $this->assertNull(AbstractApiDnsProvider::parseRetryAfter('', $now));
+        $this->assertNull(AbstractApiDnsProvider::parseRetryAfter('soon', $now));
+    }
+
+    #[PHPUnit\Framework\Attributes\DataProvider('providers')]
+    public function testOtherErrorsAreNotRetried(string $id): void
+    {
+        $fake = new FakeDnsApi($id, ['example.com']);
+        $p = DnsProviderRegistry::create($id, 'tok', $fake);
+        $waits = [];
+        $p->setSleeper(function (int $s) use (&$waits): void {
+            $waits[] = $s;
+        });
+        $z = $p->findZoneForDomain('example.com')['id'];
+        $fake->failWith = 500;
+
+        $this->assertFalse($p->upsertTxtRecord($z, 'example.com', self::SPF)['ok']);
+        $this->assertSame([], $waits);
+    }
+
     public function testHetznerUsesRecordSetsWithQuotedTxtAndTrailingDotMx(): void
     {
         $fake = new FakeDnsApi('hetzner', ['example.com']);
@@ -368,6 +560,12 @@ class ApiDnsProvidersTest extends TestCase
     {
         return ['cloudflare' => ['cloudflare'], 'hetzner' => ['hetzner'], 'ionos' => ['ionos'], 'digitalocean' => ['digitalocean'], 'desec' => ['desec']];
     }
+
+    /** Providers that change a record set by creating and deleting single records. */
+    public static function recordProviders(): array
+    {
+        return ['cloudflare' => ['cloudflare'], 'ionos' => ['ionos'], 'digitalocean' => ['digitalocean']];
+    }
 }
 
 /**
@@ -378,6 +576,14 @@ class FakeDnsApi
 {
     public int $writes = 0;
     public int $failWith = 0;
+    /** Number of next write requests that are answered with 429 before one is accepted. */
+    public int $throttleWrites = 0;
+    public int $throttled = 0;
+    /** Number of next read requests (not the zone list) that are answered with 429. */
+    public int $throttleReads = 0;
+    public ?int $retryAfterHeader = null;
+    /** Number of next DELETE requests that are answered with 429. */
+    public int $throttleDeletes = 0;
     public bool $echoHeadersInError = false;
     /** Hetzner: final status of write actions ('success' or 'error'); null answers without a running action */
     public ?string $hetznerActionStatus = null;
@@ -422,6 +628,28 @@ class FakeDnsApi
         if ($this->failWith > 0) {
             return ['status' => $this->failWith, 'body' => ['error' => $this->errorPrefix . 'denied' . ($this->echoHeadersInError ? ' for ' . json_encode($headers) : '')]];
         }
+        if (!$isWrite && $this->throttleReads > 0 && !preg_match('#/(zones|domains)/?$#', $path)) {
+            --$this->throttleReads;
+            ++$this->throttled;
+
+            return ['status' => 429, 'body' => ['detail' => 'Request was throttled. Expected available in 1 second.']];
+        }
+        if ($method === 'DELETE' && $this->throttleDeletes > 0) {
+            --$this->throttleDeletes;
+            ++$this->throttled;
+
+            return ['status' => 429, 'body' => ['detail' => 'Request was throttled. Expected available in 1 second.']];
+        }
+        if ($isWrite && $this->throttleWrites > 0) {
+            --$this->throttleWrites;
+            ++$this->throttled;
+            $res = ['status' => 429, 'body' => ['detail' => 'Request was throttled. Expected available in 3 seconds.']];
+            if ($this->retryAfterHeader !== null) {
+                $res['retry_after'] = $this->retryAfterHeader;
+            }
+
+            return $res;
+        }
         if ($isWrite) {
             ++$this->writes;
         }
@@ -441,8 +669,9 @@ class FakeDnsApi
     public function seed(string $zone, string $type, string $fqdn, array $records): void
     {
         foreach ($records as &$r) {
-            $r['id'] = 'r' . $this->nextId++;
+            $r['id'] ??= 'r' . $this->nextId++;
         }
+        unset($r);
         $this->store["$zone|$type|$fqdn"] = $records;
         $this->syncRaw($zone, $type, $fqdn);
     }
