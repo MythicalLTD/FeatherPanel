@@ -328,6 +328,44 @@ class ApiDnsProvidersTest extends TestCase
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('providers')]
+    public function testValueAddedByAnotherClientDuringTheWaitIsKept(string $id): void
+    {
+        $fake = new FakeDnsApi($id, ['example.com']);
+        $fake->seed('example.com', 'TXT', 'example.com', [['content' => 'google-site-verification=abc']]);
+        $p = DnsProviderRegistry::create($id, 'tok', $fake);
+        $z = $p->findZoneForDomain('example.com')['id'];
+        $fake->throttleWrites = 1;
+        // While the provider says "wait", somebody else adds a TXT value to the same name.
+        $p->setSleeper(function (int $s) use ($fake): void {
+            $now = $fake->state('example.com', 'TXT', 'example.com');
+            $now[] = ['content' => 'added-meanwhile=1'];
+            $fake->seed('example.com', 'TXT', 'example.com', $now);
+        });
+
+        $r = $p->upsertTxtRecord($z, 'example.com', self::SPF);
+        $this->assertTrue($r['ok'], json_encode($r));
+        $this->assertEqualsCanonicalizing(
+            ['google-site-verification=abc', 'added-meanwhile=1', self::SPF],
+            array_column($fake->state('example.com', 'TXT', 'example.com'), 'content'),
+            'the retry must be computed from a fresh read, not replay the old write'
+        );
+    }
+
+    #[\PHPUnit\Framework\Attributes\DataProvider('providers')]
+    public function testThrottledReadsAreRetriedToo(string $id): void
+    {
+        $fake = new FakeDnsApi($id, ['example.com']);
+        $p = DnsProviderRegistry::create($id, 'tok', $fake);
+        $p->setSleeper(function (int $s): void {
+        });
+        $z = $p->findZoneForDomain('example.com')['id'];
+        $fake->throttleReads = 2;
+
+        $this->assertSame('created', $p->upsertMxRecord($z, 'example.com', 'mail.example.net')['action']);
+        $this->assertSame(2, $fake->throttled);
+    }
+
+    #[\PHPUnit\Framework\Attributes\DataProvider('providers')]
     public function testRateLimitThatNeverEndsGivesUpAfterFourAttempts(string $id): void
     {
         $fake = new FakeDnsApi($id, ['example.com']);
@@ -459,6 +497,8 @@ class FakeDnsApi
     /** Number of next write requests that are answered with 429 before one is accepted. */
     public int $throttleWrites = 0;
     public int $throttled = 0;
+    /** Number of next read requests (not the zone list) that are answered with 429. */
+    public int $throttleReads = 0;
     public ?int $retryAfterHeader = null;
     public bool $echoHeadersInError = false;
     /** Hetzner: final status of write actions ('success' or 'error'); null answers without a running action */
@@ -503,6 +543,12 @@ class FakeDnsApi
         $this->requests[] = $method . ' ' . preg_replace('#^/(client/v4|v1|dns/v1|api/v1|v2)#', '', rawurldecode($path));
         if ($this->failWith > 0) {
             return ['status' => $this->failWith, 'body' => ['error' => $this->errorPrefix . 'denied' . ($this->echoHeadersInError ? ' for ' . json_encode($headers) : '')]];
+        }
+        if (!$isWrite && $this->throttleReads > 0 && !preg_match('#/(zones|domains)/?$#', $path)) {
+            --$this->throttleReads;
+            ++$this->throttled;
+
+            return ['status' => 429, 'body' => ['detail' => 'Request was throttled. Expected available in 1 second.']];
         }
         if ($isWrite && $this->throttleWrites > 0) {
             --$this->throttleWrites;

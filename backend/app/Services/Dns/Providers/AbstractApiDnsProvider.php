@@ -178,6 +178,14 @@ abstract class AbstractApiDnsProvider implements DnsProviderInterface, MailRecor
 
     public function upsertTxtRecord(string $zoneId, string $name, string $content, int $ttl = 300, bool $overwrite = true): array
     {
+        return $this->withRateLimitRetry(fn (): array => $this->upsertTxtOnce($zoneId, $name, $content, $ttl, $overwrite));
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function upsertTxtOnce(string $zoneId, string $name, string $content, int $ttl, bool $overwrite): array
+    {
         try {
             $zoneName = $this->zoneName($zoneId);
             $fqdn = $this->fqdn($name, $zoneName);
@@ -233,6 +241,8 @@ abstract class AbstractApiDnsProvider implements DnsProviderInterface, MailRecor
             $this->storeRrset($zoneId, $zoneName, 'TXT', $fqdn, $desired, max(60, $ttl), $existing);
 
             return ['ok' => true, 'action' => $action];
+        } catch (DnsRateLimited $e) {
+            throw $e;
         } catch (\Throwable $e) {
             return ['ok' => false, 'action' => 'error', 'error' => $this->clean($e->getMessage())];
         }
@@ -400,8 +410,12 @@ abstract class AbstractApiDnsProvider implements DnsProviderInterface, MailRecor
         if ($json !== null) {
             $headers['Content-Type'] = 'application/json';
         }
-        // A rate limit (429) rejects the request before anything is changed, so asking again is safe. deSEC allows
-        // only a few writes per second and the mail setup writes four records in a row.
+        // A rate limit (429) rejects the request before anything is changed. deSEC allows only a few writes per
+        // second and the mail setup writes four records in a row.
+        // - A read is simply asked again.
+        // - A write is NOT replayed here: the request body was computed from a read that is now out of date (someone
+        //   else may have added a TXT value meanwhile, and a set-based write would remove it). The write is handed up
+        //   as DnsRateLimited and the caller waits, reads again and recomputes.
         $attempt = 0;
         while (true) {
             ++$attempt;
@@ -410,7 +424,13 @@ abstract class AbstractApiDnsProvider implements DnsProviderInterface, MailRecor
             } catch (\Throwable $e) {
                 throw new \RuntimeException($this->clean('Request to the DNS provider failed: ' . $e->getMessage()));
             }
-            if ((int) $response['status'] !== 429 || in_array(429, $okStatuses, true) || $attempt >= self::MAX_ATTEMPTS) {
+            if ((int) $response['status'] !== 429 || in_array(429, $okStatuses, true)) {
+                break;
+            }
+            if ($method !== 'GET') {
+                throw new DnsRateLimited($this->retryDelay($response), $this->clean(static::label() . ' answered 429: ' . $this->errorText($response['body'])));
+            }
+            if ($attempt >= self::MAX_ATTEMPTS) {
                 break;
             }
             $this->wait($this->retryDelay($response));
@@ -427,6 +447,28 @@ abstract class AbstractApiDnsProvider implements DnsProviderInterface, MailRecor
     }
 
     private const MAX_ATTEMPTS = 4;
+
+    /**
+     * Runs one whole read, compute, write round. When the provider throttles the write, waits and runs the round
+     * again from the read, so the new write is based on the zone as it is now. Gives up after MAX_ATTEMPTS rounds.
+     *
+     * @param callable(): array<string, mixed> $round
+     *
+     * @return array<string, mixed>
+     */
+    private function withRateLimitRetry(callable $round): array
+    {
+        for ($attempt = 1; ; ++$attempt) {
+            try {
+                return $round();
+            } catch (DnsRateLimited $e) {
+                if ($attempt >= self::MAX_ATTEMPTS) {
+                    return ['ok' => false, 'action' => 'error', 'error' => $this->clean($e->getMessage())];
+                }
+                $this->wait($e->seconds);
+            }
+        }
+    }
 
     /**
      * Seconds to wait before asking again: the provider's own number if it gives one, else 2, kept within 1 to 10.
@@ -537,6 +579,14 @@ abstract class AbstractApiDnsProvider implements DnsProviderInterface, MailRecor
      */
     private function upsertSingle(string $zoneId, string $type, string $name, string $content, ?int $priority, int $ttl, bool $overwrite): array
     {
+        return $this->withRateLimitRetry(fn (): array => $this->upsertSingleOnce($zoneId, $type, $name, $content, $priority, $ttl, $overwrite));
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function upsertSingleOnce(string $zoneId, string $type, string $name, string $content, ?int $priority, int $ttl, bool $overwrite): array
+    {
         try {
             $zoneName = $this->zoneName($zoneId);
             $fqdn = $this->fqdn($name, $zoneName);
@@ -566,6 +616,8 @@ abstract class AbstractApiDnsProvider implements DnsProviderInterface, MailRecor
             $this->storeRrset($zoneId, $zoneName, $type, $fqdn, [['content' => $content, 'priority' => $priority]], max(60, $ttl), $existing);
 
             return ['ok' => true, 'action' => $action];
+        } catch (DnsRateLimited $e) {
+            throw $e;
         } catch (\Throwable $e) {
             return ['ok' => false, 'action' => 'error', 'error' => $this->clean($e->getMessage())];
         }
