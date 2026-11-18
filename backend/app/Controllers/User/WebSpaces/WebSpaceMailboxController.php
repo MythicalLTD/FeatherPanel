@@ -194,7 +194,7 @@ class WebSpaceMailboxController
             'domains' => $records,
             // Same rule as provisionDnsWithProvider(): any mail host in node mode.
             'can_provision_api' => array_filter($hosts, static fn (array $h): bool => strtolower(trim((string) ($h['provision_mode'] ?? ''))) === 'node') !== [],
-            // Domains the API token flow accepts (routed domains, redirects excluded).
+            // Domains the API token flow accepts: every domain of the WebSpace, redirect routes included.
             'provision_domains' => DnsProvisioner::collectMailDomains($space),
             'can_provision' => $dnsContext !== null
                 && $primary
