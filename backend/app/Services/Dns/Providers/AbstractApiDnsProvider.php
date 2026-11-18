@@ -37,6 +37,9 @@ abstract class AbstractApiDnsProvider implements DnsProviderInterface, MailRecor
 
     private bool $dryRun = false;
 
+    /** @var (callable(int): void)|null */
+    private $sleeper = null;
+
     /** @var list<array{id: string, name: string}>|null */
     private ?array $zoneCache = null;
 
@@ -64,6 +67,16 @@ abstract class AbstractApiDnsProvider implements DnsProviderInterface, MailRecor
     public function setDryRun(bool $dryRun): void
     {
         $this->dryRun = $dryRun;
+    }
+
+    /**
+     * Test seam: replaces the real sleep used while waiting out a rate limit.
+     *
+     * @param callable(int): void $sleeper receives the number of seconds to wait
+     */
+    public function setSleeper(callable $sleeper): void
+    {
+        $this->sleeper = $sleeper;
     }
 
     public function listZones(): array
@@ -387,10 +400,20 @@ abstract class AbstractApiDnsProvider implements DnsProviderInterface, MailRecor
         if ($json !== null) {
             $headers['Content-Type'] = 'application/json';
         }
-        try {
-            $response = $this->send($method, $url, $headers, $json);
-        } catch (\Throwable $e) {
-            throw new \RuntimeException($this->clean('Request to the DNS provider failed: ' . $e->getMessage()));
+        // A rate limit (429) rejects the request before anything is changed, so asking again is safe. deSEC allows
+        // only a few writes per second and the mail setup writes four records in a row.
+        $attempt = 0;
+        while (true) {
+            ++$attempt;
+            try {
+                $response = $this->send($method, $url, $headers, $json);
+            } catch (\Throwable $e) {
+                throw new \RuntimeException($this->clean('Request to the DNS provider failed: ' . $e->getMessage()));
+            }
+            if ((int) $response['status'] !== 429 || in_array(429, $okStatuses, true) || $attempt >= self::MAX_ATTEMPTS) {
+                break;
+            }
+            $this->wait($this->retryDelay($response));
         }
         $status = (int) $response['status'];
         if (($status === 401 || $status === 403) && !in_array($status, $okStatuses, true)) {
@@ -401,6 +424,36 @@ abstract class AbstractApiDnsProvider implements DnsProviderInterface, MailRecor
         }
 
         return ['status' => $status, 'body' => $response['body']];
+    }
+
+    private const MAX_ATTEMPTS = 4;
+
+    /**
+     * Seconds to wait before asking again: the provider's own number if it gives one, else 2, kept within 1 to 10.
+     *
+     * @param array{status: int, body: mixed, retry_after?: int|null} $response
+     */
+    private function retryDelay(array $response): int
+    {
+        $seconds = isset($response['retry_after']) ? (int) $response['retry_after'] : 0;
+        if ($seconds <= 0) {
+            $text = is_array($response['body']) ? (string) json_encode($response['body']) : (string) $response['body'];
+            if (preg_match('/in\s+(\d+(?:\.\d+)?)\s+second/i', $text, $m) === 1) {
+                $seconds = (int) ceil((float) $m[1]);
+            }
+        }
+
+        return max(1, min(10, $seconds > 0 ? $seconds : 2));
+    }
+
+    private function wait(int $seconds): void
+    {
+        if ($this->sleeper !== null) {
+            ($this->sleeper)($seconds);
+
+            return;
+        }
+        sleep($seconds);
     }
 
     protected function errorText(mixed $body): string
@@ -446,7 +499,7 @@ abstract class AbstractApiDnsProvider implements DnsProviderInterface, MailRecor
      * @param array<string, string> $headers
      * @param array<mixed>|null $json
      *
-     * @return array{status: int, body: mixed}
+     * @return array{status: int, body: mixed, retry_after?: int|null}
      */
     private function send(string $method, string $url, array $headers, ?array $json): array
     {
@@ -468,7 +521,13 @@ abstract class AbstractApiDnsProvider implements DnsProviderInterface, MailRecor
         $raw = (string) $response->getBody();
         $decoded = $raw === '' ? null : json_decode($raw, true);
 
-        return ['status' => $response->getStatusCode(), 'body' => $decoded ?? ($raw === '' ? null : $raw)];
+        $retryAfter = $response->getHeaderLine('Retry-After');
+
+        return [
+            'status' => $response->getStatusCode(),
+            'body' => $decoded ?? ($raw === '' ? null : $raw),
+            'retry_after' => ctype_digit($retryAfter) ? (int) $retryAfter : null,
+        ];
     }
 
     /**

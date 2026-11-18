@@ -286,6 +286,84 @@ class ApiDnsProvidersTest extends TestCase
         $this->assertStringNotContainsString($secret, json_encode($r));
     }
 
+    #[\PHPUnit\Framework\Attributes\DataProvider('providers')]
+    public function testRateLimitedWriteIsRetriedAfterTheWaitTheProviderNames(string $id): void
+    {
+        $fake = new FakeDnsApi($id, ['example.com']);
+        $p = DnsProviderRegistry::create($id, 'tok', $fake);
+        $waits = [];
+        $p->setSleeper(function (int $s) use (&$waits): void {
+            $waits[] = $s;
+        });
+        $z = $p->findZoneForDomain('example.com')['id'];
+        $fake->throttleWrites = 2;
+
+        $r = $p->upsertTxtRecord($z, 'example.com', self::SPF);
+        $this->assertTrue($r['ok'], json_encode($r));
+        $this->assertSame('created', $r['action']);
+        $this->assertSame(2, $fake->throttled);
+        $this->assertSame([3, 3], $waits, 'the number in the provider message is used');
+        $this->assertSame(self::SPF, $fake->state('example.com', 'TXT', 'example.com')[0]['content'], 'written exactly once');
+    }
+
+    public function testRetryAfterHeaderWinsAndTheWaitIsCapped(): void
+    {
+        $fake = new FakeDnsApi('cloudflare', ['example.com']);
+        $p = DnsProviderRegistry::create('cloudflare', 'tok', $fake);
+        $waits = [];
+        $p->setSleeper(function (int $s) use (&$waits): void {
+            $waits[] = $s;
+        });
+        $z = $p->findZoneForDomain('example.com')['id'];
+        $fake->throttleWrites = 2;
+        $fake->retryAfterHeader = 2;
+        $this->assertTrue($p->upsertMxRecord($z, 'example.com', 'mail.example.net')['ok']);
+        $this->assertSame([2, 2], $waits);
+
+        $fake->throttleWrites = 1;
+        $fake->retryAfterHeader = 600;
+        $waits = [];
+        $this->assertTrue($p->upsertMxRecord($z, 'example.com', 'mail2.example.net', 10, 300, true)['ok']);
+        $this->assertSame([10], $waits, 'a long Retry-After is capped');
+    }
+
+    #[\PHPUnit\Framework\Attributes\DataProvider('providers')]
+    public function testRateLimitThatNeverEndsGivesUpAfterFourAttempts(string $id): void
+    {
+        $fake = new FakeDnsApi($id, ['example.com']);
+        $p = DnsProviderRegistry::create($id, 'tok', $fake);
+        $waits = [];
+        $p->setSleeper(function (int $s) use (&$waits): void {
+            $waits[] = $s;
+        });
+        $z = $p->findZoneForDomain('example.com')['id'];
+        $fake->throttleWrites = 100;
+
+        $r = $p->upsertTxtRecord($z, 'example.com', self::SPF);
+        $this->assertFalse($r['ok']);
+        $this->assertSame('error', $r['action']);
+        $this->assertStringContainsString('429', $r['error']);
+        $this->assertSame(4, $fake->throttled, 'one try and three retries');
+        $this->assertCount(3, $waits);
+        $this->assertSame([], $fake->state('example.com', 'TXT', 'example.com'), 'nothing half written');
+    }
+
+    #[\PHPUnit\Framework\Attributes\DataProvider('providers')]
+    public function testOtherErrorsAreNotRetried(string $id): void
+    {
+        $fake = new FakeDnsApi($id, ['example.com']);
+        $p = DnsProviderRegistry::create($id, 'tok', $fake);
+        $waits = [];
+        $p->setSleeper(function (int $s) use (&$waits): void {
+            $waits[] = $s;
+        });
+        $z = $p->findZoneForDomain('example.com')['id'];
+        $fake->failWith = 500;
+
+        $this->assertFalse($p->upsertTxtRecord($z, 'example.com', self::SPF)['ok']);
+        $this->assertSame([], $waits);
+    }
+
     public function testHetznerUsesRecordSetsWithQuotedTxtAndTrailingDotMx(): void
     {
         $fake = new FakeDnsApi('hetzner', ['example.com']);
@@ -378,6 +456,10 @@ class FakeDnsApi
 {
     public int $writes = 0;
     public int $failWith = 0;
+    /** Number of next write requests that are answered with 429 before one is accepted. */
+    public int $throttleWrites = 0;
+    public int $throttled = 0;
+    public ?int $retryAfterHeader = null;
     public bool $echoHeadersInError = false;
     /** Hetzner: final status of write actions ('success' or 'error'); null answers without a running action */
     public ?string $hetznerActionStatus = null;
@@ -421,6 +503,16 @@ class FakeDnsApi
         $this->requests[] = $method . ' ' . preg_replace('#^/(client/v4|v1|dns/v1|api/v1|v2)#', '', rawurldecode($path));
         if ($this->failWith > 0) {
             return ['status' => $this->failWith, 'body' => ['error' => $this->errorPrefix . 'denied' . ($this->echoHeadersInError ? ' for ' . json_encode($headers) : '')]];
+        }
+        if ($isWrite && $this->throttleWrites > 0) {
+            --$this->throttleWrites;
+            ++$this->throttled;
+            $res = ['status' => 429, 'body' => ['detail' => 'Request was throttled. Expected available in 3 seconds.']];
+            if ($this->retryAfterHeader !== null) {
+                $res['retry_after'] = $this->retryAfterHeader;
+            }
+
+            return $res;
         }
         if ($isWrite) {
             ++$this->writes;
