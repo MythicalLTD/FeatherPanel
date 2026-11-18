@@ -128,6 +128,41 @@ class DnsProvisioner
     }
 
     /**
+     * Domains that can carry mail for this WebSpace.
+     *
+     * Mailboxes may be created on every domain of the WebSpace (see WebSpaceMailboxController::create), including
+     * domains whose web route is a redirect (for example an apex that redirects to www). Those domains still need
+     * MX/SPF/DKIM/DMARC, so unlike {@see self::collectProvisionDomains()} (A records for the web node) redirect
+     * routes are included here.
+     *
+     * @param array<string, mixed> $space
+     *
+     * @return list<string>
+     */
+    public static function collectMailDomains(array $space): array
+    {
+        $domains = self::collectProvisionDomains($space);
+        foreach (is_array($space['domains'] ?? null) ? $space['domains'] : [] as $domain) {
+            $domain = strtolower(trim((string) $domain));
+            if ($domain !== '') {
+                $domains[] = $domain;
+            }
+        }
+        $routes = is_array($space['domain_routes'] ?? null) ? $space['domain_routes'] : [];
+        foreach ($routes as $route) {
+            if (!is_array($route)) {
+                continue;
+            }
+            $domain = strtolower(trim((string) ($route['domain'] ?? '')));
+            if ($domain !== '') {
+                $domains[] = $domain;
+            }
+        }
+
+        return array_values(array_unique($domains));
+    }
+
+    /**
      * @param array<string, mixed>|null $space
      *
      * @return array{provider: DnsProviderInterface, zone_id: string, source: string}|null

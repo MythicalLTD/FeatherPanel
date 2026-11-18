@@ -122,7 +122,7 @@ class MailDeliverabilityChecker
         }
 
         $results = [];
-        foreach (DnsProvisioner::collectProvisionDomains($space) as $domain) {
+        foreach (DnsProvisioner::collectMailDomains($space) as $domain) {
             try {
                 $result = DnsProvisioner::provisionMailRecords($space, $mailHost, $domain);
                 $results[] = [

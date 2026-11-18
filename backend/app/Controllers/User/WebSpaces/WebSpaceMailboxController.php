@@ -195,7 +195,7 @@ class WebSpaceMailboxController
             // Same rule as provisionDnsWithProvider(): any mail host in node mode.
             'can_provision_api' => array_filter($hosts, static fn (array $h): bool => strtolower(trim((string) ($h['provision_mode'] ?? ''))) === 'node') !== [],
             // Domains the API token flow accepts (routed domains, redirects excluded).
-            'provision_domains' => DnsProvisioner::collectProvisionDomains($space),
+            'provision_domains' => DnsProvisioner::collectMailDomains($space),
             'can_provision' => $dnsContext !== null
                 && $primary
                 && strtolower(trim((string) ($primary['provision_mode'] ?? ''))) === 'node',
@@ -220,7 +220,7 @@ class WebSpaceMailboxController
         }
 
         $space = $resolved['space'];
-        $domains = DnsProvisioner::collectProvisionDomains($space);
+        $domains = DnsProvisioner::collectMailDomains($space);
         $hosts = MailHost::listForWebNode((int) ($space['web_node_id'] ?? 0));
         $primary = $hosts[0] ?? null;
         $dnsContext = DnsProvisioner::resolveProvisionerContext($space);
@@ -315,7 +315,7 @@ class WebSpaceMailboxController
         if ($token === '' || strlen($token) > 512 || preg_match('/[\x00-\x1F\x7F\s]/', $token) === 1) {
             return ApiResponse::error('A valid API token is required', 'DNS_TOKEN_INVALID', 400);
         }
-        if ($domain === '' || !in_array($domain, DnsProvisioner::collectProvisionDomains($space), true)) {
+        if ($domain === '' || !in_array($domain, DnsProvisioner::collectMailDomains($space), true)) {
             return ApiResponse::error('The domain does not belong to this WebSpace', 'DOMAIN_NOT_IN_WEBSPACE', 400);
         }
 
