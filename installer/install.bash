@@ -2667,6 +2667,7 @@ show_access_method_menu() {
 ensure_system_ready() {
 	if [ "$SKIP_SYSTEM_UPDATE" = true ]; then
 		log_warn "System update skipped via --skip-system-update flag"
+		log_warn "Please keep this host patched yourself ('apt update && apt upgrade -y') - new CVEs land every week."
 		return 0
 	fi
 
@@ -2682,28 +2683,36 @@ ensure_system_ready() {
 	yes | y | true | 1) run_full_upgrade="yes" ;;
 	no | n | false | 0) run_full_upgrade="no" ;;
 	*)
-		if [ -t 0 ] && [ -t 1 ]; then
+		# curl | bash leaves stdin on the pipe; prompt() reads from /dev/tty in that case.
+		if [ -t 0 ] || { [ -t 1 ] && [ -r /dev/tty ]; }; then
 			echo ""
 			draw_hr
-			echo -e "${BOLD}${CYAN}System packages${NC}"
+			echo -e "${BOLD}${RED}PLEASE UPDATE YOUR SYSTEM PACKAGES${NC}"
 			draw_hr
-			echo -e "${BLUE}FeatherPanel usually likes to update your system before you install or update anything.${NC}"
+			echo -e "${BOLD}New CVEs are being published for Linux, OpenSSL, glibc, sudo, Docker and friends almost every week.${NC}"
+			echo -e "An outdated host is the easiest way in for an attacker, no matter how secure FeatherPanel itself is."
+			echo -e "${GREEN}${BOLD}We strongly recommend updating now, before installing or updating anything.${NC}"
 			echo ""
-			echo -e "${YELLOW}${BOLD}Warning:${NC} ${YELLOW}If a Docker (or kernel/systemd) release came out recently,${NC}"
-			echo -e "${YELLOW}running a full upgrade may restart Docker/containers or briefly take the server down.${NC}"
-			echo -e "${YELLOW}Be careful on production hosts.${NC}"
+			echo -e "${YELLOW}Heads-up:${NC} if a Docker, kernel or systemd update is pending, the upgrade may restart"
+			echo -e "Docker/containers or briefly interrupt the server. A reboot may be needed for kernel fixes."
 			echo ""
-			echo -e "${CYAN}Suggested command:${NC} ${BOLD}apt update && apt upgrade -y${NC}"
+			echo -e "${CYAN}Command that will run:${NC} ${BOLD}apt update && apt upgrade -y${NC}"
 			echo ""
 			upgrade_choice=""
-			prompt "${BOLD}Run apt update && apt upgrade -y now?${NC} ${BLUE}(y/N)${NC}: " upgrade_choice
-			if [[ "$upgrade_choice" =~ ^[yY]$ ]]; then
-				run_full_upgrade="yes"
-			else
+			prompt "${BOLD}Update system packages now? (strongly recommended)${NC} ${BLUE}(Y/n)${NC}: " upgrade_choice
+			if [[ "$upgrade_choice" =~ ^[nN] ]]; then
+				echo ""
+				echo -e "${RED}${BOLD}Are you sure?${NC} ${RED}Skipping updates leaves known, public vulnerabilities on this server.${NC}"
+				upgrade_choice=""
+				prompt "${BOLD}Pretty please - update now?${NC} ${BLUE}(Y/n)${NC}: " upgrade_choice
+			fi
+			if [[ "$upgrade_choice" =~ ^[nN] ]]; then
 				run_full_upgrade="no"
+			else
+				run_full_upgrade="yes"
 			fi
 		else
-			# Non-interactive / piped: do not force a full upgrade down anyone's throat.
+			# No terminal at all (CI / automation): never force a full upgrade without consent.
 			log_info "Non-interactive session - skipping full apt upgrade (set FP_SYSTEM_UPGRADE=yes to enable)."
 			run_full_upgrade="no"
 		fi
@@ -2722,7 +2731,8 @@ ensure_system_ready() {
 			log_success "System packages updated (apt upgrade)."
 		fi
 	else
-		log_info "Skipping full apt upgrade. Refreshing package lists only..."
+		log_warn "System packages were NOT upgraded. Please run 'apt update && apt upgrade -y' as soon as you can - new CVEs land every week."
+		log_info "Refreshing package lists only..."
 		if ! apt-get update -qq >>"$LOG_FILE" 2>&1; then
 			log_error "Failed to update package lists. Check $LOG_FILE for details."
 			return 1
