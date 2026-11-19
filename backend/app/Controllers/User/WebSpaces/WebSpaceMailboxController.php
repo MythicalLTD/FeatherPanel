@@ -220,7 +220,7 @@ class WebSpaceMailboxController
         }
 
         $space = $resolved['space'];
-        $domains = DnsProvisioner::collectProvisionDomains($space);
+        $domains = DnsProvisioner::collectMailDomains($space);
         $hosts = MailHost::listForWebNode((int) ($space['web_node_id'] ?? 0));
         $primary = $hosts[0] ?? null;
         $dnsContext = DnsProvisioner::resolveProvisionerContext($space);

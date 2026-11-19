@@ -122,7 +122,7 @@ class MailDeliverabilityChecker
         }
 
         $results = [];
-        foreach (DnsProvisioner::collectProvisionDomains($space) as $domain) {
+        foreach (DnsProvisioner::collectMailDomains($space) as $domain) {
             try {
                 $result = DnsProvisioner::provisionMailRecords($space, $mailHost, $domain);
                 $results[] = [
@@ -237,7 +237,10 @@ class MailDeliverabilityChecker
             ];
         }
 
-        $found = self::findZoneRecord($zoneRecords, $domain, 'TXT', $selector . '._domainkey', $recordValue);
+        // The mail host row keeps the DKIM value of the domain provisioned last, but every domain has its own key.
+        // A published DKIM key at this domain's selector counts as well, so another domain's key does not fail it.
+        $found = self::findZoneRecord($zoneRecords, $domain, 'TXT', $selector . '._domainkey', $recordValue)
+            || self::hasDkimKey($zoneRecords, $selector . '._domainkey.' . $domain);
 
         return [
             'id' => 'dkim',
@@ -246,6 +249,30 @@ class MailDeliverabilityChecker
             'detail' => $found ? null : 'DKIM TXT record missing in linked zone.',
             'fixable' => $fixable,
         ];
+    }
+
+    /**
+     * True when the zone publishes a DKIM key (`v=DKIM1` with a non-empty `p=`) at exactly this name.
+     *
+     * @param list<mixed> $zoneRecords
+     */
+    private static function hasDkimKey(array $zoneRecords, string $fqdn): bool
+    {
+        $fqdn = strtolower(rtrim($fqdn, '.'));
+        foreach ($zoneRecords as $record) {
+            if (!is_array($record) || strtoupper((string) ($record['type'] ?? '')) !== 'TXT') {
+                continue;
+            }
+            if (strtolower(rtrim((string) ($record['name'] ?? ''), '.')) !== $fqdn) {
+                continue;
+            }
+            $content = preg_replace('/["\s]+/', '', (string) ($record['content'] ?? '')) ?? '';
+            if (stripos($content, 'v=DKIM1') !== false && preg_match('/(?:^|;)p=[A-Za-z0-9+\/=]+/', $content) === 1) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
