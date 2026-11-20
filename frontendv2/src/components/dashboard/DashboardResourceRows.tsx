@@ -37,6 +37,7 @@ import {
 import { useTranslation } from '@/contexts/TranslationContext';
 import { getApiErrorMessage } from '@/lib/api-errors';
 import { ServiceExpiryChip } from '@/components/common/ServiceExpiryChip';
+import { UsageMeter } from '@/components/servers/UsageMeter';
 import {
     displayStatus,
     formatCpu,
@@ -92,34 +93,6 @@ function canUsePower(server: Server, action: PowerAction): boolean {
     if (!server.is_subuser) return true;
     const perms = Array.isArray(server.subuser_permissions) ? server.subuser_permissions : [];
     return perms.includes(`control.${action}`);
-}
-
-function Meter({ label, value, percent }: { label: string; value: string; percent: number | null }) {
-    const tone =
-        percent === null
-            ? 'bg-primary/60'
-            : percent >= 90
-              ? 'bg-rose-500'
-              : percent >= 70
-                ? 'bg-amber-500'
-                : 'bg-emerald-500';
-    return (
-        <div className='min-w-0'>
-            <div className='flex flex-col gap-0.5 text-[11px] leading-none sm:flex-row sm:items-baseline sm:justify-between sm:gap-1'>
-                <span className='text-muted-foreground font-medium'>{label}</span>
-                <span className='truncate font-medium tabular-nums'>{value}</span>
-            </div>
-            <div className='bg-muted mt-1.5 h-1 overflow-hidden rounded-full'>
-                <div
-                    className={cn(
-                        'h-full rounded-full transition-[width] duration-700 ease-out motion-reduce:transition-none',
-                        tone,
-                    )}
-                    style={{ width: `${percent === null ? 0 : Math.min(100, Math.max(percent, 0))}%` }}
-                />
-            </div>
-        </div>
-    );
 }
 
 function StatusLabel({ status }: { status: string }) {
@@ -241,21 +214,21 @@ function useServerPresentation(server: Server, live?: ServerLiveData) {
 
     const meter = (id: ServerRowMeter) =>
         id === 'cpu' ? (
-            <Meter
+            <UsageMeter
                 key='cpu'
                 label={t('dashboard.home.meters.cpu')}
                 value={formatCpu(cpu)}
                 percent={cpuLimit > 0 ? getUsagePercentage(cpu, cpuLimit) : null}
             />
         ) : id === 'ram' ? (
-            <Meter
+            <UsageMeter
                 key='ram'
                 label={t('dashboard.home.meters.ram')}
                 value={formatMemory(memory)}
                 percent={memoryLimit > 0 ? getUsagePercentage(memory, memoryLimit) : null}
             />
         ) : (
-            <Meter
+            <UsageMeter
                 key='disk'
                 label={t('dashboard.home.meters.disk')}
                 value={formatDisk(disk)}

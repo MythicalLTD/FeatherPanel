@@ -22,6 +22,7 @@ use App\Controllers\Admin\MountsController;
 use App\Controllers\Admin\ServersController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RouteCollection;
+use App\Controllers\Admin\ServerResourcesController;
 use App\Controllers\Admin\ServerActivitiesController;
 use App\Controllers\Admin\ServerAllocationsController;
 
@@ -32,6 +33,16 @@ return function (RouteCollection $routes): void {
         '/api/admin/servers',
         function (Request $request) {
             return (new ServersController())->index($request);
+        },
+        Permissions::ADMIN_SERVERS_VIEW,
+    );
+    // Live usage for a page of servers; registered before {id} so "resources" is not read as an ID.
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-servers-resources',
+        '/api/admin/servers/resources',
+        function (Request $request) {
+            return (new ServerResourcesController())->index($request);
         },
         Permissions::ADMIN_SERVERS_VIEW,
     );
