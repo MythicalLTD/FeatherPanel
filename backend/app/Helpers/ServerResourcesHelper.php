@@ -17,8 +17,11 @@
 
 namespace App\Helpers;
 
+use GuzzleHttp\Client;
 use App\Services\Wings\Wings;
 use GuzzleHttp\Promise\Utils;
+use App\Runtime\RequestContext;
+use Psr\Http\Message\ResponseInterface;
 
 /**
  * Live per-server resource usage for admin lists.
@@ -117,6 +120,10 @@ class ServerResourcesHelper
     }
 
     /**
+     * One shared Guzzle client (one curl multi handle) for every node, so the requests really
+     * run at the same time: promises from separate clients are only driven one handler at a time
+     * when waited on, which would add the timeouts of unreachable nodes up.
+     *
      * @param array<int, array<string, mixed>> $nodes
      *
      * @return array<int, array{data: ?array, error: ?string}>
@@ -125,13 +132,29 @@ class ServerResourcesHelper
     {
         $results = [];
         $promises = [];
+        $client = new Client([
+            'timeout' => $timeout,
+            'connect_timeout' => $timeout,
+            'verify' => false,
+            'http_errors' => false,
+        ]);
+
         foreach ($nodes as $node) {
             $nodeId = (int) ($node['id'] ?? 0);
             if ($nodeId <= 0) {
                 continue;
             }
             try {
-                $promises[$nodeId] = Wings::fromNode($node, $timeout)->getConnection()->getAsync('/api/servers');
+                $connection = Wings::fromNode($node, $timeout)->getConnection();
+                $headers = [
+                    'Accept' => 'application/json',
+                    'User-Agent' => 'FeatherPanel/v1.0.0',
+                    'X-Request-Id' => RequestContext::id(),
+                ];
+                if ($connection->getAuthToken() !== '') {
+                    $headers['Authorization'] = 'Bearer ' . $connection->getAuthToken();
+                }
+                $promises[$nodeId] = $client->getAsync($connection->getBaseUrl() . '/api/servers', ['headers' => $headers]);
             } catch (\Throwable $e) {
                 $results[$nodeId] = ['data' => null, 'error' => $e->getMessage()];
             }
@@ -142,15 +165,24 @@ class ServerResourcesHelper
         }
 
         foreach (Utils::settle($promises)->wait() as $nodeId => $outcome) {
-            if (($outcome['state'] ?? '') === 'fulfilled' && is_array($outcome['value'] ?? null)) {
-                $results[(int) $nodeId] = ['data' => $outcome['value'], 'error' => null];
+            $nodeId = (int) $nodeId;
+            $response = $outcome['value'] ?? null;
+            if (($outcome['state'] ?? '') !== 'fulfilled' || !$response instanceof ResponseInterface) {
+                $reason = $outcome['reason'] ?? null;
+                $results[$nodeId] = [
+                    'data' => null,
+                    'error' => $reason instanceof \Throwable ? $reason->getMessage() : 'Failed to fetch server resources',
+                ];
                 continue;
             }
-            $reason = $outcome['reason'] ?? null;
-            $results[(int) $nodeId] = [
-                'data' => null,
-                'error' => $reason instanceof \Throwable ? $reason->getMessage() : 'Failed to fetch server resources',
-            ];
+            if ($response->getStatusCode() >= 400) {
+                $results[$nodeId] = ['data' => null, 'error' => 'Daemon answered HTTP ' . $response->getStatusCode()];
+                continue;
+            }
+            $decoded = json_decode((string) $response->getBody(), true);
+            $results[$nodeId] = is_array($decoded)
+                ? ['data' => $decoded, 'error' => null]
+                : ['data' => null, 'error' => 'Invalid JSON from daemon'];
         }
 
         return $results;

@@ -12,7 +12,7 @@ by the Free Software Foundation, either version 3 of the License, or
 
 See the LICENSE file or <https://www.gnu.org/licenses/>.
 */
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 
 /** Live usage of one server as returned by /api/admin/servers/resources. */
@@ -39,7 +39,6 @@ const DEFAULT_INTERVAL_MS = 10000;
 export function useAdminServerResources(serverIds: number[], intervalMs: number = DEFAULT_INTERVAL_MS) {
     const [resources, setResources] = useState<Record<number, AdminServerResources>>({});
     const [loaded, setLoaded] = useState(false);
-    const inFlight = useRef(false);
     const key = useMemo(() => [...new Set(serverIds)].sort((a, b) => a - b).join(','), [serverIds]);
 
     useEffect(() => {
@@ -49,12 +48,14 @@ export function useAdminServerResources(serverIds: number[], intervalMs: number 
             return;
         }
 
+        // Per effect, so a request still running for the previous page never blocks this one.
         let cancelled = false;
+        let inFlight = false;
         setLoaded(false);
 
         const load = async () => {
-            if (inFlight.current || (typeof document !== 'undefined' && document.hidden)) return;
-            inFlight.current = true;
+            if (inFlight || (typeof document !== 'undefined' && document.hidden)) return;
+            inFlight = true;
             try {
                 const { data } = await axios.get('/api/admin/servers/resources', { params: { ids: key } });
                 if (cancelled) return;
@@ -63,9 +64,11 @@ export function useAdminServerResources(serverIds: number[], intervalMs: number 
                 for (const [id, usage] of Object.entries(raw)) map[Number(id)] = usage;
                 setResources(map);
             } catch {
-                // Usage is a live extra; the list itself still renders without it.
+                // Usage is a live extra; the list still renders without it. Drop the old readings
+                // so stale numbers are not shown as live.
+                if (!cancelled) setResources({});
             } finally {
-                inFlight.current = false;
+                inFlight = false;
                 if (!cancelled) setLoaded(true);
             }
         };
