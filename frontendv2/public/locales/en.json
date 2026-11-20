@@ -4406,6 +4406,10 @@
             "current": "Current server",
             "loading": "Loading servers…",
             "view_all": "View all servers"
+        },
+        "server_power": {
+            "title": "Power",
+            "sent_kill": "Kill sent to {name}"
         }
     },
     "navbar": {
