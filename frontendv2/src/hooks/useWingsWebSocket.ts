@@ -19,6 +19,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import axios from 'axios';
 import { toast } from 'sonner';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { postServerPowerAction } from '@/lib/server-power';
 
 interface WingsMessage {
     event: string;
@@ -319,7 +320,7 @@ export function useWingsWebSocket({
     const sendPowerAction = useCallback(
         async (action: 'start' | 'stop' | 'restart' | 'kill') => {
             // Route power actions through panel API so lifecycle hooks execute.
-            await axios.post(`/api/user/servers/${serverUuid}/power/${action}`);
+            await postServerPowerAction(serverUuid, action);
         },
         [serverUuid],
     );

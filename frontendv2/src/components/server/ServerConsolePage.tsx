@@ -49,6 +49,7 @@ import { useServerResourceHistory } from '@/lib/resource-history';
 import { ResourceTrendStrip } from '@/components/dashboard/ResourceTrends';
 import { ServerResourceGraphs } from '@/components/server/ServerResourceGraphs';
 import { ServerCrashCard } from '@/components/server/ServerCrashCard';
+import { emitServerPowerResult, POWER_OPTIMISTIC_STATUS, runServerPowerHooks } from '@/lib/server-power';
 
 interface WingsStats {
     uptime?: number;
@@ -542,46 +543,15 @@ export default function ServerConsolePage() {
                 return;
             }
 
-            const { pluginActionHooks } = await import('@/lib/plugin-sdk/action-hooks');
-            const { pluginEventBus } = await import('@/lib/plugin-sdk/event-bus');
-            const { FP_ACTIONS, FP_EVENTS } = await import('@/lib/plugin-sdk/ids');
-
-            const hookCtx = await pluginActionHooks.run(FP_ACTIONS.SERVER_POWER, {
-                action,
+            const finalAction = await runServerPowerHooks(action, {
                 uuid: serverUuid,
                 uuidShort: server?.uuidShort ?? null,
+                killMessage: t('ui.components.server.serverConsolePage.killServer'),
             });
-            if (hookCtx.cancelled) {
-                pluginEventBus.emit(FP_EVENTS.SERVER_POWER_RESULT, {
-                    uuid: serverUuid,
-                    action,
-                    ok: false,
-                    cancelled: true,
-                    reason: hookCtx.cancelReason,
-                });
-                return;
-            }
-            const finalAction = (hookCtx.action as typeof action) || action;
+            if (!finalAction) return;
 
-            if (finalAction === 'kill') {
-                const confirmCtx = await pluginActionHooks.run(FP_ACTIONS.UI_CONFIRM, {
-                    kind: 'server-kill',
-                    uuid: serverUuid,
-                    message: t('ui.components.server.serverConsolePage.killServer'),
-                });
-                if (confirmCtx.cancelled) {
-                    return;
-                }
-            }
-
-            const optimisticStatus: Record<'start' | 'stop' | 'restart' | 'kill', string> = {
-                start: 'starting',
-                stop: 'stopping',
-                restart: 'stopping',
-                kill: 'stopping',
-            };
-            setServerStatus(optimisticStatus[finalAction]);
-            setLiveStatus(optimisticStatus[finalAction]);
+            setServerStatus(POWER_OPTIMISTIC_STATUS[finalAction]);
+            setLiveStatus(POWER_OPTIMISTIC_STATUS[finalAction]);
 
             return new Promise<void>((resolve) => {
                 if (pendingActionResolveRef.current) {
@@ -589,21 +559,8 @@ export default function ServerConsolePage() {
                 }
                 pendingActionResolveRef.current = resolve;
                 void sendPowerAction(finalAction)
-                    .then(() => {
-                        pluginEventBus.emit(FP_EVENTS.SERVER_POWER_RESULT, {
-                            uuid: serverUuid,
-                            action: finalAction,
-                            ok: true,
-                        });
-                    })
-                    .catch((err: unknown) => {
-                        pluginEventBus.emit(FP_EVENTS.SERVER_POWER_RESULT, {
-                            uuid: serverUuid,
-                            action: finalAction,
-                            ok: false,
-                            error: err instanceof Error ? err.message : String(err),
-                        });
-                    })
+                    .then(() => emitServerPowerResult(serverUuid, finalAction))
+                    .catch((err: unknown) => emitServerPowerResult(serverUuid, finalAction, err ?? 'error'))
                     .finally(() => {
                         if (pendingActionResolveRef.current === resolve) {
                             pendingActionResolveRef.current();

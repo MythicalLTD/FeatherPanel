@@ -54,6 +54,11 @@ import { SidebarBottomDock } from '@/components/sidebar/SidebarBottomDock';
 import { SidebarCollapseToggle } from '@/components/sidebar/SidebarCollapseToggle';
 import { SidebarCollapsedTooltipLayer, sidebarTooltipProps } from '@/components/sidebar/SidebarCollapsedTooltipLayer';
 import { compareNavGroups } from '@/lib/navigationGroups';
+import {
+    SidebarServerPower,
+    type SidebarServerPowerModel,
+    useSidebarServerPower,
+} from '@/components/sidebar/SidebarServerPower';
 
 interface SidebarProps {
     mobileOpen: boolean;
@@ -89,6 +94,7 @@ function SidebarContent({
     dockSize,
     sidebarGlow,
     sidebarTogglePlacement,
+    serverPower = null,
 }: {
     mobile?: boolean;
     collapsed: boolean;
@@ -106,6 +112,8 @@ function SidebarContent({
     dockSize: DockSize;
     sidebarGlow: SidebarGlow;
     sidebarTogglePlacement: SidebarTogglePlacement;
+    /** Power controls for the open server (server pages only). */
+    serverPower?: SidebarServerPowerModel | null;
 }) {
     const { theme } = useTheme();
     const { t } = useTranslation();
@@ -467,6 +475,16 @@ function SidebarContent({
                 >
                     {modernBrandInner}
                 </Link>
+            )}
+
+            {serverPower && (
+                <SidebarServerPower
+                    model={serverPower}
+                    collapsed={collapsed && !mobile}
+                    classic={isClassicChrome}
+                    solid={useSolidSidebar}
+                    tooltip={collapsedTip}
+                />
             )}
 
             <nav
@@ -954,6 +972,8 @@ export default function Sidebar({ mobileOpen, setMobileOpen, pluginFullBleed = f
 
     useEffect(() => subscribeSidebarCollapsed(setCollapsed), []);
 
+    const serverPower = useSidebarServerPower(pathname);
+
     // The mobile drawer mirrors the desktop side; "bottom" has no dock on phones, so it uses the left drawer.
     const mobileFromRight = sidebarPosition === 'right';
 
@@ -1051,6 +1071,7 @@ export default function Sidebar({ mobileOpen, setMobileOpen, pluginFullBleed = f
                                         dockSize={dockSize}
                                         sidebarGlow={sidebarGlow}
                                         sidebarTogglePlacement={sidebarTogglePlacement}
+                                        serverPower={serverPower}
                                     />
                                 </div>
                             </Dialog.Panel>
@@ -1093,6 +1114,7 @@ export default function Sidebar({ mobileOpen, setMobileOpen, pluginFullBleed = f
                         dockSize={dockSize}
                         sidebarGlow={sidebarGlow}
                         sidebarTogglePlacement={sidebarTogglePlacement}
+                        serverPower={serverPower}
                     />
                 </div>
             </div>

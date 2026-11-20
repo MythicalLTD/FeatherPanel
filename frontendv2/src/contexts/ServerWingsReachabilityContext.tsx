@@ -15,7 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { createContext, useContext, useMemo, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, type ReactNode } from 'react';
 import { useServer } from '@/contexts/ServerContext';
 import { useWingsWebSocket } from '@/hooks/useWingsWebSocket';
 
@@ -38,14 +38,36 @@ export function useServerWingsReachability() {
 }
 
 export function ServerWingsReachabilityProvider({ children }: { children: ReactNode }) {
-    const { server, loading, hasPermission } = useServer();
+    const { server, loading, hasPermission, setLiveStatus } = useServer();
     const isSuspended = server?.suspended === 1 || server?.status === 'suspended';
     const canConnect = Boolean(server && !loading && !isSuspended && hasPermission('websocket.connect'));
 
-    const { connectionStatus } = useWingsWebSocket({
+    // This socket is open on every server page, so it also keeps the live status in the server
+    // context current (sidebar power controls, server switcher) outside the console page.
+    const handleStatus = useCallback(
+        (status: string) => {
+            if (status) setLiveStatus(status);
+        },
+        [setLiveStatus],
+    );
+    const handleStats = useCallback(
+        (stats: { state?: string }) => {
+            if (stats.state) setLiveStatus(stats.state);
+        },
+        [setLiveStatus],
+    );
+
+    const { connectionStatus, requestStats } = useWingsWebSocket({
         serverUuid: server?.uuidShort || '',
         connect: canConnect,
+        onStatus: handleStatus,
+        onStats: handleStats,
     });
+
+    // Ask once per connection for the current state; the daemon pushes changes afterwards.
+    useEffect(() => {
+        if (connectionStatus === 'connected') requestStats();
+    }, [connectionStatus, requestStats]);
 
     const value = useMemo<ServerWingsReachabilityContextValue>(() => {
         const status: WingsReachabilityStatus = canConnect ? connectionStatus : 'idle';

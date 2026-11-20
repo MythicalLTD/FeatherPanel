@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.5.6 STABLE
+
+### Added
+- Power controls in the server sidebar: on every server page the sidebar shows the live state (running, starting, stopping, offline) with Start, Restart, Stop and Kill buttons, so a server can be controlled without going back to the console. The collapsed rail shows the state dot and icon-only Start, Restart and Stop with tooltips, and the mobile drawer has the full block. Buttons follow the same rules as the console header: each one needs its subuser permission (`control.start`, `control.restart`, `control.stop`, Kill uses `control.stop`), only actions that fit the current state are enabled, Kill asks for confirmation unless "don't ask again" was chosen, and the block is hidden for suspended, installing, transferring or restoring servers. Actions go through the same panel endpoint and plugin power hooks as the console; the state comes from the Wings socket that server pages already open, which now also keeps the server switcher status current outside the console. by @nayskutzu
+
 ## v1.5.5 STABLE
 
 ### Added
