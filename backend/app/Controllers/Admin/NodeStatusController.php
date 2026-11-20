@@ -22,11 +22,15 @@ use App\Chat\Location;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Helpers\NodeStatusHelper;
+use App\Helpers\ServerResourcesHelper;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 class NodeStatusController
 {
+    /** @var callable|null Test seam forwarded to ServerResourcesHelper::probeNodes */
+    public static $resourcesFetcher;
+
     #[OA\Get(
         path: '/api/admin/nodes/status/global',
         summary: 'Get global node status and utilization',
@@ -70,6 +74,13 @@ class NodeStatusController
     {
         $allNodes = Node::getAllNodes();
         $probes = NodeStatusHelper::probeNodesUtilization($allNodes);
+        // Per-server usage, one /api/servers call per node that answered the utilization probe
+        // (offline nodes are skipped so they do not cost a second timeout).
+        $reachable = array_values(array_filter(
+            $allNodes,
+            static fn (array $node): bool => ($probes[(int) $node['id']]['status'] ?? '') === 'healthy'
+        ));
+        $serverResources = $reachable === [] ? [] : ServerResourcesHelper::probeNodes($reachable, ServerResourcesHelper::PROBE_TIMEOUT, self::$resourcesFetcher);
         $locations = Location::getByIds(array_map(
             static fn (array $node): int => (int) ($node['location_id'] ?? 0),
             $allNodes
@@ -102,7 +113,13 @@ class NodeStatusController
                 'latency_ms' => null,
             ];
 
-            $servers = NodeStatusHelper::buildServersForNode($nodeId, true);
+            $nodeResources = $serverResources[$nodeId] ?? null;
+            $servers = NodeStatusHelper::buildServersForNode(
+                $nodeId,
+                true,
+                false,
+                $nodeResources !== null && $nodeResources['online'] ? $nodeResources['servers'] : [],
+            );
             $locationId = (int) ($node['location_id'] ?? 0);
             $location = $locations[$locationId] ?? null;
             $latitude = isset($location['latitude']) && $location['latitude'] !== null && $location['latitude'] !== ''

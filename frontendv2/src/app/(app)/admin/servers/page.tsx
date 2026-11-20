@@ -17,7 +17,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { AdminListToolbar } from '@/components/admin/AdminListToolbar';
 import { AdminPageTips } from '@/components/admin/AdminPageTips';
-import { useState, useEffect, useCallback, type ReactNode, type ElementType } from 'react';
+import { useState, useEffect, useCallback, useMemo, type ReactNode, type ElementType } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
@@ -46,8 +46,6 @@ import {
     X,
     Loader2,
     Database,
-    Cpu,
-    HardDrive,
     User,
     Layers,
     Gauge,
@@ -82,6 +80,9 @@ import { BulkSelectionRow, BulkServerActions } from '@/components/servers/BulkSe
 import { Sensitive } from '@/components/common/Sensitive';
 import { useIpMask } from '@/hooks/useIpMask';
 import { ListPagination } from '@/components/featherui/ListPagination';
+import { ServerUsageMeters } from '@/components/admin/ServerUsageMeters';
+import { serverRowStatus } from '@/components/dashboard/DashboardResourceRows';
+import { useAdminServerResources, type AdminServerResources } from '@/hooks/useAdminServerResources';
 
 function resolveAvatarSrc(avatar?: string): string | undefined {
     if (avatar && (avatar.startsWith('http') || avatar.startsWith('/'))) {
@@ -131,6 +132,35 @@ const formatCpu = (cpu: number) => {
     return `${cpu}%`;
 };
 
+/** Live state when the node reported one, otherwise the stored status. */
+function liveStatus(server: ApiServer, usage?: AdminServerResources): string {
+    const asServer = server as unknown as ServerType;
+    if (!usage?.found || !usage.state) return displayStatus(asServer);
+    return serverRowStatus(asServer, { status: usage.state, stats: null, lastUpdate: null });
+}
+
+function ServerLiveUsage({
+    server,
+    usage,
+    loaded,
+    className,
+}: {
+    server: ApiServer;
+    usage?: AdminServerResources;
+    loaded: boolean;
+    className?: string;
+}) {
+    return (
+        <ServerUsageMeters
+            usage={usage?.found ? usage : null}
+            limits={{ memory: server.memory, disk: server.disk, cpu: server.cpu }}
+            nodeOffline={usage !== undefined && !usage.node_online}
+            loading={!loaded && usage === undefined}
+            className={className}
+        />
+    );
+}
+
 function ServerOwner({ server }: { server: ApiServer }) {
     const { t } = useTranslation();
     if (!server.owner) {
@@ -153,25 +183,6 @@ function ServerOwner({ server }: { server: ApiServer }) {
             ) : (
                 <span className='truncate text-sm font-medium'>{server.owner.username}</span>
             )}
-        </div>
-    );
-}
-
-function ServerResources({ server }: { server: ApiServer }) {
-    return (
-        <div className='text-muted-foreground flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs whitespace-nowrap lg:flex-nowrap'>
-            <span className='inline-flex items-center gap-1'>
-                <Database className='h-3.5 w-3.5' />
-                {formatMemory(server.memory)}
-            </span>
-            <span className='inline-flex items-center gap-1'>
-                <Cpu className='h-3.5 w-3.5' />
-                {formatCpu(server.cpu)}
-            </span>
-            <span className='inline-flex items-center gap-1'>
-                <HardDrive className='h-3.5 w-3.5' />
-                {formatDisk(server.disk)}
-            </span>
         </div>
     );
 }
@@ -321,6 +332,8 @@ export default function ServersPage() {
     ]);
 
     const { fetchWidgets, getWidgets } = usePluginWidgets('admin-servers');
+    const visibleServerIds = useMemo(() => servers.map((server) => server.id), [servers]);
+    const { resources: liveResources, loaded: liveLoaded } = useAdminServerResources(visibleServerIds);
 
     useEffect(() => {
         fetchWidgets();
@@ -718,14 +731,20 @@ export default function ServersPage() {
                                 key: 'status',
                                 header: t('admin.servers.table.status'),
                                 cell: (server) => (
-                                    <StatusBadge status={displayStatus(server as unknown as ServerType)} t={t} />
+                                    <StatusBadge status={liveStatus(server, liveResources[server.id])} t={t} />
                                 ),
                             },
                             {
-                                key: 'resources',
-                                header: t('admin.servers.table.resources'),
-                                className: 'hidden 2xl:table-cell',
-                                cell: (server) => <ServerResources server={server} />,
+                                key: 'usage',
+                                header: t('admin.servers.table.usage'),
+                                className: 'hidden lg:table-cell w-72',
+                                cell: (server) => (
+                                    <ServerLiveUsage
+                                        server={server}
+                                        usage={liveResources[server.id]}
+                                        loaded={liveLoaded}
+                                    />
+                                ),
                             },
                         ]}
                         mobileCard={(server) => (
@@ -745,13 +764,13 @@ export default function ServersPage() {
                                     </span>
                                 </div>
                                 <div className='flex flex-wrap items-center gap-3'>
-                                    <StatusBadge status={displayStatus(server as unknown as ServerType)} t={t} />
+                                    <StatusBadge status={liveStatus(server, liveResources[server.id])} t={t} />
                                     <ServerOwner server={server} />
                                     <span className='text-muted-foreground text-xs'>
                                         {server.node?.name || t('ui.admin.servers.unknownNode')}
                                     </span>
                                 </div>
-                                <ServerResources server={server} />
+                                <ServerLiveUsage server={server} usage={liveResources[server.id]} loaded={liveLoaded} />
                             </div>
                         )}
                         actions={(server) => (
