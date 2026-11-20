@@ -38,6 +38,8 @@ class NodeStatusHelper
      *
      * @param bool $includePlayerCount Include cached player counts when available
      * @param bool $onlyVisibleOnStatus When true, hide servers with show_on_status disabled
+     * @param array<string, array<string, mixed>>|null $resourcesByUuid Live usage keyed by lowercase server UUID
+     *                                                                  (see ServerResourcesHelper); adds a "resources" entry
      *
      * @return array<int, array<string, mixed>>
      */
@@ -45,6 +47,7 @@ class NodeStatusHelper
         int $nodeId,
         bool $includePlayerCount = false,
         bool $onlyVisibleOnStatus = false,
+        ?array $resourcesByUuid = null,
     ): array {
         if ($nodeId <= 0) {
             return [];
@@ -60,6 +63,22 @@ class NodeStatusHelper
                 'uuid_short' => $server['uuidShort'] ?? '',
                 'status' => $server['status'] ?? 'offline',
             ];
+
+            if ($resourcesByUuid !== null) {
+                $usage = $resourcesByUuid[strtolower((string) ($server['uuid'] ?? ''))] ?? null;
+                $entry['resources'] = $usage === null ? null : [
+                    'state' => $usage['state'],
+                    'cpu_absolute' => $usage['cpu_absolute'],
+                    'memory_bytes' => $usage['memory_bytes'],
+                    'disk_bytes' => $usage['disk_bytes'],
+                    'uptime' => $usage['uptime'],
+                ];
+                $entry['limits'] = [
+                    'memory' => (int) ($server['memory'] ?? 0),
+                    'disk' => (int) ($server['disk'] ?? 0),
+                    'cpu' => (int) ($server['cpu'] ?? 0),
+                ];
+            }
 
             if ($includePlayerCount) {
                 $uuidShort = $server['uuidShort'] ?? '';
@@ -212,6 +231,21 @@ class NodeStatusHelper
     }
 
     /**
+     * Sum player_count fields from a server list built by buildServersForNode.
+     *
+     * @param array<int, array<string, mixed>> $servers
+     */
+    public static function sumPlayerCounts(array $servers): int
+    {
+        $total = 0;
+        foreach ($servers as $serverEntry) {
+            $total += (int) ($serverEntry['player_count'] ?? 0);
+        }
+
+        return $total;
+    }
+
+    /**
      * Record panel→Wings RTT for a settled probe (successful or failed).
      *
      * @param array<int, array<string, mixed>> $results
@@ -225,20 +259,5 @@ class NodeStatusHelper
 
         $results[$nodeId]['latency_ms'] = (int) max(0, round((microtime(true) - $startedAt[$nodeId]) * 1000));
         unset($startedAt[$nodeId]);
-    }
-
-    /**
-     * Sum player_count fields from a server list built by buildServersForNode.
-     *
-     * @param array<int, array<string, mixed>> $servers
-     */
-    public static function sumPlayerCounts(array $servers): int
-    {
-        $total = 0;
-        foreach ($servers as $serverEntry) {
-            $total += (int) ($serverEntry['player_count'] ?? 0);
-        }
-
-        return $total;
     }
 }

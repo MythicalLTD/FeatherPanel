@@ -1752,7 +1752,9 @@
             "DNS_PROVIDER_UNKNOWN": "Unknown DNS provider",
             "DNS_TOKEN_INVALID": "Enter a valid API token (no spaces, at most 512 characters)",
             "DNS_ZONE_NOT_FOUND": "No DNS zone for this domain was found with this token. Check that the token can see the zone",
-            "DOMAIN_NOT_IN_WEBSPACE": "This domain does not belong to this WebSpace"
+            "DOMAIN_NOT_IN_WEBSPACE": "This domain does not belong to this WebSpace",
+            "INVALID_SERVER_IDS": "Missing or invalid server IDs.",
+            "TOO_MANY_SERVER_IDS": "Too many servers requested at once."
         },
         "global": {}
     },
@@ -10032,7 +10034,14 @@
                 "owner": "Owner",
                 "node": "Node",
                 "status": "Status",
-                "resources": "Resources"
+                "resources": "Resources",
+                "usage": "Live usage"
+            },
+            "usage": {
+                "loading": "Loading usage…",
+                "node_offline": "Node offline",
+                "no_data": "No live data",
+                "unlimited": "∞"
             }
         },
         "tickets": {

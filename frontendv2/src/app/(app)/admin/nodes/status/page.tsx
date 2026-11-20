@@ -585,6 +585,8 @@ export default function NodeStatusPage() {
                                                         servers={node.servers}
                                                         showAdminLinks
                                                         showPlayerCount
+                                                        showUsage
+                                                        nodeOffline={node.status !== 'healthy'}
                                                     />
                                                 </div>
                                             )}

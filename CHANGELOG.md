@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.5.6 STABLE
+
+### Added
+- Live resource usage in the admin panel: Admin → Servers shows CPU, RAM and disk (used / limit) and the live state for every server on the page, and Admin → Nodes → Status shows the same meters for each server under its node, next to the existing node stats. Both refresh every 10 seconds (paused while the tab is hidden) and use the dashboard's meters. The panel asks each node's daemon once for all of its servers (`GET /api/servers`, in parallel, 3 second timeout), so a page costs one request per node instead of one per server; offline nodes show "Node offline" and do not slow the page down. Only usage numbers are passed on, never the server configuration. New admin endpoint `GET /api/admin/servers/resources?ids=…` (up to 100 IDs, needs `admin.servers.view`); `GET /api/admin/nodes/status/global` now includes `resources` and `limits` for each server. by @nayskutzu
+
 ## v1.5.5 STABLE
 
 ### Added
