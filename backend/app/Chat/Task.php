@@ -38,6 +38,8 @@ class Task
      */
     public static function createTask(array $data): int | false
     {
+        $data = self::normalizeFlags($data);
+
         // Required fields for task creation
         $required = [
             'schedule_id',
@@ -303,6 +305,26 @@ class Task
     }
 
     /**
+     * The API documents `is_queued` and `continue_on_failure` as booleans, but the columns are tinyints and the
+     * validation in createTask() only accepts numbers. Convert real booleans (JSON true/false) to 1/0 so the
+     * documented request body works instead of failing with CREATION_FAILED.
+     *
+     * @param array $data Task fields
+     *
+     * @return array The same fields with boolean flags turned into 0/1
+     */
+    public static function normalizeFlags(array $data): array
+    {
+        foreach (['is_queued', 'continue_on_failure'] as $flag) {
+            if (isset($data[$flag]) && is_bool($data[$flag])) {
+                $data[$flag] = (int) $data[$flag];
+            }
+        }
+
+        return $data;
+    }
+
+    /**
      * Update a task by ID.
      */
     public static function updateTask(int $id, array $data): bool
@@ -311,6 +333,7 @@ class Task
             if ($id <= 0) {
                 return false;
             }
+            $data = self::normalizeFlags($data);
             if (empty($data)) {
                 App::getInstance(true)->getLogger()->error('No data to update');
 
