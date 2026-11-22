@@ -444,9 +444,6 @@ export function useServersWebSocket() {
 
                 // Get JWT token
                 const tokenData = await serversApi.getWebSocketToken(serverUuid);
-                // disconnectServer() (or unmount) clears isRefreshingToken while the request is in
-                // flight; do not reopen a socket for a server that is no longer wanted.
-                if (!state.isRefreshingToken) return;
                 state.jwtToken = tokenData.token;
                 state.jwtExpiresAt = tokenData.expires_at;
 
