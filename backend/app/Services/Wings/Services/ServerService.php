@@ -1136,10 +1136,25 @@ class ServerService
      */
     public function deAuthUser(string $user, string $serverUuid): WingsResponse
     {
+        return $this->deAuthUserFromServers($user, [$serverUuid]);
+    }
+
+    /**
+     * Ends the user's websocket and SFTP sessions on the given servers and rejects tokens issued before now.
+     *
+     * @param list<string> $serverUuids at least one server; an empty list would mean every server on the node
+     */
+    public function deAuthUserFromServers(string $user, array $serverUuids): WingsResponse
+    {
+        $serverUuids = array_values(array_filter(array_map('strval', $serverUuids), static fn (string $u): bool => $u !== ''));
+        if ($serverUuids === []) {
+            return new WingsResponse(['skipped' => true, 'reason' => 'no servers'], 204);
+        }
+
         try {
             $data = [
                 'user' => $user,
-                'servers' => [$serverUuid],
+                'servers' => $serverUuids,
             ];
             $response = $this->connection->post('/api/deauthorize-user', $data);
 

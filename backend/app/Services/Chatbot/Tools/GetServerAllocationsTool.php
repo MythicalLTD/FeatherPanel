@@ -19,7 +19,7 @@ namespace App\Services\Chatbot\Tools;
 
 use App\Chat\Server;
 use App\Chat\Allocation;
-use App\Helpers\ServerGateway;
+use App\SubuserPermissions;
 
 /**
  * Tool to get server allocations.
@@ -71,7 +71,7 @@ class GetServerAllocationsTool implements ToolInterface
         }
 
         // Verify user has access
-        if (!ServerGateway::canUserAccessServer($user['uuid'], $server['uuid'])) {
+        if (!ToolServerAccess::allowed($user, $server, SubuserPermissions::ALLOCATION_READ)) {
             return [
                 'success' => false,
                 'error' => 'Access denied to server',

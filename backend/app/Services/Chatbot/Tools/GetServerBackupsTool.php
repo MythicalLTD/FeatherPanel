@@ -20,7 +20,7 @@ namespace App\Services\Chatbot\Tools;
 use App\App;
 use App\Chat\Backup;
 use App\Chat\Server;
-use App\Helpers\ServerGateway;
+use App\SubuserPermissions;
 
 /**
  * Tool to get server backups.
@@ -79,7 +79,7 @@ class GetServerBackupsTool implements ToolInterface
         }
 
         // Verify user has access
-        if (!ServerGateway::canUserAccessServer($user['uuid'], $server['uuid'])) {
+        if (!ToolServerAccess::allowed($user, $server, SubuserPermissions::BACKUP_READ)) {
             return [
                 'error' => 'Access denied to server',
                 'backups' => [],

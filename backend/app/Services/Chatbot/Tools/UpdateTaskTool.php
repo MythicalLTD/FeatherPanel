@@ -21,9 +21,10 @@ use App\App;
 use App\Chat\Node;
 use App\Chat\Task;
 use App\Chat\Server;
+use App\SubuserPermissions;
 use App\Chat\ServerActivity;
 use App\Chat\ServerSchedule;
-use App\Helpers\ServerGateway;
+use App\Helpers\ScheduleTaskPermissions;
 use App\Plugins\Events\Events\ServerEvent;
 
 /**
@@ -84,7 +85,7 @@ class UpdateTaskTool implements ToolInterface
         }
 
         // Verify user has access
-        if (!ServerGateway::canUserAccessServer($user['uuid'], $server['uuid'])) {
+        if (!ToolServerAccess::allowed($user, $server, SubuserPermissions::SCHEDULE_UPDATE)) {
             return [
                 'success' => false,
                 'error' => 'Access denied to server',
@@ -199,6 +200,13 @@ class UpdateTaskTool implements ToolInterface
             return [
                 'success' => false,
                 'error' => 'Container shell tasks (docker exec) cannot be created or modified by the assistant; use the schedule task form.',
+                'action_type' => 'update_task',
+            ];
+        }
+        if (ScheduleTaskPermissions::missing((int) $user['id'], (int) $server['id'], (string) $finalAction, (string) ($updateData['payload'] ?? ($task['payload'] ?? ''))) !== null) {
+            return [
+                'success' => false,
+                'error' => 'You do not have permission to change this kind of task',
                 'action_type' => 'update_task',
             ];
         }

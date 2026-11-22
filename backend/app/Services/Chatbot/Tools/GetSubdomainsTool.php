@@ -20,8 +20,8 @@ namespace App\Services\Chatbot\Tools;
 use App\App;
 use App\Chat\Server;
 use App\Chat\Subdomain;
+use App\SubuserPermissions;
 use App\Chat\SubdomainDomain;
-use App\Helpers\ServerGateway;
 use App\Config\ConfigInterface;
 
 /**
@@ -81,7 +81,7 @@ class GetSubdomainsTool implements ToolInterface
         }
 
         // Verify user has access
-        if (!ServerGateway::canUserAccessServer($user['uuid'], $server['uuid'])) {
+        if (!ToolServerAccess::allowed($user, $server, SubuserPermissions::SUBDOMAIN_MANAGE)) {
             return [
                 'success' => false,
                 'error' => 'Access denied to server',

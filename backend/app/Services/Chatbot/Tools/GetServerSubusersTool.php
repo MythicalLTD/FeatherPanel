@@ -19,7 +19,7 @@ namespace App\Services\Chatbot\Tools;
 
 use App\Chat\Server;
 use App\Chat\Subuser;
-use App\Helpers\ServerGateway;
+use App\SubuserPermissions;
 
 /**
  * Tool to get subusers for a server.
@@ -65,7 +65,7 @@ class GetServerSubusersTool implements ToolInterface
             ];
         }
 
-        if (!ServerGateway::canUserAccessServer($user['uuid'], $server['uuid'])) {
+        if (!ToolServerAccess::allowed($user, $server, SubuserPermissions::USER_READ)) {
             return [
                 'error' => 'Access denied to server',
                 'subusers' => [],

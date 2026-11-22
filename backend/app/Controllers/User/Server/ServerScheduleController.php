@@ -27,6 +27,7 @@ use App\Chat\ServerSchedule;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
+use App\Helpers\ScheduleTaskPermissions;
 use App\Plugins\Events\Events\ServerEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -1250,6 +1251,13 @@ class ServerScheduleController
             }
             if (!isset($task['sequence_id']) || !is_numeric($task['sequence_id'])) {
                 return ApiResponse::error("Task at index {$index} has an invalid sequence_id", 'INVALID_TASK_SEQUENCE', 400);
+            }
+            // Imported tasks run later on their own, so they need the same permissions as the direct action.
+            foreach (ScheduleTaskPermissions::required((string) $task['action'], (string) $task['payload']) as $requiredPermission) {
+                $actionPermissionCheck = $this->checkPermission($request, $server, $requiredPermission);
+                if ($actionPermissionCheck !== null) {
+                    return $actionPermissionCheck;
+                }
             }
             if ($task['action'] === 'container_shell') {
                 $consoleCheck = $this->checkPermission($request, $server, SubuserPermissions::CONTROL_CONSOLE);

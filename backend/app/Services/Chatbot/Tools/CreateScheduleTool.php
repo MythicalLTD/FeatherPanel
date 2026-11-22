@@ -21,10 +21,11 @@ use App\App;
 use App\Chat\Node;
 use App\Chat\Task;
 use App\Chat\Server;
+use App\SubuserPermissions;
 use App\Chat\ServerActivity;
 use App\Chat\ServerSchedule;
-use App\Helpers\ServerGateway;
 use App\Config\ConfigInterface;
+use App\Helpers\ScheduleTaskPermissions;
 use App\Plugins\Events\Events\ServerEvent;
 
 /**
@@ -95,7 +96,7 @@ class CreateScheduleTool implements ToolInterface
         }
 
         // Verify user has access
-        if (!ServerGateway::canUserAccessServer($user['uuid'], $server['uuid'])) {
+        if (!ToolServerAccess::allowed($user, $server, SubuserPermissions::SCHEDULE_CREATE)) {
             return [
                 'success' => false,
                 'error' => 'Access denied to server',
@@ -235,6 +236,11 @@ class CreateScheduleTool implements ToolInterface
                 // Command action requires payload
                 if ($action === 'command' && $payload === '') {
                     $tasksError = "Task action 'command' requires a payload (the command to execute)";
+                    continue;
+                }
+
+                if (ScheduleTaskPermissions::missing((int) $user['id'], (int) $server['id'], $action, $payload) !== null) {
+                    $tasksError = "You do not have permission to create '{$action}' tasks";
                     continue;
                 }
 

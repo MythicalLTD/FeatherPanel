@@ -614,6 +614,26 @@ class SubuserController
             }
         }
 
+        // Daemons without live permission updates keep the old permissions on open console and SFTP
+        // sessions, so end those sessions when a permission was taken away.
+        if ($removedPermissions !== [] && !DaemonCapabilities::fromNode($node)->supports(DaemonCapabilities::FEATURE_WS_LIVE_PERMISSIONS)) {
+            $subuserUser = User::getUserById((int) $subuser['user_id']);
+            if ($subuserUser && !empty($subuserUser['uuid'])) {
+                try {
+                    $deauth = Wings::fromNode($node, 15)->getServer()->deAuthUser((string) $subuserUser['uuid'], (string) $server['uuid']);
+                    if (!$deauth->isSuccessful()) {
+                        App::getInstance(true)->getLogger()->warning(
+                            'Ending sessions after a permission change failed for subuser ' . $subuserId . ': ' . ($deauth->getError() ?? 'unknown')
+                        );
+                    }
+                } catch (\Throwable $e) {
+                    App::getInstance(true)->getLogger()->warning(
+                        'Ending sessions after a permission change failed for subuser ' . $subuserId . ': ' . $e->getMessage()
+                    );
+                }
+            }
+        }
+
         $this->logActivity($server, $node, 'subuser_updated', [
             'subuser_id' => $subuserId,
             'granted_permissions' => $grantedPermissions,

@@ -28,6 +28,7 @@ use App\Plugins\Events\Events\AuthEvent;
 use App\Helpers\PasswordResetTokenHelper;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use App\Services\Servers\UserServerAccessRevoker;
 
 #[OA\Schema(
     schema: 'ResetPasswordRequest',
@@ -154,6 +155,8 @@ class ResetPasswordController
                 return ApiResponse::error($policyError, 'PASSWORD_POLICY_VIOLATION', 422);
             }
             if (User::updateUser($userInfo['uuid'], ['password' => password_hash($data['password'], PASSWORD_BCRYPT), 'remember_token' => User::generateAccountToken()]) && User::updateUser($userInfo['uuid'], ['mail_verify' => PasswordResetTokenHelper::mailVerifyAfterReset($resetLookup['state'])])) {
+                UserServerAccessRevoker::revokeEverywhere($userInfo);
+
                 Activity::createActivity([
                     'user_uuid' => $userInfo['uuid'],
                     'name' => 'reset_password',
