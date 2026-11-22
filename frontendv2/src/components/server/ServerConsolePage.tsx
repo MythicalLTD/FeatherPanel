@@ -512,7 +512,21 @@ export default function ServerConsolePage() {
             requestStats();
         }, 5000);
 
-        return () => clearInterval(interval);
+        // Browsers throttle timers in background tabs; ask once more as soon as the tab is
+        // visible again so the charts do not stay frozen after switching back.
+        const requestOnVisible = () => {
+            if (document.visibilityState === 'visible') {
+                requestStats();
+            }
+        };
+        document.addEventListener('visibilitychange', requestOnVisible);
+        window.addEventListener('focus', requestOnVisible);
+
+        return () => {
+            clearInterval(interval);
+            document.removeEventListener('visibilitychange', requestOnVisible);
+            window.removeEventListener('focus', requestOnVisible);
+        };
     }, [connectionStatus, requestStats, requestLogs]);
 
     // Allow log history re-fetch after a full reconnect (token refresh / drop)
