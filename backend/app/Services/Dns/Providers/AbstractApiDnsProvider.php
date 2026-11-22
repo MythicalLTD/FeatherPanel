@@ -174,11 +174,14 @@ abstract class AbstractApiDnsProvider implements DnsProviderInterface, MailRecor
     /**
      * Same as upsertARecord but lets the caller decide what happens to an existing different record.
      *
+     * The address must be the only value of the RRset: another address next to it is reported as a conflict
+     * (kept) and is removed with $overwrite, so visitors are not sent to an old server part of the time.
+     *
      * @return array<string, mixed>
      */
     public function upsertAddress(string $zoneId, string $name, string $ip, int $ttl = 300, bool $overwrite = false): array
     {
-        return $this->upsertSingle($zoneId, filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6) ? 'AAAA' : 'A', $name, $ip, null, $ttl, $overwrite);
+        return $this->upsertSingle($zoneId, filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6) ? 'AAAA' : 'A', $name, $ip, null, $ttl, $overwrite, true);
     }
 
     public function upsertMxRecord(string $zoneId, string $name, string $target, int $priority = 10, int $ttl = 300, bool $overwrite = true): array
@@ -612,19 +615,21 @@ abstract class AbstractApiDnsProvider implements DnsProviderInterface, MailRecor
      *
      * @return array<string, mixed>
      */
-    private function upsertSingle(string $zoneId, string $type, string $name, string $content, ?int $priority, int $ttl, bool $overwrite): array
+    private function upsertSingle(string $zoneId, string $type, string $name, string $content, ?int $priority, int $ttl, bool $overwrite, bool $exclusive = false): array
     {
-        return $this->withRateLimitRetry(fn (bool $resumed): array => $this->upsertSingleOnce($zoneId, $type, $name, $content, $priority, $ttl, $overwrite, $resumed));
+        return $this->withRateLimitRetry(fn (bool $resumed): array => $this->upsertSingleOnce($zoneId, $type, $name, $content, $priority, $ttl, $overwrite, $resumed, $exclusive));
     }
 
     /**
      * @param bool $resumed an earlier round was throttled during its write. Record providers create the new record
      *                      before deleting the old ones, so the wanted record can already be there next to the old
      *                      one; with $overwrite the old ones are then still removed instead of reporting unchanged.
+     * @param bool $exclusive the wanted value must be the only one in the RRset (address records). Other values
+     *                        next to it are a conflict, or are removed with $overwrite.
      *
      * @return array<string, mixed>
      */
-    private function upsertSingleOnce(string $zoneId, string $type, string $name, string $content, ?int $priority, int $ttl, bool $overwrite, bool $resumed = false): array
+    private function upsertSingleOnce(string $zoneId, string $type, string $name, string $content, ?int $priority, int $ttl, bool $overwrite, bool $resumed = false, bool $exclusive = false): array
     {
         try {
             $zoneName = $this->zoneName($zoneId);
@@ -639,7 +644,8 @@ abstract class AbstractApiDnsProvider implements DnsProviderInterface, MailRecor
                     break;
                 }
             }
-            if ($present && !($resumed && $overwrite && count($current) > 1)) {
+            $others = count($current) > 1;
+            if ($present && !($others && ($exclusive || ($resumed && $overwrite)))) {
                 return ['ok' => true, 'action' => 'unchanged'];
             }
 
@@ -647,7 +653,9 @@ abstract class AbstractApiDnsProvider implements DnsProviderInterface, MailRecor
                 return [
                     'ok' => false,
                     'action' => 'conflict',
-                    'error' => 'A different ' . $type . ' record already exists (kept)',
+                    'error' => $present
+                        ? 'Other ' . $type . ' records exist next to this one (kept)'
+                        : 'A different ' . $type . ' record already exists (kept)',
                     'existing' => array_map(static fn (array $r): string => $r['content'], $current),
                 ];
             }

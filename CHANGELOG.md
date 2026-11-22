@@ -8,6 +8,7 @@
 
 ### Fixed
 - Server permissions are applied the same way everywhere: schedule tasks (created, edited or imported) need the permission of the action they run (console for commands, the matching power permission, `backup.create` for backups, `settings.reinstall` for install/update tasks); the AI assistant's server tools check the same subuser permission as the matching page; SFTP sign-in only answers for servers and WebSpaces on the node that asks and refuses deleted accounts; and open console and SFTP sessions are closed when a subuser loses a permission or the account's password changes, it is signed out everywhere, suspended or deleted. by @nayskutzu
+- WebSpace DNS with an API token: the dialog also opens for WebSpaces without a panel mail server (website records only, the mail option is greyed out); when the mail records cannot be read the website records that were written are still shown and logged; an extra address next to the web server's A/AAAA record is now listed and only removed when replacing is allowed; and errors of a record group are shown in the dialog. by @nayskutzu
 
 ## v1.5.5 STABLE
 

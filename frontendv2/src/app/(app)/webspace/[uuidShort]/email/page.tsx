@@ -116,6 +116,8 @@ interface DnsInfo {
     }>;
     can_provision?: boolean;
     can_provision_api?: boolean;
+    can_provision_api_mail?: boolean;
+    can_provision_api_web?: boolean;
     provision_domains?: string[];
     client_settings: {
         imap_host: string;
@@ -971,6 +973,8 @@ export default function WebSpaceEmailPage() {
                     open={dnsApiOpen}
                     onOpenChange={setDnsApiOpen}
                     onDone={() => void load()}
+                    mailAvailable={dns?.can_provision_api_mail ?? true}
+                    webAvailable={dns?.can_provision_api_web ?? true}
                 />
 
                 <Dialog open={createOpen} onOpenChange={setCreateOpen}>
