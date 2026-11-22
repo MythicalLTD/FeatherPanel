@@ -28,6 +28,7 @@ use App\Plugins\Events\Events\AuthEvent;
 use App\Helpers\PasswordResetTokenHelper;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use App\Services\Servers\UserServerAccessRevoker;
 
 #[OA\Schema(
     schema: 'ResetPasswordRequest',
@@ -153,7 +154,14 @@ class ResetPasswordController
             if ($policyError !== null) {
                 return ApiResponse::error($policyError, 'PASSWORD_POLICY_VIOLATION', 422);
             }
-            if (User::updateUser($userInfo['uuid'], ['password' => password_hash($data['password'], PASSWORD_BCRYPT), 'remember_token' => User::generateAccountToken()]) && User::updateUser($userInfo['uuid'], ['mail_verify' => PasswordResetTokenHelper::mailVerifyAfterReset($resetLookup['state'])])) {
+            $credentialsUpdated = User::updateUser($userInfo['uuid'], ['password' => password_hash($data['password'], PASSWORD_BCRYPT), 'remember_token' => User::generateAccountToken()]);
+            if ($credentialsUpdated) {
+                // The old password no longer works, so open console/SFTP sessions end too, even if the
+                // token cleanup below fails.
+                UserServerAccessRevoker::revokeEverywhere($userInfo);
+            }
+            if ($credentialsUpdated && User::updateUser($userInfo['uuid'], ['mail_verify' => PasswordResetTokenHelper::mailVerifyAfterReset($resetLookup['state'])])) {
+
                 Activity::createActivity([
                     'user_uuid' => $userInfo['uuid'],
                     'name' => 'reset_password',

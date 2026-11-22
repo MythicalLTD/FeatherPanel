@@ -20,8 +20,8 @@ namespace App\Services\Chatbot\Tools;
 use App\App;
 use App\Chat\Node;
 use App\Chat\Server;
+use App\SubuserPermissions;
 use App\Services\Wings\Wings;
-use App\Helpers\ServerGateway;
 use App\Config\ConfigInterface;
 use App\Helpers\WingsUrlHelper;
 
@@ -76,7 +76,7 @@ class GetServerFirewallRulesTool implements ToolInterface
             ];
         }
 
-        if (!ServerGateway::canUserAccessServer($user['uuid'], $server['uuid'])) {
+        if (!ToolServerAccess::allowed($user, $server, SubuserPermissions::FIREWALL_READ)) {
             return [
                 'error' => 'Access denied to server',
                 'rules' => [],

@@ -21,10 +21,11 @@ use App\App;
 use App\Chat\Node;
 use App\Chat\Task;
 use App\Chat\Server;
+use App\SubuserPermissions;
 use App\Chat\ServerActivity;
 use App\Chat\ServerSchedule;
-use App\Helpers\ServerGateway;
 use App\Config\ConfigInterface;
+use App\Helpers\ScheduleTaskPermissions;
 use App\Plugins\Events\Events\ServerEvent;
 
 /**
@@ -95,7 +96,7 @@ class CreateScheduleTool implements ToolInterface
         }
 
         // Verify user has access
-        if (!ServerGateway::canUserAccessServer($user['uuid'], $server['uuid'])) {
+        if (!ToolServerAccess::allowed($user, $server, SubuserPermissions::SCHEDULE_CREATE)) {
             return [
                 'success' => false,
                 'error' => 'Access denied to server',
@@ -238,6 +239,11 @@ class CreateScheduleTool implements ToolInterface
                     continue;
                 }
 
+                if (ScheduleTaskPermissions::missing((int) $user['id'], (int) $server['id'], $action, $payload) !== null) {
+                    $tasksError = "You do not have permission to create '{$action}' tasks";
+                    continue;
+                }
+
                 if (in_array($action, ['backup', 'database_backup'], true)) {
                     try {
                         if ($action === 'database_backup' && $payload === '') {
@@ -283,7 +289,9 @@ class CreateScheduleTool implements ToolInterface
         } else {
             // If no tasks provided, try to infer from schedule name or create a default command task
             // This handles cases where user says "create a schedule to run command X"
-            if (isset($params['command']) && trim($params['command']) !== '') {
+            if (isset($params['command']) && trim($params['command']) !== '' && ScheduleTaskPermissions::missing((int) $user['id'], (int) $server['id'], 'command', trim($params['command'])) !== null) {
+                $tasksError = "You do not have permission to create 'command' tasks";
+            } elseif (isset($params['command']) && trim($params['command']) !== '') {
                 // User wants to run a command
                 $nextSequenceId = Task::getNextSequenceId($scheduleId);
                 $taskCreateData = [

@@ -25,6 +25,7 @@ use App\Helpers\ApiResponse;
 use App\CloudFlare\CloudFlareRealIP;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use App\Services\Servers\UserServerAccessRevoker;
 
 /**
  * Admin view of another user's signed-in sessions. Reading needs "view users",
@@ -76,6 +77,7 @@ class UserSessionsController
         $count = UserSession::revokeOthers((int) $user['id'], null);
         // Rotating the account token also ends any legacy remember-me cookies and API sessions bound to it.
         User::updateUser($user['uuid'], ['remember_token' => User::generateAccountToken()]);
+        UserServerAccessRevoker::revokeEverywhere($user);
         $this->log($request, $user, 'admin_user_sessions_revoke_all', 'Signed out all ' . $count . ' sessions of ' . $user['username']);
 
         return ApiResponse::success(['revoked' => $count], 'All sessions signed out');

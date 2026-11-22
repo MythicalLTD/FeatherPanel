@@ -19,8 +19,8 @@ namespace App\Services\Chatbot\Tools;
 
 use App\App;
 use App\Chat\Server;
+use App\SubuserPermissions;
 use App\Chat\ServerActivity;
-use App\Helpers\ServerGateway;
 
 /**
  * Tool to get server activities.
@@ -78,7 +78,7 @@ class GetServerActivitiesTool implements ToolInterface
         // Verify server and access
         if ($server) {
             // Verify user has access
-            if (!ServerGateway::canUserAccessServer($user['uuid'], $server['uuid'])) {
+            if (!ToolServerAccess::allowed($user, $server, SubuserPermissions::ACTIVITY_READ)) {
                 return [
                     'error' => 'Access denied to server',
                     'activities' => [],

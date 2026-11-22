@@ -20,8 +20,8 @@ namespace App\Services\Chatbot\Tools;
 use App\Chat\Spell;
 use App\Chat\Server;
 use App\Chat\SpellVariable;
+use App\SubuserPermissions;
 use App\Chat\ServerVariable;
-use App\Helpers\ServerGateway;
 
 /**
  * Tool to get startup configuration and variables for a server.
@@ -66,7 +66,7 @@ class GetServerStartupTool implements ToolInterface
             ];
         }
 
-        if (!ServerGateway::canUserAccessServer($user['uuid'], $server['uuid'])) {
+        if (!ToolServerAccess::allowed($user, $server, SubuserPermissions::STARTUP_READ)) {
             return [
                 'error' => 'Access denied to server',
             ];

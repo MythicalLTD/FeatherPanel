@@ -48,6 +48,7 @@ use App\Mail\templates\AccountUnBanned;
 use App\Plugins\Events\Events\UserEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use App\Services\Servers\UserServerAccessRevoker;
 
 #[OA\Schema(
     schema: 'User',
@@ -1058,6 +1059,11 @@ class UsersController
             ]);
         }
 
+        // A new password or a suspension also ends the user's open console and SFTP sessions.
+        if (isset($data['remember_token']) || $becameBanned) {
+            UserServerAccessRevoker::revokeEverywhere($user);
+        }
+
         // Emit event
         global $eventManager;
         if (isset($eventManager) && $eventManager !== null) {
@@ -2023,6 +2029,8 @@ class UsersController
         if (!$updated) {
             return ApiResponse::error('Failed to ban user', 'FAILED_TO_BAN_USER', 500);
         }
+
+        UserServerAccessRevoker::revokeEverywhere($user);
 
         $abuseipdbReport = AbuseIPDBBanReporter::maybeReport($user, $body, $parsed['reason']);
 

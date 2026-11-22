@@ -19,9 +19,9 @@ namespace App\Services\Chatbot\Tools;
 
 use App\App;
 use App\Chat\Server;
+use App\SubuserPermissions;
 use App\Chat\ServerDatabase;
 use App\Chat\DatabaseInstance;
-use App\Helpers\ServerGateway;
 use App\Helpers\RemoteDatabaseProvisioner;
 use App\Plugins\Events\Events\ServerEvent;
 
@@ -85,7 +85,7 @@ class CreateDatabaseTool implements ToolInterface
         }
 
         // Verify user has access
-        if (!ServerGateway::canUserAccessServer($user['uuid'], $server['uuid'])) {
+        if (!ToolServerAccess::allowed($user, $server, SubuserPermissions::DATABASE_CREATE)) {
             return [
                 'error' => 'Access denied to server',
                 'success' => false,

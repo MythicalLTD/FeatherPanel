@@ -19,7 +19,7 @@ namespace App\Services\Chatbot\Tools;
 
 use App\Chat\Proxy;
 use App\Chat\Server;
-use App\Helpers\ServerGateway;
+use App\SubuserPermissions;
 
 /**
  * Tool to get proxy configurations for a server.
@@ -65,7 +65,7 @@ class GetServerProxiesTool implements ToolInterface
             ];
         }
 
-        if (!ServerGateway::canUserAccessServer($user['uuid'], $server['uuid'])) {
+        if (!ToolServerAccess::allowed($user, $server, SubuserPermissions::PROXY_READ)) {
             return [
                 'error' => 'Access denied to server',
                 'proxies' => [],

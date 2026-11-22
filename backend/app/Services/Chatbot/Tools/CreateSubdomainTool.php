@@ -22,9 +22,9 @@ use App\Chat\Node;
 use App\Chat\Server;
 use App\Chat\Subdomain;
 use App\Chat\Allocation;
+use App\SubuserPermissions;
 use App\Chat\ServerActivity;
 use App\Chat\SubdomainDomain;
-use App\Helpers\ServerGateway;
 use App\Config\ConfigInterface;
 use App\Plugins\Events\Events\SubdomainsEvent;
 use App\Services\Subdomain\CloudflareSubdomainService;
@@ -87,7 +87,7 @@ class CreateSubdomainTool implements ToolInterface
         }
 
         // Verify user has access
-        if (!ServerGateway::canUserAccessServer($user['uuid'], $server['uuid'])) {
+        if (!ToolServerAccess::allowed($user, $server, SubuserPermissions::SUBDOMAIN_MANAGE)) {
             return [
                 'success' => false,
                 'error' => 'Access denied to server',

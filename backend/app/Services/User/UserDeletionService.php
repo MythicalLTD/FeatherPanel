@@ -33,6 +33,7 @@ use App\Config\ConfigInterface;
 use App\CloudFlare\CloudFlareRealIP;
 use App\Mail\templates\AccountDeleted;
 use App\Plugins\Events\Events\UserEvent;
+use App\Services\Servers\UserServerAccessRevoker;
 
 /**
  * Shared account deletion helpers for admin and user self-service flows.
@@ -161,6 +162,9 @@ class UserDeletionService
                 'code' => 'USER_HAS_ACTIVE_SUBSCRIPTIONS',
             ];
         }
+
+        // End open console and SFTP sessions on servers the user is a subuser of before the rows go away.
+        UserServerAccessRevoker::revokeEverywhere($user);
 
         $app = App::getInstance(true);
         $config = $app->getConfig();
