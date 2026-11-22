@@ -24,7 +24,13 @@ import { cn } from '@/lib/utils';
 interface PerformanceDataPoint {
     timestamp: number;
     value: number;
+    /** Optional per-direction values; when present the network chart draws one line per direction. */
+    rx?: number;
+    tx?: number;
 }
+
+const NETWORK_RX_COLOR = '#f59e0b';
+const NETWORK_TX_COLOR = '#38bdf8';
 
 interface ServerPerformanceProps {
     cpuData: PerformanceDataPoint[];
@@ -118,6 +124,10 @@ interface PerformanceChartCardProps {
     domainMax: number;
     formatTooltip: (value: number) => string;
     emptyLabel: string;
+    /** Extra lines drawn instead of the single `value` line (e.g. download and upload). */
+    lines?: Array<{ dataKey: string; color: string; prefix: string }>;
+    /** Current value per line, shown in its own row so the limit label keeps its space. */
+    lineValues?: Array<{ prefix: string; color: string; text: string }>;
 }
 
 const PerformanceChartCard = React.memo(function PerformanceChartCard({
@@ -130,10 +140,27 @@ const PerformanceChartCard = React.memo(function PerformanceChartCard({
     domainMax,
     formatTooltip,
     emptyLabel,
+    lines,
+    lineValues,
 }: PerformanceChartCardProps) {
+    const chartHeight = lineValues?.length ? 112 : 140;
     const tooltipContent = useMemo(() => {
         return function ChartTooltip({ active, payload }: TooltipContentProps) {
             if (!active || !payload?.length) return null;
+            if (lines?.length) {
+                return (
+                    <div className='bg-background/95 border-border space-y-0.5 rounded-lg border p-2 backdrop-blur'>
+                        {lines.map((line) => {
+                            const entry = payload.find((item) => item.dataKey === line.dataKey);
+                            return (
+                                <p key={line.dataKey} className='text-xs font-medium' style={{ color: line.color }}>
+                                    {line.prefix} {formatTooltip(Number(entry?.value ?? 0))}
+                                </p>
+                            );
+                        })}
+                    </div>
+                );
+            }
             const value = Number(payload[0]?.value ?? 0);
             return (
                 <div className='bg-background/95 border-border rounded-lg border p-2 backdrop-blur'>
@@ -141,7 +168,7 @@ const PerformanceChartCard = React.memo(function PerformanceChartCard({
                 </div>
             );
         };
-    }, [formatTooltip]);
+    }, [formatTooltip, lines]);
 
     return (
         <div className='fp-surface min-w-0 rounded-xl border p-4 backdrop-blur-xl sm:p-5'>
@@ -161,21 +188,34 @@ const PerformanceChartCard = React.memo(function PerformanceChartCard({
                     </span>
                 </div>
 
-                <div className='h-[140px] w-full min-w-0'>
+                {lineValues?.length ? (
+                    <div className='flex items-center justify-between gap-2 text-xs font-medium tabular-nums'>
+                        {lineValues.map((item) => (
+                            <span key={item.prefix} style={{ color: item.color }}>
+                                {item.prefix} {item.text}
+                            </span>
+                        ))}
+                    </div>
+                ) : null}
+
+                <div className='w-full min-w-0' style={{ height: chartHeight }}>
                     {data.length > 0 ? (
-                        <ResponsiveContainer width='100%' height={140} debounce={80}>
+                        <ResponsiveContainer width='100%' height={chartHeight} debounce={80}>
                             <LineChart data={data} margin={{ top: 4, right: 4, left: 4, bottom: 4 }}>
                                 <YAxis domain={[0, domainMax]} hide />
                                 <Tooltip content={tooltipContent} isAnimationActive={false} />
-                                <Line
-                                    type='monotone'
-                                    dataKey='value'
-                                    stroke={color}
-                                    strokeWidth={2}
-                                    dot={false}
-                                    isAnimationActive={false}
-                                    activeDot={false}
-                                />
+                                {(lines ?? [{ dataKey: 'value', color, prefix: '' }]).map((line) => (
+                                    <Line
+                                        key={line.dataKey}
+                                        type='monotone'
+                                        dataKey={line.dataKey}
+                                        stroke={line.color}
+                                        strokeWidth={2}
+                                        dot={false}
+                                        isAnimationActive={false}
+                                        activeDot={false}
+                                    />
+                                ))}
                             </LineChart>
                         </ResponsiveContainer>
                     ) : (
@@ -209,14 +249,26 @@ export default function ServerPerformance({
     const cpuCurrent = getCurrentValue(cpuData);
     const memoryCurrent = getCurrentValue(memoryData);
     const diskCurrent = getCurrentValue(diskData);
+    const networkLast = networkData.length ? networkData[networkData.length - 1] : undefined;
+    const networkSplit = networkLast !== undefined && (networkLast.rx !== undefined || networkLast.tx !== undefined);
     const networkCurrent = getCurrentValue(networkData);
+    // With one line per direction the scale follows the larger direction, not the sum.
+    const networkScaleData = useMemo(
+        () =>
+            networkData.map((point) =>
+                point.rx !== undefined || point.tx !== undefined
+                    ? { timestamp: point.timestamp, value: Math.max(point.rx ?? 0, point.tx ?? 0) }
+                    : point,
+            ),
+        [networkData],
+    );
     const diskIoCurrent = getCurrentValue(diskIoData);
 
     // Unlimited CPU: keep a 0-100% scale so tiny noise does not amplify into a jagged chart.
     const cpuDomainMax = useStableDomainMax(cpuData, cpuLimit > 0 ? cpuLimit : 100, 100);
     const memoryDomainMax = useStableDomainMax(memoryData, memoryLimit > 0 ? memoryLimit : undefined, 64);
     const diskDomainMax = useStableDomainMax(diskData, diskLimit > 0 ? diskLimit : undefined, 64);
-    const networkDomainMax = useStableDomainMax(networkData, undefined, 1024);
+    const networkDomainMax = useStableDomainMax(networkScaleData, undefined, 1024);
     const diskIoDomainMax = useStableDomainMax(diskIoData, undefined, 1024);
 
     const diskUsagePct = diskLimit > 0 ? (diskCurrent / diskLimit) * 100 : 0;
@@ -278,13 +330,25 @@ export default function ServerPerformance({
             data: networkData,
             color: '#f59e0b',
             icon: Globe,
-            currentValue: `${formatBytes(networkCurrent)}/s`,
+            currentValue: networkSplit ? '' : `${formatBytes(networkCurrent)}/s`,
             limitLabel: t('servers.console.info_cards.all_time_label', {
                 total: formatBytes(networkRxTotal + networkTxTotal),
             }),
             domainMax: networkDomainMax,
             formatTooltip: formatNetworkTooltip,
             emptyLabel,
+            lines: networkSplit
+                ? [
+                      { dataKey: 'rx', color: NETWORK_RX_COLOR, prefix: '↓' },
+                      { dataKey: 'tx', color: NETWORK_TX_COLOR, prefix: '↑' },
+                  ]
+                : undefined,
+            lineValues: networkSplit
+                ? [
+                      { prefix: '↓', color: NETWORK_RX_COLOR, text: `${formatBytes(networkLast?.rx ?? 0)}/s` },
+                      { prefix: '↑', color: NETWORK_TX_COLOR, text: `${formatBytes(networkLast?.tx ?? 0)}/s` },
+                  ]
+                : undefined,
         },
         {
             id: 'disk_io',

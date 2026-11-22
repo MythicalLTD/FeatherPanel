@@ -141,7 +141,9 @@ export default function ServerConsolePage() {
     const [cpuData, setCpuData] = useState<Array<{ timestamp: number; value: number }>>([]);
     const [memoryData, setMemoryData] = useState<Array<{ timestamp: number; value: number }>>([]);
     const [diskData, setDiskData] = useState<Array<{ timestamp: number; value: number }>>([]);
-    const [networkData, setNetworkData] = useState<Array<{ timestamp: number; value: number }>>([]);
+    const [networkData, setNetworkData] = useState<Array<{ timestamp: number; value: number; rx: number; tx: number }>>(
+        [],
+    );
     const [diskIoData, setDiskIoData] = useState<Array<{ timestamp: number; value: number }>>([]);
     const maxDataPoints = 60;
 
@@ -407,7 +409,15 @@ export default function ServerConsolePage() {
 
                         const totalRate = smoothNetworkRef.current.rx + smoothNetworkRef.current.tx;
                         setNetworkData((prev) => {
-                            const newData = [...prev, { timestamp, value: totalRate }];
+                            const newData = [
+                                ...prev,
+                                {
+                                    timestamp,
+                                    value: totalRate,
+                                    rx: smoothNetworkRef.current.rx,
+                                    tx: smoothNetworkRef.current.tx,
+                                },
+                            ];
                             return newData.slice(-maxDataPoints);
                         });
                     }
@@ -543,7 +553,7 @@ export default function ServerConsolePage() {
                 setCpuData([{ timestamp, value: 0 }]);
                 setMemoryData([{ timestamp, value: 0 }]);
                 setDiskData([{ timestamp, value: 0 }]);
-                setNetworkData([{ timestamp, value: 0 }]);
+                setNetworkData([{ timestamp, value: 0, rx: 0, tx: 0 }]);
                 setDiskIoData([{ timestamp, value: 0 }]);
             }, 0);
             return () => clearTimeout(timer);
