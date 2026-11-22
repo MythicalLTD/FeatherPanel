@@ -190,10 +190,15 @@ class WebSpaceMailboxController
             ];
         }
 
+        // Same rules as provisionDnsWithProvider(): mail records need a mail host in node mode, web records the web node.
+        $canProvisionApiMail = array_filter($hosts, static fn (array $h): bool => strtolower(trim((string) ($h['provision_mode'] ?? ''))) === 'node') !== [];
+        $canProvisionApiWeb = (bool) \App\Chat\WebNode::getWebNodeById((int) ($space['web_node_id'] ?? 0));
+
         return ApiResponse::success([
             'domains' => $records,
-            // Same rule as provisionDnsWithProvider(): any mail host in node mode.
-            'can_provision_api' => array_filter($hosts, static fn (array $h): bool => strtolower(trim((string) ($h['provision_mode'] ?? ''))) === 'node') !== [],
+            'can_provision_api' => $canProvisionApiMail || $canProvisionApiWeb,
+            'can_provision_api_mail' => $canProvisionApiMail,
+            'can_provision_api_web' => $canProvisionApiWeb,
             // Domains the API token flow accepts: every domain of the WebSpace, redirect routes included.
             'provision_domains' => DnsProvisioner::collectMailDomains($space),
             'can_provision' => $dnsContext !== null
@@ -372,8 +377,10 @@ class WebSpaceMailboxController
             return ApiResponse::error('DNS provider request failed: ' . mb_substr($message, 0, 300), 'DNS_PROVIDER_FAILED', 502);
         }
 
-        if ($withMail && $result['results'] === [] && !empty($result['error'])) {
-            // Nothing was looked at (for example the mail DNS hints could not be read from the node).
+        $webLookedAt = $withWeb && ($result['web']['results'] ?? []) !== [];
+        if ($withMail && $result['results'] === [] && !empty($result['error']) && !$webLookedAt) {
+            // Nothing was looked at (for example the mail DNS hints could not be read from the node). When the web
+            // records were handled, the combined result is returned instead so their outcome is not lost.
             return ApiResponse::error((string) $result['error'], 'MAIL_DNS_RECORDS_UNAVAILABLE', 502);
         }
         if ($withWeb && !$withMail && ($result['web']['results'] ?? []) === [] && !empty($result['web']['error'])) {

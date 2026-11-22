@@ -45,6 +45,7 @@ interface RecordResult {
 interface ProvisionResult {
     ok: boolean;
     results: RecordResult[];
+    error?: string;
     web?: { ok: boolean; results: RecordResult[]; error?: string };
     zone?: string;
     mode?: 'preview' | 'apply';
@@ -57,6 +58,10 @@ interface Props {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     onDone: () => void;
+    /** Mail records can be written (a mail host in node mode exists). */
+    mailAvailable?: boolean;
+    /** Web records can be written (the web node exists). */
+    webAvailable?: boolean;
 }
 
 const actionTone: Record<string, string> = {
@@ -73,7 +78,15 @@ const actionTone: Record<string, string> = {
  * Writes the mail DNS records into the customer's own zone with a one-time API token.
  * The token only lives in this component's state and is dropped when the dialog closes.
  */
-export function MailDnsProviderDialog({ uuidShort, domains, open, onOpenChange, onDone }: Props) {
+export function MailDnsProviderDialog({
+    uuidShort,
+    domains,
+    open,
+    onOpenChange,
+    onDone,
+    mailAvailable = true,
+    webAvailable = true,
+}: Props) {
     const { t } = useTranslation();
     const [providers, setProviders] = useState<ProviderInfo[]>([]);
     const [provider, setProvider] = useState('');
@@ -81,7 +94,8 @@ export function MailDnsProviderDialog({ uuidShort, domains, open, onOpenChange, 
     const [domain, setDomain] = useState('');
     const [overwrite, setOverwrite] = useState(false);
     const [withMail, setWithMail] = useState(true);
-    const [withWeb, setWithWeb] = useState(false);
+    // null until the user picks: the web group is then on by default only when mail records are not available.
+    const [webChoice, setWebChoice] = useState<boolean | null>(null);
     const [busy, setBusy] = useState(false);
     const [result, setResult] = useState<ProvisionResult | null>(null);
     // Bumped on every input change and on close, so a response that arrives late never shows up for other inputs.
@@ -100,7 +114,7 @@ export function MailDnsProviderDialog({ uuidShort, domains, open, onOpenChange, 
             setResult(null);
             setOverwrite(false);
             setWithMail(true);
-            setWithWeb(false);
+            setWebChoice(null);
             setBusy(false);
 
             return;
@@ -122,6 +136,12 @@ export function MailDnsProviderDialog({ uuidShort, domains, open, onOpenChange, 
     const selected = providers.find((p) => p.id === provider);
     const rows: RecordResult[] = [...(result?.results ?? []), ...(result?.web?.results ?? [])];
     const hasConflict = rows.some((r) => r.action === 'conflict');
+    const mailOn = mailAvailable && withMail;
+    const webOn = webAvailable && (webChoice ?? !mailAvailable);
+    const groupErrors = [
+        result?.error ? `${t('webSpaces.email.dnsApi.groupError.mail')}: ${result.error}` : null,
+        result?.web?.error ? `${t('webSpaces.email.dnsApi.groupError.web')}: ${result.web.error}` : null,
+    ].filter((e): e is string => e !== null);
 
     const run = async (mode: 'preview' | 'apply') => {
         const current = generation.current;
@@ -133,14 +153,14 @@ export function MailDnsProviderDialog({ uuidShort, domains, open, onOpenChange, 
                 domain,
                 mode,
                 overwrite,
-                mail_records: withMail,
-                web_records: withWeb,
+                mail_records: mailOn,
+                web_records: webOn,
             });
             if (current !== generation.current) return;
             const res = data?.data as ProvisionResult;
             setResult(res);
             if (mode === 'apply') {
-                if (res.ok && withMail && res.dkim_ready === false) {
+                if (res.ok && mailOn && res.dkim_ready === false) {
                     toast.success(t('webSpaces.email.dnsApi.applied'));
                     toast.info(t('webSpaces.email.dkimPending'));
                     setToken('');
@@ -162,7 +182,7 @@ export function MailDnsProviderDialog({ uuidShort, domains, open, onOpenChange, 
         }
     };
 
-    const canRun = !busy && provider !== '' && token.trim() !== '' && domain !== '' && (withMail || withWeb);
+    const canRun = !busy && provider !== '' && token.trim() !== '' && domain !== '' && (mailOn || webOn);
     const previewed = result?.mode === 'preview';
 
     return (
@@ -221,21 +241,28 @@ export function MailDnsProviderDialog({ uuidShort, domains, open, onOpenChange, 
                 <div className='space-y-2'>
                     <label className='flex items-start gap-2 text-xs'>
                         <Checkbox
-                            checked={withMail}
-                            disabled={busy}
+                            checked={mailOn}
+                            disabled={busy || !mailAvailable}
                             onCheckedChange={(checked) => {
                                 setWithMail(checked === true);
                                 resetResult();
                             }}
                         />
-                        <span>{t('webSpaces.email.dnsApi.groups.mail')}</span>
+                        <span>
+                            {t('webSpaces.email.dnsApi.groups.mail')}
+                            {!mailAvailable && (
+                                <span className='text-muted-foreground block'>
+                                    {t('webSpaces.email.dnsApi.groups.mailUnavailable')}
+                                </span>
+                            )}
+                        </span>
                     </label>
                     <label className='flex items-start gap-2 text-xs'>
                         <Checkbox
-                            checked={withWeb}
-                            disabled={busy}
+                            checked={webOn}
+                            disabled={busy || !webAvailable}
                             onCheckedChange={(checked) => {
-                                setWithWeb(checked === true);
+                                setWebChoice(checked === true);
                                 resetResult();
                             }}
                         />
@@ -264,6 +291,11 @@ export function MailDnsProviderDialog({ uuidShort, domains, open, onOpenChange, 
                                 </li>
                             ))}
                         </ul>
+                        {groupErrors.map((e) => (
+                            <p key={e} className='mt-2 text-xs text-red-600 dark:text-red-400'>
+                                {e}
+                            </p>
+                        ))}
                         {hasConflict && (
                             <label className='mt-3 flex items-start gap-2 text-xs'>
                                 <Checkbox

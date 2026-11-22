@@ -620,6 +620,42 @@ class ApiDnsProvidersTest extends TestCase
     }
 
     #[PHPUnit\Framework\Attributes\DataProvider('providers')]
+    public function testWebRecordsReportAnExtraAddressAndRemoveItOnlyOnRequest(string $id): void
+    {
+        $fake = new FakeDnsApi($id, ['example.com']);
+        $fake->seed('example.com', 'A', 'example.com', [['content' => '192.0.2.10'], ['content' => '198.51.100.7']]);
+        $ctx = $this->webContext($id, $fake);
+        $node = ['public_ip' => '192.0.2.10'];
+
+        $kept = DnsProvisioner::provisionWebRecords($node, 'example.com', $ctx);
+        $this->assertFalse($kept['ok']);
+        $this->assertSame('conflict', $kept['results'][0]['action']);
+        $this->assertContains('198.51.100.7', $kept['results'][0]['existing']);
+        $this->assertCount(2, $fake->state('example.com', 'A', 'example.com'));
+
+        $preview = DnsProvisioner::provisionWebRecords($node, 'example.com', $ctx, true, true);
+        $this->assertSame('would_update', $preview['results'][0]['action']);
+        $this->assertCount(2, $fake->state('example.com', 'A', 'example.com'));
+
+        $replaced = DnsProvisioner::provisionWebRecords($node, 'example.com', $ctx, true);
+        $this->assertTrue($replaced['ok']);
+        $this->assertSame('updated', $replaced['results'][0]['action']);
+        $this->assertSame(['192.0.2.10'], array_column($fake->state('example.com', 'A', 'example.com'), 'content'));
+    }
+
+    #[PHPUnit\Framework\Attributes\DataProvider('providers')]
+    public function testASecondMxNextToTheWantedOneIsStillKept(string $id): void
+    {
+        $fake = new FakeDnsApi($id, ['example.com']);
+        $fake->seed('example.com', 'MX', 'example.com', [['content' => 'mail.example.com', 'priority' => 10], ['content' => 'backup.example.net', 'priority' => 20]]);
+        $p = DnsProviderRegistry::create($id, 'tok', $fake);
+        $z = $p->findZoneForDomain('example.com')['id'];
+
+        $this->assertSame('unchanged', $p->upsertMxRecord($z, 'example.com', 'mail.example.com', 10, 300, true)['action']);
+        $this->assertCount(2, $fake->state('example.com', 'MX', 'example.com'));
+    }
+
+    #[PHPUnit\Framework\Attributes\DataProvider('providers')]
     public function testWebRecordsDryRunWritesNothing(string $id): void
     {
         $fake = new FakeDnsApi($id, ['example.com']);

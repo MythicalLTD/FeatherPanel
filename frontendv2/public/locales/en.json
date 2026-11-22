@@ -16795,10 +16795,11 @@
                 "appliedPartial": "Some records could not be written, see the list",
                 "failed": "Could not reach the DNS provider",
                 "loadFailed": "Could not load the DNS providers",
-            "groups": {
-                "mail": "Mail records: MX, SPF, DKIM and DMARC",
-                "web": "Website records: A and AAAA of this domain point to this web server (a different existing address is kept unless you allow replacing it)"
-            },
+                "groups": {
+                    "mail": "Mail records: MX, SPF, DKIM and DMARC",
+                    "web": "Website records: A and AAAA of this domain point to this web server (a different existing address is kept unless you allow replacing it)",
+                    "mailUnavailable": "Not available: this WebSpace has no mail server that is set up by the panel"
+                },
                 "action": {
                     "created": "created",
                     "updated": "updated",
@@ -16807,6 +16808,10 @@
                     "would_update": "will be replaced",
                     "conflict": "different record exists (kept)",
                     "error": "failed"
+                },
+                "groupError": {
+                    "mail": "Mail records",
+                    "web": "Website records"
                 }
             },
             "dnsProvisionFailed": "Failed to provision mail DNS",
