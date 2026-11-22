@@ -18,6 +18,7 @@
 namespace App\Controllers\Wings\Sftp;
 
 use App\App;
+use App\Chat\Node;
 use App\Chat\User;
 use App\Chat\Server;
 use App\Permissions;
@@ -139,6 +140,19 @@ class SftpAuthController
             $server = Server::getServerByUuidShort($parsedUsername['serverId']);
             if (!$server) {
                 App::getInstance(true)->getLogger()->warning('SFTP auth failed: Server not found');
+
+                return ApiResponse::sendManualResponse([
+                    'error' => 'Server not found',
+                ], 404);
+            }
+
+            // Only answer for servers that run on the node asking.
+            $node = Node::getNodeByWingsAuth(
+                (string) $request->attributes->get('wings_token_id'),
+                (string) $request->attributes->get('wings_token_secret')
+            );
+            if (!$node || (int) $server['node_id'] !== (int) $node['id']) {
+                App::getInstance(true)->getLogger()->warning('SFTP auth failed: Server is not on the requesting node');
 
                 return ApiResponse::sendManualResponse([
                     'error' => 'Server not found',
@@ -276,8 +290,8 @@ class SftpAuthController
             return null;
         }
 
-        // Check if user is banned
-        if ($user['banned'] === 'true') {
+        // Banned and deleted accounts cannot sign in
+        if ($user['banned'] === 'true' || ($user['deleted'] ?? 'false') === 'true') {
             return null;
         }
 

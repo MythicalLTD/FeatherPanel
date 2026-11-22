@@ -21,9 +21,10 @@ use App\App;
 use App\Chat\Node;
 use App\Chat\Task;
 use App\Chat\Server;
+use App\SubuserPermissions;
 use App\Chat\ServerActivity;
 use App\Chat\ServerSchedule;
-use App\Helpers\ServerGateway;
+use App\Helpers\ScheduleTaskPermissions;
 use App\Plugins\Events\Events\ServerEvent;
 
 /**
@@ -84,7 +85,7 @@ class CreateTaskTool implements ToolInterface
         }
 
         // Verify user has access
-        if (!ServerGateway::canUserAccessServer($user['uuid'], $server['uuid'])) {
+        if (!ToolServerAccess::allowed($user, $server, SubuserPermissions::SCHEDULE_UPDATE)) {
             return [
                 'success' => false,
                 'error' => 'Access denied to server',
@@ -168,6 +169,14 @@ class CreateTaskTool implements ToolInterface
             return [
                 'success' => false,
                 'error' => "Task action '{$action}' requires a payload",
+                'action_type' => 'create_task',
+            ];
+        }
+
+        if (ScheduleTaskPermissions::missing((int) $user['id'], (int) $server['id'], $action, $payload) !== null) {
+            return [
+                'success' => false,
+                'error' => 'You do not have permission to create this kind of task',
                 'action_type' => 'create_task',
             ];
         }

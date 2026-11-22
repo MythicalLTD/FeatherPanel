@@ -47,6 +47,7 @@ use App\Plugins\Events\Events\UserEvent;
 use App\Plugins\Events\Events\TicketEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use App\Services\Servers\UserServerAccessRevoker;
 
 #[OA\Schema(
     schema: 'SessionUpdateRequest',
@@ -343,6 +344,11 @@ class SessionController
         $userQuery = User::updateUser($user['uuid'], $data);
         if (!$userQuery) {
             return ApiResponse::error('Failed to update user', 'FAILED_TO_UPDATE_USER', 500);
+        }
+
+        // A new password also ends the user's open console and SFTP sessions.
+        if (isset($data['remember_token'])) {
+            UserServerAccessRevoker::revokeEverywhere($user);
         }
 
         // Emit event

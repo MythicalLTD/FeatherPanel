@@ -58,6 +58,11 @@ class SftpAuthController
             if (!$space) {
                 return ApiResponse::sendManualResponse(['error' => 'WebSpace not found'], 404);
             }
+            // Only answer for WebSpaces that run on the web node asking.
+            $webNode = $request->attributes->get('quilld_node');
+            if (!is_array($webNode) || (int) ($space['web_node_id'] ?? 0) !== (int) ($webNode['id'] ?? -1)) {
+                return ApiResponse::sendManualResponse(['error' => 'WebSpace not found'], 404);
+            }
 
             $type = (string) $data['type'];
             $password = (string) $data['password'];
@@ -185,7 +190,8 @@ class SftpAuthController
     private function authenticateUser(string $username, string $password, string $type): ?array
     {
         $user = User::getUserByUsername($username);
-        if (!$user || (($user['banned'] ?? 'false') === 'true')) {
+        // Banned and deleted accounts cannot sign in
+        if (!$user || (($user['banned'] ?? 'false') === 'true') || (($user['deleted'] ?? 'false') === 'true')) {
             return null;
         }
 

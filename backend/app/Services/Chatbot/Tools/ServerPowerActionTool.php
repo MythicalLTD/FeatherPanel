@@ -22,8 +22,8 @@ use App\Chat\Node;
 use App\Chat\Server;
 use App\Chat\ServerActivity;
 use App\Services\Wings\Wings;
-use App\Helpers\ServerGateway;
 use App\Helpers\WingsUrlHelper;
+use App\Helpers\ScheduleTaskPermissions;
 use App\Plugins\Events\Events\ServerEvent;
 use App\Services\Server\LifecycleHookPowerGate;
 use App\Helpers\ServerSubdomainRequirementHelper;
@@ -109,7 +109,7 @@ class ServerPowerActionTool implements ToolInterface
         }
 
         // Verify user has access
-        if (!ServerGateway::canUserAccessServer($user['uuid'], $server['uuid'])) {
+        if (!ToolServerAccess::allowed($user, $server, ...ScheduleTaskPermissions::required($action))) {
             return [
                 'success' => false,
                 'error' => 'Access denied to server',

@@ -21,9 +21,9 @@ use App\App;
 use App\Chat\Node;
 use App\Chat\Server;
 use App\Chat\Allocation;
+use App\SubuserPermissions;
 use App\Chat\ServerActivity;
 use App\Services\Wings\Wings;
-use App\Helpers\ServerGateway;
 use App\Helpers\WingsUrlHelper;
 use App\Plugins\Events\Events\ServerAllocationEvent;
 
@@ -85,7 +85,7 @@ class DeleteAllocationTool implements ToolInterface
         }
 
         // Verify user has access
-        if (!ServerGateway::canUserAccessServer($user['uuid'], $server['uuid'])) {
+        if (!ToolServerAccess::allowed($user, $server, SubuserPermissions::ALLOCATION_DELETE)) {
             return [
                 'success' => false,
                 'error' => 'Access denied to server',

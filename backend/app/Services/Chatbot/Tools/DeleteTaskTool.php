@@ -21,9 +21,9 @@ use App\App;
 use App\Chat\Node;
 use App\Chat\Task;
 use App\Chat\Server;
+use App\SubuserPermissions;
 use App\Chat\ServerActivity;
 use App\Chat\ServerSchedule;
-use App\Helpers\ServerGateway;
 use App\Plugins\Events\Events\ServerEvent;
 
 /**
@@ -84,7 +84,7 @@ class DeleteTaskTool implements ToolInterface
         }
 
         // Verify user has access
-        if (!ServerGateway::canUserAccessServer($user['uuid'], $server['uuid'])) {
+        if (!ToolServerAccess::allowed($user, $server, SubuserPermissions::SCHEDULE_UPDATE)) {
             return [
                 'success' => false,
                 'error' => 'Access denied to server',

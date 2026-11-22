@@ -19,8 +19,8 @@ namespace App\Services\Chatbot\Tools;
 
 use App\Chat\Node;
 use App\Chat\Server;
+use App\SubuserPermissions;
 use App\Services\Wings\Wings;
-use App\Helpers\ServerGateway;
 use App\Helpers\WingsUrlHelper;
 
 /**
@@ -73,7 +73,7 @@ class GetFilesTool implements ToolInterface
         }
 
         // Verify user has access
-        if (!ServerGateway::canUserAccessServer($user['uuid'], $server['uuid'])) {
+        if (!ToolServerAccess::allowed($user, $server, SubuserPermissions::FILE_READ)) {
             return [
                 'success' => false,
                 'error' => 'Access denied to server',

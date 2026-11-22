@@ -19,8 +19,8 @@ namespace App\Services\Chatbot\Tools;
 
 use App\App;
 use App\Chat\Server;
+use App\SubuserPermissions;
 use App\Chat\ServerSchedule;
-use App\Helpers\ServerGateway;
 
 /**
  * Tool to get server schedules.
@@ -79,7 +79,7 @@ class GetServerSchedulesTool implements ToolInterface
         }
 
         // Verify user has access
-        if (!ServerGateway::canUserAccessServer($user['uuid'], $server['uuid'])) {
+        if (!ToolServerAccess::allowed($user, $server, SubuserPermissions::SCHEDULE_READ)) {
             return [
                 'error' => 'Access denied to server',
                 'schedules' => [],

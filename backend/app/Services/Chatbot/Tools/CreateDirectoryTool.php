@@ -20,9 +20,9 @@ namespace App\Services\Chatbot\Tools;
 use App\App;
 use App\Chat\Node;
 use App\Chat\Server;
+use App\SubuserPermissions;
 use App\Chat\ServerActivity;
 use App\Services\Wings\Wings;
-use App\Helpers\ServerGateway;
 use App\Helpers\WingsUrlHelper;
 use App\Plugins\Events\Events\ServerFilesEvent;
 
@@ -84,7 +84,7 @@ class CreateDirectoryTool implements ToolInterface
         }
 
         // Verify user has access
-        if (!ServerGateway::canUserAccessServer($user['uuid'], $server['uuid'])) {
+        if (!ToolServerAccess::allowed($user, $server, SubuserPermissions::FILE_CREATE)) {
             return [
                 'success' => false,
                 'error' => 'Access denied to server',

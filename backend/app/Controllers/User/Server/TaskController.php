@@ -25,6 +25,7 @@ use App\Chat\ServerActivity;
 use App\Chat\ServerSchedule;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
+use App\Helpers\ScheduleTaskPermissions;
 use App\Plugins\Events\Events\ServerEvent;
 use Symfony\Component\HttpFoundation\Request;
 use App\Plugins\Events\Events\ServerTaskEvent;
@@ -393,6 +394,14 @@ class TaskController
             $payload = is_string($rawPayload) ? $payload : '';
         }
 
+        // The task runs later on its own, so it needs the same permissions as the direct action.
+        foreach (ScheduleTaskPermissions::required($action, $payload) as $requiredPermission) {
+            $actionPermissionCheck = $this->checkPermission($request, $server, $requiredPermission);
+            if ($actionPermissionCheck !== null) {
+                return $actionPermissionCheck;
+            }
+        }
+
         if (in_array($action, ['backup', 'database_backup'], true)) {
             try {
                 if ($action === 'database_backup' && $payload === '') {
@@ -591,6 +600,13 @@ class TaskController
         }
 
         $finalAction = $body['action'] ?? $task['action'];
+        $finalPayload = (string) (array_key_exists('payload', $body) ? $body['payload'] : ($task['payload'] ?? ''));
+        foreach (ScheduleTaskPermissions::required((string) $finalAction, $finalPayload) as $requiredPermission) {
+            $actionPermissionCheck = $this->checkPermission($request, $server, $requiredPermission);
+            if ($actionPermissionCheck !== null) {
+                return $actionPermissionCheck;
+            }
+        }
         if (in_array($finalAction, ['power', 'command'], true)) {
             $effectivePayload = array_key_exists('payload', $body) ? $body['payload'] : ($task['payload'] ?? '');
             if (trim((string) $effectivePayload) === '') {
@@ -627,6 +643,13 @@ class TaskController
             }
         }
 
+        $updatedFields = array_keys($body);
+
+        // Write the action and payload that were checked above together, so a concurrent partial edit
+        // cannot combine into a pair that was never checked.
+        $body['action'] = (string) $finalAction;
+        $body['payload'] = $finalPayload;
+
         // Update task
         if (!Task::updateTask($taskId, $body)) {
             return ApiResponse::error('Failed to update task', 'UPDATE_FAILED', 500);
@@ -643,7 +666,7 @@ class TaskController
             'schedule_name' => $schedule['name'],
             'task_id' => $taskId,
             'action' => $task['action'],
-            'updated_fields' => array_keys($body),
+            'updated_fields' => $updatedFields,
         ], $user);
         // Emit event
         global $eventManager;
