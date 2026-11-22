@@ -1144,7 +1144,7 @@ class ServerService
      *
      * @param list<string> $serverUuids at least one server; an empty list would mean every server on the node
      */
-    public function deAuthUserFromServers(string $user, array $serverUuids): WingsResponse
+    public function deAuthUserFromServers(string $user, array $serverUuids, int $maxRetries = 3): WingsResponse
     {
         $serverUuids = array_values(array_filter(array_map('strval', $serverUuids), static fn (string $u): bool => $u !== ''));
         if ($serverUuids === []) {
@@ -1156,7 +1156,7 @@ class ServerService
                 'user' => $user,
                 'servers' => $serverUuids,
             ];
-            $response = $this->connection->post('/api/deauthorize-user', $data);
+            $response = $this->connection->post('/api/deauthorize-user', $data, [], $maxRetries);
 
             return new WingsResponse($response, 204);
         } catch (WingsRequestException $e) {

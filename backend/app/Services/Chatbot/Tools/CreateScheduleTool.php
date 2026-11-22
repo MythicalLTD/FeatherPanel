@@ -289,7 +289,9 @@ class CreateScheduleTool implements ToolInterface
         } else {
             // If no tasks provided, try to infer from schedule name or create a default command task
             // This handles cases where user says "create a schedule to run command X"
-            if (isset($params['command']) && trim($params['command']) !== '') {
+            if (isset($params['command']) && trim($params['command']) !== '' && ScheduleTaskPermissions::missing((int) $user['id'], (int) $server['id'], 'command', trim($params['command'])) !== null) {
+                $tasksError = "You do not have permission to create 'command' tasks";
+            } elseif (isset($params['command']) && trim($params['command']) !== '') {
                 // User wants to run a command
                 $nextSequenceId = Task::getNextSequenceId($scheduleId);
                 $taskCreateData = [

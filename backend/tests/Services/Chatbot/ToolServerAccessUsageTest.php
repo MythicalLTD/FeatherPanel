@@ -45,7 +45,8 @@ final class ToolServerAccessUsageTest extends TestCase
         foreach (glob($dir . '/*Tool.php') ?: [] as $file) {
             $source = (string) file_get_contents($file);
             $name = basename($file);
-            if (!str_contains($source, 'canUserAccessServer') && !str_contains($source, 'ToolServerAccess::allowed')) {
+            // A server tool is one that looks up a server; every one of them must check access.
+            if (!str_contains($source, 'getServerByUuid')) {
                 continue;
             }
             ++$checked;

@@ -643,6 +643,13 @@ class TaskController
             }
         }
 
+        $updatedFields = array_keys($body);
+
+        // Write the action and payload that were checked above together, so a concurrent partial edit
+        // cannot combine into a pair that was never checked.
+        $body['action'] = (string) $finalAction;
+        $body['payload'] = $finalPayload;
+
         // Update task
         if (!Task::updateTask($taskId, $body)) {
             return ApiResponse::error('Failed to update task', 'UPDATE_FAILED', 500);
@@ -659,7 +666,7 @@ class TaskController
             'schedule_name' => $schedule['name'],
             'task_id' => $taskId,
             'action' => $task['action'],
-            'updated_fields' => array_keys($body),
+            'updated_fields' => $updatedFields,
         ], $user);
         // Emit event
         global $eventManager;

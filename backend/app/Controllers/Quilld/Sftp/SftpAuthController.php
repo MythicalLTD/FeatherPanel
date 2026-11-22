@@ -190,7 +190,8 @@ class SftpAuthController
     private function authenticateUser(string $username, string $password, string $type): ?array
     {
         $user = User::getUserByUsername($username);
-        if (!$user || (($user['banned'] ?? 'false') === 'true')) {
+        // Banned and deleted accounts cannot sign in
+        if (!$user || (($user['banned'] ?? 'false') === 'true') || (($user['deleted'] ?? 'false') === 'true')) {
             return null;
         }
 

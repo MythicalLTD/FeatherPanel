@@ -69,7 +69,7 @@ final class UserServerAccessRevoker
                     (self::$sender)($node, $userUuid, $serverUuids);
                     continue;
                 }
-                $response = Wings::fromNode($node, 10)->getServer()->deAuthUserFromServers($userUuid, $serverUuids);
+                $response = Wings::fromNode($node, 10)->getServer()->deAuthUserFromServers($userUuid, $serverUuids, 0);
                 if (!$response->isSuccessful()) {
                     App::getInstance(true)->getLogger()->warning(
                         'Ending sessions for user ' . $userUuid . ' on node ' . $nodeId . ' failed: ' . ($response->getError() ?? 'unknown')
