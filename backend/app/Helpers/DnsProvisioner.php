@@ -227,6 +227,69 @@ class DnsProvisioner
     }
 
     /**
+     * Point a domain at the web node (A and, when the node has one, AAAA) through a customer's DNS API.
+     *
+     * Only the record sets of the domain's own name are touched (one A and one AAAA), nothing else in the zone.
+     * An existing different address is kept and reported as a conflict unless $overwrite is set.
+     *
+     * @param array<string, mixed> $webNode
+     * @param array{provider: DnsProviderInterface, zone_id: string, source?: string} $context
+     * @param bool $overwrite replace a different existing A/AAAA value
+     * @param bool $dryRun only report what would change
+     *
+     * @return array{ok: bool, results: list<array{type: string, name: string, ok: bool, action?: string, error?: string, content?: string, existing?: list<string>}>, expected_ips: list<string>, error?: string}
+     */
+    public static function provisionWebRecords(array $webNode, string $domain, array $context, bool $overwrite = false, bool $dryRun = false): array
+    {
+        $domain = strtolower(trim($domain, ". \t"));
+        if ($domain === '') {
+            return ['ok' => false, 'results' => [], 'expected_ips' => [], 'error' => 'domain is required'];
+        }
+
+        $ips = self::resolveNodeIps($webNode);
+        $v4 = null;
+        $v6 = null;
+        foreach ($ips as $ip) {
+            if ($v4 === null && filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
+                $v4 = $ip;
+            }
+            if ($v6 === null && filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
+                $v6 = $ip;
+            }
+        }
+        if ($v4 === null && $v6 === null) {
+            return ['ok' => false, 'results' => [], 'expected_ips' => [], 'error' => 'Web node has no resolvable IP/FQDN'];
+        }
+
+        $provider = $context['provider'];
+        $zoneId = (string) $context['zone_id'];
+        if (!method_exists($provider, 'upsertAddress')) {
+            return ['ok' => false, 'results' => [], 'expected_ips' => $ips, 'error' => 'This DNS provider cannot write address records'];
+        }
+        if (method_exists($provider, 'setDryRun')) {
+            $provider->setDryRun($dryRun);
+        }
+
+        $results = [];
+        $allOk = true;
+        foreach ([['A', $v4], ['AAAA', $v6]] as [$type, $ip]) {
+            if ($ip === null) {
+                continue;
+            }
+            $upsert = $provider->upsertAddress($zoneId, $domain, $ip, 300, $overwrite);
+            $ok = !empty($upsert['ok']);
+            $allOk = $allOk && $ok;
+            $row = ['type' => $type, 'name' => $domain, 'content' => $ip, 'ok' => $ok, 'action' => $upsert['action'] ?? null, 'error' => $upsert['error'] ?? null];
+            if (isset($upsert['existing']) && is_array($upsert['existing'])) {
+                $row['existing'] = array_values(array_map('strval', $upsert['existing']));
+            }
+            $results[] = $row;
+        }
+
+        return ['ok' => $allOk && $results !== [], 'results' => $results, 'expected_ips' => $ips];
+    }
+
+    /**
      * Write MX/SPF/DKIM records for node-mode mail when a DNS zone is linked.
      *
      * @param array<string, mixed> $webSpace

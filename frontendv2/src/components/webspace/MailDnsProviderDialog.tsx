@@ -38,11 +38,14 @@ interface RecordResult {
     ok: boolean;
     action?: string | null;
     error?: string | null;
+    content?: string | null;
+    existing?: string[];
 }
 
 interface ProvisionResult {
     ok: boolean;
     results: RecordResult[];
+    web?: { ok: boolean; results: RecordResult[]; error?: string };
     zone?: string;
     mode?: 'preview' | 'apply';
     dkim_ready?: boolean;
@@ -77,6 +80,8 @@ export function MailDnsProviderDialog({ uuidShort, domains, open, onOpenChange, 
     const [token, setToken] = useState('');
     const [domain, setDomain] = useState('');
     const [overwrite, setOverwrite] = useState(false);
+    const [withMail, setWithMail] = useState(true);
+    const [withWeb, setWithWeb] = useState(false);
     const [busy, setBusy] = useState(false);
     const [result, setResult] = useState<ProvisionResult | null>(null);
     // Bumped on every input change and on close, so a response that arrives late never shows up for other inputs.
@@ -94,6 +99,8 @@ export function MailDnsProviderDialog({ uuidShort, domains, open, onOpenChange, 
             setToken('');
             setResult(null);
             setOverwrite(false);
+            setWithMail(true);
+            setWithWeb(false);
             setBusy(false);
 
             return;
@@ -113,7 +120,8 @@ export function MailDnsProviderDialog({ uuidShort, domains, open, onOpenChange, 
     }, [open, domain, domains]);
 
     const selected = providers.find((p) => p.id === provider);
-    const hasConflict = !!result?.results?.some((r) => r.action === 'conflict');
+    const rows: RecordResult[] = [...(result?.results ?? []), ...(result?.web?.results ?? [])];
+    const hasConflict = rows.some((r) => r.action === 'conflict');
 
     const run = async (mode: 'preview' | 'apply') => {
         const current = generation.current;
@@ -125,12 +133,14 @@ export function MailDnsProviderDialog({ uuidShort, domains, open, onOpenChange, 
                 domain,
                 mode,
                 overwrite,
+                mail_records: withMail,
+                web_records: withWeb,
             });
             if (current !== generation.current) return;
             const res = data?.data as ProvisionResult;
             setResult(res);
             if (mode === 'apply') {
-                if (res.ok && res.dkim_ready === false) {
+                if (res.ok && withMail && res.dkim_ready === false) {
                     toast.success(t('webSpaces.email.dnsApi.applied'));
                     toast.info(t('webSpaces.email.dkimPending'));
                     setToken('');
@@ -152,7 +162,7 @@ export function MailDnsProviderDialog({ uuidShort, domains, open, onOpenChange, 
         }
     };
 
-    const canRun = !busy && provider !== '' && token.trim() !== '' && domain !== '';
+    const canRun = !busy && provider !== '' && token.trim() !== '' && domain !== '' && (withMail || withWeb);
     const previewed = result?.mode === 'preview';
 
     return (
@@ -208,6 +218,30 @@ export function MailDnsProviderDialog({ uuidShort, domains, open, onOpenChange, 
                     }}
                 />
                 <p className='text-muted-foreground text-xs'>{t('webSpaces.email.dnsApi.tokenNotStored')}</p>
+                <div className='space-y-2'>
+                    <label className='flex items-start gap-2 text-xs'>
+                        <Checkbox
+                            checked={withMail}
+                            disabled={busy}
+                            onCheckedChange={(checked) => {
+                                setWithMail(checked === true);
+                                resetResult();
+                            }}
+                        />
+                        <span>{t('webSpaces.email.dnsApi.groups.mail')}</span>
+                    </label>
+                    <label className='flex items-start gap-2 text-xs'>
+                        <Checkbox
+                            checked={withWeb}
+                            disabled={busy}
+                            onCheckedChange={(checked) => {
+                                setWithWeb(checked === true);
+                                resetResult();
+                            }}
+                        />
+                        <span>{t('webSpaces.email.dnsApi.groups.web')}</span>
+                    </label>
+                </div>
 
                 {result && (
                     <div className='fp-surface rounded-lg border p-3'>
@@ -215,14 +249,18 @@ export function MailDnsProviderDialog({ uuidShort, domains, open, onOpenChange, 
                             {t('webSpaces.email.dnsApi.zone')}: <span className='font-mono'>{result.zone}</span>
                         </p>
                         <ul className='space-y-1 font-mono text-xs'>
-                            {result.results.map((r, i) => (
+                            {rows.map((r, i) => (
                                 <li key={`${r.type}-${r.name}-${i}`} className='flex flex-wrap items-center gap-2'>
                                     <span className='w-10'>{r.type}</span>
                                     <span className='min-w-[90px]'>{r.name}</span>
                                     <span className={actionTone[r.action || (r.ok ? 'unchanged' : 'error')]}>
                                         {t(`webSpaces.email.dnsApi.action.${r.action || 'error'}`)}
                                     </span>
+                                    {r.content && <span className='text-muted-foreground'>{r.content}</span>}
                                     {r.error && <span className='text-muted-foreground'>{r.error}</span>}
+                                    {r.existing && r.existing.length > 0 && (
+                                        <span className='text-muted-foreground'>({r.existing.join(', ')})</span>
+                                    )}
                                 </li>
                             ))}
                         </ul>
