@@ -21,14 +21,39 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { cn, formatCpu, formatFileSize, formatMib } from '@/lib/utils';
 import { AnimatedNumber } from '@/components/ui/animated-number';
 import { getUsagePercentage } from '@/lib/server-utils';
+import { NETWORK_RX_COLOR, NETWORK_TX_COLOR } from '@/lib/network-chart-colors';
 
-type Point = { timestamp: number; value: number };
+type Point = {
+    timestamp: number;
+    value: number;
+    /** Optional per-direction values; when every point has them the sparkline draws one line each. */
+    rx?: number;
+    tx?: number;
+};
+
+const SPARK_WIDTH = 100;
+const SPARK_HEIGHT = 28;
+
+function sparkPath(values: number[], peak: number): string {
+    const step = SPARK_WIDTH / (values.length - 1);
+    const points = values.map((v, i) => {
+        const x = i * step;
+        const y = SPARK_HEIGHT - 1 - (Math.min(v, peak) / peak) * (SPARK_HEIGHT - 3);
+        return `${x.toFixed(2)},${y.toFixed(2)}`;
+    });
+    return `M${points.join(' L')}`;
+}
+
+/** True when the series carries download/upload values on every point. */
+function hasDirectionalData(data: Point[]): boolean {
+    return data.length > 0 && data.every((p) => p.rx !== undefined && p.tx !== undefined);
+}
 
 /** Tiny area sparkline drawn with plain SVG so the cards stay cheap to re-render every stats tick. */
 function Sparkline({ data, max, className }: { data: Point[]; max?: number; className?: string }) {
     const gradientId = useId();
-    const width = 100;
-    const height = 28;
+    const width = SPARK_WIDTH;
+    const height = SPARK_HEIGHT;
     if (data.length < 2) {
         return (
             <svg viewBox={`0 0 ${width} ${height}`} preserveAspectRatio='none' className={className} aria-hidden>
@@ -36,14 +61,38 @@ function Sparkline({ data, max, className }: { data: Point[]; max?: number; clas
             </svg>
         );
     }
-    const peak = Math.max(max && max > 0 ? max : 0, ...data.map((p) => p.value), 1e-9);
-    const step = width / (data.length - 1);
-    const points = data.map((p, i) => {
-        const x = i * step;
-        const y = height - 1 - (Math.min(p.value, peak) / peak) * (height - 3);
-        return `${x.toFixed(2)},${y.toFixed(2)}`;
-    });
-    const line = `M${points.join(' L')}`;
+    const floor = max && max > 0 ? max : 0;
+
+    if (hasDirectionalData(data)) {
+        const rxValues = data.map((p) => p.rx ?? 0);
+        const txValues = data.map((p) => p.tx ?? 0);
+        const peak = Math.max(floor, ...rxValues, ...txValues, 1e-9);
+        return (
+            <svg viewBox={`0 0 ${width} ${height}`} preserveAspectRatio='none' className={className} aria-hidden>
+                {[
+                    { key: 'rx', values: rxValues, color: NETWORK_RX_COLOR },
+                    { key: 'tx', values: txValues, color: NETWORK_TX_COLOR },
+                ].map((series) => (
+                    <path
+                        key={series.key}
+                        data-series={series.key}
+                        d={sparkPath(series.values, peak)}
+                        fill='none'
+                        stroke={series.color}
+                        strokeWidth='1.5'
+                        vectorEffect='non-scaling-stroke'
+                        strokeLinejoin='round'
+                    />
+                ))}
+            </svg>
+        );
+    }
+
+    const peak = Math.max(floor, ...data.map((p) => p.value), 1e-9);
+    const line = sparkPath(
+        data.map((p) => p.value),
+        peak,
+    );
     const area = `${line} L${width},${height} L0,${height} Z`;
     return (
         <svg viewBox={`0 0 ${width} ${height}`} preserveAspectRatio='none' className={className} aria-hidden>
@@ -227,6 +276,8 @@ export default React.memo(function ServerConsoleStats({
     const diskShown = diskReady ?? statsReady;
     const diskSettledUnavailable = Boolean(diskUnavailableHint) && statsReady && !diskShown;
     const diskLimitLabel = diskLimit > 0 ? formatMib(diskLimit) : unlimited;
+    // When the series carries download/upload, the arrows double as the legend for the two lines.
+    const networkSplit = hasDirectionalData(networkData);
 
     return (
         <div className={cn('grid grid-cols-2 gap-3 xl:grid-cols-1 xl:gap-4', className)}>
@@ -282,14 +333,20 @@ export default React.memo(function ServerConsoleStats({
                             className='inline-flex items-center gap-0.5'
                             title={t('servers.console.info_cards.network_rx')}
                         >
-                            <ArrowDown className='h-3 w-3' />
+                            <ArrowDown
+                                className='h-3 w-3'
+                                style={networkSplit ? { color: NETWORK_RX_COLOR } : undefined}
+                            />
                             {formatFileSize(networkRx)}/s
                         </span>
                         <span
                             className='inline-flex items-center gap-0.5'
                             title={t('servers.console.info_cards.network_tx')}
                         >
-                            <ArrowUp className='h-3 w-3' />
+                            <ArrowUp
+                                className='h-3 w-3'
+                                style={networkSplit ? { color: NETWORK_TX_COLOR } : undefined}
+                            />
                             {formatFileSize(networkTx)}/s
                         </span>
                         <span className='hidden sm:inline'>

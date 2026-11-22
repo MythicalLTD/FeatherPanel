@@ -232,6 +232,9 @@ export function useServersWebSocket() {
 
                 // Get new JWT token
                 const tokenData = await serversApi.getWebSocketToken(serverUuid);
+                // disconnectServer() (or unmount) clears isRefreshingToken while the request is in
+                // flight; do not reopen a socket for a server that is no longer wanted.
+                if (!state.isRefreshingToken) return;
                 state.jwtToken = tokenData.token;
                 state.jwtExpiresAt = tokenData.expires_at;
 
@@ -244,6 +247,8 @@ export function useServersWebSocket() {
                 }
                 state.isRefreshingToken = false;
             } catch (error) {
+                // Stale failure after disconnectServer()/unmount: must not revive the connection.
+                if (!state.isRefreshingToken) return;
                 console.error(`Token refresh error for server ${serverUuid}:`, error);
                 state.connectionStatus = 'disconnected';
                 state.wingsStatus = 'error';
@@ -439,6 +444,9 @@ export function useServersWebSocket() {
 
                 // Get JWT token
                 const tokenData = await serversApi.getWebSocketToken(serverUuid);
+                // disconnectServer() (or unmount) clears isRefreshingToken while the request is in
+                // flight; do not reopen a socket for a server that is no longer wanted.
+                if (!state.isRefreshingToken) return;
                 state.jwtToken = tokenData.token;
                 state.jwtExpiresAt = tokenData.expires_at;
 
