@@ -1,6 +1,6 @@
 # FrankenPHP = Caddy + PHP in one (replaces nginx + php-fpm)
-# Always the newest FrankenPHP + PHP release; release builds pull it fresh (pull: true)
-FROM dunglas/frankenphp:latest
+# Pinned to PHP 8.5 so builds stay reproducible; release builds pull it fresh (pull: true)
+FROM dunglas/frankenphp:php8.5
 
 # Set working directory (app lives here; Caddyfile serves from public/)
 WORKDIR /var/www/html
