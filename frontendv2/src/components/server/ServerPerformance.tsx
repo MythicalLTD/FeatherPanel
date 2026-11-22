@@ -20,6 +20,7 @@ import { LineChart, Line, ResponsiveContainer, YAxis, Tooltip, type TooltipConte
 import { Cpu, Database, HardDrive, Globe, Activity, type LucideIcon } from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { cn } from '@/lib/utils';
+import { NETWORK_RX_COLOR, NETWORK_TX_COLOR } from '@/lib/network-chart-colors';
 
 interface PerformanceDataPoint {
     timestamp: number;
@@ -28,9 +29,6 @@ interface PerformanceDataPoint {
     rx?: number;
     tx?: number;
 }
-
-const NETWORK_RX_COLOR = '#f59e0b';
-const NETWORK_TX_COLOR = '#38bdf8';
 
 interface ServerPerformanceProps {
     cpuData: PerformanceDataPoint[];

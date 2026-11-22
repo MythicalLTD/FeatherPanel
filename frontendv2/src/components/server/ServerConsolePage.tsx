@@ -407,15 +407,18 @@ export default function ServerConsolePage() {
                         setCurrentNetworkRx(smoothNetworkRef.current.rx);
                         setCurrentNetworkTx(smoothNetworkRef.current.tx);
 
-                        const totalRate = smoothNetworkRef.current.rx + smoothNetworkRef.current.tx;
+                        // Snapshot once so value, rx and tx of a point always match, even if another
+                        // stats tick updates the ref before React runs the updater.
+                        const { rx, tx } = smoothNetworkRef.current;
+                        const totalRate = rx + tx;
                         setNetworkData((prev) => {
                             const newData = [
                                 ...prev,
                                 {
                                     timestamp,
                                     value: totalRate,
-                                    rx: smoothNetworkRef.current.rx,
-                                    tx: smoothNetworkRef.current.tx,
+                                    rx,
+                                    tx,
                                 },
                             ];
                             return newData.slice(-maxDataPoints);

@@ -556,6 +556,8 @@ export default function VdsConsolePage() {
                         networkData={networkRxData.map((p, i) => ({
                             timestamp: p.timestamp,
                             value: p.value + (networkTxData[i]?.value ?? 0),
+                            rx: p.value,
+                            tx: networkTxData[i]?.value ?? 0,
                         }))}
                         diskIo={
                             diskIoRate
