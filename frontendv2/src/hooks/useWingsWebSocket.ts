@@ -117,6 +117,8 @@ interface WingsWebSocketReturn {
 const MAX_RECONNECT_ATTEMPTS = 12;
 const RECONNECT_BASE_DELAY_MS = 3000;
 const RECONNECT_MAX_DELAY_MS = 30000;
+// How often a silent socket is probed with a stats request before it is considered dead.
+const PROBE_INTERVAL_MS = 20000;
 
 export function useWingsWebSocket({
     serverUuid,
@@ -159,6 +161,14 @@ export function useWingsWebSocket({
     const consoleOutputQueueRef = useRef<string[]>([]);
     const consoleFlushRafRef = useRef<number | null>(null);
     const establishConnectionRef = useRef<(() => Promise<void>) | null>(null);
+    // Tracks whether the current socket has completed its handshake. Wings can emit an event
+    // (status push) before the JWT is registered on its side, which surfaces as
+    // "jwt error: jwt: no jwt present" right after connecting. That is not a fatal error.
+    const hasAuthSuccessRef = useRef(false);
+    // Liveness tracking: Wings only pushes stats while the container runs, so a silent socket
+    // has to be probed instead of being left to look "connected" forever with frozen charts.
+    const lastActivityRef = useRef(0);
+    const pendingProbeRef = useRef<number | null>(null);
 
     // Store callbacks in refs to avoid triggering useEffect on every render
     const onMessageRef = useRef(onMessage);
@@ -347,11 +357,21 @@ export function useWingsWebSocket({
             console.log('[Wings WS] Token refresh reconnect started');
         } catch (error) {
             console.error('[Wings WS] Failed to refresh token:', error);
-            setConnectionStatus('error');
+            // Do not leave the console dead after a single failed refresh: retry with the
+            // usual backoff instead of waiting for a manual page reload.
+            const establish = establishConnectionRef.current;
+            if (establish && !connectionBlockedRef.current) {
+                setConnectionStatus('connecting');
+                scheduleReconnect(() => {
+                    void establish();
+                });
+            } else {
+                setConnectionStatus('error');
+            }
         } finally {
             isRefreshingTokenRef.current = false;
         }
-    }, [closeSocketIntentionally]);
+    }, [closeSocketIntentionally, scheduleReconnect]);
 
     useEffect(() => {
         if (!serverUuid) return;
@@ -432,6 +452,9 @@ export function useWingsWebSocket({
                 // Connect to Wings WebSocket
                 const ws = new WebSocket(connection_string);
                 wsRef.current = ws;
+                hasAuthSuccessRef.current = false;
+                lastActivityRef.current = Date.now();
+                pendingProbeRef.current = null;
 
                 ws.onopen = () => {
                     if (isCleanedUp || ws !== wsRef.current) {
@@ -453,12 +476,15 @@ export function useWingsWebSocket({
                         return;
                     }
 
+                    lastActivityRef.current = Date.now();
+
                     try {
                         const data = JSON.parse(event.data) as WingsMessage;
 
                         // Handle auth success
                         if (data.event === 'auth success') {
                             console.log('[Wings WS] Authenticated successfully');
+                            hasAuthSuccessRef.current = true;
                             reconnectAttemptsRef.current = 0;
                             setIsConnected(true);
                             reportPanelInteraction('panel.console.connection', 'connected');
@@ -495,9 +521,16 @@ export function useWingsWebSocket({
                             return;
                         }
 
-                        // JWT errors are fatal - close and reconnect (do not leave a half-alive session)
+                        // JWT errors are fatal once the socket authenticated, but a "jwt error"
+                        // before "auth success" is just Wings racing the handshake (it pushes a
+                        // status event before storing the token). Closing here caused an endless
+                        // connect/close loop, so ignore that case and keep the socket open.
                         if (data.event === 'jwt error') {
                             const raw = (data.args?.[0] as string) || 'WebSocket authentication error.';
+                            if (!hasAuthSuccessRef.current) {
+                                console.warn('[Wings WS] JWT error during handshake ignored:', raw);
+                                return;
+                            }
                             console.error('[Wings WS] JWT error:', raw);
                             if (onConsoleOutputRef.current) {
                                 enqueueConsoleOutput(`\u001b[31m[JWT] ${raw}\u001b[0m`);
@@ -766,6 +799,36 @@ export function useWingsWebSocket({
 
         establishConnectionRef.current = establishConnection;
 
+        // Liveness probe. Wings only pushes stats while the container is running, so a socket
+        // to an offline/crashed/installing server is silent even when it is perfectly healthy -
+        // and browsers throttle background timers, which used to stop the page from asking for
+        // stats at all. Probe every PROBE_INTERVAL_MS; if a probe stays unanswered the socket is
+        // considered dead and is rebuilt with a fresh JWT instead of leaving stale charts.
+        const probeTimer = setInterval(() => {
+            if (isCleanedUp) return;
+            const socket = wsRef.current;
+            if (!socket || socket.readyState !== WebSocket.OPEN) return;
+
+            const now = Date.now();
+            if (pendingProbeRef.current !== null) {
+                if (lastActivityRef.current >= pendingProbeRef.current) {
+                    pendingProbeRef.current = null;
+                    return;
+                }
+                pendingProbeRef.current = null;
+                console.warn('[Wings WS] No answer to stats probe, reconnecting...');
+                void refreshToken();
+                return;
+            }
+
+            pendingProbeRef.current = now;
+            try {
+                socket.send(JSON.stringify({ event: 'send stats', args: [] }));
+            } catch {
+                pendingProbeRef.current = null;
+            }
+        }, PROBE_INTERVAL_MS);
+
         if (shouldConnect) {
             establishConnection();
         } else {
@@ -779,6 +842,8 @@ export function useWingsWebSocket({
             establishConnectionRef.current = null;
             clearConsoleOutputQueue();
             clearReconnectTimer();
+            clearInterval(probeTimer);
+            pendingProbeRef.current = null;
             intentionalCloseRef.current = true;
             if (wsRef.current) {
                 wsRef.current.close();

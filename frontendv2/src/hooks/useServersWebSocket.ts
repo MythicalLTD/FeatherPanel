@@ -154,17 +154,17 @@ export function useServersWebSocket() {
                 state.statsInterval = null;
             }
 
-            // Only request stats if server is running/starting
-            const liveData = serverLiveData[serverUuid];
-            if (liveData?.status === 'running' || liveData?.status === 'starting') {
-                state.statsInterval = setInterval(() => {
-                    if (isServerConnected(serverUuid)) {
-                        requestServerStats(serverUuid);
-                    }
-                }, STATS_REQUEST_INTERVAL);
-            }
+            // Stats are only pushed by Wings while the container is running. For every other
+            // state (offline, crashed, installing) the client has to ask for them, so keep
+            // polling for as long as the socket is connected instead of stopping whenever the
+            // server leaves the running state - otherwise the charts freeze until reload.
+            state.statsInterval = setInterval(() => {
+                if (isServerConnected(serverUuid)) {
+                    requestServerStats(serverUuid);
+                }
+            }, STATS_REQUEST_INTERVAL);
         },
-        [serverLiveData, isServerConnected, requestServerStats],
+        [isServerConnected, requestServerStats],
     );
 
     // Declare all functions first, then define them
@@ -248,6 +248,11 @@ export function useServersWebSocket() {
                 state.connectionStatus = 'disconnected';
                 state.wingsStatus = 'error';
                 state.isRefreshingToken = false;
+                // One failed refresh must not kill the stream until the page is reloaded:
+                // schedule a reconnect so the charts recover on their own.
+                if (scheduleReconnectRef.current) {
+                    scheduleReconnectRef.current(serverUuid);
+                }
             }
         },
         [setupTokenExpirationTimer],
