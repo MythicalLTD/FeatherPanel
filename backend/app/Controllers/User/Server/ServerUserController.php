@@ -1316,18 +1316,21 @@ class ServerUserController
             $updateData['description'] = $description;
         }
 
-        // Check if startup command has actually changed (only block if it changed AND changes are disabled)
-        // Skip this check if spell is changing - allow startup/image changes during spell change
-        if (isset($data['startup']) && !$isSpellChanging) {
-            $newStartup = (string) $data['startup'];
-            $currentStartup = (string) ($server['startup'] ?? '');
+        // A changed startup command is only accepted when custom startup commands are allowed; otherwise
+        // the only change allowed is back to the spell's own startup command (the new spell's on a spell change).
+        if (isset($data['startup'])) {
+            $newStartup = trim((string) $data['startup']);
+            $currentStartup = trim((string) ($server['startup'] ?? ''));
 
-            // Only check permission if startup actually changed
-            if (trim($newStartup) !== trim($currentStartup)) {
+            if ($newStartup !== $currentStartup || $isSpellChanging) {
                 $app = App::getInstance(true);
-                $allowStartupChange = $app->getConfig()->getSetting(ConfigInterface::SERVER_ALLOW_STARTUP_CHANGE, 'true');
-                if ($allowStartupChange !== 'true' && $allowStartupChange !== true && $allowStartupChange !== '1' && $allowStartupChange !== 1) {
-                    return ApiResponse::error('Startup changes are currently disabled by the administrator', 'STARTUP_CHANGE_DISABLED', 403);
+                $allowStartupChange = $app->getConfig()->getSetting(ConfigInterface::SERVER_ALLOW_STARTUP_CHANGE, 'false');
+                if (!self::isStartupChangeAllowed($allowStartupChange)) {
+                    $spellForStartup = Spell::getSpellById($isSpellChanging ? (int) $data['spell_id'] : (int) $server['spell_id']);
+                    $spellStartup = trim((string) ($spellForStartup['startup'] ?? ''));
+                    if ($spellStartup === '' || $newStartup !== $spellStartup) {
+                        return ApiResponse::error('Startup changes are currently disabled by the administrator', 'STARTUP_CHANGE_DISABLED', 403);
+                    }
                 }
             }
         }
@@ -2594,6 +2597,15 @@ class ServerUserController
     }
 
     /**
+     * Whether the server_allow_startup_change setting allows custom startup commands.
+     * Unset means not allowed: users can still go back to the spell's startup command.
+     */
+    public static function isStartupChangeAllowed(mixed $value): bool
+    {
+        return $value === 'true' || $value === true || $value === '1' || $value === 1;
+    }
+
+    /**
      * Parse optional status filter from query parameters.
      * Supports `status=running` or legacy `running_only=true`.
      */
@@ -2896,7 +2908,7 @@ class ServerUserController
                     $pdo = new \PDO($dsn, $databaseHost['database_username'], $databaseHost['database_password'], $options);
 
                     // Revoke privileges from the user
-                    $pdo->exec("REVOKE ALL PRIVILEGES ON {$safeDbName}.* FROM {$safeUser}@'%'");
+                    \App\Helpers\RemoteDatabaseProvisioner::revokeMySQLDatabaseGrants($pdo, $databaseName, $safeUser, "'%'");
 
                     // Drop the user
                     $pdo->exec("DROP USER IF EXISTS {$safeUser}@'%'");

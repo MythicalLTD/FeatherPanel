@@ -27,6 +27,7 @@ use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Chat\DatabaseInstance;
 use App\Helpers\ServerGateway;
+use App\Helpers\RemoteDatabaseProvisioner;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use App\Plugins\Events\Events\ServerDatabaseEvent;
@@ -438,7 +439,12 @@ class ServerDatabaseController
         }
 
         // Generate database name: s{server_id}_{database_name}
-        $databaseName = 's' . $server['id'] . '_' . $body['database_name'];
+        $namePart = trim((string) $body['database_name']);
+        $databaseName = 's' . $server['id'] . '_' . $namePart;
+        $nameError = RemoteDatabaseProvisioner::validateDatabaseName($namePart, $databaseName);
+        if ($nameError !== null) {
+            return ApiResponse::error($nameError, 'INVALID_DATABASE_NAME', 400);
+        }
 
         // Generate username: u{server_id}_{random_string}
         $username = 'u' . $server['id'] . '_' . $this->generateRandomString(10);
@@ -1693,14 +1699,18 @@ class ServerDatabaseController
                     $dsn = "mysql:host={$databaseHost['database_host']};port={$databaseHost['database_port']}";
                     $pdo = new \PDO($dsn, $databaseHost['database_username'], $databaseHost['database_password'], $options);
 
+                    // Grant target with "_" and "%" escaped, so the grant covers only this database.
+                    // Worked out first so a name that cannot be granted leaves nothing behind.
+                    $grantTarget = RemoteDatabaseProvisioner::mysqlGrantTarget($pdo, $databaseName);
+
                     // Create the database
                     $pdo->exec("CREATE DATABASE IF NOT EXISTS {$safeDbName} CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
 
                     // Create the user
-                    $pdo->exec("CREATE USER IF NOT EXISTS {$safeUser}@'%' IDENTIFIED BY '{$password}'");
+                    $pdo->exec("CREATE USER IF NOT EXISTS {$safeUser}@'%' IDENTIFIED BY " . $pdo->quote($password));
 
                     // Grant privileges to the user on the specific database
-                    $pdo->exec("GRANT ALL PRIVILEGES ON {$safeDbName}.* TO {$safeUser}@'%'");
+                    $pdo->exec("GRANT ALL PRIVILEGES ON {$grantTarget}.* TO {$safeUser}@'%'");
 
                     // Flush privileges
                     $pdo->exec('FLUSH PRIVILEGES');
@@ -1725,7 +1735,7 @@ class ServerDatabaseController
                 default:
                     throw new \Exception("Unsupported database type: {$databaseHost['database_type']}");
             }
-        } catch (\PDOException $e) {
+        } catch (\PDOException | \InvalidArgumentException $e) {
             throw new \Exception("Failed to create database on host {$databaseHost['name']}: " . $e->getMessage());
         }
     }
@@ -1757,8 +1767,8 @@ class ServerDatabaseController
                     $dsn = "mysql:host={$databaseHost['database_host']};port={$databaseHost['database_port']}";
                     $pdo = new \PDO($dsn, $databaseHost['database_username'], $databaseHost['database_password'], $options);
 
-                    // Revoke privileges from the user
-                    $pdo->exec("REVOKE ALL PRIVILEGES ON {$safeDbName}.* FROM {$safeUser}@'%'");
+                    // Revoke privileges from the user (current and older grant forms)
+                    RemoteDatabaseProvisioner::revokeMySQLDatabaseGrants($pdo, $databaseName, $safeUser, "'%'");
 
                     // Drop the user
                     $pdo->exec("DROP USER IF EXISTS {$safeUser}@'%'");

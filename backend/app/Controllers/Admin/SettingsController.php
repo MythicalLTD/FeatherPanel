@@ -3243,7 +3243,7 @@ class SettingsController
                     ->getConfig()
                     ->getSetting(
                         ConfigInterface::SERVER_ALLOW_STARTUP_CHANGE,
-                        'true',
+                        'false',
                     ),
                 'type' => 'select',
                 'required' => true,

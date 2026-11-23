@@ -166,7 +166,7 @@ class PublicConfig extends ConfigFactory
 
             // Servers related settings
             ConfigInterface::SERVER_ALLOW_EGG_CHANGE => 'false',
-            ConfigInterface::SERVER_ALLOW_STARTUP_CHANGE => 'true',
+            ConfigInterface::SERVER_ALLOW_STARTUP_CHANGE => 'false',
             ConfigInterface::SERVER_ALLOW_CUSTOM_DOCKER_IMAGE => 'false',
             ConfigInterface::SERVER_ALLOW_SUBUSERS => 'true',
             ConfigInterface::SERVER_ALLOW_SCHEDULES => 'true',

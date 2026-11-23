@@ -543,6 +543,14 @@ class ServerScheduleController
             }
         }
 
+        // Turning a schedule on lets its tasks run again, so the user needs each task's permission too.
+        if (!empty($body['is_active']) && $body['is_active'] !== 'false' && !$schedule['is_active']) {
+            $taskPermissionCheck = $this->checkTaskPermissions($request, $server, Task::getTasksByScheduleId($scheduleId));
+            if ($taskPermissionCheck !== null) {
+                return $taskPermissionCheck;
+            }
+        }
+
         // If a timezone was supplied, validate it up-front (and recompute next_run_at below).
         if (isset($body['timezone'])) {
             if (!is_string($body['timezone']) || !ServerSchedule::isValidTimezone($body['timezone'])) {
@@ -657,6 +665,14 @@ class ServerScheduleController
         // Verify schedule belongs to this server
         if ($schedule['server_id'] != $server['id']) {
             return ApiResponse::error('Schedule not found', 'SCHEDULE_NOT_FOUND', 404);
+        }
+
+        // Turning a schedule on lets its tasks run again, so the user needs each task's permission too.
+        if (!$schedule['is_active']) {
+            $taskPermissionCheck = $this->checkTaskPermissions($request, $server, Task::getTasksByScheduleId($scheduleId));
+            if ($taskPermissionCheck !== null) {
+                return $taskPermissionCheck;
+            }
         }
 
         // Toggle status
@@ -1016,6 +1032,12 @@ class ServerScheduleController
             return ApiResponse::error('Schedule has no tasks to run', 'SCHEDULE_NO_TASKS', 400);
         }
 
+        // Running the schedule runs every task in it, so the user needs each task's permission too.
+        $taskPermissionCheck = $this->checkTaskPermissions($request, $server, $tasks);
+        if ($taskPermissionCheck !== null) {
+            return $taskPermissionCheck;
+        }
+
         $pastTime = date('Y-m-d H:i:s', time() - 60);
         if (!ServerSchedule::updateSchedule($scheduleId, ['next_run_at' => $pastTime])) {
             return ApiResponse::error('Failed to queue schedule', 'RUN_NOW_FAILED', 500);
@@ -1366,5 +1388,21 @@ class ServerScheduleController
             'event' => $event,
             'metadata' => json_encode($metadata),
         ]);
+    }
+
+    /**
+     * 403 when the user lacks the permission of any task (owners and admins pass), otherwise null.
+     *
+     * @param array<int, array<string, mixed>> $tasks
+     */
+    private function checkTaskPermissions(Request $request, array $server, array $tasks): ?Response
+    {
+        $user = $request->attributes->get('user');
+        $missing = ScheduleTaskPermissions::missingForTasks((int) ($user['id'] ?? 0), (int) ($server['id'] ?? 0), $tasks);
+        if ($missing === null) {
+            return null;
+        }
+
+        return ApiResponse::error('You do not have permission to perform this action', 'PERMISSION_DENIED', 403);
     }
 }

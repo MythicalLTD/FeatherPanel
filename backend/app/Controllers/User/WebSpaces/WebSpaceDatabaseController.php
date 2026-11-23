@@ -125,6 +125,10 @@ class WebSpaceDatabaseController
         }
 
         $databaseName = 'w' . $spaceId . '_' . $namePart;
+        $nameError = RemoteDatabaseProvisioner::validateDatabaseName($namePart, $databaseName);
+        if ($nameError !== null) {
+            return ApiResponse::error($nameError, 'VALIDATION_FAILED', 400);
+        }
         $username = 'u' . $spaceId . '_' . RemoteDatabaseProvisioner::generateRandomString(10);
         $password = RemoteDatabaseProvisioner::generateRandomString(16);
         $remote = (string) ($body['remote'] ?? '%');
