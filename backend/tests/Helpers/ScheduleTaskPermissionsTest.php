@@ -110,11 +110,24 @@ final class ScheduleTaskPermissionsTest extends TestCase
     {
         $src = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Controllers/User/Server/ServerScheduleController.php');
         $this->assertMatchesRegularExpression('/function runNow\(.*?getTasksByScheduleId\(\$scheduleId\).*?checkTaskPermissions\(\$request, \$server, \$tasks\).*?updateSchedule\(\$scheduleId/s', $src);
-        $this->assertMatchesRegularExpression('/function toggleScheduleStatus\(.*?\$enable = !\$schedule\[\'is_active\'\];.*?checkTaskPermissions\(.*?updateSchedule\(\$scheduleId, \[\'is_active\' => \$enable/s', $src);
+        $this->assertMatchesRegularExpression('/function toggleScheduleStatus\(.*?\$enable = !\$schedule\[\'is_active\'\];.*?if \(\$enable\) \{\s*\$taskPermissionCheck = \$this->checkTaskPermissions\([^;]*\);\s*if \(\$taskPermissionCheck !== null\) \{\s*return \$taskPermissionCheck;\s*\}\s*\}.*?updateSchedule\(\$scheduleId, \[\'is_active\' => \$enable/s', $src);
         $toggle = strstr(substr((string) strstr($src, 'function toggleScheduleStatus('), 1), 'public function', true);
         $this->assertIsString($toggle);
         $this->assertStringNotContainsString('toggleActiveStatus(', $toggle);
         $this->assertMatchesRegularExpression('/function updateSchedule\(.*?is_active.*?checkTaskPermissions\(/s', $src);
         $this->assertStringContainsString('ScheduleTaskPermissions::missingForTasks(', $src);
+    }
+
+    public function testScheduleFlagIsReadTheSameWayForTheCheckAndTheWrite(): void
+    {
+        foreach ([true, 1, '1', 'true', '1.5', 1.0] as $on) {
+            $this->assertSame(1, \App\Chat\ServerSchedule::normalizeBooleanFlag($on), var_export($on, true));
+        }
+        foreach ([false, 0, '0', 'false'] as $off) {
+            $this->assertSame(0, \App\Chat\ServerSchedule::normalizeBooleanFlag($off), var_export($off, true));
+        }
+
+        $src = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Controllers/User/Server/ServerScheduleController.php');
+        $this->assertMatchesRegularExpression('/function updateSchedule\(.*?\$isActive = ServerSchedule::normalizeBooleanFlag\(\$body\[\'is_active\'\]\);.*?\$body\[\'is_active\'\] = \$isActive;.*?checkTaskPermissions\(/s', $src);
     }
 }

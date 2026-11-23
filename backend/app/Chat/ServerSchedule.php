@@ -945,7 +945,7 @@ class ServerSchedule
     /**
      * Normalize schedule boolean flags (0/1) from JSON booleans, integers, or strings.
      */
-    private static function normalizeBooleanFlag(mixed $value): ?int
+    public static function normalizeBooleanFlag(mixed $value): ?int
     {
         if (is_bool($value)) {
             return $value ? 1 : 0;

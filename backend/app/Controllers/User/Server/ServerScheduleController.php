@@ -546,7 +546,18 @@ class ServerScheduleController
         // Turning a schedule on lets its tasks run again, so the user needs each task's permission too.
         // For a schedule that was already on, is_active is dropped instead, so this request can never
         // switch it back on after somebody else turned it off in the meantime.
-        if (array_key_exists('is_active', $body) && self::isTruthyFlag($body['is_active'])) {
+        if (array_key_exists('is_active', $body) && $body['is_active'] === null) {
+            unset($body['is_active']);
+        }
+        if (array_key_exists('is_active', $body)) {
+            // Normalise once and store that value, so the check and the write read it the same way.
+            $isActive = ServerSchedule::normalizeBooleanFlag($body['is_active']);
+            if ($isActive === null) {
+                return ApiResponse::error('Field is_active must be a boolean', 'INVALID_DATA_TYPE', 400);
+            }
+            $body['is_active'] = $isActive;
+        }
+        if (($body['is_active'] ?? 0) === 1) {
             $taskPermissionCheck = $this->checkTaskPermissions($request, $server, Task::getTasksByScheduleId($scheduleId));
             if ($taskPermissionCheck !== null) {
                 if (!$schedule['is_active']) {
@@ -1416,23 +1427,5 @@ class ServerScheduleController
         }
 
         return ApiResponse::error('You do not have permission to perform this action', 'PERMISSION_DENIED', 403);
-    }
-
-    /**
-     * Same reading of a boolean flag as ServerSchedule uses when it stores is_active.
-     */
-    private static function isTruthyFlag(mixed $value): bool
-    {
-        if (is_bool($value)) {
-            return $value;
-        }
-        if (is_int($value) || is_float($value)) {
-            return (int) $value === 1;
-        }
-        if (is_string($value)) {
-            return filter_var(trim($value), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) === true;
-        }
-
-        return false;
     }
 }
