@@ -142,6 +142,39 @@ final class DatabaseGrantNamesTest extends TestCase
         $this->assertTrue($result['complete']);
     }
 
+    public function testFailedModeLookupStopsBeforeAnyGrant(): void
+    {
+        $statements = new \ArrayObject();
+        $pdo = $this->createMock(\PDO::class);
+        $pdo->method('query')->willThrowException(new \PDOException('lookup failed'));
+        $pdo->method('exec')->willReturnCallback(function (string $sql) use ($statements) {
+            $statements[] = $sql;
+
+            return 0;
+        });
+
+        try {
+            P::reissueMySQLGrant($pdo, 's5_db', 'u5_x', '%');
+            $this->fail('expected the lookup failure to propagate');
+        } catch (\PDOException) {
+        }
+        $this->assertSame([], $statements->getArrayCopy());
+
+        // Removing a database does not depend on the lookup and still tries both forms.
+        P::revokeMySQLDatabaseGrants($pdo, 's5_db', '`u5_x`', "'%'");
+        $this->assertCount(2, $statements);
+    }
+
+    public function testOnlyAMissingWebSpaceTableIsIgnored(): void
+    {
+        $this->assertTrue(DatabaseGrantRepair::runForPanel($this->panel(1146), function (): void {
+        })['complete']);
+
+        $this->expectException(\PDOException::class);
+        DatabaseGrantRepair::runForPanel($this->panel(1142), function (): void {
+        });
+    }
+
     public function testCreateAndDeletePathsUseTheEscapedGrant(): void
     {
         $root = dirname(__DIR__, 2);
@@ -160,6 +193,25 @@ final class DatabaseGrantNamesTest extends TestCase
 
         $migrate = (string) file_get_contents($root . '/app/Cli/Commands/Migrate.php');
         $this->assertStringContainsString('DatabaseGrantRepair::runForPanel(', $migrate);
+    }
+
+    private function panel(int $webspaceError): \PDO
+    {
+        $empty = $this->createMock(\PDOStatement::class);
+        $empty->method('fetchAll')->willReturn([]);
+
+        $pdo = $this->createMock(\PDO::class);
+        $pdo->method('query')->willReturnCallback(function (string $sql) use ($empty, $webspaceError) {
+            if (str_contains($sql, 'featherpanel_webspace_databases')) {
+                $e = new \PDOException('webspace query failed');
+                $e->errorInfo = ['42000', $webspaceError, 'failed'];
+                throw $e;
+            }
+
+            return $empty;
+        });
+
+        return $pdo;
     }
 
     /**

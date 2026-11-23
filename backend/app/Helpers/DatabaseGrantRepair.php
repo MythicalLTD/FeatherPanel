@@ -132,8 +132,13 @@ final class DatabaseGrantRepair
             foreach ($stmt !== false ? $stmt->fetchAll(\PDO::FETCH_ASSOC) : [] as $row) {
                 $databases[] = $row;
             }
-        } catch (\PDOException) {
-            // WebSpaces tables are optional.
+        } catch (\PDOException $e) {
+            // Only a missing WebSpaces table is fine (1146 / 42S02); any other failure must keep
+            // the step pending instead of marking it done without those databases.
+            $code = (int) ($e->errorInfo[1] ?? 0);
+            if ($code !== 1146 && (string) $e->getCode() !== '42S02') {
+                throw $e;
+            }
         }
 
         return self::run($hosts, $databases, [RemoteDatabaseProvisioner::class, 'connectHost'], $log);

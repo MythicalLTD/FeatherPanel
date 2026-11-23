@@ -544,10 +544,18 @@ class ServerScheduleController
         }
 
         // Turning a schedule on lets its tasks run again, so the user needs each task's permission too.
-        if (!empty($body['is_active']) && $body['is_active'] !== 'false' && !$schedule['is_active']) {
+        // For a schedule that was already on, is_active is dropped instead, so this request can never
+        // switch it back on after somebody else turned it off in the meantime.
+        if (array_key_exists('is_active', $body) && self::isTruthyFlag($body['is_active'])) {
             $taskPermissionCheck = $this->checkTaskPermissions($request, $server, Task::getTasksByScheduleId($scheduleId));
             if ($taskPermissionCheck !== null) {
-                return $taskPermissionCheck;
+                if (!$schedule['is_active']) {
+                    return $taskPermissionCheck;
+                }
+                unset($body['is_active']);
+                if ($body === []) {
+                    return ApiResponse::success(null, 'Schedule updated successfully', 200);
+                }
             }
         }
 
@@ -667,8 +675,12 @@ class ServerScheduleController
             return ApiResponse::error('Schedule not found', 'SCHEDULE_NOT_FOUND', 404);
         }
 
+        // Write the state derived from what was read (not NOT is_active), so a concurrent change can
+        // never turn this request into an unchecked enable.
+        $enable = !$schedule['is_active'];
+
         // Turning a schedule on lets its tasks run again, so the user needs each task's permission too.
-        if (!$schedule['is_active']) {
+        if ($enable) {
             $taskPermissionCheck = $this->checkTaskPermissions($request, $server, Task::getTasksByScheduleId($scheduleId));
             if ($taskPermissionCheck !== null) {
                 return $taskPermissionCheck;
@@ -676,7 +688,7 @@ class ServerScheduleController
         }
 
         // Toggle status
-        if (!ServerSchedule::toggleActiveStatus($scheduleId)) {
+        if (!ServerSchedule::updateSchedule($scheduleId, ['is_active' => $enable ? 1 : 0, 'updated_at' => date('Y-m-d H:i:s')])) {
             return ApiResponse::error('Failed to toggle schedule status', 'TOGGLE_FAILED', 500);
         }
 
@@ -1404,5 +1416,23 @@ class ServerScheduleController
         }
 
         return ApiResponse::error('You do not have permission to perform this action', 'PERMISSION_DENIED', 403);
+    }
+
+    /**
+     * Same reading of a boolean flag as ServerSchedule uses when it stores is_active.
+     */
+    private static function isTruthyFlag(mixed $value): bool
+    {
+        if (is_bool($value)) {
+            return $value;
+        }
+        if (is_int($value) || is_float($value)) {
+            return (int) $value === 1;
+        }
+        if (is_string($value)) {
+            return filter_var(trim($value), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) === true;
+        }
+
+        return false;
     }
 }

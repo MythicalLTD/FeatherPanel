@@ -425,13 +425,15 @@ class RemoteDatabaseProvisioner
      */
     public static function mysqlPartialRevokesEnabled(\PDO $pdo): bool
     {
-        try {
-            $stmt = $pdo->query("SHOW GLOBAL VARIABLES LIKE 'partial_revokes'");
-            $row = $stmt !== false ? $stmt->fetch(\PDO::FETCH_ASSOC) : false;
-        } catch (\PDOException) {
-            return false;
+        // A failed lookup must not be read as "off": that would pick the escaped name on a server
+        // that reads it literally. Let it fail before any GRANT or REVOKE runs.
+        $stmt = $pdo->query("SHOW GLOBAL VARIABLES LIKE 'partial_revokes'");
+        if ($stmt === false) {
+            throw new \RuntimeException('Could not read partial_revokes from the database host');
         }
+        $row = $stmt->fetch(\PDO::FETCH_ASSOC);
 
+        // No row: MariaDB, or MySQL before 8.0.16. Both treat the escaped name as intended.
         if (!is_array($row)) {
             return false;
         }
@@ -470,9 +472,10 @@ class RemoteDatabaseProvisioner
     }
 
     /**
-     * Removes the database-level grants of a user on one database, in the current form and in
-     * the raw-name form older versions used. Grants that do not exist are ignored, so dropping
-     * the user afterwards always works.
+     * Removes the database-level grants of a user on one database, in both the escaped and the
+     * raw-name form (older versions, or MySQL with partial_revokes on). Both are always tried, so
+     * no host lookup is needed here, and grants that do not exist are ignored: dropping the user
+     * afterwards always runs.
      *
      * @param string $safeUser already quoted user name
      * @param string $safeRemote already quoted host part
@@ -481,7 +484,7 @@ class RemoteDatabaseProvisioner
     {
         $targets = [self::quoteIdentifierMySQL($databaseName)];
         try {
-            $targets[] = self::mysqlGrantTarget($pdo, $databaseName);
+            $targets[] = self::buildMySQLGrantTarget($databaseName, false);
         } catch (\InvalidArgumentException) {
             // Too long once escaped: such a grant was never issued.
         }
