@@ -23,6 +23,16 @@ namespace App\Helpers;
 class RemoteDatabaseProvisioner
 {
     /**
+     * MySQL and MariaDB limit database names (and the names stored in grant tables) to 64 characters.
+     */
+    public const MYSQL_MAX_NAME_LENGTH = 64;
+
+    /**
+     * Characters allowed in the part of a database name a user picks.
+     */
+    public const DATABASE_NAME_PART_PATTERN = '/^[A-Za-z0-9_]+$/';
+
+    /**
      * @param array<string, mixed> $databaseHost
      */
     public static function create(
@@ -53,12 +63,15 @@ class RemoteDatabaseProvisioner
                 $safeDbName = self::quoteIdentifierMySQL($databaseName);
                 $safeUser = self::quoteIdentifierMySQL($username);
                 $safeRemote = self::quoteRemoteMySQL($remote);
+                // Work out the grant target before creating anything, so a name that cannot be
+                // granted on its own does not leave a database and user behind.
+                $grantTarget = self::mysqlGrantTarget($pdo, $databaseName);
                 $maxClause = $maxConnections > 0 ? ' WITH MAX_USER_CONNECTIONS ' . $maxConnections : '';
                 $pdo->exec("CREATE DATABASE IF NOT EXISTS {$safeDbName} CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
                 $pdo->exec(
                     "CREATE USER IF NOT EXISTS {$safeUser}@{$safeRemote} IDENTIFIED BY " . $pdo->quote($password) . $maxClause
                 );
-                $pdo->exec("GRANT ALL PRIVILEGES ON {$safeDbName}.* TO {$safeUser}@{$safeRemote}");
+                $pdo->exec("GRANT ALL PRIVILEGES ON {$grantTarget}.* TO {$safeUser}@{$safeRemote}");
                 if ($maxConnections > 0) {
                     $pdo->exec(
                         'ALTER USER ' . $safeUser . '@' . $safeRemote . ' WITH MAX_USER_CONNECTIONS ' . $maxConnections
@@ -113,7 +126,7 @@ class RemoteDatabaseProvisioner
                 $safeDbName = self::quoteIdentifierMySQL($databaseName);
                 $safeUser = self::quoteIdentifierMySQL($username);
                 $safeRemote = self::quoteRemoteMySQL($remote);
-                $pdo->exec("REVOKE ALL PRIVILEGES ON {$safeDbName}.* FROM {$safeUser}@{$safeRemote}");
+                self::revokeMySQLDatabaseGrants($pdo, $databaseName, $safeUser, $safeRemote);
                 $pdo->exec("DROP USER IF EXISTS {$safeUser}@{$safeRemote}");
                 $pdo->exec("DROP DATABASE IF EXISTS {$safeDbName}");
                 $pdo->exec('FLUSH PRIVILEGES');
@@ -377,6 +390,166 @@ class RemoteDatabaseProvisioner
     }
 
     /**
+     * Checks the user-chosen part of a database name and the full prefixed name.
+     *
+     * @return string|null an error message, or null when the name can be used
+     */
+    public static function validateDatabaseName(string $namePart, string $fullName): ?string
+    {
+        if ($namePart === '' || preg_match(self::DATABASE_NAME_PART_PATTERN, $namePart) !== 1) {
+            return 'Database name may only contain letters, numbers and underscores';
+        }
+
+        if (strlen($fullName) > self::MYSQL_MAX_NAME_LENGTH || strlen(self::escapeMySQLGrantPattern($fullName)) > self::MYSQL_MAX_NAME_LENGTH) {
+            return 'Database name is too long. Use a shorter name or fewer underscores';
+        }
+
+        return null;
+    }
+
+    /**
+     * Escapes a database name for a database-level GRANT/REVOKE on MySQL and MariaDB.
+     *
+     * There, "_" and "%" in the database name of a grant act as pattern characters, so a raw
+     * name like s5_db would also cover other databases on the same host. Escaping them keeps
+     * the grant to this one database.
+     */
+    public static function escapeMySQLGrantPattern(string $databaseName): string
+    {
+        return str_replace(['\\', '_', '%'], ['\\\\', '\\_', '\\%'], $databaseName);
+    }
+
+    /**
+     * MySQL with partial_revokes enabled reads database names in grants literally, so escaping
+     * would point the grant at a different name there. MariaDB has no such variable.
+     */
+    public static function mysqlPartialRevokesEnabled(\PDO $pdo): bool
+    {
+        // A failed lookup must not be read as "off": that would pick the escaped name on a server
+        // that reads it literally. Let it fail before any GRANT or REVOKE runs.
+        $stmt = $pdo->query("SHOW GLOBAL VARIABLES LIKE 'partial_revokes'");
+        if ($stmt === false) {
+            throw new \RuntimeException('Could not read partial_revokes from the database host');
+        }
+        $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        // No row: MariaDB, or MySQL before 8.0.16. Both treat the escaped name as intended.
+        if (!is_array($row)) {
+            return false;
+        }
+
+        $value = $row['Value'] ?? $row['value'] ?? (array_values($row)[1] ?? '');
+
+        return strtoupper((string) $value) === 'ON';
+    }
+
+    /**
+     * The quoted database identifier to use in a database-level GRANT on MySQL/MariaDB.
+     *
+     * @throws \InvalidArgumentException when the escaped name no longer fits in 64 characters
+     */
+    public static function mysqlGrantTarget(\PDO $pdo, string $databaseName): string
+    {
+        return self::buildMySQLGrantTarget($databaseName, self::mysqlPartialRevokesEnabled($pdo));
+    }
+
+    /**
+     * @throws \InvalidArgumentException when the escaped name no longer fits in 64 characters
+     */
+    public static function buildMySQLGrantTarget(string $databaseName, bool $partialRevokes): string
+    {
+        if ($partialRevokes) {
+            return self::quoteIdentifierMySQL($databaseName);
+        }
+
+        $pattern = self::escapeMySQLGrantPattern($databaseName);
+        // Never fall back to the raw name here: it would widen the grant again.
+        if (strlen($pattern) > self::MYSQL_MAX_NAME_LENGTH) {
+            throw new \InvalidArgumentException('Database name is too long to grant access to. Use a shorter name or fewer underscores');
+        }
+
+        return self::quoteIdentifierMySQL($pattern);
+    }
+
+    /**
+     * Removes the database-level grants of a user on one database, in both the escaped and the
+     * raw-name form (older versions, or MySQL with partial_revokes on). Both are always tried, so
+     * no host lookup is needed here, and grants that do not exist are ignored: dropping the user
+     * afterwards always runs.
+     *
+     * @param string $safeUser already quoted user name
+     * @param string $safeRemote already quoted host part
+     */
+    public static function revokeMySQLDatabaseGrants(\PDO $pdo, string $databaseName, string $safeUser, string $safeRemote): void
+    {
+        $targets = [self::quoteIdentifierMySQL($databaseName)];
+        try {
+            $targets[] = self::buildMySQLGrantTarget($databaseName, false);
+        } catch (\InvalidArgumentException) {
+            // Too long once escaped: such a grant was never issued.
+        }
+
+        foreach (array_unique($targets) as $target) {
+            try {
+                $pdo->exec("REVOKE ALL PRIVILEGES ON {$target}.* FROM {$safeUser}@{$safeRemote}");
+            } catch (\PDOException $e) {
+                if (!self::isMissingGrantError($e)) {
+                    throw $e;
+                }
+            }
+        }
+    }
+
+    /**
+     * Re-issues the grant of an existing database in the current form and removes the raw-name
+     * grant older versions used. The new grant is issued first, so the user never loses access
+     * if something fails part way.
+     *
+     * @return bool true when the grant was changed, false when nothing needed changing
+     */
+    public static function reissueMySQLGrant(\PDO $pdo, string $databaseName, string $username, string $remote = '%'): bool
+    {
+        $remote = self::normalizeRemote($remote);
+        $safeUser = self::quoteIdentifierMySQL($username);
+        $safeRemote = self::quoteRemoteMySQL($remote);
+        $grantTarget = self::mysqlGrantTarget($pdo, $databaseName);
+        $legacyTarget = self::quoteIdentifierMySQL($databaseName);
+
+        if ($grantTarget === $legacyTarget) {
+            return false;
+        }
+
+        // Never let GRANT create a user: skip accounts that were removed on the host.
+        $exists = $pdo->prepare('SELECT 1 FROM mysql.user WHERE User = ? AND Host = ? LIMIT 1');
+        $exists->execute([$username, $remote]);
+        if ($exists->fetchColumn() === false) {
+            return false;
+        }
+
+        $pdo->exec("GRANT ALL PRIVILEGES ON {$grantTarget}.* TO {$safeUser}@{$safeRemote}");
+        try {
+            $pdo->exec("REVOKE ALL PRIVILEGES ON {$legacyTarget}.* FROM {$safeUser}@{$safeRemote}");
+        } catch (\PDOException $e) {
+            if (!self::isMissingGrantError($e)) {
+                throw $e;
+            }
+        }
+        $pdo->exec('FLUSH PRIVILEGES');
+
+        return true;
+    }
+
+    /**
+     * Opens a PDO connection to a MySQL/MariaDB/PostgreSQL database host record.
+     *
+     * @param array<string, mixed> $databaseHost
+     */
+    public static function connectHost(array $databaseHost): \PDO
+    {
+        return self::connect($databaseHost);
+    }
+
+    /**
      * Replaces string literals, quoted identifiers and non-executable comments
      * with placeholders in one left-to-right pass, so keyword checks cannot be
      * fooled by quoting or comment-splitting. MySQL executable comments
@@ -508,6 +681,17 @@ class RemoteDatabaseProvisioner
         }
 
         return $out;
+    }
+
+    /**
+     * MySQL/MariaDB error 1141: there is no such grant defined for the user.
+     * 1147 is the table-level variant some versions return.
+     */
+    private static function isMissingGrantError(\PDOException $e): bool
+    {
+        $code = (int) ($e->errorInfo[1] ?? 0);
+
+        return $code === 1141 || $code === 1147;
     }
 
     /**

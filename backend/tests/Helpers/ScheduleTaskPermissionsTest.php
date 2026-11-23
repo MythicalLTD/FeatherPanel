@@ -17,8 +17,8 @@
 
 namespace Tests\Helpers;
 
-use App\SubuserPermissions as P;
 use PHPUnit\Framework\TestCase;
+use App\SubuserPermissions as P;
 use App\Helpers\ScheduleTaskPermissions;
 use App\Helpers\SubuserPermissionChecker as C;
 
@@ -90,5 +90,44 @@ final class ScheduleTaskPermissionsTest extends TestCase
         foreach (['command', 'power', 'backup', 'install', 'update', 'kill'] as $action) {
             $this->assertNull(ScheduleTaskPermissions::missing(self::OWNER, self::SERVER, $action, 'restart'), $action);
         }
+    }
+
+    public function testRunningAScheduleNeedsEveryTaskPermission(): void
+    {
+        $tasks = [
+            ['action' => 'command', 'payload' => 'save-all'],
+            ['action' => 'power', 'payload' => 'stop'],
+        ];
+
+        $this->assertSame(P::CONTROL_STOP, ScheduleTaskPermissions::missingForTasks(self::OPERATOR, self::SERVER, $tasks));
+        $this->assertSame(P::CONTROL_CONSOLE, ScheduleTaskPermissions::missingForTasks(self::SCHEDULER, self::SERVER, $tasks));
+        $this->assertNull(ScheduleTaskPermissions::missingForTasks(self::OWNER, self::SERVER, $tasks));
+        $this->assertNull(ScheduleTaskPermissions::missingForTasks(self::OPERATOR, self::SERVER, [['action' => 'power', 'payload' => 'restart']]));
+        $this->assertNull(ScheduleTaskPermissions::missingForTasks(self::SCHEDULER, self::SERVER, []));
+    }
+
+    public function testRunNowAndEnablingCheckTaskPermissions(): void
+    {
+        $src = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Controllers/User/Server/ServerScheduleController.php');
+        $this->assertMatchesRegularExpression('/function runNow\(.*?getTasksByScheduleId\(\$scheduleId\).*?checkTaskPermissions\(\$request, \$server, \$tasks\).*?updateSchedule\(\$scheduleId/s', $src);
+        $this->assertMatchesRegularExpression('/function toggleScheduleStatus\(.*?\$enable = !\$schedule\[\'is_active\'\];.*?if \(\$enable\) \{\s*\$taskPermissionCheck = \$this->checkTaskPermissions\([^;]*\);\s*if \(\$taskPermissionCheck !== null\) \{\s*return \$taskPermissionCheck;\s*\}\s*\}.*?updateSchedule\(\$scheduleId, \[\'is_active\' => \$enable/s', $src);
+        $toggle = strstr(substr((string) strstr($src, 'function toggleScheduleStatus('), 1), 'public function', true);
+        $this->assertIsString($toggle);
+        $this->assertStringNotContainsString('toggleActiveStatus(', $toggle);
+        $this->assertMatchesRegularExpression('/function updateSchedule\(.*?is_active.*?checkTaskPermissions\(/s', $src);
+        $this->assertStringContainsString('ScheduleTaskPermissions::missingForTasks(', $src);
+    }
+
+    public function testScheduleFlagIsReadTheSameWayForTheCheckAndTheWrite(): void
+    {
+        foreach ([true, 1, '1', 'true', '1.5', 1.0] as $on) {
+            $this->assertSame(1, \App\Chat\ServerSchedule::normalizeBooleanFlag($on), var_export($on, true));
+        }
+        foreach ([false, 0, '0', 'false'] as $off) {
+            $this->assertSame(0, \App\Chat\ServerSchedule::normalizeBooleanFlag($off), var_export($off, true));
+        }
+
+        $src = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Controllers/User/Server/ServerScheduleController.php');
+        $this->assertMatchesRegularExpression('/function updateSchedule\(.*?\$isActive = ServerSchedule::normalizeBooleanFlag\(\$body\[\'is_active\'\]\);.*?\$body\[\'is_active\'\] = \$isActive;.*?checkTaskPermissions\(/s', $src);
     }
 }

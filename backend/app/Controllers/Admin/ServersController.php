@@ -3454,7 +3454,7 @@ class ServersController
                     $pdo = new \PDO($dsn, $databaseHost['database_username'], $databaseHost['database_password'], $options);
 
                     // Revoke privileges from the user
-                    $pdo->exec("REVOKE ALL PRIVILEGES ON {$safeDbName}.* FROM {$safeUser}@'%'");
+                    \App\Helpers\RemoteDatabaseProvisioner::revokeMySQLDatabaseGrants($pdo, $databaseName, $safeUser, "'%'");
 
                     // Drop the user
                     $pdo->exec("DROP USER IF EXISTS {$safeUser}@'%'");

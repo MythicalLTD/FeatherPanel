@@ -72,6 +72,8 @@ export default function ServerStartupPage() {
 
     const canRead = hasPermission('startup.read');
     const canUpdateStartup = hasPermission('startup.update') && isEnabled(settings?.server_allow_startup_change);
+    // With custom startup commands off, users can still go back to the spell's startup command.
+    const canRestoreStartup = hasPermission('startup.update');
     const canUpdateDockerImage = hasPermission('startup.docker-image');
     const allowCustomDockerImage = isEnabled(settings?.server_allow_custom_docker_image);
     const canManageCustomVariables = hasPermission('startup.update');
@@ -452,7 +454,7 @@ export default function ServerStartupPage() {
                         description={t('serverStartup.startupHelp')}
                         icon={Terminal}
                         action={
-                            canUpdateStartup && (
+                            canRestoreStartup && (
                                 <Button variant='outline' size='sm' onClick={handleRestoreDefault}>
                                     {t('serverStartup.restoreDefault')}
                                 </Button>

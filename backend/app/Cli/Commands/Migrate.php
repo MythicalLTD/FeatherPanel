@@ -25,6 +25,7 @@ use App\Helpers\XChaCha20;
 use App\Cli\CommandBuilder;
 use App\Config\ConfigInterface;
 use App\Plugins\ObsoleteAddons;
+use App\Helpers\DatabaseGrantRepair;
 
 class Migrate extends App implements CommandBuilder
 {
@@ -208,6 +209,7 @@ class Migrate extends App implements CommandBuilder
             }
         }
 
+        self::repairDatabaseGrants($cliApp, $db->getPdo());
         self::clearCache();
         self::seedSystemWebPlates($cliApp);
 
@@ -260,6 +262,46 @@ class Migrate extends App implements CommandBuilder
     public static function getSubCommands(): array
     {
         return [];
+    }
+
+    /**
+     * One-time step: re-issue the grants of existing MySQL/MariaDB databases on their exact name.
+     * Never fails the migration; unreachable hosts keep the step pending for the next run.
+     */
+    private static function repairDatabaseGrants(App $cliApp, \PDO $pdo): void
+    {
+        try {
+            $stmt = $pdo->prepare("SELECT 1 FROM featherpanel_migrations WHERE migrated = 'true' AND script = ? LIMIT 1");
+            $stmt->execute([DatabaseGrantRepair::MARKER]);
+            if ($stmt->fetchColumn() !== false) {
+                return;
+            }
+
+            $cliApp->send('&7' . str_repeat('─', 50));
+            $cliApp->send($cliApp->color3 . '&l🔧 Updating database grants...');
+
+            $logger = MainApp::getInstance(true)->getLogger();
+            $result = DatabaseGrantRepair::runForPanel($pdo, static function (string $line) use ($cliApp, $logger): void {
+                $cliApp->send('&e&l⚠️  &r' . $line);
+                $logger->warning('Database grant update: ' . $line);
+            });
+
+            $cliApp->send(
+                '&a&l✅ Database grants: &r&f'
+                . $result['updated'] . '&r&a updated, &r&f'
+                . $result['unchanged'] . '&r&a unchanged, &r&f'
+                . ($result['skipped'] + $result['failed']) . '&r&a pending',
+            );
+
+            if ($result['complete']) {
+                $insert = $pdo->prepare('INSERT INTO featherpanel_migrations (script, migrated) VALUES (:script, :migrated)');
+                $insert->execute(['script' => DatabaseGrantRepair::MARKER, 'migrated' => 'true']);
+            } else {
+                $cliApp->send('&e&l⚠️  &rSome database hosts could not be updated; this step runs again on the next migrate.');
+            }
+        } catch (\Throwable $e) {
+            $cliApp->send('&c&l⚠️  Database grant update skipped: &r' . $e->getMessage());
+        }
     }
 
     /**

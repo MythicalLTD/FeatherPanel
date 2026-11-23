@@ -84,4 +84,22 @@ final class ScheduleTaskPermissions
 
         return null;
     }
+
+    /**
+     * The first permission the user lacks for any of the given tasks, or null when every one is held.
+     * Used when a user starts or re-enables a schedule that may hold tasks somebody else created.
+     *
+     * @param iterable<array<string, mixed>> $tasks task rows with action and payload
+     */
+    public static function missingForTasks(int $userId, int $serverId, iterable $tasks): ?string
+    {
+        foreach ($tasks as $task) {
+            $missing = self::missing($userId, $serverId, (string) ($task['action'] ?? ''), (string) ($task['payload'] ?? ''));
+            if ($missing !== null) {
+                return $missing;
+            }
+        }
+
+        return null;
+    }
 }
