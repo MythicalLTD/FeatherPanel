@@ -22,9 +22,12 @@ namespace App\Cron;
  *
  * This cron job runs every minute and processes all due server schedules.
  * It handles:
- * - Getting all schedules that are due to run (is_active=1, next_run_at <= NOW(), is_processing=0)
+ * - Getting all schedules that are due: new runs (next_run_at reached) and
+ *   running task chains whose next task is due (chain_next_at reached)
+ * - Taking an atomic per-schedule lease so overlapping cron runs never run a task twice
  * - Checking if schedules should only run when server is online (only_when_online flag)
- * - Executing tasks associated with each schedule in sequence order
+ * - Executing tasks in sequence order; a task's time_offset is waited out across
+ *   cron ticks instead of with sleep(), so other cron jobs are never blocked
  * - Updating schedule status and calculating next run time
  * - Logging all schedule and task execution activities
  */
@@ -46,6 +49,8 @@ use App\Services\Backup\ServerBackupTaskService;
 use App\Services\Database\ServerDatabaseDumpService;
 use App\Services\Server\LifecycleHookExecutorService;
 use App\Services\Server\ScheduleContainerShellService;
+use App\Services\Server\ScheduleChain\ScheduleChainRunner;
+use App\Services\Server\ScheduleChain\DatabaseScheduleChainStore;
 
 class AServerScheduleProcessor implements TimeTask
 {
@@ -54,14 +59,16 @@ class AServerScheduleProcessor implements TimeTask
      */
     public function run()
     {
+        // Runs on every cron run (forced): each run is short now, task offsets are
+        // waited out across runs, and the per-schedule lease keeps runs apart.
+        // A time gate measured from the end of the previous run could skip a minute.
         $cron = new Cron('server-schedule-processor', '1M');
-        $force = getenv('FP_CRON_FORCE') === '1';
         try {
             $cron->runIfDue(function () {
                 $this->processSchedules();
                 // Report cron heartbeat
                 TimedTask::markRun('server-schedule-processor', true, 'Processed schedules heartbeat');
-            }, $force);
+            }, true);
         } catch (\Exception $e) {
             $app = App::getInstance(false, true);
             $app->getLogger()->error('Failed to process server schedules: ' . $e->getMessage());
@@ -84,178 +91,134 @@ class AServerScheduleProcessor implements TimeTask
 
         MinecraftColorCodeSupport::sendOutputWithNewLine('&aProcessing server schedules...');
 
-        // Reset schedules stuck in processing (e.g. cron crashed or timed out)
+        // Reset schedules stuck in processing (e.g. cron crashed or timed out).
+        // Schedules waiting for their next task's offset are not touched.
         $stuckReset = ServerSchedule::resetStuckProcessing(15);
         if ($stuckReset > 0) {
             MinecraftColorCodeSupport::sendOutputWithNewLine('&eReset ' . $stuckReset . ' schedule(s) stuck in processing');
         }
 
-        // Get all due schedules
+        // New runs and running task chains whose next task is due
         $dueSchedules = ServerSchedule::getDueSchedules();
         MinecraftColorCodeSupport::sendOutputWithNewLine('&aFound ' . count($dueSchedules) . ' due schedules');
 
+        $runner = new ScheduleChainRunner(new DatabaseScheduleChainStore());
         foreach ($dueSchedules as $schedule) {
             try {
-                $this->processSchedule($schedule);
-            } catch (\Exception $e) {
+                $this->processSchedule($runner, $schedule);
+            } catch (\Throwable $e) {
                 $app->getLogger()->error('Failed to process schedule ' . $schedule['id'] . ': ' . $e->getMessage());
                 MinecraftColorCodeSupport::sendOutputWithNewLine('&cFailed to process schedule ' . $schedule['id'] . ': ' . $e->getMessage());
-
-                // Mark schedule as not processing on error
-                ServerSchedule::updateSchedule($schedule['id'], ['is_processing' => 0]);
             }
         }
     }
 
     /**
-     * Process a single schedule.
+     * Handle one cron tick for a schedule.
+     *
+     * Tasks run in sequence_id order. Instead of sleeping for a task's
+     * time_offset, the runner stores when the next task is due and a later tick
+     * continues the chain, so this never blocks the cron runner.
      */
-    private function processSchedule(array $schedule)
+    private function processSchedule(ScheduleChainRunner $runner, array $schedule): void
     {
-        $app = App::getInstance(false, true);
-        MinecraftColorCodeSupport::sendOutputWithNewLine('&aProcessing schedule: ' . $schedule['name'] . ' (ID: ' . $schedule['id'] . ')');
-
-        // Mark schedule as processing
-        if (!ServerSchedule::updateSchedule($schedule['id'], ['is_processing' => 1])) {
-            MinecraftColorCodeSupport::sendOutputWithNewLine('&cFailed to mark schedule as processing: ' . $schedule['id']);
-
-            return;
-        }
-
-        // Get server information
-        $server = Server::getServerById($schedule['server_id']);
+        $scheduleId = (int) $schedule['id'];
+        $server = Server::getServerById((int) $schedule['server_id']);
         if (!$server) {
-            MinecraftColorCodeSupport::sendOutputWithNewLine('&cServer not found for schedule: ' . $schedule['id']);
-            ServerSchedule::updateSchedule($schedule['id'], ['is_processing' => 0]);
+            MinecraftColorCodeSupport::sendOutputWithNewLine('&cServer not found for schedule: ' . $scheduleId);
 
             return;
         }
 
-        // Check if schedule should only run when server is online
-        if ($schedule['only_when_online'] == 1) {
-            if (!$this->isServerOnline($server)) {
-                MinecraftColorCodeSupport::sendOutputWithNewLine('&eServer is offline, skipping schedule: ' . $schedule['name']);
+        $result = $runner->tick(
+            $scheduleId,
+            fn (): array => $this->getScheduleTasks($scheduleId),
+            function (array $task) use ($server): void {
+                try {
+                    $this->executeTask($task, $server);
+                    MinecraftColorCodeSupport::sendOutputWithNewLine('&aExecuted task: ' . $task['action'] . ' (Sequence: ' . $task['sequence_id'] . ')');
+                } catch (\Throwable $e) {
+                    App::getInstance(false, true)->getLogger()->error('Failed to execute task ' . $task['id'] . ': ' . $e->getMessage());
+                    MinecraftColorCodeSupport::sendOutputWithNewLine('&cFailed to execute task: ' . $task['action'] . ' - ' . $e->getMessage());
+                    throw $e;
+                }
+            },
+            // Next occurrence in the schedule's authoring timezone, so e.g.
+            // "0 3 * * *" still means 03:00 local even though PHP runs in UTC.
+            fn (array $row, string $reference): string => ServerSchedule::calculateNextRunTime(
+                $row['cron_day_of_week'],
+                $row['cron_month'],
+                $row['cron_day_of_month'],
+                $row['cron_hour'],
+                $row['cron_minute'],
+                $reference,
+                $row['timezone'] ?? 'UTC'
+            ),
+            function (array $row) use ($server): bool {
+                MinecraftColorCodeSupport::sendOutputWithNewLine('&aProcessing schedule: ' . $row['name'] . ' (ID: ' . $row['id'] . ')');
+                if ((int) $row['only_when_online'] === 1 && !$this->isServerOnline($server)) {
+                    MinecraftColorCodeSupport::sendOutputWithNewLine('&eServer is offline, skipping schedule: ' . $row['name']);
 
-                // Calculate next run time and update schedule, honouring the
-                // schedule's authoring timezone so e.g. "0 3 * * *" still means
-                // 03:00 local even after PHP's default zone was pinned to UTC.
-                $nextRunAt = ServerSchedule::calculateNextRunTime(
-                    $schedule['cron_day_of_week'],
-                    $schedule['cron_month'],
-                    $schedule['cron_day_of_month'],
-                    $schedule['cron_hour'],
-                    $schedule['cron_minute'],
-                    $schedule['next_run_at'] ?? null,
-                    $schedule['timezone'] ?? 'UTC'
-                );
+                    return false;
+                }
 
-                ServerSchedule::updateSchedule($schedule['id'], [
-                    'is_processing' => 0,
-                    'next_run_at' => $nextRunAt,
-                ]);
+                return true;
+            }
+        );
 
-                // Log activity
+        switch ($result['status']) {
+            case ScheduleChainRunner::STATUS_BUSY:
+                MinecraftColorCodeSupport::sendOutputWithNewLine('&7Schedule ' . $scheduleId . ' is handled by another cron run, skipping');
+                break;
+            case ScheduleChainRunner::STATUS_LOST:
+                MinecraftColorCodeSupport::sendOutputWithNewLine('&eSchedule ' . $scheduleId . ' was deleted, turned off or taken over while running, stopped');
+                break;
+            case ScheduleChainRunner::STATUS_SKIPPED:
+                $fresh = ServerSchedule::getScheduleById($scheduleId) ?? $schedule;
                 ServerActivity::createActivity([
                     'server_id' => $server['id'],
                     'node_id' => $server['node_id'],
                     'event' => 'schedule_skipped_offline',
                     'metadata' => json_encode([
-                        'schedule_id' => $schedule['id'],
+                        'schedule_id' => $scheduleId,
                         'schedule_name' => $schedule['name'],
                         'reason' => 'server_offline',
-                        'next_run_at' => $nextRunAt,
+                        'next_run_at' => $fresh['next_run_at'] ?? null,
                     ]),
                 ]);
-
-                return;
-            }
-        }
-
-        // Execute the schedule
-        $this->executeSchedule($schedule, $server);
-
-        // Calculate next run time in the schedule's authoring timezone.
-        $nextRunAt = ServerSchedule::calculateNextRunTime(
-            $schedule['cron_day_of_week'],
-            $schedule['cron_month'],
-            $schedule['cron_day_of_month'],
-            $schedule['cron_hour'],
-            $schedule['cron_minute'],
-            $schedule['next_run_at'] ?? null,
-            $schedule['timezone'] ?? 'UTC'
-        );
-
-        // Update schedule with next run time and mark as not processing.
-        // `last_run_at` is a TIMESTAMP and PHP runs in UTC, so gmdate is
-        // explicit about intent.
-        ServerSchedule::updateSchedule($schedule['id'], [
-            'is_processing' => 0,
-            'next_run_at' => $nextRunAt,
-            'last_run_at' => gmdate('Y-m-d H:i:s'),
-        ]);
-
-        MinecraftColorCodeSupport::sendOutputWithNewLine('&aSchedule processed successfully: ' . $schedule['name'] . ' (Next run: ' . $nextRunAt . ')');
-    }
-
-    /**
-     * Execute a schedule by running its associated tasks.
-     */
-    private function executeSchedule(array $schedule, array $server)
-    {
-        $app = App::getInstance(false, true);
-        MinecraftColorCodeSupport::sendOutputWithNewLine('&aExecuting schedule tasks for: ' . $schedule['name']);
-
-        // Get tasks for this schedule
-        $tasks = $this->getScheduleTasks($schedule['id']);
-
-        if (empty($tasks)) {
-            MinecraftColorCodeSupport::sendOutputWithNewLine('&eNo tasks found for schedule: ' . $schedule['name']);
-
-            return;
-        }
-
-        // Sort tasks by sequence_id to ensure proper execution order
-        usort($tasks, function ($a, $b) {
-            return $a['sequence_id'] <=> $b['sequence_id'];
-        });
-
-        $executedTasks = 0;
-        $failedTasks = 0;
-
-        foreach ($tasks as $task) {
-            try {
-                $offset = (int) ($task['time_offset'] ?? 0);
-                if ($offset > 0) {
-                    MinecraftColorCodeSupport::sendOutputWithNewLine('&eWaiting ' . $offset . 's before task: ' . $task['action'] . ' (Sequence: ' . $task['sequence_id'] . ')');
-                    sleep($offset);
+                break;
+            case ScheduleChainRunner::STATUS_WAITING:
+                $fresh = ServerSchedule::getScheduleById($scheduleId) ?? $schedule;
+                MinecraftColorCodeSupport::sendOutputWithNewLine('&eSchedule ' . $schedule['name'] . ': next task due at ' . ($fresh['chain_next_at'] ?? '?') . ' UTC');
+                break;
+            case ScheduleChainRunner::STATUS_EMPTY:
+                MinecraftColorCodeSupport::sendOutputWithNewLine('&eNo tasks found for schedule: ' . $schedule['name']);
+                break;
+            case ScheduleChainRunner::STATUS_FINISHED:
+            case ScheduleChainRunner::STATUS_ABORTED:
+                $metadata = [
+                    'schedule_id' => $scheduleId,
+                    'schedule_name' => $schedule['name'],
+                    'executed_tasks' => $result['executed'],
+                    'failed_tasks' => $result['failed'],
+                    'total_tasks' => $result['total'],
+                    'execution_time' => date('Y-m-d H:i:s'),
+                ];
+                if ($result['status'] === ScheduleChainRunner::STATUS_ABORTED) {
+                    $metadata['stopped_at_task_id'] = $result['failed_task_id'];
                 }
-
-                $this->executeTask($task, $server);
-                ++$executedTasks;
-                MinecraftColorCodeSupport::sendOutputWithNewLine('&aExecuted task: ' . $task['action'] . ' (Sequence: ' . $task['sequence_id'] . ')');
-            } catch (\Exception $e) {
-                ++$failedTasks;
-                $app->getLogger()->error('Failed to execute task ' . $task['id'] . ': ' . $e->getMessage());
-                MinecraftColorCodeSupport::sendOutputWithNewLine('&cFailed to execute task: ' . $task['action'] . ' - ' . $e->getMessage());
-            }
+                ServerActivity::createActivity([
+                    'server_id' => $server['id'],
+                    'node_id' => $server['node_id'],
+                    'event' => 'schedule_executed',
+                    'metadata' => json_encode($metadata),
+                ]);
+                MinecraftColorCodeSupport::sendOutputWithNewLine(
+                    '&aSchedule execution completed: ' . $result['executed'] . ' tasks executed, ' . $result['failed'] . ' failed'
+                    . ($result['status'] === ScheduleChainRunner::STATUS_ABORTED ? ' (stopped: task failed without continue on failure)' : '')
+                );
+                break;
         }
-
-        // Log schedule execution activity
-        ServerActivity::createActivity([
-            'server_id' => $server['id'],
-            'node_id' => $server['node_id'],
-            'event' => 'schedule_executed',
-            'metadata' => json_encode([
-                'schedule_id' => $schedule['id'],
-                'schedule_name' => $schedule['name'],
-                'executed_tasks' => $executedTasks,
-                'failed_tasks' => $failedTasks,
-                'total_tasks' => count($tasks),
-                'execution_time' => date('Y-m-d H:i:s'),
-            ]),
-        ]);
-
-        MinecraftColorCodeSupport::sendOutputWithNewLine('&aSchedule execution completed: ' . $executedTasks . ' tasks executed, ' . $failedTasks . ' failed');
     }
 
     /**
