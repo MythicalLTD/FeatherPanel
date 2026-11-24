@@ -24,15 +24,13 @@ use App\Chat\ServerSchedule;
  */
 final class DatabaseScheduleChainStore implements ScheduleChainStore
 {
-    public function claim(int $scheduleId, int $now, int $leaseUntil): ?array
+    public function claim(int $scheduleId, int $now, int $leaseUntil, string $token): ?array
     {
-        return ServerSchedule::claimForTick($scheduleId, $now, $leaseUntil);
+        return ServerSchedule::claimForTick($scheduleId, $now, $leaseUntil, $token);
     }
 
-    public function save(int $scheduleId, array $fields): void
+    public function save(int $scheduleId, string $token, array $fields): bool
     {
-        if (!ServerSchedule::updateSchedule($scheduleId, $fields)) {
-            throw new \RuntimeException('Failed to save schedule ' . $scheduleId . ' state');
-        }
+        return ServerSchedule::saveChainState($scheduleId, $token, $fields);
     }
 }

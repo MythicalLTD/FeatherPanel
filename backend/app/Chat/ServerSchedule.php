@@ -225,8 +225,7 @@ class ServerSchedule
         $pdo = Database::getPdoConnection();
         $now = gmdate('Y-m-d H:i:s');
         $stmt = $pdo->prepare(
-            'UPDATE ' . self::$table . ' SET is_processing = 0, chain_next_at = NULL, chain_last_sequence = NULL,'
-            . ' chain_executed = 0, chain_failed = 0, chain_locked_until = NULL, updated_at = NOW()'
+            'UPDATE ' . self::$table . ' SET is_processing = 0, ' . self::chainResetSql() . ', updated_at = NOW()'
             . ' WHERE is_processing = 1 AND (chain_locked_until IS NULL OR chain_locked_until <= :now)'
             . ' AND ((chain_next_at IS NULL AND updated_at < DATE_SUB(NOW(), INTERVAL :minutes MINUTE)) OR is_active = 0)'
         );
@@ -265,20 +264,23 @@ class ServerSchedule
      *
      * The UPDATE only matches while the schedule is still due and no other cron
      * run holds a live lease, so when two runs overlap only one of them gets the
-     * row. Returns the fresh row on success, null when someone else has it or it
-     * is no longer due.
+     * row. The claim token is stored with the lease; every later write of that
+     * tick goes through {@see saveChainState()} and only lands while the token is
+     * still there. Returns the fresh row on success, null when someone else has
+     * it or it is no longer due.
      *
      * @param int $now Unix time (UTC)
      * @param int $leaseUntil Unix time the lease expires
      */
-    public static function claimForTick(int $id, int $now, int $leaseUntil): ?array
+    public static function claimForTick(int $id, int $now, int $leaseUntil, string $token): ?array
     {
-        if ($id <= 0) {
+        if ($id <= 0 || $token === '') {
             return null;
         }
         $pdo = Database::getPdoConnection();
-        $stmt = $pdo->prepare('UPDATE ' . self::$table . ' SET chain_locked_until = :until WHERE id = :id AND ' . self::dueCondition());
+        $stmt = $pdo->prepare('UPDATE ' . self::$table . ' SET chain_locked_until = :until, chain_claim = :token WHERE id = :id AND ' . self::dueCondition());
         $stmt->bindValue(':until', gmdate('Y-m-d H:i:s', $leaseUntil), \PDO::PARAM_STR);
+        $stmt->bindValue(':token', $token, \PDO::PARAM_STR);
         $stmt->bindValue(':id', $id, \PDO::PARAM_INT);
         self::bindDueNow($stmt, gmdate('Y-m-d H:i:s', $now));
         $stmt->execute();
@@ -287,6 +289,46 @@ class ServerSchedule
         }
 
         return self::getScheduleById($id);
+    }
+
+    /**
+     * Write the run state of a schedule, only while it still carries the claim token.
+     *
+     * Returns false when the claim is gone (schedule deleted or turned off, or
+     * another run took it over after the lease ran out); the caller must stop
+     * without sending anything. A write that changes no value but still owns
+     * the claim counts as done.
+     *
+     * @param array<string, int|string|null> $fields
+     */
+    public static function saveChainState(int $id, string $token, array $fields): bool
+    {
+        $allowed = ['is_processing', 'next_run_at', 'last_run_at', 'chain_next_at', 'chain_done_tasks', 'chain_executed', 'chain_failed', 'chain_locked_until', 'chain_claim'];
+        $fields = array_intersect_key($fields, array_flip($allowed));
+        if ($id <= 0 || $token === '' || $fields === []) {
+            return false;
+        }
+
+        $pdo = Database::getPdoConnection();
+        $set = implode(', ', array_map(static fn (string $f): string => "`$f` = :set_$f", array_keys($fields)));
+        $stmt = $pdo->prepare('UPDATE ' . self::$table . ' SET ' . $set . ' WHERE id = :id AND chain_claim = :token');
+        foreach ($fields as $field => $value) {
+            $stmt->bindValue(':set_' . $field, $value, $value === null ? \PDO::PARAM_NULL : (is_int($value) ? \PDO::PARAM_INT : \PDO::PARAM_STR));
+        }
+        $stmt->bindValue(':id', $id, \PDO::PARAM_INT);
+        $stmt->bindValue(':token', $token, \PDO::PARAM_STR);
+        $stmt->execute();
+        if ($stmt->rowCount() > 0) {
+            return true;
+        }
+
+        // Nothing changed: still fine as long as the row still carries our claim.
+        $check = $pdo->prepare('SELECT COUNT(*) FROM ' . self::$table . ' WHERE id = :id AND chain_claim = :token');
+        $check->bindValue(':id', $id, \PDO::PARAM_INT);
+        $check->bindValue(':token', $token, \PDO::PARAM_STR);
+        $check->execute();
+
+        return (int) $check->fetchColumn() > 0;
     }
 
     /**
@@ -414,6 +456,12 @@ class ServerSchedule
 
                 return false;
             }
+            // Turning a schedule off cancels the rest of its current run (and the
+            // claim of a cron tick working on it), so turning it back on starts a
+            // new run instead of resuming the old one.
+            if (array_key_exists('is_active', $data) && $data['is_active'] === 0 && in_array('chain_claim', $columns, true)) {
+                $data += self::chainResetValues();
+            }
             $pdo = Database::getPdoConnection();
             $fields = array_keys($data);
             if (empty($fields)) {
@@ -512,7 +560,13 @@ class ServerSchedule
                 return false;
             }
             $pdo = Database::getPdoConnection();
+            // Turning it off also cancels the rest of the current run (see updateSchedule()).
             $stmt = $pdo->prepare('UPDATE ' . self::$table . ' SET is_active = NOT is_active, updated_at = NOW() WHERE id = :id');
+            $stmt->bindValue(':id', $id, \PDO::PARAM_INT);
+            if (!$stmt->execute()) {
+                return false;
+            }
+            $stmt = $pdo->prepare('UPDATE ' . self::$table . ' SET is_processing = 0, ' . self::chainResetSql() . ' WHERE id = :id AND is_active = 0');
             $stmt->bindValue(':id', $id, \PDO::PARAM_INT);
 
             return $stmt->execute();
@@ -1055,5 +1109,31 @@ class ServerSchedule
         foreach (['lock', 'run', 'chain'] as $suffix) {
             $stmt->bindValue(':due_now_' . $suffix, $now, \PDO::PARAM_STR);
         }
+    }
+
+    /**
+     * Column values that clear the run state of a schedule.
+     *
+     * @return array<string, int|null>
+     */
+    private static function chainResetValues(): array
+    {
+        return [
+            'is_processing' => 0,
+            'chain_next_at' => null,
+            'chain_done_tasks' => null,
+            'chain_executed' => 0,
+            'chain_failed' => 0,
+            'chain_locked_until' => null,
+            'chain_claim' => null,
+        ];
+    }
+
+    /**
+     * SQL SET list that clears the chain columns (without is_processing).
+     */
+    private static function chainResetSql(): string
+    {
+        return 'chain_next_at = NULL, chain_done_tasks = NULL, chain_executed = 0, chain_failed = 0, chain_locked_until = NULL, chain_claim = NULL';
     }
 }

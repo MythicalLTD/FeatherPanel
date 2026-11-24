@@ -29,20 +29,36 @@ final class InMemoryScheduleChainStore implements ScheduleChainStore
     /** @var array<int, array<string, mixed>> */
     public array $rows = [];
 
-    public function claim(int $scheduleId, int $now, int $leaseUntil): ?array
+    public function claim(int $scheduleId, int $now, int $leaseUntil, string $token): ?array
     {
         $row = $this->rows[$scheduleId] ?? null;
         if ($row === null || !self::isDue($row, $now)) {
             return null;
         }
         $this->rows[$scheduleId]['chain_locked_until'] = Runner::format($leaseUntil);
+        $this->rows[$scheduleId]['chain_claim'] = $token;
 
         return $this->rows[$scheduleId];
     }
 
-    public function save(int $scheduleId, array $fields): void
+    /** Mirrors ServerSchedule::saveChainState(): only while the claim token matches. */
+    public function save(int $scheduleId, string $token, array $fields): bool
     {
+        if (!isset($this->rows[$scheduleId]) || $this->rows[$scheduleId]['chain_claim'] !== $token) {
+            return false;
+        }
         $this->rows[$scheduleId] = array_merge($this->rows[$scheduleId], $fields);
+
+        return true;
+    }
+
+    /** Mirrors ServerSchedule::updateSchedule(['is_active' => 0]). */
+    public function turnOff(int $scheduleId): void
+    {
+        $this->rows[$scheduleId] = array_merge($this->rows[$scheduleId], [
+            'is_active' => 0, 'is_processing' => 0, 'chain_next_at' => null, 'chain_done_tasks' => null,
+            'chain_executed' => 0, 'chain_failed' => 0, 'chain_locked_until' => null, 'chain_claim' => null,
+        ]);
     }
 
     /** Mirrors ServerSchedule::dueCondition(). */
@@ -101,10 +117,11 @@ final class ScheduleChainRunnerTest extends TestCase
             'last_run_at' => null,
             'next_run_at' => Runner::format(self::START),
             'chain_next_at' => null,
-            'chain_last_sequence' => null,
+            'chain_done_tasks' => null,
             'chain_executed' => 0,
             'chain_failed' => 0,
             'chain_locked_until' => null,
+            'chain_claim' => null,
         ];
     }
 
@@ -139,8 +156,9 @@ final class ScheduleChainRunnerTest extends TestCase
         $row = $this->store->rows[self::ID];
         $this->assertSame(1, $row['is_processing'], 'the schedule shows as running for the whole chain');
         $this->assertSame(Runner::format(self::START + 900), $row['chain_next_at']);
-        $this->assertSame(1, $row['chain_last_sequence']);
+        $this->assertSame('[11]', $row['chain_done_tasks']);
         $this->assertNull($row['chain_locked_until'], 'the lease is given back while waiting');
+        $this->assertNull($row['chain_claim']);
 
         // Ticks before the offset has passed do nothing.
         for ($i = 1; $i < 15; ++$i) {
@@ -194,7 +212,7 @@ final class ScheduleChainRunnerTest extends TestCase
             $atKill = $this->store->rows[self::ID];
         }, $this->nextRunAt(...));
         $this->store->rows[self::ID] = $atKill;
-        $this->assertSame(2, $atKill['chain_last_sequence'], 'progress is stored before the task is sent');
+        $this->assertSame('[11,12]', $atKill['chain_done_tasks'], 'progress is stored before the task is sent');
         $this->assertNotNull($atKill['chain_locked_until']);
 
         // Nothing runs while the dead run's lease is live.
@@ -323,6 +341,95 @@ final class ScheduleChainRunnerTest extends TestCase
         $this->store->rows[self::ID]['is_active'] = 0;
         $this->runTicksFor(45 * 60);
         $this->assertSame([11], array_column($this->log, 0));
+    }
+
+    public function testTurningOffAndOnAgainStartsANewRunInsteadOfResuming(): void
+    {
+        $this->tick();
+        $this->store->turnOff(self::ID);
+        $this->store->rows[self::ID]['is_active'] = 1;
+
+        // Nothing of the cancelled run is sent; the next run starts at its next occurrence.
+        $this->now = self::START + 900;
+        $this->assertSame(Runner::STATUS_BUSY, $this->tick()['status']);
+        $this->assertSame([11], array_column($this->log, 0));
+    }
+
+    public function testTurnedOffDuringATickStopsBeforeTheNextTask(): void
+    {
+        foreach ($this->tasks as &$task) {
+            $task['time_offset'] = 0;
+        }
+        unset($task);
+        $runner = new Runner($this->store, fn (): int => $this->now);
+        $result = $runner->tick(self::ID, fn (): array => $this->tasks, function (array $task): void {
+            $this->log[] = [$task['id'], $this->now];
+            // The user turns the schedule off while the first task is being sent.
+            $this->store->turnOff(self::ID);
+        }, $this->nextRunAt(...));
+
+        $this->assertSame(Runner::STATUS_LOST, $result['status']);
+        $this->assertSame([11], array_column($this->log, 0));
+        $this->assertSame(0, $this->store->rows[self::ID]['is_processing']);
+    }
+
+    public function testDeletedDuringATickSendsNothingMore(): void
+    {
+        foreach ($this->tasks as &$task) {
+            $task['time_offset'] = 0;
+        }
+        unset($task);
+        $runner = new Runner($this->store, fn (): int => $this->now);
+        $result = $runner->tick(self::ID, fn (): array => $this->tasks, function (array $task): void {
+            $this->log[] = [$task['id'], $this->now];
+            unset($this->store->rows[self::ID]);
+        }, $this->nextRunAt(...));
+
+        $this->assertSame(Runner::STATUS_LOST, $result['status']);
+        $this->assertSame([11], array_column($this->log, 0));
+    }
+
+    public function testStalledRunCannotSendAfterItsLeaseWasTakenOver(): void
+    {
+        $this->tasks[1]['time_offset'] = 0;
+        $runner = new Runner($this->store, fn (): int => $this->now);
+        $result = $runner->tick(self::ID, fn (): array => $this->tasks, function (array $task): void {
+            $this->log[] = [$task['id'], $this->now];
+            if ($task['id'] !== 11) {
+                return;
+            }
+            // This run stalls for longer than the lease; another run takes over.
+            $this->now += Runner::LEASE_SECONDS + 1;
+            $this->tick();
+        }, $this->nextRunAt(...));
+
+        $this->assertSame(Runner::STATUS_LOST, $result['status']);
+        $this->assertSame([11, 12], array_column($this->log, 0), 'task 2 is sent once, by the run that took over');
+    }
+
+    public function testReorderingWhileWaitingNeitherRepeatsNorSkipsTasks(): void
+    {
+        $this->tick();
+        // Move task 11 (already sent) to the end: the others are renumbered.
+        $this->tasks[0]['sequence_id'] = 5;
+        $this->tasks[1]['sequence_id'] = 1;
+        $this->tasks[2]['sequence_id'] = 2;
+        $this->tasks[3]['sequence_id'] = 3;
+        $this->tasks[4]['sequence_id'] = 4;
+        $this->runTicksFor(45 * 60);
+
+        $this->assertSame([11, 12, 13, 14, 15], array_column($this->log, 0));
+    }
+
+    public function testDuplicateSequenceIdsStillRunEveryTask(): void
+    {
+        foreach ($this->tasks as &$task) {
+            $task['sequence_id'] = 1;
+        }
+        unset($task);
+        $this->runTicksFor(45 * 60);
+
+        $this->assertSame([11, 12, 13, 14, 15], array_column($this->log, 0));
     }
 
     public function testStoreErrorGivesTheLeaseBack(): void

@@ -59,17 +59,16 @@ class AServerScheduleProcessor implements TimeTask
      */
     public function run()
     {
-        // 30S so every once-a-minute cron run handles schedules: the last-run stamp is
-        // written when the job ends, so a 1M interval skipped every other minute.
-        // Each run is short now (task offsets are waited out across runs).
-        $cron = new Cron('server-schedule-processor', '30S');
-        $force = getenv('FP_CRON_FORCE') === '1';
+        // Runs on every cron run (forced): each run is short now, task offsets are
+        // waited out across runs, and the per-schedule lease keeps runs apart.
+        // A time gate measured from the end of the previous run could skip a minute.
+        $cron = new Cron('server-schedule-processor', '1M');
         try {
             $cron->runIfDue(function () {
                 $this->processSchedules();
                 // Report cron heartbeat
                 TimedTask::markRun('server-schedule-processor', true, 'Processed schedules heartbeat');
-            }, $force);
+            }, true);
         } catch (\Exception $e) {
             $app = App::getInstance(false, true);
             $app->getLogger()->error('Failed to process server schedules: ' . $e->getMessage());
@@ -170,6 +169,9 @@ class AServerScheduleProcessor implements TimeTask
         switch ($result['status']) {
             case ScheduleChainRunner::STATUS_BUSY:
                 MinecraftColorCodeSupport::sendOutputWithNewLine('&7Schedule ' . $scheduleId . ' is handled by another cron run, skipping');
+                break;
+            case ScheduleChainRunner::STATUS_LOST:
+                MinecraftColorCodeSupport::sendOutputWithNewLine('&eSchedule ' . $scheduleId . ' was deleted, turned off or taken over while running, stopped');
                 break;
             case ScheduleChainRunner::STATUS_SKIPPED:
                 $fresh = ServerSchedule::getScheduleById($scheduleId) ?? $schedule;
