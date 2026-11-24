@@ -24,12 +24,27 @@ import { FileObject } from '@/types/server';
 import { toast } from 'sonner';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { getApiErrorMessage, getApiErrorCode } from '@/lib/api-errors';
+import axios from 'axios';
 
 function sanitizeDirectoryPath(path: string | null): string | null {
     if (!path) return null;
 
     const normalized = ('/' + path).replace(/\/+/g, '/').replace(/\/+$/, '') || '/';
     return normalized === '' ? '/' : normalized;
+}
+
+function parentDirectory(path: string): string {
+    const parts = path.split('/').filter(Boolean);
+    parts.pop();
+    return parts.length === 0 ? '/' : `/${parts.join('/')}`;
+}
+
+/** The daemon answered that the listed folder does not exist (not a missing server or route). */
+function isDirectoryNotFound(err: unknown): boolean {
+    const code = getApiErrorCode(err);
+    if (code === 'FILES_DIRECTORY_NOT_FOUND') return true;
+    // WebSpace listings pass the daemon status through with this code.
+    return code === 'DAEMON_LIST_FAILED' && axios.isAxiosError(err) && err.response?.status === 404;
 }
 
 export interface UseFileManagerOptions {
@@ -62,6 +77,11 @@ export function useFileManager(serverUuid: string, options: UseFileManagerOption
     const [listLimit, setListLimit] = useState(250);
     const [listTotal, setListTotal] = useState(0);
     const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    // Directory the loaded `files` belong to. Rows are only shown while it matches the URL, so a
+    // click on a row from the previous folder can never be joined onto the new path.
+    const [listedDirectory, setListedDirectory] = useState<string | null>(null);
+    const requestSeqRef = useRef(0);
+    const abortRef = useRef<AbortController | null>(null);
 
     // Current directory from URL or default to /
     const currentDirectory = sanitizeDirectoryPath(searchParams?.get('path'));
@@ -113,22 +133,53 @@ export function useFileManager(serverUuid: string, options: UseFileManagerOption
     const refresh = useCallback(async () => {
         if (!serverUuid || !enabled) return;
 
+        const directory = currentDirectory || '/';
+        // Only the newest request may update the list; older ones are cancelled and ignored.
+        const seq = ++requestSeqRef.current;
+        abortRef.current?.abort();
+        const controller = new AbortController();
+        abortRef.current = controller;
+        let timeout: ReturnType<typeof setTimeout> | undefined;
+
         setLoading(true);
         setError(null);
         try {
             const data = await Promise.race([
-                filesApi.getFiles(serverUuid, currentDirectory || undefined, debouncedSearch || undefined),
-                new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Request timeout')), 15000)),
+                filesApi.getFiles(serverUuid, directory, debouncedSearch || undefined, { signal: controller.signal }),
+                new Promise<never>((_, reject) => {
+                    timeout = setTimeout(() => {
+                        controller.abort();
+                        reject(new Error('Request timeout'));
+                    }, 15000);
+                }),
             ]);
+            if (seq !== requestSeqRef.current) return;
 
             const sorted = sortFiles(data.contents);
             setFiles(sorted);
+            setListedDirectory(directory);
             setListLimited(data.limited);
             setListLimit(data.limit);
             setListTotal(data.total);
             setSelectedFiles([]);
         } catch (err) {
+            if (seq !== requestSeqRef.current) return;
             console.error(err);
+
+            if (directory !== '/' && !debouncedSearch && isDirectoryNotFound(err)) {
+                // The folder is gone (deleted, renamed or a stale link): go up instead of failing.
+                const parent = parentDirectory(directory);
+                toast.info(t('files.messages.directory_not_found', { directory, parent }));
+                const params = new URLSearchParams(searchParams?.toString() ?? '');
+                if (parent === '/') {
+                    params.delete('path');
+                } else {
+                    params.set('path', parent);
+                }
+                const qs = params.toString();
+                router.replace(qs ? `?${qs}` : '?', { scroll: false });
+                return;
+            }
 
             if (err instanceof Error && err.message === 'Request timeout') {
                 const message = t('errors.codes.REQUEST_TIMEOUT');
@@ -144,9 +195,19 @@ export function useFileManager(serverUuid: string, options: UseFileManagerOption
                 toast.error(message);
             }
         } finally {
-            setLoading(false);
+            if (timeout) clearTimeout(timeout);
+            if (seq === requestSeqRef.current) {
+                setLoading(false);
+            }
         }
-    }, [serverUuid, enabled, filesApi, currentDirectory, debouncedSearch, t]);
+    }, [serverUuid, enabled, filesApi, currentDirectory, debouncedSearch, t, router, searchParams]);
+
+    useEffect(() => {
+        return () => {
+            requestSeqRef.current += 1;
+            abortRef.current?.abort();
+        };
+    }, []);
 
     // Refresh when directory or server-side search changes
     useEffect(() => {
@@ -155,8 +216,13 @@ export function useFileManager(serverUuid: string, options: UseFileManagerOption
     }, [serverUuid, enabled, currentDirectory, debouncedSearch]);
 
     // Filtering logic - name search is server-side; only apply local ignore rules here
+    const currentFiles = useMemo(
+        () => (listedDirectory === (currentDirectory || '/') ? files : []),
+        [files, listedDirectory, currentDirectory],
+    );
+
     const filteredFiles = useMemo(() => {
-        let result = filterFeatherTrashFiles(files);
+        let result = filterFeatherTrashFiles(currentFiles);
 
         if (ignoredPatterns.length > 0) {
             result = result.filter((file) => {
@@ -165,7 +231,7 @@ export function useFileManager(serverUuid: string, options: UseFileManagerOption
         }
 
         return result;
-    }, [files, ignoredPatterns]);
+    }, [currentFiles, ignoredPatterns]);
 
     const navigate = (path: string) => {
         const params = new URLSearchParams(searchParams?.toString() ?? '');
@@ -174,13 +240,17 @@ export function useFileManager(serverUuid: string, options: UseFileManagerOption
         if (isHiddenServerEntry(segment) || isHiddenServerEntry(sanitizedPath.replace(/^\//, ''))) {
             return;
         }
+        setSearchQuery('');
+        setDebouncedSearch('');
+        // Double-clicks and repeated clicks land on the folder we are already in: no extra history entry.
+        if (sanitizedPath === (currentDirectory || '/')) {
+            return;
+        }
         if (sanitizedPath === '/') {
             params.delete('path');
         } else {
             params.set('path', sanitizedPath);
         }
-        setSearchQuery('');
-        setDebouncedSearch('');
         reportPanelInteraction('panel.file.browse', 'files');
         // scroll: false - Next's default scroll-to-segment uses scrollIntoView(), which also scrolls the
         // app shell and could push the mobile top bar out of view. Reset the page's own scroller instead.
@@ -250,7 +320,7 @@ export function useFileManager(serverUuid: string, options: UseFileManagerOption
 
     return {
         files: filteredFiles, // Return filtered files
-        rawFiles: files,
+        rawFiles: currentFiles,
         loading,
         error,
         currentDirectory,
