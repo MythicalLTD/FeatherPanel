@@ -200,12 +200,14 @@ export const filesApi = {
         uuid: string,
         directory: string = '/',
         search?: string,
+        options: { signal?: AbortSignal } = {},
     ): Promise<{ contents: FileObject[]; limited: boolean; limit: number; total: number }> => {
         const response = await api.get<ApiResponse<FilesResponse>>(`/user/servers/${uuid}/files`, {
             params: {
                 path: directory,
                 ...(search?.trim() ? { search: search.trim() } : {}),
             },
+            signal: options.signal,
         });
 
         const payload = response.data.data;

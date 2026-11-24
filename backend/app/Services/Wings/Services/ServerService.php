@@ -298,6 +298,9 @@ class ServerService
 
                 throw $e;
             }
+        } catch (WingsRequestException $e) {
+            // Keep a daemon 404 (folder not found) so callers can tell it apart from other failures.
+            return new WingsResponse(['error' => $e->getMessage()], (int) $e->getCode() === 404 ? 404 : 500);
         } catch (\Exception $e) {
             return new WingsResponse(['error' => $e->getMessage()], 500);
         }

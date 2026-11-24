@@ -1755,7 +1755,8 @@
             "DOMAIN_NOT_IN_WEBSPACE": "This domain does not belong to this WebSpace",
             "INVALID_SERVER_IDS": "Missing or invalid server IDs.",
             "TOO_MANY_SERVER_IDS": "Too many servers requested at once.",
-            "DNS_NOTHING_SELECTED": "Select at least one group of records to write"
+            "DNS_NOTHING_SELECTED": "Select at least one group of records to write",
+            "FILES_DIRECTORY_NOT_FOUND": "The requested folder was not found."
         },
         "global": {}
     },
@@ -6389,7 +6390,8 @@
             "download_selected_files_only": "Folders are skipped because this node cannot download folders.",
             "duplicating": "Duplicating...",
             "duplicated": "Created {name}",
-            "duplicate_failed": "Could not duplicate this item"
+            "duplicate_failed": "Could not duplicate this item",
+            "directory_not_found": "{directory} no longer exists, showing {parent} instead."
         },
         "editor": {
             "title": "Editing: {file}",
