@@ -246,6 +246,10 @@ export function useFileManager(serverUuid: string, options: UseFileManagerOption
         if (sanitizedPath === (currentDirectory || '/')) {
             return;
         }
+        // The listing of the folder we are leaving must not land (or redirect) after this point.
+        requestSeqRef.current += 1;
+        abortRef.current?.abort();
+        setLoading(true);
         if (sanitizedPath === '/') {
             params.delete('path');
         } else {
