@@ -250,6 +250,7 @@ export const webspaceFilesApi = {
         uuid: string,
         directory: string = '/',
         search?: string,
+        options: { signal?: AbortSignal } = {},
     ): Promise<{ contents: FileObject[]; limited: boolean; limit: number; total: number }> => {
         const normalizedDir = normalizePath(directory || '/');
         let page = 1;
@@ -265,6 +266,7 @@ export const webspaceFilesApi = {
                     page,
                     per_page: DEFAULT_PAGE_SIZE,
                 },
+                signal: options.signal,
             });
             const payload = response.data.data;
             const mapped = extractList(payload).map(mapFileObject);

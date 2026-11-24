@@ -183,7 +183,7 @@ class ServerFilesController
             new OA\Response(response: 400, description: 'Bad request - Missing or invalid UUID short'),
             new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
             new OA\Response(response: 403, description: 'Forbidden - Access denied to server'),
-            new OA\Response(response: 404, description: 'Not found - Server or node not found'),
+            new OA\Response(response: 404, description: 'Not found - Server, node or directory not found'),
             new OA\Response(response: 500, description: 'Internal server error - Failed to fetch files'),
         ]
     )]
@@ -215,6 +215,10 @@ class ServerFilesController
                         'WINGS_CONNECTION_UNAVAILABLE',
                         503
                     );
+                }
+
+                if ($response->getStatusCode() === 404) {
+                    return ApiResponse::error('The requested directory was not found.', 'FILES_DIRECTORY_NOT_FOUND', 404);
                 }
 
                 return ApiResponse::error('Failed to fetch files: ' . $error, 'WINGS_ERROR', $response->getStatusCode());
