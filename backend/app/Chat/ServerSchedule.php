@@ -210,6 +210,12 @@ class ServerSchedule
     /**
      * Reset schedules stuck in processing for longer than the given minutes.
      * Returns the number of schedules reset.
+     *
+     * A schedule that is part way through its task chain (`chain_next_at` set)
+     * is not stuck: it is waiting for its next task's time offset, and the next
+     * tick carries on from where it stopped. Only rows without chain state and
+     * without a live tick lease are reset. Chains of schedules that were turned
+     * off are dropped so they do not resume when the schedule is turned on again.
      */
     public static function resetStuckProcessing(int $stuckAfterMinutes = 15): int
     {
@@ -217,7 +223,14 @@ class ServerSchedule
             return 0;
         }
         $pdo = Database::getPdoConnection();
-        $stmt = $pdo->prepare('UPDATE ' . self::$table . ' SET is_processing = 0, updated_at = NOW() WHERE is_processing = 1 AND updated_at < DATE_SUB(NOW(), INTERVAL :minutes MINUTE)');
+        $now = gmdate('Y-m-d H:i:s');
+        $stmt = $pdo->prepare(
+            'UPDATE ' . self::$table . ' SET is_processing = 0, chain_next_at = NULL, chain_last_sequence = NULL,'
+            . ' chain_executed = 0, chain_failed = 0, chain_locked_until = NULL, updated_at = NOW()'
+            . ' WHERE is_processing = 1 AND (chain_locked_until IS NULL OR chain_locked_until <= :now)'
+            . ' AND ((chain_next_at IS NULL AND updated_at < DATE_SUB(NOW(), INTERVAL :minutes MINUTE)) OR is_active = 0)'
+        );
+        $stmt->bindValue(':now', $now, \PDO::PARAM_STR);
         $stmt->bindValue(':minutes', $stuckAfterMinutes, \PDO::PARAM_INT);
         $stmt->execute();
 
@@ -226,6 +239,10 @@ class ServerSchedule
 
     /**
      * Get schedules that are due to run.
+     *
+     * That is a new run (`next_run_at` reached and not processing) or a running
+     * task chain whose next task is due (`chain_next_at` reached). Schedules
+     * held by a live tick lease are left out.
      *
      * Comparison is done in UTC: PHP's `date()` is pinned to UTC by App.php
      * and `next_run_at` is persisted as a UTC literal by
@@ -236,11 +253,40 @@ class ServerSchedule
     {
         $pdo = Database::getPdoConnection();
         $now = gmdate('Y-m-d H:i:s');
-        $stmt = $pdo->prepare('SELECT * FROM ' . self::$table . ' WHERE is_active = 1 AND next_run_at <= :now AND is_processing = 0');
-        $stmt->bindValue(':now', $now, \PDO::PARAM_STR);
+        $stmt = $pdo->prepare('SELECT * FROM ' . self::$table . ' WHERE ' . self::dueCondition() . ' ORDER BY id ASC');
+        self::bindDueNow($stmt, $now);
         $stmt->execute();
 
         return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Atomically take the tick lease on a due schedule.
+     *
+     * The UPDATE only matches while the schedule is still due and no other cron
+     * run holds a live lease, so when two runs overlap only one of them gets the
+     * row. Returns the fresh row on success, null when someone else has it or it
+     * is no longer due.
+     *
+     * @param int $now Unix time (UTC)
+     * @param int $leaseUntil Unix time the lease expires
+     */
+    public static function claimForTick(int $id, int $now, int $leaseUntil): ?array
+    {
+        if ($id <= 0) {
+            return null;
+        }
+        $pdo = Database::getPdoConnection();
+        $stmt = $pdo->prepare('UPDATE ' . self::$table . ' SET chain_locked_until = :until WHERE id = :id AND ' . self::dueCondition());
+        $stmt->bindValue(':until', gmdate('Y-m-d H:i:s', $leaseUntil), \PDO::PARAM_STR);
+        $stmt->bindValue(':id', $id, \PDO::PARAM_INT);
+        self::bindDueNow($stmt, gmdate('Y-m-d H:i:s', $now));
+        $stmt->execute();
+        if ($stmt->rowCount() !== 1) {
+            return null;
+        }
+
+        return self::getScheduleById($id);
     }
 
     /**
@@ -989,5 +1035,25 @@ class ServerSchedule
         }
 
         return $sanitized;
+    }
+
+    /**
+     * SQL condition for a schedule that a cron tick should handle (bind with {@see bindDueNow()}).
+     */
+    private static function dueCondition(): string
+    {
+        return 'is_active = 1 AND (chain_locked_until IS NULL OR chain_locked_until <= :due_now_lock)'
+            . ' AND ((is_processing = 0 AND next_run_at <= :due_now_run)'
+            . ' OR (is_processing = 1 AND chain_next_at IS NOT NULL AND chain_next_at <= :due_now_chain))';
+    }
+
+    /**
+     * Bind the `:due_now_*` placeholders of {@see dueCondition()}.
+     */
+    private static function bindDueNow(\PDOStatement $stmt, string $now): void
+    {
+        foreach (['lock', 'run', 'chain'] as $suffix) {
+            $stmt->bindValue(':due_now_' . $suffix, $now, \PDO::PARAM_STR);
+        }
     }
 }
