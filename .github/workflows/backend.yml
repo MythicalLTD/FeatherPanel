@@ -47,6 +47,12 @@ jobs:
           MYSQL_DATABASE: testing
         ports:
           - 3306
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+          --health-start-period=10s
     steps:
       - name: Code Checkout
         uses: actions/checkout@v4
@@ -84,22 +90,26 @@ jobs:
           REDIS_HOST=127.0.0.1
           REDIS_PASSWORD=testredis
           EOF
-      - name: Verify database connection
+      - name: Wait for database
         run: |
           php -r "
           \$env = parse_ini_file('storage/config/.env');
-          try {
-            \$pdo = new PDO(
-              'mysql:host=' . \$env['DATABASE_HOST'] . ';port=' . \$env['DATABASE_PORT'] . ';dbname=' . \$env['DATABASE_DATABASE'],
-              \$env['DATABASE_USER'],
-              \$env['DATABASE_PASSWORD']
-            );
-            \$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-            echo 'Database connection successful!' . PHP_EOL;
-          } catch (Exception \$e) {
-            echo 'Database connection failed: ' . \$e->getMessage() . PHP_EOL;
-            exit(1);
+          \$dsn = 'mysql:host=' . \$env['DATABASE_HOST'] . ';port=' . \$env['DATABASE_PORT'] . ';dbname=' . \$env['DATABASE_DATABASE'];
+          \$lastError = '';
+          for (\$attempt = 1; \$attempt <= 30; ++\$attempt) {
+            try {
+              \$pdo = new PDO(\$dsn, \$env['DATABASE_USER'], \$env['DATABASE_PASSWORD'], [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_TIMEOUT => 5]);
+              \$pdo->query('SELECT 1');
+              echo 'Database connection successful after ' . \$attempt . ' attempt(s).' . PHP_EOL;
+              exit(0);
+            } catch (Exception \$e) {
+              \$lastError = \$e->getMessage();
+              echo 'Database not ready (attempt ' . \$attempt . '/30): ' . \$lastError . PHP_EOL;
+              sleep(2);
+            }
           }
+          echo 'Database connection failed: ' . \$lastError . PHP_EOL;
+          exit(1);
           "
       - name: Run migrations
         run: |
