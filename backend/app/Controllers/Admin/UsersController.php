@@ -552,7 +552,7 @@ class UsersController
     public function showByExternalId(Request $request, string $externalId): Response
     {
         $app = App::getInstance(true);
-        if (empty($externalId)) {
+        if ($externalId === '') {
             return ApiResponse::error('External ID is required', 'INVALID_EXTERNAL_ID', 400);
         }
 
@@ -723,8 +723,21 @@ class UsersController
                 return $reauth;
             }
         }
-        $userId = User::createUser($data);
+        try {
+            $userId = User::createUser($data);
+        } catch (\PDOException $e) {
+            $conflict = self::externalIdConflict($data, null, $e);
+            if ($conflict !== null) {
+                return $conflict;
+            }
+            throw $e;
+        }
         if (!$userId) {
+            $conflict = self::externalIdConflict($data, null, null);
+            if ($conflict !== null) {
+                return $conflict;
+            }
+
             return ApiResponse::error('Failed to create user', 'FAILED_TO_CREATE_USER', 500);
         }
 
@@ -933,6 +946,14 @@ class UsersController
             }
         }
 
+        // external_id has its own rules (text or number, or null to clear); check it before the generic
+        // type checks so create and update answer an invalid value the same way.
+        if (array_key_exists('external_id', $data)) {
+            $externalIdError = self::applyExternalId($data, (string) $user['uuid']);
+            if ($externalIdError !== null) {
+                return $externalIdError;
+            }
+        }
         // Validation rules (only for fields being updated)
         $lengthRules = [
             'username' => [3, 32],
@@ -985,12 +1006,6 @@ class UsersController
             $existingUser = User::getUserByUsername($data['username']);
             if ($existingUser && $existingUser['uuid'] !== $user['uuid']) {
                 return ApiResponse::error('Username already exists', 'USERNAME_ALREADY_EXISTS', 409);
-            }
-        }
-        if (array_key_exists('external_id', $data)) {
-            $externalIdError = self::applyExternalId($data, (string) $user['uuid']);
-            if ($externalIdError !== null) {
-                return $externalIdError;
             }
         }
         // Hash password if updating password
@@ -1048,8 +1063,14 @@ class UsersController
             return ApiResponse::error('No data to update', 'NO_DATA', 400);
         }
 
-        $updated = User::updateUser($user['uuid'], $data);
+        $updateError = null;
+        $updated = User::updateUser($user['uuid'], $data, $updateError);
         if (!$updated) {
+            $conflict = self::externalIdConflict($data, (string) $user['uuid'], $updateError);
+            if ($conflict !== null) {
+                return $conflict;
+            }
+
             return ApiResponse::error('Failed to update user', 'FAILED_TO_UPDATE_USER', 500, [
                 'error' => $updated,
 
@@ -2283,6 +2304,28 @@ class UsersController
             return ApiResponse::error('Another user already uses this external_id', 'EXTERNAL_ID_IN_USE', 409, [
                 'uuid' => (string) $existing['uuid'],
             ]);
+        }
+
+        return null;
+    }
+
+    /**
+     * After a failed write: answer 409 when the external_id was taken in the meantime (another request
+     * claimed it between the check in applyExternalId() and the write, and the unique index refused it).
+     */
+    private static function externalIdConflict(array $data, ?string $currentUserUuid, ?\PDOException $error): ?Response
+    {
+        if (!isset($data['external_id']) || $data['external_id'] === '') {
+            return null;
+        }
+        $holder = User::getUserByExternalId((string) $data['external_id']);
+        if ($holder && (string) $holder['uuid'] !== $currentUserUuid) {
+            return ApiResponse::error('Another user already uses this external_id', 'EXTERNAL_ID_IN_USE', 409, [
+                'uuid' => (string) $holder['uuid'],
+            ]);
+        }
+        if ($error !== null && (int) ($error->errorInfo[1] ?? 0) === 1062 && str_contains($error->getMessage(), 'external_id')) {
+            return ApiResponse::error('Another user already uses this external_id', 'EXTERNAL_ID_IN_USE', 409);
         }
 
         return null;
