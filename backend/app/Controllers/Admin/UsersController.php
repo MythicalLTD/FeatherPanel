@@ -746,19 +746,24 @@ class UsersController
             return ApiResponse::error('Failed to create user', 'FAILED_TO_CREATE_USER', 500);
         }
 
-        Welcome::send([
-            'email' => $data['email'],
-            'subject' => 'Welcome to ' . $config->getSetting(ConfigInterface::APP_NAME, 'FeatherPanel'),
-            'app_name' => $config->getSetting(ConfigInterface::APP_NAME, 'FeatherPanel'),
-            'app_url' => $config->getSetting(ConfigInterface::APP_URL, 'https://featherpanel.mythical.systems'),
-            'first_name' => $data['first_name'],
-            'last_name' => $data['last_name'],
-            'password' => $tempPassword,
-            'username' => $data['username'],
-            'app_support_url' => $config->getSetting(ConfigInterface::APP_SUPPORT_URL, 'https://discord.mythical.systems'),
-            'uuid' => $data['uuid'],
-            'enabled' => $config->getSetting(ConfigInterface::SMTP_ENABLED, 'false'),
-        ]);
+        // The account exists from here on; the welcome email is best effort.
+        try {
+            Welcome::send([
+                'email' => $data['email'],
+                'subject' => 'Welcome to ' . $config->getSetting(ConfigInterface::APP_NAME, 'FeatherPanel'),
+                'app_name' => $config->getSetting(ConfigInterface::APP_NAME, 'FeatherPanel'),
+                'app_url' => $config->getSetting(ConfigInterface::APP_URL, 'https://featherpanel.mythical.systems'),
+                'first_name' => $data['first_name'],
+                'last_name' => $data['last_name'],
+                'password' => $tempPassword,
+                'username' => $data['username'],
+                'app_support_url' => $config->getSetting(ConfigInterface::APP_SUPPORT_URL, 'https://discord.mythical.systems'),
+                'uuid' => $data['uuid'],
+                'enabled' => $config->getSetting(ConfigInterface::SMTP_ENABLED, 'false'),
+            ]);
+        } catch (\Throwable $e) {
+            App::getInstance(true)->getLogger()->error('User ' . $userId . ' created, but the welcome email could not be sent: ' . $e->getMessage());
+        }
 
         Activity::createActivity([
             'user_uuid' => $data['uuid'],
@@ -777,15 +782,19 @@ class UsersController
         // Emit event
         global $eventManager;
         if (isset($eventManager) && $eventManager !== null) {
-            $eventManager->emit(
-                UserEvent::onUserCreated(),
-                [
-                    'user' => $data,
-                    'user_id' => $userId,
-                    'uuid' => $data['uuid'],
-                    'created_by' => $request->attributes->get('user'),
-                ]
-            );
+            try {
+                $eventManager->emit(
+                    UserEvent::onUserCreated(),
+                    [
+                        'user' => $data,
+                        'user_id' => $userId,
+                        'uuid' => $data['uuid'],
+                        'created_by' => $request->attributes->get('user'),
+                    ]
+                );
+            } catch (\Throwable $e) {
+                App::getInstance(true)->getLogger()->error('User ' . $userId . ' created, but a user-created event listener failed: ' . $e->getMessage());
+            }
         }
 
         return ApiResponse::success([
