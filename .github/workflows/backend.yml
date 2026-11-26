@@ -33,6 +33,8 @@ jobs:
         run: composer install --no-interaction --no-progress --no-suggest --prefer-dist
       - name: Lint
         run: composer lint
+      - name: PHPStan
+        run: storage/packages/bin/phpstan analyse --memory-limit=2G --no-progress --error-format=github
   tests:
     name: Backend Tests
     runs-on: ubuntu-latest

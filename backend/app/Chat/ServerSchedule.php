@@ -809,6 +809,38 @@ class ServerSchedule
     }
 
     /**
+     * Normalize schedule boolean flags (0/1) from JSON booleans, integers, or strings.
+     */
+    public static function normalizeBooleanFlag(mixed $value): ?int
+    {
+        if (is_bool($value)) {
+            return $value ? 1 : 0;
+        }
+
+        if (is_numeric($value)) {
+            $int = (int) $value;
+
+            return in_array($int, [0, 1], true) ? $int : null;
+        }
+
+        if (is_string($value)) {
+            $trimmed = trim($value);
+            if ($trimmed === '') {
+                return null;
+            }
+
+            $filtered = filter_var($trimmed, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+            if ($filtered === null) {
+                return null;
+            }
+
+            return $filtered ? 1 : 0;
+        }
+
+        return null;
+    }
+
+    /**
      * Build cron expression string in minute-hour-dayOfMonth-month-dayOfWeek order.
      */
     private static function formatCronExpression(string $dayOfWeek, string $month, string $dayOfMonth, string $hour, string $minute): string
@@ -1040,38 +1072,6 @@ class ServerSchedule
         }
 
         return false;
-    }
-
-    /**
-     * Normalize schedule boolean flags (0/1) from JSON booleans, integers, or strings.
-     */
-    public static function normalizeBooleanFlag(mixed $value): ?int
-    {
-        if (is_bool($value)) {
-            return $value ? 1 : 0;
-        }
-
-        if (is_numeric($value)) {
-            $int = (int) $value;
-
-            return in_array($int, [0, 1], true) ? $int : null;
-        }
-
-        if (is_string($value)) {
-            $trimmed = trim($value);
-            if ($trimmed === '') {
-                return null;
-            }
-
-            $filtered = filter_var($trimmed, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
-            if ($filtered === null) {
-                return null;
-            }
-
-            return $filtered ? 1 : 0;
-        }
-
-        return null;
     }
 
     /**

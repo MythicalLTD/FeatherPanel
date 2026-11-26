@@ -169,17 +169,6 @@ class ExternalNotifier
         }
     }
 
-    private static function eventFor(string $kind): ?string
-    {
-        foreach (self::EVENTS as $event => $kinds) {
-            if (in_array($kind, $kinds, true)) {
-                return $event;
-            }
-        }
-
-        return null;
-    }
-
     /** @return string[] */
     public static function describe(string $kind, array $data): array
     {
@@ -237,6 +226,17 @@ class ExternalNotifier
         }
 
         return $lines;
+    }
+
+    private static function eventFor(string $kind): ?string
+    {
+        foreach (self::EVENTS as $event => $kinds) {
+            if (in_array($kind, $kinds, true)) {
+                return $event;
+            }
+        }
+
+        return null;
     }
 
     private static function email(string $uuid, string $appName, string $title, array $lines, string $url): void

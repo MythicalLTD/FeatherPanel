@@ -18,11 +18,11 @@
 namespace App\Services\Notifications;
 
 use App\App;
+use Minishlink\WebPush\VAPID;
 use App\Chat\PushSubscription;
 use App\Config\ConfigInterface;
-use Minishlink\WebPush\Subscription;
-use Minishlink\WebPush\VAPID;
 use Minishlink\WebPush\WebPush;
+use Minishlink\WebPush\Subscription;
 
 /**
  * Delivers inbox events as Web Push notifications to browsers that opted in.

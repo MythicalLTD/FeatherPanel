@@ -18,8 +18,8 @@
 namespace App\Services\Chatbot;
 
 use App\App;
-use App\Config\ConfigInterface;
 use App\Helpers\LogRedactor;
+use App\Config\ConfigInterface;
 
 /**
  * Explains console / crash errors and optionally suggests a file edit.
@@ -207,8 +207,8 @@ PROMPT;
             return $value;
         }
 
-        return substr($value, 0, $limit) . "
-/* …truncated… */";
+        return substr($value, 0, $limit) . '
+/* …truncated… */';
     }
 
     private function truncateTail(string $value, int $limit): string
@@ -217,7 +217,7 @@ PROMPT;
             return $value;
         }
 
-        return "/* …truncated… */
-" . substr($value, -$limit);
+        return '/* …truncated… */
+' . substr($value, -$limit);
     }
 }

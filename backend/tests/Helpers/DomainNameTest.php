@@ -16,8 +16,8 @@
  */
 
 use App\Chat\WebSpace;
-use App\Chat\WebSpaceDomain;
 use App\Helpers\DomainName;
+use App\Chat\WebSpaceDomain;
 use PHPUnit\Framework\TestCase;
 
 class DomainNameTest extends TestCase
@@ -46,7 +46,7 @@ class DomainNameTest extends TestCase
 
     public function testAsciiNamesAreOnlyTrimmedAndLowercased(): void
     {
-        $this->assertSame('www.example.com', DomainName::toAscii("  WWW.Example.COM.  "));
+        $this->assertSame('www.example.com', DomainName::toAscii('  WWW.Example.COM.  '));
         $this->assertSame('xn--grtnerei-0za.example.com', DomainName::toAscii('xn--grtnerei-0za.example.com'));
         $this->assertSame('*.example.com', DomainName::toAscii('*.Example.com'));
     }

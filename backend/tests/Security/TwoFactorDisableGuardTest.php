@@ -28,7 +28,7 @@ final class TwoFactorDisableGuardTest extends TestCase
     public function testSessionUpdateRefusesToDisableRequiredTwoFactor(): void
     {
         $src = (string) file_get_contents(__DIR__ . '/../../app/Controllers/User/User/SessionController.php');
-        $this->assertMatchesRegularExpression('/SecurityPolicy::twoFactorApplies\(\$user\)\)\s*\{\s*return ApiResponse::error\([^;]+TWO_FACTOR_REQUIRED_BY_POLICY/s', $src);
+        $this->assertMatchesRegularExpression('/SecurityPolicy::twoFactorApplies\(\$user\)\s*\)\s*\{\s*return ApiResponse::error\([^;]+TWO_FACTOR_REQUIRED_BY_POLICY/s', $src);
         $locale = json_decode((string) file_get_contents(__DIR__ . '/../../../frontendv2/public/locales/en.json'), true);
         $this->assertStringContainsString('TWO_FACTOR_REQUIRED_BY_POLICY', json_encode($locale));
     }

@@ -22,9 +22,9 @@ use App\Chat\Server;
 use App\SubuserPermissions;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
-use App\Services\Chatbot\AiEditorHelperService;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use App\Services\Chatbot\AiEditorHelperService;
 
 /**
  * Optional AI helper for console crashes and the file editor.
@@ -90,10 +90,11 @@ class ServerAiHelperController
         }
         if (!$hasConsole && !$hasFile) {
             // Question-only still requires at least console OR file read so random users cannot burn AI quota.
-            if ($denied = $this->checkAnyPermission($request, $server, [
+            $denied = $this->checkAnyPermission($request, $server, [
                 SubuserPermissions::CONTROL_CONSOLE,
                 SubuserPermissions::FILE_READ_CONTENT,
-            ])) {
+            ]);
+            if ($denied) {
                 return $denied;
             }
         }

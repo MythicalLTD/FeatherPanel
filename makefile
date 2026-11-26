@@ -148,7 +148,7 @@ lint: lint-backend lint-frontend
 
 lint-backend:
 	@echo -e "${PURPLE}${INFO} Backend lint...${NC}"
-	@cd $(BACKEND_DIR) && $(COMPOSER) run lint
+	@cd $(BACKEND_DIR) && $(COMPOSER) run lint:fix && $(COMPOSER) run lint
 	@echo -e "${GREEN}${CHECK} Backend lint complete${NC}\n"
 
 lint-frontend:

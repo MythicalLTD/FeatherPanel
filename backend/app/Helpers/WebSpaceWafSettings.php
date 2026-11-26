@@ -134,7 +134,7 @@ final class WebSpaceWafSettings
      * Validate a partial update. Only keys present in $patch are touched.
      *
      * @param array<string, mixed> $current full current settings (already with defaults)
-     * @param array<string, mixed> $patch   decoded request body
+     * @param array<string, mixed> $patch decoded request body
      *
      * @return array{settings: array<string, mixed>, error: ?string, field: ?string}
      */
@@ -162,6 +162,40 @@ final class WebSpaceWafSettings
         }
 
         return ['settings' => $next, 'error' => null, 'field' => null];
+    }
+
+    /**
+     * Same rule as the deny lists use everywhere else in the panel (WebSpaceWafRules), so one
+     * definition decides what may end up in a generated proxy config.
+     */
+    public static function isValidIp(string $value): bool
+    {
+        return WebSpaceWafRules::isValidIp(trim($value));
+    }
+
+    public static function isValidPath(string $path): bool
+    {
+        // The shared pattern ends in "$", which also matches before one trailing newline.
+        return WebSpaceWafRules::isValidPath($path) && preg_match('/[\x00-\x20\x7f]/', $path) !== 1;
+    }
+
+    /**
+     * The daemon engine (Coraza/Go) uses RE2, which has no lookaround or backreferences.
+     * Reject those here so the panel never accepts a rule the node cannot load.
+     */
+    public static function isValidRegex(string $pattern): bool
+    {
+        if ($pattern === '' || strlen($pattern) > 200 || !self::usesOnlyRe2Syntax($pattern)) {
+            return false;
+        }
+        set_error_handler(static fn () => true);
+        try {
+            $ok = @preg_match('~' . str_replace('~', '\~', $pattern) . '~u', '') !== false;
+        } finally {
+            restore_error_handler();
+        }
+
+        return $ok;
     }
 
     /**
@@ -202,39 +236,6 @@ final class WebSpaceWafSettings
         }
 
         return [null, 'Unknown setting'];
-    }
-
-    /**
-     * Same rule as the deny lists use everywhere else in the panel (WebSpaceWafRules), so one
-     * definition decides what may end up in a generated proxy config.
-     */
-    public static function isValidIp(string $value): bool
-    {
-        return WebSpaceWafRules::isValidIp(trim($value));
-    }
-
-    public static function isValidPath(string $path): bool
-    {
-        // The shared pattern ends in "$", which also matches before one trailing newline.
-        return WebSpaceWafRules::isValidPath($path) && preg_match('/[\x00-\x20\x7f]/', $path) !== 1;
-    }
-    /**
-     * The daemon engine (Coraza/Go) uses RE2, which has no lookaround or backreferences.
-     * Reject those here so the panel never accepts a rule the node cannot load.
-     */
-    public static function isValidRegex(string $pattern): bool
-    {
-        if ($pattern === '' || strlen($pattern) > 200 || !self::usesOnlyRe2Syntax($pattern)) {
-            return false;
-        }
-        set_error_handler(static fn () => true);
-        try {
-            $ok = @preg_match('~' . str_replace('~', '\~', $pattern) . '~u', '') !== false;
-        } finally {
-            restore_error_handler();
-        }
-
-        return $ok;
     }
 
     /**
@@ -486,7 +487,8 @@ final class WebSpaceWafSettings
         }
         $out = [];
         foreach ($v as $r) {
-            if (!is_array($r)
+            if (
+                !is_array($r)
                 || !in_array($r['target'] ?? null, self::TARGETS, true)
                 || !in_array($r['op'] ?? null, self::OPS, true)
                 || !in_array($r['action'] ?? null, self::ACTIONS, true)

@@ -21,8 +21,8 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RouteCollection;
 use App\Controllers\User\User\SessionController;
 use App\Controllers\User\User\UiPreferencesController;
-use App\Controllers\User\User\NotificationSettingsController;
 use App\Controllers\User\User\PushSubscriptionController;
+use App\Controllers\User\User\NotificationSettingsController;
 
 return function (RouteCollection $routes): void {
     App::getInstance(true)->registerAuthRoute(
@@ -109,7 +109,7 @@ return function (RouteCollection $routes): void {
         Rate::perMinute(5), // Default: Admin can override in ratelimit.json
         'user-session'
     );
-    
+
     App::getInstance(true)->registerAuthRoute(
         $routes,
         'push-vapid',
@@ -166,7 +166,7 @@ return function (RouteCollection $routes): void {
         'user-session'
     );
 
-App::getInstance(true)->registerAuthRoute(
+    App::getInstance(true)->registerAuthRoute(
         $routes,
         'preferences-ui',
         '/api/user/preferences/ui',

@@ -15,20 +15,12 @@
  * See the LICENSE file or <https://www.gnu.org/licenses/>.
  */
 
-use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use App\Helpers\WebSpaceWafSettings;
+use PHPUnit\Framework\Attributes\DataProvider;
 
 class WebSpaceWafSettingsTest extends TestCase
 {
-    /**
-     * @param array<string, mixed> $stored settings already saved for the webspace
-     */
-    private function apply(array $patch, array $stored = []): array
-    {
-        return WebSpaceWafSettings::apply(WebSpaceWafSettings::withDefaults($stored), $patch);
-    }
-
     public function testDefaultsAreValidAndRoundTrip(): void
     {
         $d = WebSpaceWafSettings::defaults();
@@ -223,5 +215,13 @@ class WebSpaceWafSettingsTest extends TestCase
         $this->assertNotNull($this->apply(['anti_bot' => ['custom_agents' => ["x\ny"]]])['error']);
         $this->assertNotNull($this->apply(['login' => ['enabled' => true, 'per_minute' => 10, 'ban_minutes' => 30, 'paths' => ['login']]])['error']);
         $this->assertNull($this->apply(['login' => ['enabled' => true, 'per_minute' => 10, 'ban_minutes' => 30, 'paths' => ['/login']]])['error']);
+    }
+
+    /**
+     * @param array<string, mixed> $stored settings already saved for the webspace
+     */
+    private function apply(array $patch, array $stored = []): array
+    {
+        return WebSpaceWafSettings::apply(WebSpaceWafSettings::withDefaults($stored), $patch);
     }
 }
