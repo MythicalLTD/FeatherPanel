@@ -4,7 +4,8 @@ public class PterodactylEgg
 {
     public int Id { get; set; }
     public string Uuid { get; set; } = string.Empty;
-    public int NestId { get; set; }
+    /// <summary>Null on Pterodactyl v2 (nests replaced by tags).</summary>
+    public int? NestId { get; set; }
     public string Author { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public string? Description { get; set; }

@@ -30,7 +30,7 @@ public class EggsDisplay
             table.AddRow(
                 egg.Id.ToString(),
                 Markup.Escape(egg.Name ?? ""),
-                egg.NestId.ToString(),
+                egg.NestId?.ToString() ?? "null",
                 Markup.Escape(egg.Author ?? ""),
                 egg.Variables.Count.ToString()
             );

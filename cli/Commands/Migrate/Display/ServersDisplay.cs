@@ -31,7 +31,7 @@ public class ServersDisplay
                 Markup.Escape(server.Name ?? ""),
                 server.OwnerId.ToString(),
                 server.NodeId.ToString(),
-                server.NestId.ToString(),
+                server.NestId?.ToString() ?? "null",
                 server.EggId.ToString(),
                 Markup.Escape(server.Status ?? "N/A")
             );

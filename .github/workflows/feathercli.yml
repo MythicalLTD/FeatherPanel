@@ -5,10 +5,80 @@ on: [push, pull_request]
 permissions:
   contents: read
 
+# Every commit:
+#   - Build on amd64 + arm64
+#   - Migrate smoke for Pterodactyl v1 + v2 on both arches
 jobs:
-  migrate-smoke:
-    name: Build CLI + migrate smoke
-    runs-on: ubuntu-latest
+  build:
+    name: Build FeatherCli (${{ matrix.arch }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            runner: ubuntu-latest
+            rid: linux-x64
+            out_dir: dist/linux-x64
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+            rid: linux-arm64
+            out_dir: dist/linux-arm64
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Cache NuGet
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-${{ matrix.arch }}-nuget-${{ hashFiles('cli/FeatherCli.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ matrix.arch }}-nuget-
+
+      - name: Build FeatherCli (${{ matrix.arch }})
+        working-directory: cli
+        run: |
+          dotnet publish FeatherCli.csproj \
+            -c Release \
+            -r ${{ matrix.rid }} \
+            --self-contained true \
+            /p:PublishSingleFile=true \
+            /p:PublishTrimmed=false \
+            -o ${{ matrix.out_dir }}
+          chmod +x ${{ matrix.out_dir }}/FeatherCli
+          uname -m
+          file ${{ matrix.out_dir }}/FeatherCli || true
+          ${{ matrix.out_dir }}/FeatherCli --help
+          ${{ matrix.out_dir }}/FeatherCli migrate --help
+
+      - name: Upload FeatherCli binary (${{ matrix.arch }})
+        uses: actions/upload-artifact@v4
+        with:
+          name: feathercli-linux-${{ matrix.arch }}
+          path: cli/${{ matrix.out_dir }}/FeatherCli
+          if-no-files-found: error
+          retention-days: 1
+
+  migrate-v1:
+    name: Migrate smoke — Pterodactyl v1 (${{ matrix.arch }})
+    needs: build
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            runner: ubuntu-latest
+            artifact_dir: cli/dist/linux-x64
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+            artifact_dir: cli/dist/linux-arm64
     services:
       database:
         image: mariadb:11
@@ -23,6 +93,17 @@ jobs:
           --health-timeout=5s
           --health-retries=20
           --health-start-period=10s
+    env:
+      SEED_VARIANT: v1
+      SEED_FILE: tests/fixtures/pterodactyl/seed.sql
+      FEATHERCLI_BIN: ${{ matrix.artifact_dir }}/FeatherCli
+      MIN_USERS: "10"
+      MIN_NODES: "2"
+      MIN_SERVERS: "10"
+      MIN_SPELLS: "10"
+      MIN_BACKUPS: "50"
+      MIN_SCHEDULES: "20"
+      MIN_DATABASES: "5"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -35,44 +116,29 @@ jobs:
           tools: composer:v2
           coverage: none
 
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: "10.0.x"
-
       - name: Cache Composer
         uses: actions/cache@v4
         with:
           path: backend/storage/packages
-          key: ${{ runner.os }}-composer-${{ hashFiles('backend/composer.lock') }}
+          key: ${{ runner.os }}-${{ matrix.arch }}-composer-${{ hashFiles('backend/composer.lock') }}
           restore-keys: |
-            ${{ runner.os }}-composer-
+            ${{ runner.os }}-${{ matrix.arch }}-composer-
 
-      - name: Cache NuGet
-        uses: actions/cache@v4
+      - name: Download FeatherCli binary (${{ matrix.arch }})
+        uses: actions/download-artifact@v4
         with:
-          path: ~/.nuget/packages
-          key: ${{ runner.os }}-nuget-${{ hashFiles('cli/FeatherCli.csproj') }}
-          restore-keys: |
-            ${{ runner.os }}-nuget-
+          name: feathercli-linux-${{ matrix.arch }}
+          path: ${{ matrix.artifact_dir }}
+
+      - name: Make FeatherCli executable
+        run: |
+          chmod +x "$FEATHERCLI_BIN"
+          uname -m
+          "$FEATHERCLI_BIN" --help >/dev/null
 
       - name: Install PHP dependencies
         working-directory: backend
         run: composer install --no-interaction --no-progress --prefer-dist
-
-      - name: Build FeatherCli
-        working-directory: cli
-        run: |
-          dotnet publish FeatherCli.csproj \
-            -c Release \
-            -r linux-x64 \
-            --self-contained true \
-            /p:PublishSingleFile=true \
-            /p:PublishTrimmed=false \
-            -o dist/linux-x64
-          chmod +x dist/linux-x64/FeatherCli
-          ./dist/linux-x64/FeatherCli --help
-          ./dist/linux-x64/FeatherCli migrate --help
 
       - name: Create FeatherPanel .env
         working-directory: backend
@@ -94,25 +160,7 @@ jobs:
 
       - name: Wait for MariaDB
         working-directory: backend
-        run: |
-          php -r "
-          \$env = parse_ini_file('storage/config/.env');
-          \$dsn = 'mysql:host=' . \$env['DATABASE_HOST'] . ';port=' . \$env['DATABASE_PORT'];
-          for (\$i = 1; \$i <= 30; ++\$i) {
-            try {
-              \$pdo = new PDO(\$dsn, \$env['DATABASE_USER'], \$env['DATABASE_PASSWORD'], [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_TIMEOUT => 5]);
-              \$pdo->exec('CREATE DATABASE IF NOT EXISTS featherpanel');
-              \$pdo->exec('CREATE DATABASE IF NOT EXISTS pterodactyl_source');
-              \$pdo->exec('CREATE DATABASE IF NOT EXISTS pterodactyl_staging');
-              echo \"ready after \$i attempts\n\";
-              exit(0);
-            } catch (Exception \$e) {
-              echo \$e->getMessage() . PHP_EOL;
-              sleep(2);
-            }
-          }
-          exit(1);
-          "
+        run: bash ../.github/scripts/feathercli-wait-mariadb.sh
 
       - name: Migrate FeatherPanel schema
         working-directory: backend
@@ -123,16 +171,11 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -y -qq mariadb-client
 
-      - name: Seed Pterodactyl source DB + dump
+      - name: Seed Pterodactyl v1 + dump
         working-directory: backend
         env:
           DB_PORT: ${{ job.services.database.ports[3306] }}
-        run: |
-          mysql -h 127.0.0.1 -P "$DB_PORT" -u root pterodactyl_source < tests/fixtures/pterodactyl/schema.sql
-          mysql -h 127.0.0.1 -P "$DB_PORT" -u root pterodactyl_source < tests/fixtures/pterodactyl/seed.sql
-          mysqldump -h 127.0.0.1 -P "$DB_PORT" -u root pterodactyl_source > /tmp/panel.sql
-          cp tests/fixtures/pterodactyl/panel.env /tmp/panel.env
-          test -s /tmp/panel.sql
+        run: bash ../.github/scripts/feathercli-seed-pterodactyl.sh
 
       - name: Bootstrap admin API key
         working-directory: backend
@@ -140,68 +183,153 @@ jobs:
 
       - name: Start panel HTTP
         working-directory: backend
-        run: |
-          nohup php -S 127.0.0.1:8080 -t public public/index.php > /tmp/panel-http.log 2>&1 &
-          echo $! > /tmp/panel-http.pid
-          for i in $(seq 1 30); do
-            # /api/health/live is the dedicated liveness probe (always 200 when PHP boots).
-            # Do not probe /api/system or / — those are not routes and return 404, which
-            # makes curl -sf fail even when the panel is healthy.
-            if curl -sf http://127.0.0.1:8080/api/health/live >/dev/null 2>&1; then
-              echo "panel up"
-              exit 0
-            fi
-            sleep 1
-          done
-          echo "panel failed to start"
-          echo "--- last health probe ---"
-          curl -sS -D - -o /tmp/panel-health.body http://127.0.0.1:8080/api/health/live || true
-          echo
-          cat /tmp/panel-health.body 2>/dev/null || true
-          echo
-          echo "--- panel-http.log ---"
-          cat /tmp/panel-http.log || true
-          exit 1
+        run: bash ../.github/scripts/feathercli-start-panel.sh
 
-      - name: Run feathercli migrate
+      - name: Run feathercli migrate (v1 / ${{ matrix.arch }})
         env:
           DB_PORT: ${{ job.services.database.ports[3306] }}
           FEATHERCLI_API_URL: http://127.0.0.1:8080
-        run: |
-          export FEATHERCLI_API_KEY="$(cat /tmp/feathercli-api-key)"
-          cli/dist/linux-x64/FeatherCli migrate \
-            --sql-dump /tmp/panel.sql \
-            --env-file /tmp/panel.env \
-            --staging-db-host 127.0.0.1 \
-            --staging-db-port "$DB_PORT" \
-            --staging-db-user root \
-            --staging-db-password '' \
-            --confirm-blueprint \
-            --confirm-migrate \
-            --reset
+        run: bash .github/scripts/feathercli-run-migrate.sh
 
-      - name: Assert imported entities
+      - name: Assert imported entities (v1 / ${{ matrix.arch }})
+        working-directory: backend
+        run: bash ../.github/scripts/feathercli-assert-migrate.sh
+
+      - name: Stop panel HTTP
+        if: always()
+        run: |
+          if [ -f /tmp/panel-http.pid ]; then kill "$(cat /tmp/panel-http.pid)" || true; fi
+          cat /tmp/panel-http.log || true
+
+  migrate-v2:
+    name: Migrate smoke — Pterodactyl v2 (${{ matrix.arch }})
+    needs: build
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            runner: ubuntu-latest
+            artifact_dir: cli/dist/linux-x64
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+            artifact_dir: cli/dist/linux-arm64
+    services:
+      database:
+        image: mariadb:11
+        env:
+          MYSQL_ALLOW_EMPTY_PASSWORD: yes
+          MYSQL_DATABASE: featherpanel
+        ports:
+          - 3306
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+          --health-start-period=10s
+    env:
+      SEED_VARIANT: v2
+      SEED_FILE: tests/fixtures/pterodactyl/seed_v2.sql
+      FEATHERCLI_BIN: ${{ matrix.artifact_dir }}/FeatherCli
+      MIN_USERS: "10"
+      MIN_NODES: "1"
+      MIN_SERVERS: "8"
+      MIN_SPELLS: "10"
+      MIN_BACKUPS: "40"
+      MIN_SCHEDULES: "8"
+      MIN_DATABASES: "5"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.5"
+          extensions: bcmath, curl, gd, mbstring, mysql, openssl, pdo, tokenizer, xml, zip
+          tools: composer:v2
+          coverage: none
+
+      - name: Cache Composer
+        uses: actions/cache@v4
+        with:
+          path: backend/storage/packages
+          key: ${{ runner.os }}-${{ matrix.arch }}-composer-${{ hashFiles('backend/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ matrix.arch }}-composer-
+
+      - name: Download FeatherCli binary (${{ matrix.arch }})
+        uses: actions/download-artifact@v4
+        with:
+          name: feathercli-linux-${{ matrix.arch }}
+          path: ${{ matrix.artifact_dir }}
+
+      - name: Make FeatherCli executable
+        run: |
+          chmod +x "$FEATHERCLI_BIN"
+          uname -m
+          "$FEATHERCLI_BIN" --help >/dev/null
+
+      - name: Install PHP dependencies
+        working-directory: backend
+        run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Create FeatherPanel .env
         working-directory: backend
         run: |
-          php -r "
-          \$env = parse_ini_file('storage/config/.env');
-          \$pdo = new PDO(
-            'mysql:host=' . \$env['DATABASE_HOST'] . ';port=' . \$env['DATABASE_PORT'] . ';dbname=' . \$env['DATABASE_DATABASE'],
-            \$env['DATABASE_USER'],
-            \$env['DATABASE_PASSWORD'],
-            [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
-          );
-          \$users = (int) \$pdo->query('SELECT COUNT(*) FROM featherpanel_users')->fetchColumn();
-          \$nodes = (int) \$pdo->query('SELECT COUNT(*) FROM featherpanel_nodes')->fetchColumn();
-          \$servers = (int) \$pdo->query('SELECT COUNT(*) FROM featherpanel_servers')->fetchColumn();
-          \$spells = (int) \$pdo->query('SELECT COUNT(*) FROM featherpanel_spells')->fetchColumn();
-          echo \"users=\$users nodes=\$nodes servers=\$servers spells=\$spells\n\";
-          if (\$users < 2) { fwrite(STDERR, \"expected >=2 users\n\"); exit(1); }
-          if (\$nodes < 1) { fwrite(STDERR, \"expected >=1 nodes\n\"); exit(1); }
-          if (\$servers < 1) { fwrite(STDERR, \"expected >=1 servers\n\"); exit(1); }
-          if (\$spells < 1) { fwrite(STDERR, \"expected >=1 spells\n\"); exit(1); }
-          echo \"migration assertions passed\n\";
-          "
+          mkdir -p storage/config
+          KEY=$(head -c 32 /dev/urandom | base64)
+          cat > storage/config/.env <<EOF
+          DATABASE_HOST=127.0.0.1
+          DATABASE_PORT=${{ job.services.database.ports[3306] }}
+          DATABASE_DATABASE=featherpanel
+          DATABASE_USER=root
+          DATABASE_PASSWORD=
+          DATABASE_ENCRYPTION="xchacha20"
+          DATABASE_ENCRYPTION_KEY="${KEY}"
+          REDIS_HOST=127.0.0.1
+          REDIS_PASSWORD=testredis
+          APP_URL=http://127.0.0.1:8080
+          EOF
+
+      - name: Wait for MariaDB
+        working-directory: backend
+        run: bash ../.github/scripts/feathercli-wait-mariadb.sh
+
+      - name: Migrate FeatherPanel schema
+        working-directory: backend
+        run: php cli migrate --skip-path-check
+
+      - name: Install MariaDB client
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq mariadb-client
+
+      - name: Seed Pterodactyl v2 + dump
+        working-directory: backend
+        env:
+          DB_PORT: ${{ job.services.database.ports[3306] }}
+        run: bash ../.github/scripts/feathercli-seed-pterodactyl.sh
+
+      - name: Bootstrap admin API key
+        working-directory: backend
+        run: php tests/fixtures/pterodactyl/bootstrap_admin.php /tmp/feathercli-api-key
+
+      - name: Start panel HTTP
+        working-directory: backend
+        run: bash ../.github/scripts/feathercli-start-panel.sh
+
+      - name: Run feathercli migrate (v2 / ${{ matrix.arch }})
+        env:
+          DB_PORT: ${{ job.services.database.ports[3306] }}
+          FEATHERCLI_API_URL: http://127.0.0.1:8080
+        run: bash .github/scripts/feathercli-run-migrate.sh
+
+      - name: Assert imported entities (v2 / ${{ matrix.arch }})
+        working-directory: backend
+        run: bash ../.github/scripts/feathercli-assert-migrate.sh
 
       - name: Stop panel HTTP
         if: always()

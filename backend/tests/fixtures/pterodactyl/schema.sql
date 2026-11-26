@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS `nests` (
 CREATE TABLE IF NOT EXISTS `eggs` (
   `id` int unsigned NOT NULL AUTO_INCREMENT,
   `uuid` char(36) NOT NULL,
-  `nest_id` int unsigned NOT NULL,
+  `nest_id` int unsigned DEFAULT NULL,
   `author` varchar(191) NOT NULL,
   `name` varchar(191) NOT NULL,
   `description` text,
@@ -92,7 +92,7 @@ CREATE TABLE IF NOT EXISTS `nodes` (
   `disk_overallocate` int NOT NULL DEFAULT 0,
   `upload_size` int NOT NULL DEFAULT 100,
   `daemon_token_id` char(16) NOT NULL,
-  `daemon_token` varchar(191) NOT NULL,
+  `daemon_token` text NOT NULL,
   `daemonListen` smallint unsigned NOT NULL DEFAULT 8080,
   `daemonSFTP` smallint unsigned NOT NULL DEFAULT 2022,
   `daemonBase` varchar(191) NOT NULL,
@@ -182,7 +182,7 @@ CREATE TABLE IF NOT EXISTS `servers` (
   `threads` varchar(191) DEFAULT NULL,
   `oom_disabled` tinyint(1) NOT NULL DEFAULT 0,
   `allocation_id` int unsigned NOT NULL,
-  `nest_id` int unsigned NOT NULL,
+  `nest_id` int unsigned DEFAULT NULL,
   `egg_id` int unsigned NOT NULL,
   `startup` text NOT NULL,
   `image` varchar(191) NOT NULL,
@@ -282,6 +282,27 @@ CREATE TABLE IF NOT EXISTS `tasks` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Pterodactyl v2: nests replaced by tags (+ taggables pivot on eggs).
+CREATE TABLE IF NOT EXISTS `tags` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `name` varchar(191) NOT NULL,
+  `slug` varchar(191) NOT NULL,
+  `color` varchar(32) DEFAULT NULL,
+  `legacy_nest_id` int unsigned DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `tags_slug_unique` (`slug`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `taggables` (
+  `tag_id` int unsigned NOT NULL,
+  `kind` varchar(20) NOT NULL DEFAULT 'egg',
+  `taggable_type` varchar(50) NOT NULL,
+  `taggable_id` int unsigned NOT NULL,
+  PRIMARY KEY (`tag_id`, `taggable_type`, `taggable_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 SET FOREIGN_KEY_CHECKS = 1;

@@ -1331,25 +1331,49 @@ public class MigrateCommandModule : ICommandModule
                     return await dbService.GetNestsAsync(_pterodactylConfig);
                 });
 
+            var realmSource = "nests";
+            // Pterodactyl 2.x emptied nests and moved categories to tags (+ taggables on eggs).
             if (nests.Count == 0)
             {
-                AnsiConsole.MarkupLine("[yellow]No nests found in Pterodactyl database[/]");
-                return new Dictionary<string, object>
+                AnsiConsole.MarkupLine("[yellow]No nests found — checking Pterodactyl v2 tags...[/]");
+                var tagsForRealms = await dbService.GetTagsAsync(_pterodactylConfig!);
+                if (tagsForRealms.Count == 0)
                 {
-                    ["nests_count"] = 0,
-                    ["imported_count"] = 0
-                };
+                    AnsiConsole.MarkupLine("[yellow]No nests or tags found in Pterodactyl database[/]");
+                    return new Dictionary<string, object>
+                    {
+                        ["nests_count"] = 0,
+                        ["tags_count"] = 0,
+                        ["imported_count"] = 0,
+                        ["realm_source"] = "none"
+                    };
+                }
+
+                realmSource = "tags";
+                nests = tagsForRealms.Select(t => new PterodactylNest
+                {
+                    Id = t.LegacyNestId ?? t.Id,
+                    Uuid = Guid.NewGuid().ToString(),
+                    Author = "tags@pterodactyl.v2",
+                    Name = t.Name,
+                    Description = string.IsNullOrWhiteSpace(t.Slug)
+                        ? "Imported from Pterodactyl v2 tag"
+                        : $"Imported from Pterodactyl v2 tag '{t.Slug}'",
+                    CreatedAt = t.CreatedAt,
+                    UpdatedAt = t.UpdatedAt
+                }).ToList();
+                AnsiConsole.MarkupLine($"[yellow]Using {tagsForRealms.Count} tag(s) as realm source (Pterodactyl v2)[/]");
             }
 
             // Display nests preview
             var nestsDisplay = new NestsDisplay();
             nestsDisplay.DisplayNests(nests);
 
-            AnsiConsole.MarkupLine($"[yellow]Found {nests.Count} nest(s) that will be imported to FeatherPanel as realms[/]");
+            AnsiConsole.MarkupLine($"[yellow]Found {nests.Count} {realmSource} that will be imported to FeatherPanel as realms[/]");
             AnsiConsole.WriteLine();
 
             // Countdown with cancellation option
-            AnsiConsole.MarkupLine("[bold yellow]Going to import the nests into FeatherPanel in 3 seconds...[/]");
+            AnsiConsole.MarkupLine($"[bold yellow]Going to import the {realmSource} into FeatherPanel in 3 seconds...[/]");
             AnsiConsole.MarkupLine("[yellow]You can cancel by pressing Ctrl+C[/]");
             AnsiConsole.WriteLine();
 
@@ -1369,7 +1393,7 @@ public class MigrateCommandModule : ICommandModule
             }
 
             AnsiConsole.WriteLine();
-            AnsiConsole.MarkupLine("[yellow]Importing nests to FeatherPanel as realms...[/]");
+            AnsiConsole.MarkupLine($"[yellow]Importing {realmSource} to FeatherPanel as realms...[/]");
 
             var importedCount = 0;
             var failedCount = 0;
@@ -1384,14 +1408,14 @@ public class MigrateCommandModule : ICommandModule
                     {
                         Name = nest.Name,
                         Description = nest.Description,
-                        Id = nest.Id // Preserve Pterodactyl nest ID for WHMCS and other services
+                        Id = nest.Id // Preserve Pterodactyl nest/tag ID for WHMCS and other services
                     };
 
                     var response = await apiClient.CreateRealmAsync(createRequest);
 
                     if (response == null || response.Error || !response.Success)
                     {
-                        AnsiConsole.MarkupLine($"[red]✗ Failed to import nest '{EscapeMarkup(nest.Name)}' (ID: {nest.Id})[/]");
+                        AnsiConsole.MarkupLine($"[red]✗ Failed to import '{EscapeMarkup(nest.Name)}' (ID: {nest.Id})[/]");
                         if (response?.ErrorMessage != null)
                         {
                             AnsiConsole.MarkupLine($"[dim]  Error: {EscapeMarkup(response.ErrorMessage)}[/]");
@@ -1404,44 +1428,61 @@ public class MigrateCommandModule : ICommandModule
                         var realmId = response.Data?.Realm?.Id ?? 0;
                         if (realmId > 0)
                         {
-                            // Verify the ID matches what we requested (should be the same as Pterodactyl nest ID)
                             if (realmId == nest.Id)
                             {
-                                AnsiConsole.MarkupLine($"[green]✓ Imported nest '{EscapeMarkup(nest.Name)}' (ID: {nest.Id} - preserved as Realm)[/]");
+                                AnsiConsole.MarkupLine($"[green]✓ Imported '{EscapeMarkup(nest.Name)}' (ID: {nest.Id} - preserved as Realm)[/]");
                             }
                             else
                             {
-                                AnsiConsole.MarkupLine($"[yellow]⚠  Imported nest '{EscapeMarkup(nest.Name)}' (Pterodactyl ID: {nest.Id} → Realm ID: {realmId}) - ID changed[/]");
+                                AnsiConsole.MarkupLine($"[yellow]⚠  Imported '{EscapeMarkup(nest.Name)}' (Pterodactyl ID: {nest.Id} → Realm ID: {realmId}) - ID changed[/]");
                             }
                             importedRealmIds.Add(realmId);
                             nestToRealmMapping[nest.Id] = realmId;
                         }
                         else
                         {
-                            AnsiConsole.MarkupLine($"[yellow]⚠  Imported nest '{EscapeMarkup(nest.Name)}' (ID: {nest.Id}) but realm ID was not returned in response[/]");
+                            AnsiConsole.MarkupLine($"[yellow]⚠  Imported '{EscapeMarkup(nest.Name)}' (ID: {nest.Id}) but realm ID was not returned in response[/]");
                             AnsiConsole.MarkupLine($"[dim]  Response: Success={response.Success}, Data={response.Data != null}, Realm={response.Data?.Realm != null}[/]");
                         }
                     }
                 }
                 catch (Exception ex)
                 {
-                    AnsiConsole.MarkupLine($"[red]✗ Error importing nest '{EscapeMarkup(nest.Name)}' (ID: {nest.Id}): {EscapeMarkup(ex.Message)}[/]");
+                    AnsiConsole.MarkupLine($"[red]✗ Error importing '{EscapeMarkup(nest.Name)}' (ID: {nest.Id}): {EscapeMarkup(ex.Message)}[/]");
                     failedCount++;
                 }
             }
 
+            // v2: ensure raw tag ids also map when LegacyNestId was used as the realm key.
+            if (realmSource == "tags")
+            {
+                var tags = await dbService.GetTagsAsync(_pterodactylConfig!);
+                foreach (var tag in tags)
+                {
+                    var key = tag.LegacyNestId ?? tag.Id;
+                    if (nestToRealmMapping.TryGetValue(key, out var realmId))
+                    {
+                        nestToRealmMapping[tag.Id] = realmId;
+                        if (tag.LegacyNestId.HasValue)
+                        {
+                            nestToRealmMapping[tag.LegacyNestId.Value] = realmId;
+                        }
+                    }
+                }
+            }
+
             AnsiConsole.WriteLine();
-            AnsiConsole.MarkupLine($"[green]✓ Successfully imported {importedCount} nest(s)[/]");
+            AnsiConsole.MarkupLine($"[green]✓ Successfully imported {importedCount} realm source(s) from {realmSource}[/]");
             if (failedCount > 0)
             {
-                AnsiConsole.MarkupLine($"[yellow]⚠  Failed to import {failedCount} nest(s)[/]");
+                AnsiConsole.MarkupLine($"[yellow]⚠  Failed to import {failedCount} realm source(s)[/]");
             }
             
             if (nestToRealmMapping.Count == 0 && importedCount > 0)
             {
                 AnsiConsole.MarkupLine("[red]✗ WARNING: No realm IDs were captured during import![/]");
                 AnsiConsole.MarkupLine("[yellow]This means the API response didn't include realm IDs. The mapping cannot be created.[/]");
-                AnsiConsole.MarkupLine("[yellow]You may need to manually map nests to realms or check the API response format.[/]");
+                AnsiConsole.MarkupLine("[yellow]You may need to manually map nests/tags to realms or check the API response format.[/]");
             }
             else if (nestToRealmMapping.Count < importedCount)
             {
@@ -1449,7 +1490,7 @@ public class MigrateCommandModule : ICommandModule
             }
             else
             {
-                AnsiConsole.MarkupLine($"[green]✓ Successfully mapped {nestToRealmMapping.Count} nest(s) to realm(s)[/]");
+                AnsiConsole.MarkupLine($"[green]✓ Successfully mapped {nestToRealmMapping.Count} source id(s) to realm(s)[/]");
             }
 
             // Convert dictionary to a format that can be serialized to JSON
@@ -1460,7 +1501,9 @@ public class MigrateCommandModule : ICommandModule
 
             return new Dictionary<string, object>
             {
-                ["nests_count"] = nests.Count,
+                ["nests_count"] = realmSource == "nests" ? nests.Count : 0,
+                ["tags_count"] = realmSource == "tags" ? nests.Count : 0,
+                ["realm_source"] = realmSource,
                 ["imported_count"] = importedCount,
                 ["failed_count"] = failedCount,
                 ["imported_realm_ids"] = importedRealmIds,
@@ -1657,6 +1700,10 @@ public class MigrateCommandModule : ICommandModule
                 throw new Exception("Import cancelled by user");
             }
 
+            // Pterodactyl v2: eggs have null nest_id; resolve via primary tag.
+            var eggPrimaryTagIds = await dbService.GetEggPrimaryTagIdsAsync(_pterodactylConfig!);
+            var eggToRealmMapping = new Dictionary<string, int>();
+
             AnsiConsole.WriteLine();
             AnsiConsole.MarkupLine("[yellow]Importing eggs to FeatherPanel as spells...[/]");
 
@@ -1669,27 +1716,36 @@ public class MigrateCommandModule : ICommandModule
             {
                 try
                 {
-                    // Check if we have a mapping for this nest
-                    if (!nestToRealmMapping.ContainsKey(egg.NestId))
+                    int? effectiveNestId = egg.NestId;
+                    if (!effectiveNestId.HasValue || !nestToRealmMapping.ContainsKey(effectiveNestId.Value))
                     {
-                        AnsiConsole.MarkupLine($"[red]✗ Skipping egg '{EscapeMarkup(egg.Name)}' (ID: {egg.Id}) - No realm mapping for nest ID {egg.NestId}[/]");
+                        if (eggPrimaryTagIds.TryGetValue(egg.Id, out var tagId) && nestToRealmMapping.ContainsKey(tagId))
+                        {
+                            effectiveNestId = tagId;
+                        }
+                    }
+
+                    if (!effectiveNestId.HasValue || !nestToRealmMapping.ContainsKey(effectiveNestId.Value))
+                    {
+                        AnsiConsole.MarkupLine($"[red]✗ Skipping egg '{EscapeMarkup(egg.Name)}' (ID: {egg.Id}) - No realm mapping for nest/tag ID {egg.NestId?.ToString() ?? "null"}[/]");
                         failedCount++;
                         continue;
                     }
 
-                    var realmId = nestToRealmMapping[egg.NestId];
+                    var realmId = nestToRealmMapping[effectiveNestId.Value];
+                    eggToRealmMapping[egg.Id.ToString()] = realmId;
 
                     // Build the nest to realm mapping dictionary for this request
                     var requestMapping = new Dictionary<string, int>
                     {
-                        [egg.NestId.ToString()] = realmId
+                        [effectiveNestId.Value.ToString()] = realmId
                     };
 
                     var eggData = new EggData
                     {
                         Id = egg.Id,
                         Uuid = egg.Uuid,
-                        NestId = egg.NestId,
+                        NestId = effectiveNestId,
                         Author = egg.Author,
                         Name = egg.Name,
                         Description = egg.Description,
@@ -1806,7 +1862,8 @@ public class MigrateCommandModule : ICommandModule
                 ["failed_count"] = failedCount,
                 ["imported_spell_ids"] = importedSpellIds,
                 ["total_variables_imported"] = totalVariablesImported,
-                ["pterodactyl_egg_ids"] = eggs.Select(e => e.Id).ToList()
+                ["pterodactyl_egg_ids"] = eggs.Select(e => e.Id).ToList(),
+                ["egg_to_realm_mapping"] = eggToRealmMapping.ToDictionary(kvp => kvp.Key, kvp => (object)kvp.Value)
             };
         });
 
@@ -2905,6 +2962,7 @@ public class MigrateCommandModule : ICommandModule
         {
             // Get all necessary mappings from step details
             var nestToRealmMapping = new Dictionary<string, int>();
+            var eggToRealmMapping = new Dictionary<string, int>();
             var eggToSpellMapping = new Dictionary<string, int>();
             var nodeToNodeMapping = new Dictionary<string, int>();
             var userToUserMapping = new Dictionary<string, int>();
@@ -2912,18 +2970,17 @@ public class MigrateCommandModule : ICommandModule
             var variableToVariableMapping = new Dictionary<string, int>(); // egg_variable_id -> spell_variable_id (1:1 since IDs are preserved)
             var serverToServerMapping = new Dictionary<string, int>(); // Will be built as we import servers
 
-            // Load nest to realm mapping
-            if (_migrationState != null && _migrationState.StepDetails.ContainsKey("nest_to_realm_mapping"))
+            static void LoadStringIntMap(object? mappingData, Dictionary<string, int> target)
             {
-                var mappingData = _migrationState.StepDetails["nest_to_realm_mapping"];
-                
-                // Handle different serialization formats
                 if (mappingData is JsonElement mappingJson)
                 {
                     var dict = JsonSerializer.Deserialize<Dictionary<string, int>>(mappingJson.GetRawText());
                     if (dict != null)
                     {
-                        nestToRealmMapping = dict;
+                        foreach (var kvp in dict)
+                        {
+                            target[kvp.Key] = kvp.Value;
+                        }
                     }
                 }
                 else if (mappingData is Dictionary<string, object> mappingDict)
@@ -2932,14 +2989,29 @@ public class MigrateCommandModule : ICommandModule
                     {
                         if (int.TryParse(kvp.Value?.ToString(), out int value))
                         {
-                            nestToRealmMapping[kvp.Key] = value;
+                            target[kvp.Key] = value;
                         }
                     }
                 }
                 else if (mappingData is Dictionary<string, int> directDict)
                 {
-                    nestToRealmMapping = directDict;
+                    foreach (var kvp in directDict)
+                    {
+                        target[kvp.Key] = kvp.Value;
+                    }
                 }
+            }
+
+            // Load nest to realm mapping
+            if (_migrationState != null && _migrationState.StepDetails.ContainsKey("nest_to_realm_mapping"))
+            {
+                LoadStringIntMap(_migrationState.StepDetails["nest_to_realm_mapping"], nestToRealmMapping);
+            }
+
+            // Load egg to realm mapping (needed when server.nest_id is null on Pterodactyl v2)
+            if (_migrationState != null && _migrationState.StepDetails.ContainsKey("egg_to_realm_mapping"))
+            {
+                LoadStringIntMap(_migrationState.StepDetails["egg_to_realm_mapping"], eggToRealmMapping);
             }
             
             // Fallback: rebuild from imported_realm_ids and pterodactyl_nest_ids if mapping is empty
@@ -3214,16 +3286,19 @@ public class MigrateCommandModule : ICommandModule
                     // Get server variables for this server
                     var serverVariables = await dbService.GetServerVariablesAsync(_pterodactylConfig, server.Id);
 
-                    // Map all IDs
-                    // Use original nest_id if not in mapping (shouldn't happen, but handle gracefully)
+                    // Map all IDs — nest_id may be null on Pterodactyl v2; fall back to egg→realm.
                     int mappedRealmId;
-                    if (nestToRealmMapping.ContainsKey(server.NestId.ToString()))
+                    if (server.NestId.HasValue && nestToRealmMapping.ContainsKey(server.NestId.Value.ToString()))
                     {
-                        mappedRealmId = nestToRealmMapping[server.NestId.ToString()];
+                        mappedRealmId = nestToRealmMapping[server.NestId.Value.ToString()];
+                    }
+                    else if (eggToRealmMapping.ContainsKey(server.EggId.ToString()))
+                    {
+                        mappedRealmId = eggToRealmMapping[server.EggId.ToString()];
                     }
                     else
                     {
-                        AnsiConsole.MarkupLine($"[red]✗ Skipping server '{EscapeMarkup(server.Name)}' (ID: {server.Id}) - No realm mapping for nest ID {server.NestId}[/]");
+                        AnsiConsole.MarkupLine($"[red]✗ Skipping server '{EscapeMarkup(server.Name)}' (ID: {server.Id}) - No realm mapping for nest ID {server.NestId?.ToString() ?? "null"} / egg ID {server.EggId}[/]");
                         failedCount++;
                         continue;
                     }

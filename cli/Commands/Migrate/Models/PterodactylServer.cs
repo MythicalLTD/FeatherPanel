@@ -19,7 +19,8 @@ public class PterodactylServer
     public string? Threads { get; set; }
     public bool OomDisabled { get; set; }
     public int AllocationId { get; set; }
-    public int NestId { get; set; }
+    /// <summary>Null on Pterodactyl v2 (nests replaced by tags).</summary>
+    public int? NestId { get; set; }
     public int EggId { get; set; }
     public string Startup { get; set; } = string.Empty;
     public string Image { get; set; } = string.Empty;

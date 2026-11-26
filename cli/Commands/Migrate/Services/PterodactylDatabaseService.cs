@@ -313,6 +313,105 @@ public class PterodactylDatabaseService
         }
     }
 
+    public async Task<bool> TagsTableExistsAsync(PterodactylConfig config)
+    {
+        try
+        {
+            await using var connection = await GetConnectionAsync(config);
+            return await ColumnExistsAsync(connection, "tags", "id")
+                && await ColumnExistsAsync(connection, "taggables", "tag_id");
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    public async Task<List<PterodactylTag>> GetTagsAsync(PterodactylConfig config)
+    {
+        var tags = new List<PterodactylTag>();
+
+        try
+        {
+            if (!await TagsTableExistsAsync(config))
+            {
+                return tags;
+            }
+
+            await using var connection = await GetConnectionAsync(config);
+            await using var command = new MySqlCommand(
+                "SELECT `id`, `name`, `slug`, `color`, `legacy_nest_id`, `created_at`, `updated_at` FROM `tags` ORDER BY `id`",
+                connection
+            );
+
+            await using var reader = await command.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                tags.Add(new PterodactylTag
+                {
+                    Id = ReadMysqlIntAsInt32(reader, 0, nameof(PterodactylTag.Id)),
+                    Name = reader.GetString(1),
+                    Slug = reader.GetString(2),
+                    Color = reader.IsDBNull(3) ? null : reader.GetString(3),
+                    LegacyNestId = ReadMysqlIntAsInt32OrNull(reader, 4, nameof(PterodactylTag.LegacyNestId)),
+                    CreatedAt = reader.IsDBNull(5) ? null : reader.GetDateTime(5),
+                    UpdatedAt = reader.IsDBNull(6) ? null : reader.GetDateTime(6)
+                });
+            }
+
+            _logger?.LogInformation("Loaded {Count} tags from database", tags.Count);
+            return tags;
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogError(ex, "Failed to read tags from database");
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Pterodactyl v2: map egg_id -> primary tag_id (lowest tag id for that egg).
+    /// </summary>
+    public async Task<Dictionary<int, int>> GetEggPrimaryTagIdsAsync(PterodactylConfig config)
+    {
+        var map = new Dictionary<int, int>();
+
+        try
+        {
+            if (!await TagsTableExistsAsync(config))
+            {
+                return map;
+            }
+
+            await using var connection = await GetConnectionAsync(config);
+            await using var command = new MySqlCommand(
+                @"SELECT tg.`taggable_id` AS egg_id, MIN(tg.`tag_id`) AS tag_id
+                  FROM `taggables` tg
+                  WHERE tg.`taggable_type` IN ('egg', 'App\\Models\\Egg', 'Pterodactyl\\Models\\Egg')
+                     OR tg.`kind` = 'egg'
+                  GROUP BY tg.`taggable_id`
+                  ORDER BY egg_id",
+                connection
+            );
+
+            await using var reader = await command.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                var eggId = ReadMysqlIntAsInt32(reader, 0, "egg_id");
+                var tagId = ReadMysqlIntAsInt32(reader, 1, "tag_id");
+                map[eggId] = tagId;
+            }
+
+            _logger?.LogInformation("Loaded primary tag mapping for {Count} eggs", map.Count);
+            return map;
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogError(ex, "Failed to read egg tag mappings from database");
+            throw;
+        }
+    }
+
     public async Task<List<PterodactylEgg>> GetEggsWithVariablesAsync(PterodactylConfig config)
     {
         var eggs = new List<PterodactylEgg>();
@@ -335,7 +434,7 @@ public class PterodactylDatabaseService
                 {
                     Id = ReadMysqlIntAsInt32(eggsReader, 0, nameof(PterodactylEgg.Id)),
                     Uuid = eggsReader.GetGuid(1).ToString(),
-                    NestId = ReadMysqlIntAsInt32(eggsReader, 2, nameof(PterodactylEgg.NestId)),
+                    NestId = ReadMysqlIntAsInt32OrNull(eggsReader, 2, nameof(PterodactylEgg.NestId)),
                     Author = eggsReader.GetString(3),
                     Name = eggsReader.GetString(4),
                     Description = eggsReader.IsDBNull(5) ? null : eggsReader.GetString(5),
@@ -699,7 +798,7 @@ public class PterodactylDatabaseService
                     Threads = reader.IsDBNull(reader.GetOrdinal("threads")) ? null : reader.GetString(reader.GetOrdinal("threads")),
                     OomDisabled = reader.GetBoolean(reader.GetOrdinal("oom_disabled")),
                     AllocationId = ReadMysqlIntAsInt32(reader, "allocation_id", nameof(PterodactylServer.AllocationId)),
-                    NestId = ReadMysqlIntAsInt32(reader, "nest_id", nameof(PterodactylServer.NestId)),
+                    NestId = ReadMysqlIntAsInt32OrNull(reader, "nest_id", nameof(PterodactylServer.NestId)),
                     EggId = ReadMysqlIntAsInt32(reader, "egg_id", nameof(PterodactylServer.EggId)),
                     Startup = reader.GetString(reader.GetOrdinal("startup")),
                     Image = reader.GetString(reader.GetOrdinal("image")),

@@ -23,7 +23,7 @@ public class EggData
     public string? Uuid { get; set; }
 
     [JsonProperty("nest_id")]
-    public int NestId { get; set; }
+    public int? NestId { get; set; }
 
     [JsonProperty("author")]
     public string? Author { get; set; }

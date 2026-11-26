@@ -66,7 +66,10 @@ feathercli migrate \
 
 ## Releases
 
-Binaries and `.deb` packages ship on each FeatherPanel `v*` GitHub release (same tag as Docker) and are uploaded to the MythicalSystems APT repo (`feathercli` / `feathercli-dev`).
+- **stable** — `feathercli` on each FeatherPanel `v*` GitHub release (same tag as Docker) → MythicalSystems APT
+- **nightly** — `feathercli-dev` on every `cli/**` commit to `develop`/`main` → same APT repo
+
+Both packages install the `feathercli` binary; they conflict/replace each other so you can switch channels with `apt`.
 
 ## License
 
