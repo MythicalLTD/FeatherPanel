@@ -109,7 +109,7 @@ interface ApiUser {
     first_name?: string;
     last_name?: string;
     email?: string;
-    external_id?: number | null;
+    external_id?: string | null;
     first_ip?: string;
     last_ip?: string;
     banned?: string;
@@ -145,7 +145,7 @@ interface EditForm {
     last_name: string;
     email: string;
     role_id: string;
-    external_id?: number | null;
+    external_id?: string | null;
     password?: string;
     webspace_limit?: string;
 }
@@ -299,7 +299,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                 role_id: apiUser.role_id != null ? String(apiUser.role_id) : '',
                 external_id:
                     apiUser.external_id !== null && apiUser.external_id !== undefined
-                        ? Number(apiUser.external_id)
+                        ? String(apiUser.external_id)
                         : undefined,
                 password: '',
                 webspace_limit: String(apiUser.webspace_limit ?? 0),
@@ -390,8 +390,14 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                 delete patchData.password;
             }
 
-            if (patchData.external_id === undefined || patchData.external_id === null || patchData.external_id === 0) {
+            // Only send external_id when it changed (it is a root-only field); empty clears it.
+            const newExternalId = String(patchData.external_id ?? '').trim();
+            const oldExternalId =
+                user.external_id === null || user.external_id === undefined ? '' : String(user.external_id);
+            if (newExternalId === oldExternalId) {
                 delete patchData.external_id;
+            } else {
+                patchData.external_id = newExternalId === '' ? null : newExternalId;
             }
 
             if (patchData.webspace_limit !== undefined) {
@@ -818,12 +824,13 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                                     <Label htmlFor='edit-externalid'>{t('admin.users.edit.form.external_id')}</Label>
                                     <Input
                                         id='edit-externalid'
-                                        type='number'
+                                        type='text'
+                                        maxLength={191}
                                         value={editForm.external_id ?? ''}
                                         onChange={(e) =>
                                             setEditForm({
                                                 ...editForm,
-                                                external_id: e.target.value === '' ? undefined : Number(e.target.value),
+                                                external_id: e.target.value,
                                             })
                                         }
                                         placeholder={t('admin.users.edit.form.external_id_help')}
