@@ -1112,6 +1112,9 @@ public class MigrateCommandModule : ICommandModule
         FeatherPanelApiClient apiClient,
         string pterodactylPath)
     {
+        var pterodactylConfig = _pterodactylConfig
+            ?? throw new InvalidOperationException("Pterodactyl configuration is not loaded.");
+
         AnsiConsole.WriteLine();
         AnsiConsole.MarkupLine("[bold green]Starting migration...[/]");
         AnsiConsole.MarkupLine("[dim]Remember: Update Wings after migration completes![/]");
@@ -1128,7 +1131,7 @@ public class MigrateCommandModule : ICommandModule
                 .SpinnerStyle(Style.Parse("yellow"))
                 .StartAsync("Preparing settings...", async ctx =>
                 {
-                    return await settingsService.PrepareSettingsAsync(_pterodactylConfig);
+                    return await settingsService.PrepareSettingsAsync(pterodactylConfig);
                 });
 
             // Show preview of what will be imported
@@ -1200,7 +1203,7 @@ public class MigrateCommandModule : ICommandModule
                 .SpinnerStyle(Style.Parse("yellow"))
                 .StartAsync("Reading locations...", async ctx =>
                 {
-                    return await dbService.GetLocationsAsync(_pterodactylConfig);
+                    return await dbService.GetLocationsAsync(pterodactylConfig);
                 });
 
             if (locations.Count == 0)
@@ -1328,7 +1331,7 @@ public class MigrateCommandModule : ICommandModule
                 .SpinnerStyle(Style.Parse("yellow"))
                 .StartAsync("Reading nests...", async ctx =>
                 {
-                    return await dbService.GetNestsAsync(_pterodactylConfig);
+                    return await dbService.GetNestsAsync(pterodactylConfig);
                 });
 
             var realmSource = "nests";
@@ -1336,7 +1339,7 @@ public class MigrateCommandModule : ICommandModule
             if (nests.Count == 0)
             {
                 AnsiConsole.MarkupLine("[yellow]No nests found — checking Pterodactyl v2 tags...[/]");
-                var tagsForRealms = await dbService.GetTagsAsync(_pterodactylConfig!);
+                var tagsForRealms = await dbService.GetTagsAsync(pterodactylConfig);
                 if (tagsForRealms.Count == 0)
                 {
                     AnsiConsole.MarkupLine("[yellow]No nests or tags found in Pterodactyl database[/]");
@@ -1456,7 +1459,7 @@ public class MigrateCommandModule : ICommandModule
             // v2: ensure raw tag ids also map when LegacyNestId was used as the realm key.
             if (realmSource == "tags")
             {
-                var tags = await dbService.GetTagsAsync(_pterodactylConfig!);
+                var tags = await dbService.GetTagsAsync(pterodactylConfig);
                 foreach (var tag in tags)
                 {
                     var key = tag.LegacyNestId ?? tag.Id;
@@ -1522,7 +1525,7 @@ public class MigrateCommandModule : ICommandModule
                 .SpinnerStyle(Style.Parse("yellow"))
                 .StartAsync("Reading eggs...", async ctx =>
                 {
-                    return await dbService.GetEggsWithVariablesAsync(_pterodactylConfig);
+                    return await dbService.GetEggsWithVariablesAsync(pterodactylConfig);
                 });
 
             if (eggs.Count == 0)
@@ -1701,7 +1704,7 @@ public class MigrateCommandModule : ICommandModule
             }
 
             // Pterodactyl v2: eggs have null nest_id; resolve via primary tag.
-            var eggPrimaryTagIds = await dbService.GetEggPrimaryTagIdsAsync(_pterodactylConfig!);
+            var eggPrimaryTagIds = await dbService.GetEggPrimaryTagIdsAsync(pterodactylConfig);
             var eggToRealmMapping = new Dictionary<string, int>();
 
             AnsiConsole.WriteLine();
@@ -1958,7 +1961,7 @@ public class MigrateCommandModule : ICommandModule
                 .SpinnerStyle(Style.Parse("yellow"))
                 .StartAsync("Reading nodes...", async ctx =>
                 {
-                    return await dbService.GetNodesAsync(_pterodactylConfig);
+                    return await dbService.GetNodesAsync(pterodactylConfig);
                 });
 
             if (nodes.Count == 0)
@@ -2005,12 +2008,12 @@ public class MigrateCommandModule : ICommandModule
             AnsiConsole.MarkupLine("[yellow]Importing nodes to FeatherPanel...[/]");
 
             // Initialize decryptor
-            if (string.IsNullOrEmpty(_pterodactylConfig.AppKey))
+            if (string.IsNullOrEmpty(pterodactylConfig.AppKey))
             {
                 throw new Exception("APP_KEY not found in Pterodactyl configuration. Cannot decrypt daemon tokens.");
             }
 
-            var decryptor = new LaravelDecryptor(_pterodactylConfig.AppKey, logger);
+            var decryptor = new LaravelDecryptor(pterodactylConfig.AppKey, logger);
 
             var importedCount = 0;
             var failedCount = 0;
@@ -2224,7 +2227,7 @@ public class MigrateCommandModule : ICommandModule
                 .SpinnerStyle(Style.Parse("yellow"))
                 .StartAsync("Reading database hosts...", async ctx =>
                 {
-                    return await dbService.GetDatabaseHostsAsync(_pterodactylConfig);
+                    return await dbService.GetDatabaseHostsAsync(pterodactylConfig);
                 });
 
             if (hosts.Count == 0)
@@ -2271,12 +2274,12 @@ public class MigrateCommandModule : ICommandModule
             AnsiConsole.MarkupLine("[yellow]Importing database hosts to FeatherPanel...[/]");
 
             // Initialize decryptor
-            if (string.IsNullOrEmpty(_pterodactylConfig.AppKey))
+            if (string.IsNullOrEmpty(pterodactylConfig.AppKey))
             {
                 throw new Exception("APP_KEY not found in Pterodactyl configuration. Cannot decrypt database passwords.");
             }
 
-            var decryptor = new LaravelDecryptor(_pterodactylConfig.AppKey, logger);
+            var decryptor = new LaravelDecryptor(pterodactylConfig.AppKey, logger);
 
             var importedCount = 0;
             var failedCount = 0;
@@ -2473,7 +2476,7 @@ public class MigrateCommandModule : ICommandModule
             
             AnsiConsole.MarkupLine($"[green]✓ Found {nodeMapping.Count} node to node mapping(s)[/]");
             
-            var allocations = await dbService.GetAllocationsAsync(_pterodactylConfig!);
+            var allocations = await dbService.GetAllocationsAsync(pterodactylConfig);
             
             if (allocations.Count == 0)
             {
@@ -2613,7 +2616,7 @@ public class MigrateCommandModule : ICommandModule
                 .SpinnerStyle(Style.Parse("yellow"))
                 .StartAsync("Reading users...", async ctx =>
                 {
-                    return await dbService.GetUsersAsync(_pterodactylConfig);
+                    return await dbService.GetUsersAsync(pterodactylConfig);
                 });
 
             if (users.Count == 0)
@@ -2824,7 +2827,7 @@ public class MigrateCommandModule : ICommandModule
                 .SpinnerStyle(Style.Parse("yellow"))
                 .StartAsync("Reading SSH keys...", async ctx =>
                 {
-                    return await dbService.GetSshKeysAsync(_pterodactylConfig);
+                    return await dbService.GetSshKeysAsync(pterodactylConfig);
                 });
 
             if (sshKeys.Count == 0)
@@ -3204,7 +3207,7 @@ public class MigrateCommandModule : ICommandModule
 
             // Build variable to variable mapping (1:1 since IDs are preserved)
             // Read eggs and their variables to build the mapping
-            var eggs = await dbService.GetEggsWithVariablesAsync(_pterodactylConfig);
+            var eggs = await dbService.GetEggsWithVariablesAsync(pterodactylConfig);
             foreach (var egg in eggs)
             {
                 foreach (var variable in egg.Variables)
@@ -3228,7 +3231,7 @@ public class MigrateCommandModule : ICommandModule
                 .SpinnerStyle(Style.Parse("yellow"))
                 .StartAsync("Reading servers...", async ctx =>
                 {
-                    return await dbService.GetServersAsync(_pterodactylConfig);
+                    return await dbService.GetServersAsync(pterodactylConfig);
                 });
 
             if (servers.Count == 0)
@@ -3284,7 +3287,7 @@ public class MigrateCommandModule : ICommandModule
                 try
                 {
                     // Get server variables for this server
-                    var serverVariables = await dbService.GetServerVariablesAsync(_pterodactylConfig, server.Id);
+                    var serverVariables = await dbService.GetServerVariablesAsync(pterodactylConfig, server.Id);
 
                     // Map all IDs — nest_id may be null on Pterodactyl v2; fall back to egg→realm.
                     int mappedRealmId;
@@ -3466,7 +3469,7 @@ public class MigrateCommandModule : ICommandModule
         // Step 11: Import Server Databases
         await ExecuteStep("Step 11: Import Server Databases", "server_databases", async () =>
         {
-            var databases = await dbService.GetServerDatabasesAsync(_pterodactylConfig!);
+            var databases = await dbService.GetServerDatabasesAsync(pterodactylConfig);
 
             if (databases.Count == 0)
             {
@@ -3740,12 +3743,12 @@ public class MigrateCommandModule : ICommandModule
             }
 
             // Initialize decryptor for server database passwords
-            if (string.IsNullOrEmpty(_pterodactylConfig!.AppKey))
+            if (string.IsNullOrEmpty(pterodactylConfig.AppKey))
             {
                 throw new Exception("APP_KEY not found in Pterodactyl configuration. Cannot decrypt server database passwords.");
             }
 
-            var decryptor = new Utils.LaravelDecryptor(_pterodactylConfig.AppKey, logger);
+            var decryptor = new Utils.LaravelDecryptor(pterodactylConfig.AppKey, logger);
 
             var importedCount = 0;
             var failedCount = 0;
@@ -3867,7 +3870,7 @@ public class MigrateCommandModule : ICommandModule
         // Step 12: Import Backups
         await ExecuteStep("Step 12: Import Backups", "import_backups", async () =>
         {
-            var backups = await dbService.GetBackupsAsync(_pterodactylConfig!);
+            var backups = await dbService.GetBackupsAsync(pterodactylConfig);
 
             if (backups.Count == 0)
             {
@@ -4118,7 +4121,7 @@ public class MigrateCommandModule : ICommandModule
         // Step 13: Import Subusers
         await ExecuteStep("Step 13: Import Subusers", "import_subusers", async () =>
         {
-            var subusers = await dbService.GetSubusersAsync(_pterodactylConfig!);
+            var subusers = await dbService.GetSubusersAsync(pterodactylConfig);
 
             if (subusers.Count == 0)
             {
@@ -4415,7 +4418,7 @@ public class MigrateCommandModule : ICommandModule
         // Step 14: Import Schedules
         await ExecuteStep("Step 14: Import Schedules", "import_schedules", async () =>
         {
-            var schedules = await dbService.GetSchedulesAsync(_pterodactylConfig!);
+            var schedules = await dbService.GetSchedulesAsync(pterodactylConfig);
 
             if (schedules.Count == 0)
             {
@@ -4619,7 +4622,7 @@ public class MigrateCommandModule : ICommandModule
         // Step 15: Import Tasks
         await ExecuteStep("Step 15: Import Tasks", "import_tasks", async () =>
         {
-            var tasks = await dbService.GetTasksAsync(_pterodactylConfig!);
+            var tasks = await dbService.GetTasksAsync(pterodactylConfig);
 
             if (tasks.Count == 0)
             {
@@ -4848,20 +4851,20 @@ public class MigrateCommandModule : ICommandModule
 
         try
         {
-            var locations = await dbService.GetLocationsAsync(_pterodactylConfig!);
-            var nests = await dbService.GetNestsAsync(_pterodactylConfig!);
-            var eggs = await dbService.GetEggsWithVariablesAsync(_pterodactylConfig!);
-            var nodes = await dbService.GetNodesAsync(_pterodactylConfig!);
-            var databaseHosts = await dbService.GetDatabaseHostsAsync(_pterodactylConfig!);
-            var allocations = await dbService.GetAllocationsAsync(_pterodactylConfig!);
-            var users = await dbService.GetUsersAsync(_pterodactylConfig!);
-            var sshKeys = await dbService.GetSshKeysAsync(_pterodactylConfig!);
-            var servers = await dbService.GetServersAsync(_pterodactylConfig!);
-            var serverDatabases = await dbService.GetServerDatabasesAsync(_pterodactylConfig!);
-            var backups = await dbService.GetBackupsAsync(_pterodactylConfig!);
-            var subusers = await dbService.GetSubusersAsync(_pterodactylConfig!);
-            var schedules = await dbService.GetSchedulesAsync(_pterodactylConfig!);
-            var tasks = await dbService.GetTasksAsync(_pterodactylConfig!);
+            var locations = await dbService.GetLocationsAsync(pterodactylConfig);
+            var nests = await dbService.GetNestsAsync(pterodactylConfig);
+            var eggs = await dbService.GetEggsWithVariablesAsync(pterodactylConfig);
+            var nodes = await dbService.GetNodesAsync(pterodactylConfig);
+            var databaseHosts = await dbService.GetDatabaseHostsAsync(pterodactylConfig);
+            var allocations = await dbService.GetAllocationsAsync(pterodactylConfig);
+            var users = await dbService.GetUsersAsync(pterodactylConfig);
+            var sshKeys = await dbService.GetSshKeysAsync(pterodactylConfig);
+            var servers = await dbService.GetServersAsync(pterodactylConfig);
+            var serverDatabases = await dbService.GetServerDatabasesAsync(pterodactylConfig);
+            var backups = await dbService.GetBackupsAsync(pterodactylConfig);
+            var subusers = await dbService.GetSubusersAsync(pterodactylConfig);
+            var schedules = await dbService.GetSchedulesAsync(pterodactylConfig);
+            var tasks = await dbService.GetTasksAsync(pterodactylConfig);
 
             var summaryTable = new Table();
             summaryTable.AddColumn("[bold]Item[/]");

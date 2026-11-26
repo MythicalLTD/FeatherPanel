@@ -15,7 +15,7 @@ public class ServerLogsCommand : BaseServerCommand
         var logsCommand = new Command("logs", "View server logs");
         var logsUuidOption = new Option<string?>("--uuid", "Server UUID or short UUID (will prompt if not provided)");
         var logsLinesOption = new Option<int>("--lines", () => 50, "Number of lines to display (default: 50)");
-        var logsUploadOption = new Option<bool>("--upload", "Upload logs to mclo.gs and get shareable URL");
+        var logsUploadOption = new Option<bool>("--upload", "Upload logs to pastes.mythicalsystems.org and get shareable URL");
         logsCommand.AddOption(logsUuidOption);
         logsCommand.AddOption(logsLinesOption);
         logsCommand.AddOption(logsUploadOption);
@@ -133,7 +133,7 @@ public class ServerLogsCommand : BaseServerCommand
     {
         var installLogsCommand = new Command("install-logs", "View server installation logs");
         var installLogsUuidOption = new Option<string?>("--uuid", "Server UUID or short UUID (will prompt if not provided)");
-        var installLogsUploadOption = new Option<bool>("--upload", "Upload installation logs to mclo.gs and get shareable URL");
+        var installLogsUploadOption = new Option<bool>("--upload", "Upload installation logs to pastes.mythicalsystems.org and get shareable URL");
         installLogsCommand.AddOption(installLogsUuidOption);
         installLogsCommand.AddOption(installLogsUploadOption);
         
