@@ -1026,6 +1026,48 @@ final class VmInstanceUtil
     }
 
     /**
+     * Config key of the main disk: rootfs for LXC, the first of scsi0/virtio0/sata0/ide0 present for QEMU.
+     */
+    public static function primaryDiskKey(array $config, string $vmType): ?string
+    {
+        if ($vmType === 'lxc') {
+            return isset($config['rootfs']) ? 'rootfs' : null;
+        }
+        foreach (['scsi0', 'virtio0', 'sata0', 'ide0'] as $candidate) {
+            if (isset($config[$candidate]) && is_string($config[$candidate])) {
+                return $candidate;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Size in GB from a Proxmox disk spec such as "local-lvm:vm-100-disk-0,size=40G" (M rounds up, T = 1024 GB).
+     */
+    public static function diskSizeGbFromSpec(string $spec): ?int
+    {
+        foreach (explode(',', $spec) as $part) {
+            $part = trim($part);
+            if (!str_starts_with($part, 'size=')) {
+                continue;
+            }
+            if (!preg_match('/^(\d+)([GgMmTt])?$/', substr($part, 5), $m)) {
+                return null;
+            }
+            $num = (int) $m[1];
+
+            return match (strtolower($m[2] ?? 'g')) {
+                'm' => (int) ceil($num / 1024),
+                't' => $num * 1024,
+                default => $num,
+            };
+        }
+
+        return null;
+    }
+
+    /**
      * QEMU cdrom slots that reference a real ISO/import image (not the cloud-init seed).
      *
      * @param array<string, mixed> $config Proxmox qemu config key => value

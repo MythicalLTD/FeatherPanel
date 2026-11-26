@@ -1095,6 +1095,14 @@ class VmInstancesController
                 }
             }
 
+            // Keep the stored resources in line with what was applied on Proxmox
+            // (capacity views, reinstall and billing modules read them from the row).
+            $resourceUpdate = array_intersect_key($dbUpdate, array_flip(['memory', 'cpus', 'cores', 'on_boot']));
+            if (!empty($resourceUpdate)) {
+                VmInstance::update($id, $resourceUpdate);
+                $instance = VmInstance::getById($id) ?? $instance;
+            }
+
             if ($networks !== null) {
                 $savedAssignments = [];
                 foreach (array_values($networks) as $index => $network) {
@@ -1461,6 +1469,18 @@ class VmInstancesController
             $wait = $client->waitTask($node, (string) $res['upid'], 600, 5);
             if (!$wait['ok']) {
                 return ApiResponse::error('Resize task failed: ' . ($wait['error'] ?? 'unknown'), 'RESIZE_FAILED', 503);
+            }
+        }
+
+        // Record the new size of the main disk so disk_gb matches the VM.
+        $cfgAfter = $client->getVmConfig($node, (int) $instance['vmid'], $vmType);
+        if ($cfgAfter['ok'] && is_array($cfgAfter['config'] ?? null)) {
+            $cfg = (array) $cfgAfter['config'];
+            if ($disk === VmInstanceUtil::primaryDiskKey($cfg, $vmType)) {
+                $newGb = VmInstanceUtil::diskSizeGbFromSpec((string) ($cfg[$disk] ?? ''));
+                if ($newGb !== null && $newGb > 0 && $newGb !== (int) ($instance['disk_gb'] ?? 0)) {
+                    VmInstance::update($id, ['disk_gb' => $newGb]);
+                }
             }
         }
 
