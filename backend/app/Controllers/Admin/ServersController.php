@@ -1287,25 +1287,35 @@ class ServersController
             return ApiResponse::error('Failed to create server in Wings: ' . $e->getMessage(), 'FAILED_TO_CREATE_SERVER_IN_WINGS', 500);
         }
 
-        // Log activity
-        Activity::createActivity([
-            'user_uuid' => $request->attributes->get('user')['uuid'],
-            'name' => 'create_server',
-            'context' => 'Created a new server ' . $data['name'],
-            'ip_address' => CloudFlareRealIP::getRealIP(),
-        ]);
+        // The server exists in the panel and on Wings from here on. Logging, plugin events and the
+        // email are best effort: a failure there must not turn a created server into an error
+        // (billing systems would retry and the panel would already have the server).
+        $logger = App::getInstance(true)->getLogger();
+        try {
+            Activity::createActivity([
+                'user_uuid' => $request->attributes->get('user')['uuid'] ?? null,
+                'name' => 'create_server',
+                'context' => 'Created a new server ' . $data['name'],
+                'ip_address' => CloudFlareRealIP::getRealIP(),
+            ]);
+        } catch (\Throwable $e) {
+            $logger->error('Server ' . $serverId . ' created, but the activity could not be recorded: ' . $e->getMessage());
+        }
 
-        // Emit event
         global $eventManager;
         if (isset($eventManager) && $eventManager !== null) {
-            $eventManager->emit(
-                ServerEvent::onServerCreated(),
-                [
-                    'server_id' => $serverId,
-                    'server_data' => $data,
-                    'created_by' => $request->attributes->get('user'),
-                ]
-            );
+            try {
+                $eventManager->emit(
+                    ServerEvent::onServerCreated(),
+                    [
+                        'server_id' => $serverId,
+                        'server_data' => $data,
+                        'created_by' => $request->attributes->get('user'),
+                    ]
+                );
+            } catch (\Throwable $e) {
+                $logger->error('Server ' . $serverId . ' created, but a server-created event listener failed: ' . $e->getMessage());
+            }
         }
 
         try {
@@ -1322,13 +1332,11 @@ class ServersController
                 'uuid' => $user['uuid'],
                 'enabled' => $config->getSetting(ConfigInterface::SMTP_ENABLED, 'false'),
                 'server_name' => $data['name'],
-                'server_ip' => $allocation['ip'] . ':' . $allocation['port'],
+                'server_ip' => is_array($allocation) ? $allocation['ip'] . ':' . $allocation['port'] : '',
                 'panel_url' => $config->getSetting(ConfigInterface::APP_URL, 'https://featherpanel.mythical.systems') . '/dashboard',
             ]);
-        } catch (\Exception $e) {
-            App::getInstance(true)->getLogger()->error('Failed to send server created email: ' . $e->getMessage());
-
-            return ApiResponse::error('Failed to send server created email: ' . $e->getMessage(), 'FAILED_TO_SEND_SERVER_CREATED_EMAIL', 500);
+        } catch (\Throwable $e) {
+            $logger->error('Server ' . $serverId . ' created, but the server created email could not be sent: ' . $e->getMessage());
         }
 
         return ApiResponse::success(['server_id' => $serverId], 'Server created successfully', 201);
