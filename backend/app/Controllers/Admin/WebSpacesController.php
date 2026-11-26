@@ -29,6 +29,7 @@ use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Chat\WebSpaceSchedule;
 use App\Helpers\DnsProvisioner;
+use App\Helpers\ExternalIdLock;
 use App\Helpers\WebSpaceWafRules;
 use App\Helpers\WebSpacePresenter;
 use App\Helpers\WebSpaceDaemonSync;
@@ -170,18 +171,57 @@ class WebSpacesController
             return ApiResponse::error('Invalid JSON payload', 'INVALID_JSON', 400);
         }
 
-        // Panel-only fields (no daemon sync needed): external_id and hosting_package_id.
-        // Validated here, written once the rest of the update has gone through.
+        // Panel-only fields: external_id and hosting_package_id. They are validated here and
+        // written just before the regular fields; if the regular write fails they are put
+        // back, so a rejected request never leaves half of its changes behind.
         $panelOnly = [];
-        $savePanelOnly = static function () use (&$panelOnly, $uuid): bool {
-            if (array_key_exists('external_id', $panelOnly) && !WebSpace::setExternalId($uuid, $panelOnly['external_id'])) {
-                return false;
+        $savePanelOnly = static function () use (&$panelOnly, $uuid): ?Response {
+            if (array_key_exists('external_id', $panelOnly) && $panelOnly['external_id'] !== null) {
+                $externalId = (string) $panelOnly['external_id'];
+                $lock = ExternalIdLock::acquire('ws', $externalId);
+                if ($lock === null) {
+                    return ApiResponse::error(ExternalId::lockedMessage(), 'EXTERNAL_ID_LOCKED', 409);
+                }
+                $holder = WebSpace::getByExternalId($externalId);
+                if ($holder && (string) $holder['uuid'] !== $uuid) {
+                    return ApiResponse::error('Another WebSpace already uses this external_id', 'EXTERNAL_ID_IN_USE', 409, [
+                        'uuid' => (string) $holder['uuid'],
+                    ]);
+                }
+                try {
+                    $ok = WebSpace::setExternalId($uuid, $externalId);
+                } catch (\PDOException $e) {
+                    if (!ExternalId::isDuplicateKey($e)) {
+                        throw $e;
+                    }
+                    $holder = WebSpace::getByExternalId($externalId);
+
+                    return ApiResponse::error('Another WebSpace already uses this external_id', 'EXTERNAL_ID_IN_USE', 409, [
+                        'uuid' => $holder ? (string) $holder['uuid'] : null,
+                    ]);
+                }
+                $lock->release();
+                if (!$ok) {
+                    return ApiResponse::error('Failed to update WebSpace', 'UPDATE_FAILED', 500);
+                }
+            } elseif (array_key_exists('external_id', $panelOnly) && !WebSpace::setExternalId($uuid, null)) {
+                return ApiResponse::error('Failed to update WebSpace', 'UPDATE_FAILED', 500);
             }
             if (array_key_exists('hosting_package_id', $panelOnly) && !WebSpace::setHostingPackageId($uuid, $panelOnly['hosting_package_id'])) {
-                return false;
+                return ApiResponse::error('Failed to update WebSpace', 'UPDATE_FAILED', 500);
             }
 
-            return true;
+            return null;
+        };
+        $restorePanelOnly = static function () use (&$panelOnly, $uuid, $space): void {
+            if (array_key_exists('external_id', $panelOnly)) {
+                $previous = isset($space['external_id']) && $space['external_id'] !== '' ? (string) $space['external_id'] : null;
+                WebSpace::setExternalId($uuid, $previous);
+            }
+            if (array_key_exists('hosting_package_id', $panelOnly)) {
+                $previous = isset($space['hosting_package_id']) && (int) $space['hosting_package_id'] > 0 ? (int) $space['hosting_package_id'] : null;
+                WebSpace::setHostingPackageId($uuid, $previous);
+            }
         };
         if (array_key_exists('external_id', $content)) {
             $externalIdCheck = ExternalId::normalize($content['external_id']);
@@ -290,12 +330,35 @@ class WebSpacesController
 
         if ($fields === []) {
             if ($panelOnly !== []) {
-                if (!$savePanelOnly()) {
-                    return ApiResponse::error('Failed to update WebSpace', 'UPDATE_FAILED', 500);
+                $failed = $savePanelOnly();
+                if ($failed !== null) {
+                    return $failed;
                 }
+                $previousSpace = $space;
                 $space = WebSpace::getByUuid($uuid) ?? $space;
 
-                return ApiResponse::success(['webspace' => $space, 'daemon' => [], 'runtime_recreated' => false], 'WebSpace updated', 200);
+                // Detaching a package can change the effective limits (bandwidth falls back
+                // to the space's own value), so the daemon needs the new config.
+                $daemon = [];
+                $packageChanged = array_key_exists('hosting_package_id', $panelOnly)
+                    && (int) ($previousSpace['hosting_package_id'] ?? 0) !== (int) ($panelOnly['hosting_package_id'] ?? 0);
+                $webNode = $packageChanged ? WebNode::getWebNodeById((int) $space['web_node_id']) : null;
+                if ($webNode) {
+                    $daemon = WebSpaceDaemonSync::syncAfterUpdate($webNode, $space, $previousSpace);
+                    if (!$daemon['ok']) {
+                        return ApiResponse::error(
+                            'WebSpace saved on panel but daemon sync failed: ' . ($daemon['error'] ?? 'unknown'),
+                            'DAEMON_SYNC_FAILED',
+                            502,
+                            [
+                                'webspace' => $space,
+                                'daemon' => $daemon,
+                            ],
+                        );
+                    }
+                }
+
+                return ApiResponse::success(['webspace' => $space, 'daemon' => $daemon, 'runtime_recreated' => false], 'WebSpace updated', 200);
             }
 
             return ApiResponse::error('No updatable fields provided', 'MISSING_FIELDS', 400);
@@ -356,7 +419,19 @@ class WebSpacesController
             }
         }
 
-        if (!WebSpace::update($uuid, $fields) || !$savePanelOnly()) {
+        $failed = $savePanelOnly();
+        if ($failed !== null) {
+            return $failed;
+        }
+        try {
+            $updated = WebSpace::update($uuid, $fields);
+        } catch (\Throwable $e) {
+            $restorePanelOnly();
+            throw $e;
+        }
+        if (!$updated) {
+            $restorePanelOnly();
+
             return ApiResponse::error('Failed to update WebSpace', 'UPDATE_FAILED', 500);
         }
 
@@ -413,6 +488,11 @@ class WebSpacesController
         }
         $externalId = $externalIdCheck['value'];
         if ($externalId !== null) {
+            // Held until this request returns, so two retried orders cannot both pass the check.
+            $externalIdLock = ExternalIdLock::acquire('ws', $externalId);
+            if ($externalIdLock === null) {
+                return ApiResponse::error(ExternalId::lockedMessage(), 'EXTERNAL_ID_LOCKED', 409);
+            }
             $existing = WebSpace::getByExternalId($externalId);
             if ($existing) {
                 return ApiResponse::error('A WebSpace with this external_id already exists', 'EXTERNAL_ID_IN_USE', 409, [

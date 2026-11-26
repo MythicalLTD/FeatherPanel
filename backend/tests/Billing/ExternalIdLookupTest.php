@@ -180,6 +180,76 @@ class ExternalIdLookupTest extends TestCase
         $this->assertSame('EXTERNAL_ID_IN_USE', $this->json($response)['error_code']);
     }
 
+    public function testRejectedVmPatchLeavesExternalIdUntouched(): void
+    {
+        $externalId = 'test-vmr-' . bin2hex(random_bytes(4));
+        $vm = $this->insertRow('featherpanel_vm_instances', ['external_id' => $externalId, 'vmid' => random_int(100000, 999999)]);
+
+        $response = (new VmInstancesController())->update($this->jsonRequest(['external_id' => null, 'backup_limit' => 101], 'PATCH'), (int) $vm['id']);
+        $this->assertSame(400, $response->getStatusCode());
+        $this->assertSame($externalId, VmInstance::getById((int) $vm['id'])['external_id']);
+    }
+
+    public function testVmPatchCannotTakeTheIdOfAVdsBeingCreated(): void
+    {
+        $externalId = 'test-vmp-' . bin2hex(random_bytes(4));
+        $taskId = bin2hex(random_bytes(16));
+        $this->insertRow('featherpanel_vm_tasks', [
+            'task_id' => $taskId,
+            'task_type' => 'create',
+            'status' => 'running',
+            'data' => json_encode(['external_id' => $externalId]),
+        ]);
+        $vm = $this->insertRow('featherpanel_vm_instances', ['vmid' => random_int(100000, 999999)]);
+
+        $response = (new VmInstancesController())->update($this->jsonRequest(['external_id' => $externalId], 'PATCH'), (int) $vm['id']);
+        $this->assertSame(409, $response->getStatusCode());
+        $this->assertSame('CREATION_IN_PROGRESS', $this->json($response)['error_code']);
+        $this->assertNull(VmInstance::getById((int) $vm['id'])['external_id']);
+    }
+
+    public function testRejectedWebSpacePatchLeavesExternalIdUntouched(): void
+    {
+        $externalId = 'test-wsr-' . bin2hex(random_bytes(4));
+        // No such web node: the regular update is refused after validation.
+        $space = $this->insertRow('featherpanel_webspaces', ['external_id' => $externalId, 'web_node_id' => 99999999]);
+
+        $response = (new WebSpacesController())->update($this->jsonRequest(['external_id' => $externalId . '-new', 'name' => 'renamed'], 'PATCH'), (string) $space['uuid']);
+        $this->assertSame(404, $response->getStatusCode());
+        $this->assertSame($externalId, WebSpace::getByUuid((string) $space['uuid'])['external_id']);
+    }
+
+    public function testServerLookupAcceptsZeroAndDuplicateKeyIsRecognised(): void
+    {
+        $inUse = $this->pdo->prepare('SELECT COUNT(*) FROM featherpanel_servers WHERE external_id = ?');
+        $inUse->execute(['0']);
+        if ((int) $inUse->fetchColumn() > 0) {
+            $this->markTestSkipped('A server in this database already uses external_id "0".');
+        }
+        $server = $this->insertRow('featherpanel_servers', ['external_id' => '0']);
+        $this->assertSame((int) $server['id'], (int) \App\Chat\Server::getServerByExternalId('0')['id']);
+
+        try {
+            $this->insertRow('featherpanel_servers', ['external_id' => '0']);
+            $this->fail('the unique index should reject a second server with the same external_id');
+        } catch (\PDOException $e) {
+            $this->pdo->exec('SET FOREIGN_KEY_CHECKS=1');
+            $this->assertTrue(ExternalId::isDuplicateKey($e));
+        }
+        $this->assertFalse(ExternalId::isDuplicateKey(new \RuntimeException('x')));
+    }
+
+    public function testExternalIdLockCanBeTakenAndReleased(): void
+    {
+        $externalId = 'test-lock-' . bin2hex(random_bytes(4));
+        $this->assertTrue(ExternalId::lock('vm', $externalId, 1));
+        $held = $this->pdo->query("SELECT IS_USED_LOCK('fp_external_id:vm:" . sha1($externalId) . "')")->fetchColumn();
+        $this->assertNotNull($held);
+        ExternalId::unlock('vm', $externalId);
+        $free = $this->pdo->query("SELECT IS_FREE_LOCK('fp_external_id:vm:" . sha1($externalId) . "')")->fetchColumn();
+        $this->assertSame(1, (int) $free);
+    }
+
     /**
      * Insert a row with fillers for every NOT NULL column without a default (foreign keys off).
      *

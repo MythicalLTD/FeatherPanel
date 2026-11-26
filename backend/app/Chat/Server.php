@@ -331,7 +331,7 @@ class Server
      */
     public static function getServerByExternalId(string $externalId): ?array
     {
-        if (empty($externalId)) {
+        if ($externalId === '') {
             return null;
         }
         $pdo = Database::getPdoConnection();
