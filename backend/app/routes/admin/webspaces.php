@@ -77,6 +77,21 @@ return function (RouteCollection $routes): void {
 
     App::getInstance(true)->registerAdminRoute(
         $routes,
+        'admin-webspaces-show-by-external-id',
+        '/api/admin/webspaces/external/{externalId}',
+        function (Request $request, array $args) {
+            $externalId = (string) ($args['externalId'] ?? '');
+            if (trim($externalId) === '') {
+                return ApiResponse::error('Missing external ID', 'INVALID_EXTERNAL_ID', 400);
+            }
+
+            return (new WebSpacesController())->showByExternalId($request, $externalId);
+        },
+        Permissions::ADMIN_WEBSPACES_VIEW,
+    );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
         'admin-webspaces-show',
         '/api/admin/webspaces/{uuid}',
         function (Request $request, array $args) {

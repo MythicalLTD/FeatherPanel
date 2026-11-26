@@ -117,6 +117,38 @@ class VmInstance
         return $stmt->fetch(\PDO::FETCH_ASSOC) ?: null;
     }
 
+    /**
+     * Find an instance by the ID a billing system gave it (WHMCS service ID and the like).
+     */
+    public static function getByExternalId(string $externalId): ?array
+    {
+        $externalId = trim($externalId);
+        if ($externalId === '') {
+            return null;
+        }
+        $pdo = Database::getPdoConnection();
+        $stmt = $pdo->prepare('SELECT id FROM featherpanel_vm_instances WHERE external_id = :external_id LIMIT 1');
+        $stmt->execute(['external_id' => $externalId]);
+        $id = $stmt->fetchColumn();
+
+        return $id === false ? null : self::getById((int) $id, $pdo);
+    }
+
+    /**
+     * Set or clear the external ID. Kept out of update() so only admin callers can change it.
+     */
+    public static function setExternalId(int $id, ?string $externalId): bool
+    {
+        $externalId = $externalId === null ? null : trim($externalId);
+        if ($externalId === '') {
+            $externalId = null;
+        }
+        $pdo = Database::getPdoConnection();
+        $stmt = $pdo->prepare('UPDATE featherpanel_vm_instances SET external_id = :external_id WHERE id = :id');
+
+        return $stmt->execute(['external_id' => $externalId, 'id' => $id]);
+    }
+
     public static function getByVmidAndNode(int $vmid, int $nodeId): ?array
     {
         $pdo = Database::getPdoConnection();
@@ -285,11 +317,11 @@ class VmInstance
             INSERT INTO featherpanel_vm_instances
                 (vmid, vm_node_id, user_uuid, pve_node, plan_id, template_id, vm_type,
                  hostname, status, ip_address, ip6_prefix, subnet_mask, gateway, vm_ip_id, notes, backup_limit, backup_retention_mode,
-                 memory, cpus, cores, disk_gb, on_boot)
+                 memory, cpus, cores, disk_gb, on_boot, external_id)
             VALUES
                 (:vmid, :vm_node_id, :user_uuid, :pve_node, :plan_id, :template_id, :vm_type,
                  :hostname, :status, :ip_address, :ip6_prefix, :subnet_mask, :gateway, :vm_ip_id, :notes, :backup_limit, :backup_retention_mode,
-                 :memory, :cpus, :cores, :disk_gb, :on_boot)
+                 :memory, :cpus, :cores, :disk_gb, :on_boot, :external_id)
         ');
         $brm = null;
         if (isset($data['backup_retention_mode']) && is_string($data['backup_retention_mode'])) {
@@ -321,6 +353,7 @@ class VmInstance
             'cores' => isset($data['cores']) ? (int) $data['cores'] : 1,
             'disk_gb' => isset($data['disk_gb']) ? (int) $data['disk_gb'] : 10,
             'on_boot' => isset($data['on_boot']) ? (int) (bool) $data['on_boot'] : 1,
+            'external_id' => isset($data['external_id']) && is_string($data['external_id']) && trim($data['external_id']) !== '' ? trim($data['external_id']) : null,
         ]);
 
         return self::getById((int) $pdo->lastInsertId(), $pdo);

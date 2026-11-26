@@ -51,10 +51,10 @@ use App\Mail\templates\ServerUnbanned;
 use App\Helpers\ModerationReasonHelper;
 use App\Plugins\Events\Events\ServerEvent;
 use App\Services\Backup\BackupFifoEviction;
+use App\Services\Server\WingsSuspensionSync;
 use Symfony\Component\HttpFoundation\Request;
 use App\Services\Notifications\WarningService;
 use Symfony\Component\HttpFoundation\Response;
-use App\Services\Server\WingsSuspensionSync;
 use App\Services\Subdomain\SubdomainCleanupService;
 
 #[OA\Schema(
@@ -1119,6 +1119,29 @@ class ServersController
             }
         }
         $data['external_id'] = $data['external_id'] ?? null;
+        if (is_int($data['external_id'])) {
+            $data['external_id'] = (string) $data['external_id'];
+        }
+        if ($data['external_id'] !== null && !is_string($data['external_id'])) {
+            return ApiResponse::error('external_id must be a string or null', 'INVALID_DATA_TYPE', 400);
+        }
+        if (is_string($data['external_id'])) {
+            $data['external_id'] = trim($data['external_id']);
+            if ($data['external_id'] === '') {
+                $data['external_id'] = null;
+            } elseif (strlen($data['external_id']) > 191) {
+                return ApiResponse::error('External id must be less than 191 characters long', 'INVALID_DATA_LENGTH', 400);
+            } else {
+                // Billing systems retry orders; answer with the server that already has this ID
+                // instead of a database error.
+                $existingServer = Server::getServerByExternalId($data['external_id']);
+                if ($existingServer) {
+                    return ApiResponse::error('A server with this external_id already exists', 'EXTERNAL_ID_IN_USE', 409, [
+                        'server_id' => (int) $existingServer['id'],
+                    ]);
+                }
+            }
+        }
         $data['threads'] = $data['threads'] ?? null;
 
         // Validate spell variables before anything is written, so an invalid request never
@@ -1559,6 +1582,15 @@ class ServersController
                 if ($len > $max) {
                     return ApiResponse::error(ucfirst(str_replace('_', ' ', $field)) . " must be less than $max characters long", 'INVALID_DATA_LENGTH', 400);
                 }
+            }
+        }
+
+        if (isset($data['external_id']) && is_string($data['external_id']) && trim($data['external_id']) !== '') {
+            $externalHolder = Server::getServerByExternalId(trim($data['external_id']));
+            if ($externalHolder && (int) $externalHolder['id'] !== $id) {
+                return ApiResponse::error('Another server already uses this external_id', 'EXTERNAL_ID_IN_USE', 409, [
+                    'server_id' => (int) $externalHolder['id'],
+                ]);
             }
         }
 

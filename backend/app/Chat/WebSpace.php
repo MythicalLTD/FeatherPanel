@@ -61,6 +61,7 @@ class WebSpace
         'status',
         'state',
         'owner_id',
+        'external_id',
     ];
 
     public static function isValidUuid(string $uuid): bool
@@ -181,6 +182,51 @@ class WebSpace
         }
 
         return self::fetchOne('w.uuid = :uuid', ['uuid' => $uuid]);
+    }
+
+    /**
+     * Find a WebSpace by the ID a billing system gave it.
+     *
+     * @return array<string, mixed>|null
+     */
+    public static function getByExternalId(string $externalId): ?array
+    {
+        $externalId = trim($externalId);
+        if ($externalId === '') {
+            return null;
+        }
+
+        return self::fetchOne('w.external_id = :external_id', ['external_id' => $externalId]);
+    }
+
+    /**
+     * Set or clear the external ID (admin API only).
+     */
+    public static function setExternalId(string $uuid, ?string $externalId): bool
+    {
+        if (!self::isValidUuid($uuid)) {
+            return false;
+        }
+        $externalId = $externalId === null ? null : trim($externalId);
+        if ($externalId === '') {
+            $externalId = null;
+        }
+        $stmt = Database::getPdoConnection()->prepare('UPDATE ' . self::$table . ' SET external_id = :external_id WHERE uuid = :uuid');
+
+        return $stmt->execute(['external_id' => $externalId, 'uuid' => $uuid]);
+    }
+
+    /**
+     * Point the WebSpace at a hosting package (null to detach).
+     */
+    public static function setHostingPackageId(string $uuid, ?int $packageId): bool
+    {
+        if (!self::isValidUuid($uuid)) {
+            return false;
+        }
+        $stmt = Database::getPdoConnection()->prepare('UPDATE ' . self::$table . ' SET hosting_package_id = :pkg WHERE uuid = :uuid');
+
+        return $stmt->execute(['pkg' => $packageId !== null && $packageId > 0 ? $packageId : null, 'uuid' => $uuid]);
     }
 
     /** @return array<string, mixed>|null */

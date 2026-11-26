@@ -1314,6 +1314,7 @@ final class VmInstanceUtil
             'cores' => $cores,
             'disk_gb' => (int) ($meta['disk'] ?? 10),
             'on_boot' => $onBoot ? 1 : 0,
+            'external_id' => isset($meta['external_id']) && is_string($meta['external_id']) ? $meta['external_id'] : null,
         ];
         $brNorm = BackupFifoEviction::normalizeEntityOverride($meta['backup_retention_mode'] ?? null);
         if ($brNorm !== null) {

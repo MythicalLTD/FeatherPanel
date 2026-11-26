@@ -62,6 +62,29 @@ class VmTask
         return $row ?: null;
     }
 
+    /**
+     * The newest create task for a billing external ID that has not finished yet
+     * (queued or running), so a retried order does not start a second VM.
+     */
+    public static function getActiveCreateByExternalId(string $externalId): ?array
+    {
+        $externalId = trim($externalId);
+        if ($externalId === '') {
+            return null;
+        }
+        $pdo = Database::getPdoConnection();
+        $stmt = $pdo->prepare(
+            'SELECT * FROM ' . self::$table . "
+             WHERE task_type = 'create' AND status IN ('pending', 'running')
+               AND JSON_VALID(data) AND JSON_UNQUOTE(JSON_EXTRACT(data, '$.external_id')) = :external_id
+             ORDER BY id DESC LIMIT 1"
+        );
+        $stmt->execute(['external_id' => $externalId]);
+        $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        return $row ?: null;
+    }
+
     public static function deleteByInstanceId(int $instanceId): int
     {
         if ($instanceId <= 0) {
