@@ -24,11 +24,6 @@ use PHPUnit\Framework\TestCase;
  */
 class WebmailTokenTemplateTest extends TestCase
 {
-    private function source(): string
-    {
-        return (string) file_get_contents(__DIR__ . '/../../storage/modules/webmail/token.php');
-    }
-
     public function testTemplateIsValidPhp(): void
     {
         $this->assertNotEmpty(token_get_all($this->source(), TOKEN_PARSE));
@@ -53,5 +48,10 @@ class WebmailTokenTemplateTest extends TestCase
         foreach (array_unique($used[1]) as $key) {
             $this->assertStringContainsString("'" . $key . "' =>", $block[1], "missing key {$key}");
         }
+    }
+
+    private function source(): string
+    {
+        return (string) file_get_contents(__DIR__ . '/../../storage/modules/webmail/token.php');
     }
 }

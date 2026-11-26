@@ -30,9 +30,9 @@ use App\Chat\UserNotification;
 use App\Config\ConfigInterface;
 use App\CloudFlare\CloudFlareRealIP;
 use App\Helpers\ModerationReasonHelper;
-use App\Services\Server\WingsSuspensionSync;
 use App\Services\Storage\StorageSettings;
 use App\Controllers\Admin\ServersController;
+use App\Services\Server\WingsSuspensionSync;
 use Symfony\Component\HttpFoundation\Request;
 use App\Services\Backup\ServerFullBackupService;
 
@@ -295,8 +295,10 @@ class InactiveCleanupService
             return 'error: server not found';
         }
         $started = strtotime((string) $row['inactivity_stage_at'] . ' UTC') ?: $this->now();
-        if ($row['b_uuid'] === null || ($row['completed_at'] !== null && (int) $row['is_successful'] !== 1)
-            || ($row['completed_at'] === null && $this->now() - $started > self::ARCHIVE_TIMEOUT_HOURS * 3600)) {
+        if (
+            $row['b_uuid'] === null || ($row['completed_at'] !== null && (int) $row['is_successful'] !== 1)
+            || ($row['completed_at'] === null && $this->now() - $started > self::ARCHIVE_TIMEOUT_HOURS * 3600)
+        ) {
             $this->setStage($item['server_id'], self::STAGE_ARCHIVE_FAILED);
 
             return 'archive backup failed, server kept';

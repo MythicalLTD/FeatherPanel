@@ -17,15 +17,15 @@
 
 namespace App\Controllers\User\User;
 
-use App\Chat\PushSubscription;
 use App\Chat\UserPreference;
 use App\Helpers\ApiResponse;
-use App\Middleware\AuthMiddleware;
-use App\Services\Notifications\ExternalNotifier;
-use App\Services\Notifications\WebPushNotifier;
 use OpenApi\Attributes as OA;
+use App\Chat\PushSubscription;
+use App\Middleware\AuthMiddleware;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use App\Services\Notifications\WebPushNotifier;
+use App\Services\Notifications\ExternalNotifier;
 
 class PushSubscriptionController
 {

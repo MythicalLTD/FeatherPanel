@@ -161,7 +161,6 @@ class ResetPasswordController
                 UserServerAccessRevoker::revokeEverywhere($userInfo);
             }
             if ($credentialsUpdated && User::updateUser($userInfo['uuid'], ['mail_verify' => PasswordResetTokenHelper::mailVerifyAfterReset($resetLookup['state'])])) {
-
                 Activity::createActivity([
                     'user_uuid' => $userInfo['uuid'],
                     'name' => 'reset_password',

@@ -213,7 +213,7 @@ class PhpMyAdmin
     /**
      * Re-copy token bridge files and ensure AllowArbitraryServer stays off.
      *
-     * @param bool $force When false, skip if we refreshed within the last hour.
+     * @param bool $force when false, skip if we refreshed within the last hour
      */
     public static function refreshSignonHardening(bool $force = true): void
     {

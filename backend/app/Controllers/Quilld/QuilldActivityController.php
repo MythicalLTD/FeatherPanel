@@ -18,12 +18,12 @@
 namespace App\Controllers\Quilld;
 
 use App\App;
-use App\Services\Notifications\InboxNotifier;
 use App\Chat\User;
 use App\Chat\WebSpace;
 use App\Helpers\ApiResponse;
 use App\Chat\WebSpaceActivity;
 use App\Plugins\Events\Events\QuilldEvent;
+use App\Services\Notifications\InboxNotifier;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 

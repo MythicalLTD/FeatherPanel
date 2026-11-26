@@ -18,8 +18,8 @@
 namespace App\Chat;
 
 use App\App;
-use App\Runtime\RequestContext;
 use App\Realtime\Events;
+use App\Runtime\RequestContext;
 
 class Activity
 {

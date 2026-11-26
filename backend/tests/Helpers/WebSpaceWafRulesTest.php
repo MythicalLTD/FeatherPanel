@@ -15,8 +15,8 @@
  * See the LICENSE file or <https://www.gnu.org/licenses/>.
  */
 
-use App\Helpers\WebSpaceWafRules;
 use PHPUnit\Framework\TestCase;
+use App\Helpers\WebSpaceWafRules;
 
 class WebSpaceWafRulesTest extends TestCase
 {
@@ -38,7 +38,7 @@ class WebSpaceWafRulesTest extends TestCase
 
     public function testRejectsUnsafePaths(): void
     {
-        foreach (['', 'a', '/a b', '/a"b', "/a`b", '/a{b}', '/a;b', '/../etc', '/a/../b', '/.well-known/acme-challenge/x', '/.WELL-KNOWN/x', str_repeat('a', 300)] as $path) {
+        foreach (['', 'a', '/a b', '/a"b', '/a`b', '/a{b}', '/a;b', '/../etc', '/a/../b', '/.well-known/acme-challenge/x', '/.WELL-KNOWN/x', str_repeat('a', 300)] as $path) {
             $this->assertFalse(WebSpaceWafRules::isValidPath($path), $path);
         }
     }

@@ -21,12 +21,12 @@ use App\Chat\WebNode;
 use App\Chat\WebSpace;
 use App\Helpers\ApiResponse;
 use App\Helpers\WebSpaceGateway;
-use App\Helpers\FeatherQuilldClient;
 use App\Helpers\WebSpaceDaemonSync;
 use App\WebSpaceSubuserPermissions;
-use App\Helpers\WebSpaceActivityLogger;
-use App\Helpers\WebSpacePathValidator;
+use App\Helpers\FeatherQuilldClient;
 use App\Helpers\WebSpaceWafSettings;
+use App\Helpers\WebSpacePathValidator;
+use App\Helpers\WebSpaceActivityLogger;
 use App\Helpers\CheckWebSpacePermission;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -116,54 +116,6 @@ class WebSpaceWafController
         return ApiResponse::success(['events' => $events], 'OK', 200);
     }
 
-    private function range(Request $request): string
-    {
-        $range = (string) $request->query->get('range', '24h');
-
-        return isset(self::RANGE_SECONDS[$range]) ? $range : '24h';
-    }
-
-    /**
-     * The daemon does the counting (it owns the access and audit logs). A node that does not know the endpoint yet,
-     * or is unreachable, yields no numbers rather than an error page.
-     *
-     * @param array{space: array<string, mixed>, webNode: array<string, mixed>, user: array<string, mixed>} $ctx
-     *
-     * @return array<string, mixed>
-     */
-    private function stats(array $ctx, string $range, int $events): array
-    {
-        $daemon = FeatherQuilldClient::getWebSpaceWafStats($ctx['webNode'], (string) $ctx['space']['uuid'], $range, $events);
-        if (!$daemon['ok'] || !is_array($daemon['body'])) {
-            return [];
-        }
-        $body = $daemon['body'];
-
-        return isset($body['data']) && is_array($body['data']) ? $body['data'] : $body;
-    }
-
-    /** @return array<string, mixed> */
-    private function emptyOverview(string $range): array
-    {
-        return [
-            'engine_available' => false,
-            'bucket_seconds' => self::RANGE_SECONDS[$range],
-            'totals' => [
-                'requests' => 0, 'blocked' => 0, 'detected' => 0, 'unique_ips' => 0,
-                'blocked_ips' => 0, 'status_4xx' => 0, 'status_5xx' => 0,
-            ],
-            'series' => [],
-            'status_codes' => [],
-            'top_ips' => [],
-            'top_categories' => [],
-            'top_paths' => [],
-            'top_hosts' => [],
-            'referrers' => [],
-            'browsers' => [],
-            'systems' => [],
-        ];
-    }
-
     /**
      * Look for error pages the customer already has (403.html, error/403.html, ErrorDocument lines)
      * so they can be reused as the block page. Reads only through the daemon's file API, which
@@ -246,6 +198,54 @@ class WebSpaceWafController
         return ApiResponse::success(['pages' => $pages], 'OK', 200);
     }
 
+    private function range(Request $request): string
+    {
+        $range = (string) $request->query->get('range', '24h');
+
+        return isset(self::RANGE_SECONDS[$range]) ? $range : '24h';
+    }
+
+    /**
+     * The daemon does the counting (it owns the access and audit logs). A node that does not know the endpoint yet,
+     * or is unreachable, yields no numbers rather than an error page.
+     *
+     * @param array{space: array<string, mixed>, webNode: array<string, mixed>, user: array<string, mixed>} $ctx
+     *
+     * @return array<string, mixed>
+     */
+    private function stats(array $ctx, string $range, int $events): array
+    {
+        $daemon = FeatherQuilldClient::getWebSpaceWafStats($ctx['webNode'], (string) $ctx['space']['uuid'], $range, $events);
+        if (!$daemon['ok'] || !is_array($daemon['body'])) {
+            return [];
+        }
+        $body = $daemon['body'];
+
+        return isset($body['data']) && is_array($body['data']) ? $body['data'] : $body;
+    }
+
+    /** @return array<string, mixed> */
+    private function emptyOverview(string $range): array
+    {
+        return [
+            'engine_available' => false,
+            'bucket_seconds' => self::RANGE_SECONDS[$range],
+            'totals' => [
+                'requests' => 0, 'blocked' => 0, 'detected' => 0, 'unique_ips' => 0,
+                'blocked_ips' => 0, 'status_4xx' => 0, 'status_5xx' => 0,
+            ],
+            'series' => [],
+            'status_codes' => [],
+            'top_ips' => [],
+            'top_categories' => [],
+            'top_paths' => [],
+            'top_hosts' => [],
+            'referrers' => [],
+            'browsers' => [],
+            'systems' => [],
+        ];
+    }
+
     /**
      * @param array{space: array<string, mixed>, webNode: array<string, mixed>, user: array<string, mixed>} $ctx
      * @param array<string, mixed> $patch
@@ -306,6 +306,7 @@ class WebSpaceWafController
         $settings = WebSpaceWafSettings::withLegacyMode($stored, !empty($space['waf_enabled']));
         $settings['deny_ips'] = is_array($space['waf_deny_ips'] ?? null) ? array_values($space['waf_deny_ips']) : [];
         $settings['deny_paths'] = is_array($space['waf_deny_paths'] ?? null) ? array_values($space['waf_deny_paths']) : [];
+
         return $settings;
     }
 

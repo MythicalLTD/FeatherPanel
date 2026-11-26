@@ -89,7 +89,7 @@ class LogRedactor
         ];
 
         $out = preg_replace($patterns, $replacements, $text);
+
         return is_string($out) ? $out : $text;
     }
-
 }
