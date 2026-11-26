@@ -225,6 +225,10 @@ class PublicConfig extends ConfigFactory
             ConfigInterface::STATUS_PAGE_ALLOW_IFRAME => 'false',
             ConfigInterface::STATUS_PAGE_SHOW_RAW_VALUES => 'false',
             ConfigInterface::STATUS_PAGE_SHOW_PLAYER_COUNT => 'false',
+            ConfigInterface::STATUS_PAGE_SHOW_WEB_NODES => 'true',
+            ConfigInterface::STATUS_PAGE_SHOW_VDS_NODES => 'true',
+            ConfigInterface::STATUS_PAGE_SHOW_INCIDENTS => 'true',
+            ConfigInterface::STATUS_PAGE_SHOW_MAP => 'true',
 
             // Knowledgebase settings
             ConfigInterface::KNOWLEDGEBASE_ENABLED => 'true',

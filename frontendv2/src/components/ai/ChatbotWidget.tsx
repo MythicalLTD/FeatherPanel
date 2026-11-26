@@ -22,6 +22,7 @@ import { Button } from '@/components/featherui/Button';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useVmInstance } from '@/contexts/VmInstanceContext';
+import { useWebSpace } from '@/contexts/WebSpaceContext';
 import { useTheme } from '@/contexts/ThemeContext';
 
 const ChatbotContainer = lazy(() => import('./ChatbotContainer'));
@@ -53,6 +54,69 @@ function ChatbotOpenButton({ onClick }: { onClick: () => void }) {
             <span className='sr-only'>{t('chatbot.openChat')}</span>
             <span className='border-background absolute -top-0.5 -right-0.5 h-3 w-3 rounded-full border-2 bg-emerald-500' />
         </Button>
+    );
+}
+
+
+function WebSpaceChatbotWidget() {
+    const [isOpen, setIsOpen] = useState(false);
+    const { webspace } = useWebSpace();
+
+    useEffect(() => {
+        const handleKeyDown = (event: KeyboardEvent) => {
+            const target = event.target as HTMLElement;
+            const isInputField =
+                target.tagName === 'INPUT' ||
+                target.tagName === 'TEXTAREA' ||
+                target.isContentEditable ||
+                target.getAttribute('contenteditable') === 'true';
+
+            if ((event.ctrlKey || event.metaKey) && event.key === 'j' && !isInputField) {
+                event.preventDefault();
+                setIsOpen(true);
+            }
+        };
+
+        document.addEventListener('keydown', handleKeyDown);
+        return () => document.removeEventListener('keydown', handleKeyDown);
+    }, []);
+
+    return (
+        <>
+            {!isOpen && (
+                <div className='fixed right-6 bottom-6 z-50'>
+                    <div className='relative'>
+                        <ChatbotOpenButton onClick={() => setIsOpen(true)} />
+                    </div>
+                </div>
+            )}
+
+            {isOpen && (
+                <Suspense fallback={null}>
+                    <ChatbotContainer
+                        open={isOpen}
+                        onClose={() => setIsOpen(false)}
+                        mode='webspace'
+                        webspace={
+                            webspace
+                                ? {
+                                      uuidShort: webspace.uuidShort || '',
+                                      uuid: webspace.uuid,
+                                      name: webspace.name,
+                                      status: webspace.status,
+                                      domains: Array.isArray(webspace.domains)
+                                          ? webspace.domains.map((d: any) =>
+                                                typeof d === 'string' ? d : d?.domain || '',
+                                            ).filter(Boolean)
+                                          : undefined,
+                                      webplate_name: (webspace as any).webplate_name ?? null,
+                                  }
+                                : null
+                        }
+                    />
+                </Suspense>
+            )}
+        </>
     );
 }
 
@@ -130,19 +194,24 @@ export default function ChatbotWidget() {
     const chatbotEnabled = settings?.chatbot_enabled === 'true';
     const isIDE = pathname?.includes('/files/ide');
     const isVds = pathname?.startsWith('/vds/');
+    const isWebspace = pathname?.startsWith('/webspace/');
     const isServer = pathname?.startsWith('/server/');
     const dashboardChatbotRoutes = ['/dashboard', '/dashboard/servers', '/dashboard/vms', '/dashboard/knowledgebase'];
     const isDashboardChatbotRoute =
         pathname === '/dashboard/knowledgebase' ||
         pathname?.startsWith('/dashboard/knowledgebase/') ||
         dashboardChatbotRoutes.includes(pathname || '');
-    const shouldShow = (isServer || isVds || isDashboardChatbotRoute) && !isIDE && chatbotEnabled;
+    const shouldShow = (isServer || isVds || isWebspace || isDashboardChatbotRoute) && !isIDE && chatbotEnabled;
 
     if (!shouldShow) return null;
 
     // VDS routes: delegate to VdsChatbotWidget which safely calls useVmInstance()
     if (isVds) {
         return <VdsChatbotWidget />;
+    }
+
+    if (isWebspace) {
+        return <WebSpaceChatbotWidget />;
     }
 
     if (isDashboardChatbotRoute) {

@@ -159,7 +159,7 @@ class VdsChatbotController
         }
 
         try {
-            $conversations = ChatConversation::getConversationsByUser($currentUser['uuid'], 50);
+            $conversations = ChatConversation::getConversationsByUser($currentUser['uuid'], 50, 'vds');
 
             return ApiResponse::success(['conversations' => $conversations], 'Conversations retrieved successfully');
         } catch (\Exception $e) {
@@ -214,8 +214,8 @@ class VdsChatbotController
                 return ApiResponse::error('Conversation not found', 'NOT_FOUND', 404);
             }
 
-            // Verify conversation belongs to user
-            if ($conversation['user_uuid'] !== $currentUser['uuid']) {
+            // Verify conversation belongs to user and VDS scope
+            if ($conversation['user_uuid'] !== $currentUser['uuid'] || !ChatConversation::matchesScope($conversation, 'vds')) {
                 return ApiResponse::error('Conversation not found', 'NOT_FOUND', 404);
             }
 
@@ -267,8 +267,8 @@ class VdsChatbotController
                 return ApiResponse::error('Conversation not found', 'NOT_FOUND', 404);
             }
 
-            // Verify conversation belongs to user
-            if ($conversation['user_uuid'] !== $currentUser['uuid']) {
+            // Verify conversation belongs to user and VDS scope
+            if ($conversation['user_uuid'] !== $currentUser['uuid'] || !ChatConversation::matchesScope($conversation, 'vds')) {
                 return ApiResponse::error('Conversation not found', 'NOT_FOUND', 404);
             }
 
@@ -335,8 +335,8 @@ class VdsChatbotController
                 return ApiResponse::error('Conversation not found', 'NOT_FOUND', 404);
             }
 
-            // Verify conversation belongs to user
-            if ($conversation['user_uuid'] !== $currentUser['uuid']) {
+            // Verify conversation belongs to user and VDS scope
+            if ($conversation['user_uuid'] !== $currentUser['uuid'] || !ChatConversation::matchesScope($conversation, 'vds')) {
                 return ApiResponse::error('Conversation not found', 'NOT_FOUND', 404);
             }
 
@@ -399,16 +399,26 @@ class VdsChatbotController
         $conversation = null;
         if ($conversationId) {
             $conversation = ChatConversation::getConversationById((int) $conversationId);
-            if ($conversation && $conversation['user_uuid'] !== $currentUser['uuid']) {
+            if (
+                $conversation
+                && (
+                    $conversation['user_uuid'] !== $currentUser['uuid']
+                    || !ChatConversation::matchesScope($conversation, 'vds')
+                )
+            ) {
                 throw new \RuntimeException('Conversation not found');
             }
         }
 
         if (!$conversation) {
-            $conversationId = ChatConversation::createConversation([
+            $createData = [
                 'user_uuid' => $currentUser['uuid'],
                 'title' => substr($message, 0, 255),
-            ]);
+            ];
+            if (ChatConversation::hasColumn('scope')) {
+                $createData['scope'] = 'vds';
+            }
+            $conversationId = ChatConversation::createConversation($createData);
             if (!$conversationId) {
                 throw new \RuntimeException('Failed to create conversation');
             }

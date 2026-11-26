@@ -25,6 +25,7 @@ use App\Services\Wings\Wings;
 use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
 use App\Helpers\NodeStatusHelper;
+use App\Helpers\StatusPageInfrastructure;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -75,6 +76,10 @@ class NodeStatusController
         $allowIframe = $config->getSetting(ConfigInterface::STATUS_PAGE_ALLOW_IFRAME, 'false') === 'true';
         $showRawValues = $config->getSetting(ConfigInterface::STATUS_PAGE_SHOW_RAW_VALUES, 'false') === 'true';
         $showPlayerCount = $config->getSetting(ConfigInterface::STATUS_PAGE_SHOW_PLAYER_COUNT, 'false') === 'true';
+        $showWebNodes = $config->getSetting(ConfigInterface::STATUS_PAGE_SHOW_WEB_NODES, 'true') === 'true';
+        $showVdsNodes = $config->getSetting(ConfigInterface::STATUS_PAGE_SHOW_VDS_NODES, 'true') === 'true';
+        $showIncidents = $config->getSetting(ConfigInterface::STATUS_PAGE_SHOW_INCIDENTS, 'true') === 'true';
+        $showMap = $config->getSetting(ConfigInterface::STATUS_PAGE_SHOW_MAP, 'true') === 'true';
         $showPoweredBy = $config->getSetting(ConfigInterface::BRANDING_SHOW_POWERED_BY, 'true') === 'true';
 
         $responseData = [
@@ -82,6 +87,10 @@ class NodeStatusController
             'allow_iframe' => $allowIframe,
             'show_raw_values' => $showRawValues,
             'show_player_count' => $showPlayerCount,
+            'show_web_nodes' => $showWebNodes,
+            'show_vds_nodes' => $showVdsNodes,
+            'show_incidents' => $showIncidents,
+            'show_map' => $showMap,
             'powered_by' => [
                 'show' => $showPoweredBy,
                 'label' => 'FeatherPanel',
@@ -89,8 +98,10 @@ class NodeStatusController
             ],
         ];
 
+        $gameNodesForMap = [];
+
         // Get node status if enabled
-        if ($showNodeStatus || $showLoadUsage || $showIndividualNodes) {
+        if ($showNodeStatus || $showLoadUsage || $showIndividualNodes || $showMap) {
             $allNodes = Node::getAllNodes();
             $probes = NodeStatusHelper::probeNodesUtilization($allNodes);
 
@@ -187,6 +198,12 @@ class NodeStatusController
                     ++$globalStats['unhealthy_nodes'];
                 }
 
+                $gameNodesForMap[] = [
+                    'id' => $nodeId,
+                    'name' => $node['name'],
+                    'status' => $nodeData['status'],
+                ];
+
                 if ($showIndividualNodes) {
                     $nodesWithStatus[] = $nodeData;
                 }
@@ -216,6 +233,21 @@ class NodeStatusController
                 $responseData['data'] = [];
             }
             $responseData['data']['total_servers'] = $totalServers;
+        }
+
+        if ($showWebNodes || $showVdsNodes || $showIncidents || $showMap) {
+            if (!isset($responseData['data'])) {
+                $responseData['data'] = [];
+            }
+            $extras = StatusPageInfrastructure::build(
+                $showWebNodes,
+                $showVdsNodes,
+                $showIncidents,
+                $showMap,
+                $showIndividualNodes,
+                $gameNodesForMap,
+            );
+            $responseData['data'] = array_merge($responseData['data'], $extras);
         }
 
         // Maintenance notice so the status page can tell visitors what is going on.

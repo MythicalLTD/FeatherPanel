@@ -33,8 +33,10 @@ export interface ChatMessage {
     toolActivity?: ToolActivity[] | null;
 }
 
+export type ChatbotMode = 'server' | 'vds' | 'dashboard' | 'webspace';
+
 export interface PageContext {
-    mode?: 'server' | 'vds' | 'dashboard';
+    mode?: ChatbotMode;
     route?: string;
     routeName?: string;
     page?: string;
@@ -56,6 +58,14 @@ export interface PageContext {
         cpus?: number | null;
         disk_gb?: number | null;
         node_name?: string | null;
+    };
+    webspace?: {
+        uuidShort: string;
+        uuid?: string;
+        name?: string | null;
+        status?: string | null;
+        domains?: string[];
+        webplate_name?: string | null;
     };
     contextItems?: Array<{
         type: 'server' | 'page' | 'file';
@@ -397,15 +407,73 @@ export async function deleteVdsConversation(conversationId: number): Promise<voi
     }
 }
 
+// WebSpace Chatbot API functions
+
+export async function getWebSpaceConversations(): Promise<Conversation[]> {
+    try {
+        const response = await axios.get<{ success: boolean; data: { conversations: Conversation[] } }>(
+            '/api/user/webspace-chatbot/conversations',
+        );
+
+        if (response.data && response.data.success && response.data.data) {
+            return response.data.data.conversations;
+        }
+
+        return [];
+    } catch (error) {
+        console.error('Failed to get WebSpace conversations:', error);
+        return [];
+    }
+}
+
+export async function getWebSpaceConversationMessages(conversationId: number): Promise<{
+    conversation: Conversation;
+    messages: ConversationMessage[];
+}> {
+    try {
+        const response = await axios.get<{
+            success: boolean;
+            data: { conversation: Conversation; messages: ConversationMessage[] };
+        }>(`/api/user/webspace-chatbot/conversations/${conversationId}`);
+
+        if (response.data && response.data.success && response.data.data) {
+            return response.data.data;
+        }
+
+        throw new Error(payloadFailureMessage(response.data, 'Failed to get WebSpace conversation messages'));
+    } catch (error) {
+        if (axios.isAxiosError(error)) {
+            throw new Error(apiFailureMessage(error, 'Failed to get messages'));
+        }
+        throw error;
+    }
+}
+
+export async function deleteWebSpaceConversation(conversationId: number): Promise<void> {
+    try {
+        await axios.delete(`/api/user/webspace-chatbot/conversations/${conversationId}`);
+    } catch (error) {
+        if (axios.isAxiosError(error)) {
+            throw new Error(apiFailureMessage(error, 'Failed to delete WebSpace conversation'));
+        }
+        throw error;
+    }
+}
+
 export async function streamChatMessage(
-    mode: 'server' | 'vds' | 'dashboard',
+    mode: ChatbotMode,
     message: string,
     history: ChatMessage[] = [],
     pageContext?: PageContext,
     conversationId?: number,
     onEvent?: (event: ChatStreamEvent) => void,
 ): Promise<ChatStreamFinalEvent> {
-    const endpoint = mode === 'vds' ? '/api/user/vds-chatbot/chat/stream' : '/api/user/chatbot/chat/stream';
+    const endpoint =
+        mode === 'vds'
+            ? '/api/user/vds-chatbot/chat/stream'
+            : mode === 'webspace'
+              ? '/api/user/webspace-chatbot/chat/stream'
+              : '/api/user/chatbot/chat/stream';
     const response = await fetch(endpoint, {
         method: 'POST',
         credentials: 'same-origin',

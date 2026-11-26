@@ -498,6 +498,10 @@ interface ConfigInterface
     public const STATUS_PAGE_SHOW_RAW_VALUES = 'status_page_show_raw_values';
     public const STATUS_PAGE_SHOW_PLAYER_COUNT = 'status_page_show_player_count';
     public const STATUS_PAGE_SERVERS_VISIBLE_BY_DEFAULT = 'status_page_servers_visible_by_default';
+    public const STATUS_PAGE_SHOW_WEB_NODES = 'status_page_show_web_nodes';
+    public const STATUS_PAGE_SHOW_VDS_NODES = 'status_page_show_vds_nodes';
+    public const STATUS_PAGE_SHOW_INCIDENTS = 'status_page_show_incidents';
+    public const STATUS_PAGE_SHOW_MAP = 'status_page_show_map';
 
     /**
      * Knowledgebase Settings.

@@ -25,10 +25,11 @@ import { resolveNodeCoordinates } from '@/lib/country-centroids';
 import { Badge } from '@/components/ui/badge';
 
 export type NodesMapNode = {
-    id: number;
+    id?: number;
     name: string;
     fqdn?: string;
     status: 'healthy' | 'unhealthy' | string;
+    kind?: 'game' | 'web' | 'vds' | string;
     location_name?: string | null;
     flag_code?: string | null;
     latitude?: number | null;
@@ -63,7 +64,13 @@ function latencyTone(ms: number | null | undefined): string {
     return 'text-red-600 dark:text-red-400';
 }
 
-export function NodesMap({ nodes }: { nodes: NodesMapNode[] }) {
+export function NodesMap({
+    nodes,
+    variant = 'admin',
+}: {
+    nodes: NodesMapNode[];
+    variant?: 'admin' | 'public';
+}) {
     const { t } = useTranslation();
     const [isDark, setIsDark] = useState(false);
 
@@ -149,12 +156,14 @@ export function NodesMap({ nodes }: { nodes: NodesMapNode[] }) {
                             url={tileUrl}
                         />
                         <FitBounds points={points} />
-                        {mapped.map((node) => {
+                        {mapped.map((node, index) => {
                             const healthy = node.status === 'healthy';
-                            const color = healthy ? '#16a34a' : '#dc2626';
+                            const kindColor =
+                                node.kind === 'web' ? '#2563eb' : node.kind === 'vds' ? '#7c3aed' : null;
+                            const color = kindColor ?? (healthy ? '#16a34a' : '#dc2626');
                             return (
                                 <CircleMarker
-                                    key={node.id}
+                                    key={`${node.kind || 'node'}-${node.id ?? index}-${node.name}`}
                                     center={[node.latitude, node.longitude]}
                                     radius={9}
                                     pathOptions={{
@@ -167,6 +176,11 @@ export function NodesMap({ nodes }: { nodes: NodesMapNode[] }) {
                                     <Popup>
                                         <div className='space-y-1 text-sm'>
                                             <div className='font-semibold'>{node.name}</div>
+                                            {node.kind && (
+                                                <div className='text-muted-foreground uppercase tracking-wide text-[10px]'>
+                                                    {node.kind}
+                                                </div>
+                                            )}
                                             {node.location_name && (
                                                 <div className='text-muted-foreground'>
                                                     {node.location_name}
@@ -181,12 +195,14 @@ export function NodesMap({ nodes }: { nodes: NodesMapNode[] }) {
                                                     {t('admin.nodes.latency_value', { ms: String(node.latency_ms) })}
                                                 </div>
                                             )}
-                                            <Link
-                                                href={`/admin/nodes/${node.id}`}
-                                                className='text-primary inline-block underline-offset-4 hover:underline'
-                                            >
-                                                {t('admin.nodes.map_open_node')}
-                                            </Link>
+                                            {variant === 'admin' && node.id != null && (!node.kind || node.kind === 'game') && (
+                                                <Link
+                                                    href={`/admin/nodes/${node.id}`}
+                                                    className='text-primary inline-block underline-offset-4 hover:underline'
+                                                >
+                                                    {t('admin.nodes.map_open_node')}
+                                                </Link>
+                                            )}
                                         </div>
                                     </Popup>
                                 </CircleMarker>

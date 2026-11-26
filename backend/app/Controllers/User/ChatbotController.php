@@ -159,7 +159,7 @@ class ChatbotController
         }
 
         try {
-            $conversations = ChatConversation::getConversationsByUser($currentUser['uuid'], 50);
+            $conversations = ChatConversation::getConversationsByUserScopes($currentUser['uuid'], ['server', 'dashboard'], 50);
 
             return ApiResponse::success(['conversations' => $conversations], 'Conversations retrieved successfully');
         } catch (\Exception $e) {
@@ -214,8 +214,8 @@ class ChatbotController
                 return ApiResponse::error('Conversation not found', 'NOT_FOUND', 404);
             }
 
-            // Verify conversation belongs to user
-            if ($conversation['user_uuid'] !== $currentUser['uuid']) {
+            // Verify conversation belongs to user and server/dashboard scope
+            if ($conversation['user_uuid'] !== $currentUser['uuid'] || !ChatConversation::matchesAnyScope($conversation, ['server', 'dashboard'])) {
                 return ApiResponse::error('Conversation not found', 'NOT_FOUND', 404);
             }
 
@@ -267,8 +267,8 @@ class ChatbotController
                 return ApiResponse::error('Conversation not found', 'NOT_FOUND', 404);
             }
 
-            // Verify conversation belongs to user
-            if ($conversation['user_uuid'] !== $currentUser['uuid']) {
+            // Verify conversation belongs to user and server/dashboard scope
+            if ($conversation['user_uuid'] !== $currentUser['uuid'] || !ChatConversation::matchesAnyScope($conversation, ['server', 'dashboard'])) {
                 return ApiResponse::error('Conversation not found', 'NOT_FOUND', 404);
             }
 
@@ -336,7 +336,7 @@ class ChatbotController
             }
 
             // Verify conversation belongs to user
-            if ($conversation['user_uuid'] !== $currentUser['uuid']) {
+            if ($conversation['user_uuid'] !== $currentUser['uuid'] || !ChatConversation::matchesAnyScope($conversation, ['server', 'dashboard'])) {
                 return ApiResponse::error('Conversation not found', 'NOT_FOUND', 404);
             }
 
@@ -399,16 +399,31 @@ class ChatbotController
         $conversation = null;
         if ($conversationId) {
             $conversation = ChatConversation::getConversationById((int) $conversationId);
-            if ($conversation && $conversation['user_uuid'] !== $currentUser['uuid']) {
+            if (
+                $conversation
+                && (
+                    $conversation['user_uuid'] !== $currentUser['uuid']
+                    || !ChatConversation::matchesAnyScope($conversation, ['server', 'dashboard'])
+                )
+            ) {
                 throw new \RuntimeException('Conversation not found');
             }
         }
 
         if (!$conversation) {
-            $conversationId = ChatConversation::createConversation([
+            $scope = 'server';
+            $mode = $pageContext['mode'] ?? null;
+            if (is_string($mode) && in_array($mode, ['server', 'dashboard'], true)) {
+                $scope = $mode;
+            }
+            $createData = [
                 'user_uuid' => $currentUser['uuid'],
                 'title' => substr($message, 0, 255),
-            ]);
+            ];
+            if (ChatConversation::hasColumn('scope')) {
+                $createData['scope'] = $scope;
+            }
+            $conversationId = ChatConversation::createConversation($createData);
             if (!$conversationId) {
                 throw new \RuntimeException('Failed to create conversation');
             }

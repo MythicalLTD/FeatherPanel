@@ -3,6 +3,8 @@
 ## v1.5.6 STABLE
 
 ### Added
+- WebSpace AI copilot for DNS, WAF, SSL, deploys, backups and files (read + actions). by @nayskutzu
+- Unified status page: web nodes, VDS nodes, sanitized incidents, and location map. by @nayskutzu
 - Import Pelican eggs (PLCN_v1–v3) as spells, including from URL. by @nayskutzu
 - Live CPU/RAM/disk usage on Admin → Servers and Nodes → Status. by @nayskutzu
 - Start / Restart / Stop / Kill controls in the server sidebar. by @nayskutzu

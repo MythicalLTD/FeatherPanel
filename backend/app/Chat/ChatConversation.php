@@ -70,18 +70,100 @@ class ChatConversation
      *
      * @param string $userUuid User UUID
      * @param int $limit Maximum number of results
+     * @param string|null $scope Optional scope filter (server|vds|webspace|dashboard)
      *
      * @return array Array of conversations
      */
-    public static function getConversationsByUser(string $userUuid, int $limit = 50): array
+    public static function getConversationsByUser(string $userUuid, int $limit = 50, ?string $scope = null): array
     {
         $pdo = Database::getPdoConnection();
-        $stmt = $pdo->prepare('SELECT * FROM ' . self::$table . ' WHERE user_uuid = :user_uuid ORDER BY updated_at DESC LIMIT :limit');
+        $hasScope = self::hasColumn('scope');
+        $sql = 'SELECT * FROM ' . self::$table . ' WHERE user_uuid = :user_uuid';
+        if ($hasScope && $scope !== null && $scope !== '') {
+            $sql .= ' AND scope = :scope';
+        }
+        $sql .= ' ORDER BY updated_at DESC LIMIT :limit';
+        $stmt = $pdo->prepare($sql);
         $stmt->bindValue(':user_uuid', $userUuid);
+        if ($hasScope && $scope !== null && $scope !== '') {
+            $stmt->bindValue(':scope', $scope);
+        }
         $stmt->bindValue(':limit', $limit, \PDO::PARAM_INT);
         $stmt->execute();
 
         return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Get conversations for a user limited to one of several scopes.
+     *
+     * @param list<string> $scopes
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public static function getConversationsByUserScopes(string $userUuid, array $scopes, int $limit = 50): array
+    {
+        $scopes = array_values(array_filter(array_map('strval', $scopes), static fn (string $s): bool => $s !== ''));
+        if ($scopes === [] || !self::hasColumn('scope')) {
+            return self::getConversationsByUser($userUuid, $limit);
+        }
+        if (count($scopes) === 1) {
+            return self::getConversationsByUser($userUuid, $limit, $scopes[0]);
+        }
+
+        $pdo = Database::getPdoConnection();
+        $placeholders = [];
+        $params = ['user_uuid' => $userUuid];
+        foreach ($scopes as $i => $scope) {
+            $key = 'scope_' . $i;
+            $placeholders[] = ':' . $key;
+            $params[$key] = $scope;
+        }
+        $sql = 'SELECT * FROM ' . self::$table
+            . ' WHERE user_uuid = :user_uuid AND scope IN (' . implode(', ', $placeholders) . ')'
+            . ' ORDER BY updated_at DESC LIMIT :limit';
+        $stmt = $pdo->prepare($sql);
+        foreach ($params as $key => $value) {
+            $stmt->bindValue(':' . $key, $value);
+        }
+        $stmt->bindValue(':limit', $limit, \PDO::PARAM_INT);
+        $stmt->execute();
+
+        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Whether a conversation belongs to any of the expected scopes.
+     *
+     * @param list<string> $expectedScopes
+     */
+    public static function matchesAnyScope(?array $conversation, array $expectedScopes): bool
+    {
+        if ($conversation === null) {
+            return false;
+        }
+        if (!self::hasColumn('scope')) {
+            return true;
+        }
+        $scope = (string) ($conversation['scope'] ?? 'server');
+
+        return in_array($scope, $expectedScopes, true);
+    }
+
+    /**
+     * Whether a conversation belongs to the expected scope (missing column = always ok).
+     */
+    public static function matchesScope(?array $conversation, string $expectedScope): bool
+    {
+        if ($conversation === null) {
+            return false;
+        }
+        if (!self::hasColumn('scope')) {
+            return true;
+        }
+        $scope = (string) ($conversation['scope'] ?? 'server');
+
+        return $scope === $expectedScope;
     }
 
     /**

@@ -32,6 +32,9 @@ import {
     deleteConversation,
     getVdsConversations,
     getVdsConversationMessages,
+    getWebSpaceConversations,
+    getWebSpaceConversationMessages,
+    deleteWebSpaceConversation,
     deleteVdsConversation,
     type Conversation,
     type TokenUsage,
@@ -105,8 +108,16 @@ interface ConfirmDialogState {
 interface ChatbotContainerProps {
     open: boolean;
     onClose: () => void;
-    mode?: 'server' | 'vds' | 'dashboard';
+    mode?: 'server' | 'vds' | 'dashboard' | 'webspace';
     vdsInstance?: VmInstance | null;
+    webspace?: {
+        uuidShort: string;
+        uuid?: string;
+        name?: string | null;
+        status?: string | null;
+        domains?: string[];
+        webplate_name?: string | null;
+    } | null;
 }
 
 interface UserAvatarProps {
@@ -145,7 +156,7 @@ const UserAvatar = memo(function UserAvatar({ avatar, username, firstName, size 
     );
 });
 
-export default function ChatbotContainer({ open, onClose, mode = 'server', vdsInstance }: ChatbotContainerProps) {
+export default function ChatbotContainer({ open, onClose, mode = 'server', vdsInstance, webspace }: ChatbotContainerProps) {
     const { t } = useTranslation();
     const [messages, setMessages] = useState<Message[]>([]);
     const [inputMessage, setInputMessage] = useState('');
@@ -261,6 +272,9 @@ export default function ChatbotContainer({ open, onClose, mode = 'server', vdsIn
         if (mode === 'vds') {
             return t('chatbot.welcomeVds', { name: userName });
         }
+        if (mode === 'webspace') {
+            return t('chatbot.welcomeWebspace', { name: userName });
+        }
         return t('chatbot.welcome', { name: userName });
     };
 
@@ -314,7 +328,12 @@ export default function ChatbotContainer({ open, onClose, mode = 'server', vdsIn
     const loadConversationsList = async () => {
         setLoadingConversations(true);
         try {
-            const convs = mode === 'vds' ? await getVdsConversations() : await getConversations();
+            const convs =
+                mode === 'vds'
+                    ? await getVdsConversations()
+                    : mode === 'webspace'
+                      ? await getWebSpaceConversations()
+                      : await getConversations();
             setConversations(convs);
             return convs;
         } catch (error) {
@@ -352,7 +371,9 @@ export default function ChatbotContainer({ open, onClose, mode = 'server', vdsIn
             const data =
                 mode === 'vds'
                     ? await getVdsConversationMessages(conversationId)
-                    : await getConversationMessages(conversationId);
+                    : mode === 'webspace'
+                      ? await getWebSpaceConversationMessages(conversationId)
+                      : await getConversationMessages(conversationId);
             setCurrentConversationId(conversationId);
             setMessages(
                 data.messages.map((msg) => ({
@@ -394,6 +415,8 @@ export default function ChatbotContainer({ open, onClose, mode = 'server', vdsIn
         try {
             if (mode === 'vds') {
                 await deleteVdsConversation(conversationId);
+            } else if (mode === 'webspace') {
+                await deleteWebSpaceConversation(conversationId);
             } else {
                 await deleteConversation(conversationId);
             }
@@ -906,6 +929,17 @@ export default function ChatbotContainer({ open, onClose, mode = 'server', vdsIn
                     cpus: vdsInstance.cpus,
                     disk_gb: vdsInstance.disk_gb,
                     node_name: vdsInstance.node_name,
+                };
+            }
+
+            if (mode === 'webspace' && webspace && pathname?.startsWith('/webspace/')) {
+                pageContext.webspace = {
+                    uuidShort: webspace.uuidShort,
+                    uuid: webspace.uuid,
+                    name: webspace.name,
+                    status: webspace.status,
+                    domains: webspace.domains,
+                    webplate_name: webspace.webplate_name,
                 };
             }
 

@@ -48,6 +48,7 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Input } from '@/components/featherui/Input';
 import { NodeServersList, type NodeStatusServer } from '@/components/admin/NodeServersList';
+import { NodesMapDynamic, type NodesMapNode } from '@/components/admin/nodes-map/NodesMapDynamic';
 import { Sensitive } from '@/components/common/Sensitive';
 
 interface NodeEntry {
@@ -68,12 +69,37 @@ interface NodeEntry {
     };
 }
 
+interface InfraNode {
+    id: number;
+    name: string;
+    status: 'healthy' | 'unhealthy' | string;
+    location_name?: string | null;
+    flag_code?: string | null;
+    latitude?: number | null;
+    longitude?: number | null;
+    latency_ms?: number | null;
+}
+
+interface StatusIncident {
+    id: number;
+    component: string;
+    node_name: string;
+    type: string;
+    severity: string;
+    message: string;
+    started_at?: string | null;
+}
+
 interface StatusData {
     enabled: boolean;
     maintenance?: { enabled: boolean; message?: string };
     allow_iframe?: boolean;
     show_raw_values?: boolean;
     show_player_count?: boolean;
+    show_web_nodes?: boolean;
+    show_vds_nodes?: boolean;
+    show_incidents?: boolean;
+    show_map?: boolean;
     data?: {
         global?: {
             total_nodes?: number;
@@ -87,7 +113,80 @@ interface StatusData {
         };
         total_servers?: number;
         nodes?: NodeEntry[];
+        web_nodes?: { total: number; healthy: number; unhealthy: number; nodes?: InfraNode[] };
+        vds_nodes?: { total: number; healthy: number; unhealthy: number; nodes?: InfraNode[] };
+        incidents?: StatusIncident[];
+        map_nodes?: Array<NodesMapNode & { kind?: string }>;
     };
+}
+
+
+function InfraNodesSection({
+    title,
+    summary,
+    nodes,
+}: {
+    title: string;
+    summary?: { total: number; healthy: number; unhealthy: number; nodes?: InfraNode[] };
+    nodes?: InfraNode[];
+}) {
+    const { t } = useTranslation();
+    if (!summary) return null;
+    const list = nodes || summary.nodes || [];
+
+    return (
+        <div className='space-y-3'>
+            <div className='flex flex-wrap items-end justify-between gap-2 pt-2'>
+                <h2 className='text-lg font-bold tracking-tight md:text-xl'>{title}</h2>
+                <p className='text-muted-foreground text-xs'>
+                    {t('dashboard.status.infraSummary', {
+                        total: String(summary.total),
+                        healthy: String(summary.healthy),
+                        unhealthy: String(summary.unhealthy),
+                    })}
+                </p>
+            </div>
+            {list.length > 0 ? (
+                <div className='fp-surface divide-border/40 divide-y overflow-hidden rounded-xl border'>
+                    {list.map((node) => (
+                        <div key={node.id} className='flex items-center justify-between gap-3 p-4'>
+                            <div className='min-w-0'>
+                                <div className='flex flex-wrap items-center gap-2'>
+                                    <span className='truncate font-bold'>{node.name}</span>
+                                    {node.flag_code && (
+                                        <span className='text-muted-foreground text-xs uppercase'>{node.flag_code}</span>
+                                    )}
+                                </div>
+                                {node.location_name && (
+                                    <p className='text-muted-foreground mt-0.5 text-xs'>{node.location_name}</p>
+                                )}
+                            </div>
+                            <div className='flex items-center gap-3'>
+                                {node.latency_ms != null && (
+                                    <span className='text-muted-foreground text-xs'>{node.latency_ms} ms</span>
+                                )}
+                                <Badge
+                                    className={
+                                        node.status === 'healthy'
+                                            ? 'bg-green-500/10 text-green-500'
+                                            : 'bg-red-500/10 text-red-500'
+                                    }
+                                >
+                                    {node.status === 'healthy'
+                                        ? t('dashboard.status.online')
+                                        : t('dashboard.status.offline')}
+                                </Badge>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            ) : (
+                <div className='fp-surface text-muted-foreground rounded-xl border p-6 text-sm'>
+                    {t('dashboard.status.noInfraNodes')}
+                </div>
+            )}
+        </div>
+    );
 }
 
 function ProgressBar({ value, color }: { value: number; color: string }) {
@@ -387,6 +486,47 @@ export default function StatusPage() {
                 </Alert>
             )}
 
+            {statusData?.show_incidents !== false && (statusData?.data?.incidents?.length || 0) > 0 && (
+                <div className='space-y-3'>
+                    <h2 className='text-lg font-bold tracking-tight md:text-xl'>
+                        {t('dashboard.status.incidents')}
+                    </h2>
+                    <div className='fp-surface divide-border/40 divide-y overflow-hidden rounded-xl border'>
+                        {statusData.data?.incidents?.map((incident) => (
+                            <div key={incident.id} className='flex flex-col gap-1 p-4 sm:flex-row sm:items-center sm:justify-between'>
+                                <div className='min-w-0'>
+                                    <div className='flex flex-wrap items-center gap-2'>
+                                        <Badge className='bg-amber-500/10 text-amber-600'>{incident.type}</Badge>
+                                        <span className='font-semibold'>{incident.node_name}</span>
+                                    </div>
+                                    <p className='text-muted-foreground mt-1 text-sm'>{incident.message}</p>
+                                </div>
+                                {incident.started_at && (
+                                    <span className='text-muted-foreground shrink-0 text-xs'>{incident.started_at}</span>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {statusData?.show_map !== false && (statusData?.data?.map_nodes?.length || 0) > 0 && (
+                <NodesMapDynamic
+                    variant='public'
+                    nodes={(statusData.data?.map_nodes || []).map((node, index) => ({
+                        id: index + 1,
+                        name: node.name,
+                        status: node.status,
+                        kind: node.kind,
+                        location_name: node.location_name,
+                        flag_code: node.flag_code,
+                        latitude: node.latitude,
+                        longitude: node.longitude,
+                        latency_ms: node.latency_ms,
+                    }))}
+                />
+            )}
+
             {/*  Global stat cards  */}
             {global && (
                 <div className='grid grid-cols-2 gap-3 md:grid-cols-4'>
@@ -448,12 +588,26 @@ export default function StatusPage() {
 
             <WidgetRenderer widgets={getWidgets('dashboard-status', 'after-global-stats')} />
 
+            {statusData?.show_web_nodes !== false && statusData?.data?.web_nodes && (
+                <InfraNodesSection
+                    title={t('dashboard.status.webNodes')}
+                    summary={statusData.data.web_nodes}
+                />
+            )}
+
+            {statusData?.show_vds_nodes !== false && statusData?.data?.vds_nodes && (
+                <InfraNodesSection
+                    title={t('dashboard.status.vdsNodes')}
+                    summary={statusData.data.vds_nodes}
+                />
+            )}
+
             {/*  Individual nodes  */}
             {filteredNodes.length > 0 || statusData?.data?.nodes !== undefined ? (
                 <div className='space-y-3'>
                     <div className='flex items-center justify-between pt-2'>
                         <h2 className='text-lg font-bold tracking-tight md:text-xl'>
-                            {t('dashboard.status.individualNodes')}
+                            {t('dashboard.status.gameNodes')}
                         </h2>
                     </div>
 
