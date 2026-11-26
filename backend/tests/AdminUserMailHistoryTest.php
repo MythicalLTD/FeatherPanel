@@ -23,7 +23,7 @@ use Symfony\Component\HttpFoundation\Request;
 
 class AdminUserMailHistoryTest extends TestCase
 {
-    private const BODY_MARKER = 'Root password: Mh-Test-7Q2x';
+    private const BODY_MARKER = 'mail-history-content-marker';
 
     private UsersController $controller;
     private PDO $pdo;
@@ -60,7 +60,7 @@ class AdminUserMailHistoryTest extends TestCase
         $this->assertCount(1, $data['data']['user']['mails']);
         $mail = $data['data']['user']['mails'][0];
         $this->assertSame(['id', 'subject', 'status', 'created_at'], array_keys($mail));
-        $this->assertSame('Your VDS is ready', $mail['subject']);
+        $this->assertSame('Your server is ready', $mail['subject']);
         $this->assertStringNotContainsString(self::BODY_MARKER, json_encode($data));
     }
 
@@ -113,7 +113,7 @@ class AdminUserMailHistoryTest extends TestCase
         $this->users[] = $uuid;
 
         $this->pdo->prepare('INSERT INTO featherpanel_mail_queue (user_uuid, subject, body, status) VALUES (?, ?, ?, ?)')
-            ->execute([$uuid, 'Your VDS is ready', '<p>' . self::BODY_MARKER . '</p>', 'sent']);
+            ->execute([$uuid, 'Your server is ready', '<p>' . self::BODY_MARKER . '</p>', 'sent']);
         $queueId = (int) $this->pdo->lastInsertId();
         $this->pdo->prepare('INSERT INTO featherpanel_mail_list (queue_id, user_uuid) VALUES (?, ?)')->execute([$queueId, $uuid]);
 
