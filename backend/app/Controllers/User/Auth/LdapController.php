@@ -28,6 +28,8 @@ use App\CloudFlare\CloudFlareRealIP;
 use App\Helpers\AccountLockoutHelper;
 use App\Helpers\EmailDomainValidator;
 use App\Plugins\Events\Events\AuthEvent;
+use App\Services\Webhooks\WebhookPayloads;
+use App\Services\Webhooks\WebhookDispatcher;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -383,6 +385,12 @@ class LdapController
             }
 
             $logger->info('LDAP: User provisioned successfully. User ID: ' . $userId . ', UUID: ' . $uuid . ', Username: ' . $username . ', Email: ' . $ldapUser['email']);
+
+            WebhookDispatcher::dispatch('user.created', static fn (): array => [
+                'user' => WebhookPayloads::user(User::getUserByUuid($uuid)),
+                'source' => 'ldap',
+                'actor' => null,
+            ]);
 
             return User::getUserByUuid($uuid);
         } catch (\Exception $e) {

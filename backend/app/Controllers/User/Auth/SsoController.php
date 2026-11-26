@@ -29,7 +29,9 @@ use App\Helpers\PanelIpBlockGuard;
 use App\CloudFlare\CloudFlareRealIP;
 use App\Helpers\OidcIdTokenVerifier;
 use App\Helpers\EmailDomainValidator;
+use App\Services\Webhooks\WebhookPayloads;
 use App\Helpers\AbuseIPDBRegistrationGuard;
+use App\Services\Webhooks\WebhookDispatcher;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -340,6 +342,11 @@ class SsoController
         }
         User::updateUser($uuid, ['password_set' => 'false']);
         AbuseIPDBRegistrationGuard::applyAutoBanIfNeeded($uuid, $abuseDecision);
+        WebhookDispatcher::dispatch('user.created', static fn (): array => [
+            'user' => WebhookPayloads::user(User::getUserByUuid($uuid)),
+            'source' => 'sso',
+            'actor' => null,
+        ]);
 
         return User::getUserByUuid($uuid);
     }

@@ -42,7 +42,9 @@ use App\CloudFlare\CloudFlareRealIP;
 use App\Mail\templates\VmUnsuspended;
 use App\Helpers\ModerationReasonHelper;
 use App\Plugins\Events\Events\VdsEvent;
+use App\Services\Webhooks\WebhookPayloads;
 use App\Services\Backup\BackupFifoEviction;
+use App\Services\Webhooks\WebhookDispatcher;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -2892,6 +2894,11 @@ class VmInstancesController
             'vmid' => (int) ($instance['vmid'] ?? 0),
             'context' => ['source' => 'admin'],
         ]);
+        WebhookDispatcher::dispatch('vds.suspended', static fn (): array => [
+            'vds' => WebhookPayloads::vds(VmInstance::getById($id) ?? $instance),
+            'source' => 'admin',
+            'actor' => WebhookPayloads::actor($admin),
+        ]);
 
         if ($user) {
             try {
@@ -2988,6 +2995,11 @@ class VmInstancesController
             'vmid' => (int) ($instance['vmid'] ?? 0),
             'context' => ['source' => 'admin'],
         ]);
+        WebhookDispatcher::dispatch('vds.unsuspended', static fn (): array => [
+            'vds' => WebhookPayloads::vds(VmInstance::getById($id) ?? $instance),
+            'source' => 'admin',
+            'actor' => WebhookPayloads::actor($admin),
+        ]);
 
         if ($user) {
             try {
@@ -3052,6 +3064,11 @@ class VmInstancesController
                 'vmid' => (int) ($instance['vmid'] ?? 0),
                 'context' => ['source' => 'admin', 'reason' => 'node_gone'],
             ]);
+            WebhookDispatcher::dispatch('vds.deleted', static fn (): array => [
+                'vds' => WebhookPayloads::vds($instance),
+                'reason' => 'node_gone',
+                'actor' => WebhookPayloads::actor($admin),
+            ]);
 
             return ApiResponse::success([], 'VM instance deleted', 200);
         }
@@ -3073,6 +3090,11 @@ class VmInstancesController
                 'vds_id' => $id,
                 'vmid' => (int) ($instance['vmid'] ?? 0),
                 'context' => ['source' => 'admin', 'reason' => 'proxmox_unreachable'],
+            ]);
+            WebhookDispatcher::dispatch('vds.deleted', static fn (): array => [
+                'vds' => WebhookPayloads::vds($instance),
+                'reason' => 'proxmox_unreachable',
+                'actor' => WebhookPayloads::actor($admin),
             ]);
 
             return ApiResponse::success([], 'VM instance deleted from panel', 200);
@@ -3116,6 +3138,11 @@ class VmInstancesController
             'vds_id' => $id,
             'vmid' => $vmid,
             'context' => ['source' => 'admin', 'task_id' => $taskId, 'queued' => true],
+        ]);
+        WebhookDispatcher::dispatch('vds.deleted', static fn (): array => [
+            'vds' => WebhookPayloads::vds($instance),
+            'queued' => true,
+            'actor' => WebhookPayloads::actor($admin),
         ]);
 
         return ApiResponse::success(['task_id' => $taskId], 'VM deletion task added to queue', 202);
@@ -3165,6 +3192,11 @@ class VmInstancesController
             'vds_id' => $id,
             'vmid' => (int) ($instance['vmid'] ?? 0),
             'context' => ['source' => 'admin', 'reason' => 'hard_delete', 'hard_delete' => true],
+        ]);
+        WebhookDispatcher::dispatch('vds.deleted', static fn (): array => [
+            'vds' => WebhookPayloads::vds($instance),
+            'hard_delete' => true,
+            'actor' => WebhookPayloads::actor($admin),
         ]);
 
         return ApiResponse::success([], 'VM instance hard deleted successfully (database only - Proxmox was not contacted)', 200);

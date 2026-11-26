@@ -75,6 +75,7 @@ import {
     LifeBuoy,
     Camera,
     Radar,
+    Webhook,
 } from 'lucide-react';
 import { isEnabled, isEnabledUnlessExplicitlyFalse } from '@/lib/utils';
 import { supportsDaemonFeature, type DaemonFeature } from '@/lib/daemonCapabilities';
@@ -620,6 +621,17 @@ const buildAdminNavigationItems = (
             isActive: false,
             category: 'admin',
             permission: Permissions.ADMIN_STORAGE_SENSE_VIEW,
+            group: 'system',
+        },
+        {
+            id: 'admin-webhooks',
+            name: t('navigation.items.webhooks'),
+            title: t('navigation.items.webhooks'),
+            url: '/admin/webhooks',
+            icon: Webhook,
+            isActive: false,
+            category: 'admin',
+            permission: Permissions.ADMIN_WEBHOOKS_VIEW,
             group: 'system',
         },
         {

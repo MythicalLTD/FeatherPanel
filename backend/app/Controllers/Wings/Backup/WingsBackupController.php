@@ -25,6 +25,8 @@ use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Plugins\Events\Events\WingsEvent;
 use App\Services\Storage\StorageException;
+use App\Services\Webhooks\WebhookPayloads;
+use App\Services\Webhooks\WebhookDispatcher;
 use App\Services\Notifications\InboxNotifier;
 use Symfony\Component\HttpFoundation\Request;
 use App\Services\Storage\BackupStorageService;
@@ -266,6 +268,8 @@ class WingsBackupController
         // Only the first report notifies; Wings may retry the callback.
         if (empty($backup['completed_at'])) {
             InboxNotifier::backupFinished($backup, $server, (int) ($updateData['is_successful'] ?? 0) === 1);
+            $successful = (int) ($updateData['is_successful'] ?? 0) === 1;
+            WebhookDispatcher::dispatch($successful ? 'backup.completed' : 'backup.failed', static fn (): array => WebhookPayloads::backup(array_merge($backup, $updateData), $server));
         }
 
         // Emit event

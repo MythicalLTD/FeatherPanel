@@ -25,7 +25,9 @@ use App\Config\ConfigInterface;
 use App\Mail\templates\ServerBanned;
 use App\Helpers\ModerationReasonHelper;
 use App\Plugins\Events\Events\ServerEvent;
+use App\Services\Webhooks\WebhookPayloads;
 use App\Services\Server\WingsSuspensionSync;
+use App\Services\Webhooks\WebhookDispatcher;
 
 /**
  * Suspension Service for FeatherZeroTrust.
@@ -110,6 +112,13 @@ class SuspensionService
                     ]
                 );
             }
+
+            WebhookDispatcher::dispatch('server.suspended', static fn (): array => [
+                'server' => WebhookPayloads::server(Server::getServerById((int) $server['id']) ?? $server),
+                'source' => 'featherzerotrust',
+                'reason' => $reason,
+                'actor' => null,
+            ]);
 
             // Send email notification to server owner
             $config = App::getInstance(true)->getConfig();

@@ -33,6 +33,8 @@ use App\Config\ConfigInterface;
 use App\CloudFlare\CloudFlareRealIP;
 use App\Mail\templates\AccountDeleted;
 use App\Plugins\Events\Events\UserEvent;
+use App\Services\Webhooks\WebhookPayloads;
+use App\Services\Webhooks\WebhookDispatcher;
 use App\Services\Servers\UserServerAccessRevoker;
 
 /**
@@ -226,6 +228,12 @@ class UserDeletionService
                 'code' => 'FAILED_TO_DELETE_USER',
             ];
         }
+
+        WebhookDispatcher::dispatch('user.deleted', static fn (): array => [
+            'user' => WebhookPayloads::user($user),
+            'context' => $context,
+            'actor' => WebhookPayloads::actor($deletedBy),
+        ]);
 
         return ['success' => true];
     }

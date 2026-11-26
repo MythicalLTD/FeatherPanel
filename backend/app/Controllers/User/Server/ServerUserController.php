@@ -46,8 +46,10 @@ use App\Helpers\DaemonCapabilities;
 use App\CloudFlare\CloudFlareRealIP;
 use App\Mail\templates\ServerDeleted;
 use App\Plugins\Events\Events\ServerEvent;
+use App\Services\Webhooks\WebhookPayloads;
 use App\Services\Backup\BackupFifoEviction;
 use App\Services\Wings\Services\JwtService;
+use App\Services\Webhooks\WebhookDispatcher;
 use Symfony\Component\HttpFoundation\Request;
 use App\Plugins\Events\Events\ServerUserEvent;
 use Symfony\Component\HttpFoundation\Response;
@@ -1688,6 +1690,10 @@ class ServerUserController
                         ]
                     );
                 }
+                WebhookDispatcher::dispatch('server.reinstalled', static fn (): array => [
+                    'server' => WebhookPayloads::server(Server::getServerById((int) $server['id']) ?? $server),
+                    'actor' => WebhookPayloads::actor($user),
+                ]);
             }
         } catch (\Exception $e) {
             App::getInstance(true)->getLogger()->error('Failed to send power action to Wings: ' . $e->getMessage());
@@ -1994,6 +2000,11 @@ class ServerUserController
                 ]
             );
         }
+
+        WebhookDispatcher::dispatch('server.reinstalled', static fn (): array => [
+            'server' => WebhookPayloads::server(Server::getServerById((int) $server['id']) ?? $server),
+            'actor' => WebhookPayloads::actor($user),
+        ]);
 
         // Log activity
         $this->logActivity($server, $node, 'server_reinstalled', [
@@ -2574,6 +2585,12 @@ class ServerUserController
         if (!$deleted) {
             return ApiResponse::error('Failed to delete server', 'FAILED_TO_DELETE_SERVER', 500);
         }
+
+        WebhookDispatcher::dispatch('server.deleted', static fn (): array => [
+            'server' => WebhookPayloads::server($server),
+            'hard_delete' => false,
+            'actor' => WebhookPayloads::actor($user),
+        ]);
 
         // Delete from Wings daemon (after database deletion)
         if ($nodeInfo) {

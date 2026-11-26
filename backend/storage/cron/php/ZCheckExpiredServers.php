@@ -33,8 +33,10 @@ use App\Chat\VmInstance;
 use App\Config\ConfigInterface;
 use App\Services\Vm\VmInstanceUtil;
 use App\Helpers\ModerationReasonHelper;
+use App\Services\Webhooks\WebhookPayloads;
 use App\Cli\Utils\MinecraftColorCodeSupport;
 use App\Services\Server\WingsSuspensionSync;
+use App\Services\Webhooks\WebhookDispatcher;
 use App\Services\Notifications\InboxNotifier;
 
 class ZCheckExpiredServers implements TimeTask
@@ -142,6 +144,11 @@ class ZCheckExpiredServers implements TimeTask
                     if ($fresh && !WingsSuspensionSync::afterSuspend($fresh)) {
                         $logger->warning('Auto-suspended expired server in the panel, but Wings could not be updated: ' . $server['name'] . ' (ID: ' . $server['id'] . ')');
                     }
+                    WebhookDispatcher::dispatch('server.suspended', static fn (): array => [
+                        'server' => WebhookPayloads::server($fresh ?: $server),
+                        'source' => 'expiry',
+                        'actor' => null,
+                    ]);
                     $logger->info('Auto-suspended expired server: ' . $server['name'] . ' (ID: ' . $server['id'] . ', Expired: ' . $server['expires_at'] . ')');
                 } else {
                     $logger->error('Failed to suspend expired server: ' . $server['name'] . ' (ID: ' . $server['id'] . ')');
@@ -189,6 +196,11 @@ class ZCheckExpiredServers implements TimeTask
                 if ($success) {
                     ++$suspendedCount;
                     $this->stopExpiredVm($vm);
+                    WebhookDispatcher::dispatch('vds.suspended', static fn (): array => [
+                        'vds' => WebhookPayloads::vds(VmInstance::getById((int) $vm['id']) ?? $vm),
+                        'source' => 'expiry',
+                        'actor' => null,
+                    ]);
                     $logger->info('Auto-suspended expired VM: ' . ($vm['hostname'] ?? 'VM-' . $vm['vmid']) . ' (ID: ' . $vm['id'] . ', Expired: ' . $vm['expires_at'] . ')');
                 } else {
                     $logger->error('Failed to suspend expired VM: ' . ($vm['hostname'] ?? 'VM-' . $vm['vmid']) . ' (ID: ' . $vm['id'] . ')');

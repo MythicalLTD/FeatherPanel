@@ -33,8 +33,10 @@ use App\CloudFlare\CloudFlareRealIP;
 use App\Helpers\SessionCookieHelper;
 use App\Helpers\EmailDomainValidator;
 use App\Plugins\Events\Events\AuthEvent;
+use App\Services\Webhooks\WebhookPayloads;
 use App\Helpers\AbuseIPDBRegistrationGuard;
 use App\Helpers\UserDeviceRegistrationGuard;
+use App\Services\Webhooks\WebhookDispatcher;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -321,6 +323,11 @@ class RegisterController
         if (!$createdUser) {
             return ApiResponse::error('Failed to retrieve created user', 'USER_RETRIEVAL_FAILED', 500);
         }
+        WebhookDispatcher::dispatch('user.created', static fn (): array => [
+            'user' => WebhookPayloads::user($createdUser),
+            'source' => 'register',
+            'actor' => null,
+        ]);
 
         $wasAutoBanned = ($createdUser['banned'] ?? 'false') === 'true';
 

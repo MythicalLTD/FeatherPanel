@@ -150,7 +150,21 @@ final class OAuthProviderTest extends TestCase
 
     public function testStreamSignatureRejectsTamperingAndExpiry(): void
     {
+        $previousKey = $_ENV['DATABASE_ENCRYPTION_KEY'] ?? null;
         $_ENV['DATABASE_ENCRYPTION_KEY'] = 'unit-test-key';
+        try {
+            $this->assertStreamSignature();
+        } finally {
+            if ($previousKey === null) {
+                unset($_ENV['DATABASE_ENCRYPTION_KEY']);
+            } else {
+                $_ENV['DATABASE_ENCRYPTION_KEY'] = $previousKey;
+            }
+        }
+    }
+
+    private function assertStreamSignature(): void
+    {
         $sign = new \ReflectionMethod(BackupStreamSigner::class, 'sign');
         $uuid = self::BACKUP['uuid'];
         $exp = time() + 60;

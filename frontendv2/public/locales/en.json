@@ -1764,7 +1764,19 @@
             "INVALID_YAML": "Invalid YAML",
             "INVALID_EGG_URL": "Enter a valid http:// or https:// egg URL",
             "EGG_URL_NOT_ALLOWED": "This URL points to a private or unreachable address and cannot be imported",
-            "EGG_URL_FETCH_FAILED": "Could not download the egg. Check that the URL is reachable and the file is smaller than 2 MB"
+            "EGG_URL_FETCH_FAILED": "Could not download the egg. Check that the URL is reachable and the file is smaller than 2 MB",
+            "WEBHOOK_NOT_FOUND": "Webhook not found",
+            "WEBHOOK_DELIVERY_NOT_FOUND": "Delivery not found",
+            "WEBHOOK_URL_INVALID": "The webhook URL must be a valid http(s) URL without credentials",
+            "WEBHOOK_URL_UNRESOLVABLE": "The webhook host does not resolve",
+            "WEBHOOK_URL_PRIVATE_ADDRESS": "The webhook host resolves to a private, loopback or reserved address. Allow private targets in the webhook settings to use it.",
+            "WEBHOOK_EVENTS_REQUIRED": "Pick at least one event",
+            "WEBHOOK_FORMAT_INVALID": "Format must be JSON or Discord",
+            "WEBHOOK_SECRET_INVALID": "The secret must be 16 to 255 characters without spaces",
+            "WEBHOOK_DESCRIPTION_TOO_LONG": "Description must be at most 255 characters",
+            "WEBHOOK_CREATE_FAILED": "Failed to create webhook",
+            "WEBHOOK_UPDATE_FAILED": "Failed to update webhook",
+            "WEBHOOK_SETTINGS_SAVE_FAILED": "Failed to save webhook settings"
         },
         "global": {}
     },
@@ -4097,7 +4109,8 @@
             "boot": "Boot",
             "vdsIsos": "VDS ISO Library",
             "inactiveServers": "Inactive Servers",
-            "observability": "Observability"
+            "observability": "Observability",
+            "webhooks": "Webhooks"
         }
     },
     "adminWingsBackups": {
@@ -16493,6 +16506,136 @@
                 "saved": "Metrics settings saved",
                 "save_failed": "Could not save metrics settings",
                 "read_only": "You need permission to edit nodes to change these settings."
+            }
+        },
+        "webhooks": {
+            "title": "Webhooks",
+            "description": "Send panel events (servers, users, backups, VDS and web hosting) to your billing system, bots or any other service. Every request is signed and failed deliveries are retried.",
+            "create": "Add webhook",
+            "created": "Webhook created. Copy the signing secret now.",
+            "updated": "Webhook saved",
+            "deleted": "Webhook deleted",
+            "loadFailed": "Could not load webhooks",
+            "saveFailed": "Could not save the webhook",
+            "deleteFailed": "Could not delete the webhook",
+            "emptyTitle": "No webhooks yet",
+            "emptyDescription": "Add a webhook to get a signed HTTP request whenever something happens in the panel.",
+            "enabled": "Enabled",
+            "disabled": "Disabled",
+            "allEvents": "All events",
+            "eventCount": "{count} events",
+            "stats24h": "Last 24 h: {delivered} delivered, {failed} failed, {pending} waiting",
+            "lastDeliveryAt": "last delivery {when}",
+            "lastDelivery": {
+                "delivered": "Last delivery OK",
+                "failed": "Last delivery failed"
+            },
+            "formats": {
+                "json": "JSON (signed)",
+                "discord": "Discord message"
+            },
+            "groups": {
+                "servers": "Servers",
+                "users": "Users",
+                "backups": "Backups",
+                "vds": "VDS",
+                "webspaces": "Web hosting"
+            },
+            "events": {
+                "server_created": "Server created",
+                "server_updated": "Server updated",
+                "server_suspended": "Server suspended",
+                "server_unsuspended": "Server unsuspended",
+                "server_reinstalled": "Server reinstalled",
+                "server_deleted": "Server deleted",
+                "user_created": "User created",
+                "user_updated": "User updated",
+                "user_deleted": "User deleted",
+                "backup_completed": "Backup completed",
+                "backup_failed": "Backup failed",
+                "vds_created": "VDS created",
+                "vds_suspended": "VDS suspended",
+                "vds_unsuspended": "VDS unsuspended",
+                "vds_deleted": "VDS deleted",
+                "webspace_created": "Web hosting created",
+                "webspace_suspended": "Web hosting suspended",
+                "webspace_unsuspended": "Web hosting unsuspended",
+                "webspace_deleted": "Web hosting deleted",
+                "webhook_test": "Test delivery"
+            },
+            "form": {
+                "createTitle": "Add webhook",
+                "editTitle": "Edit webhook",
+                "hint": "FeatherPanel sends a POST request with a JSON body to this URL for every event you pick.",
+                "url": "Payload URL",
+                "urlRequired": "Enter the payload URL",
+                "description": "Description",
+                "descriptionPlaceholder": "For example: WHMCS sync",
+                "format": "Format",
+                "enabled": "Active",
+                "events": "Events",
+                "eventsHint": "Pick the events this webhook should receive.",
+                "eventsRequired": "Pick at least one event",
+                "discordHint": "Discord mode sends a short embed that a Discord channel webhook understands. Use JSON for billing systems and bots."
+            },
+            "secret": {
+                "title": "Signing secret",
+                "description": "Used to sign every request (HMAC-SHA256). Keep it private and store it in the receiving service.",
+                "custom": "Custom secret (optional)",
+                "customPlaceholder": "Leave empty to generate one",
+                "reveal": "Show secret",
+                "rotate": "Rotate secret",
+                "copy": "Copy secret",
+                "rotated": "New secret generated. Update the receiving service.",
+                "rotateConfirm": "Generate a new secret? The receiving service will reject requests until you update it there.",
+                "loadFailed": "Could not load the secret",
+                "rotateFailed": "Could not rotate the secret"
+            },
+            "test": {
+                "button": "Send test",
+                "ok": "Test delivered (HTTP {code})",
+                "failed": "Test failed: {error}",
+                "error": "Could not send the test"
+            },
+            "settings": {
+                "title": "Delivery settings",
+                "description": "Deliveries run in the background. A failed delivery is retried up to {attempts} times with growing delays (1 min, 5 min, 30 min, 2 h).",
+                "allowPrivate": "Allow private and local targets",
+                "allowPrivateHelp": "By default webhooks may only call public addresses. Turn this on to allow localhost, LAN and other private addresses, for example a billing system on the same server.",
+                "allowPrivateEnv": "Private targets are also allowed by the FEATHERPANEL_WEBHOOKS_ALLOW_PRIVATE environment variable.",
+                "saved": "Webhook settings saved",
+                "saveFailed": "Could not save webhook settings"
+            },
+            "verify": {
+                "title": "Verify requests",
+                "description": "Check the signature before you trust a request.",
+                "headerSignature": "X-FeatherPanel-Signature: \"sha256=\" + HMAC-SHA256 of \"<timestamp>.<raw body>\" with your secret.",
+                "headerTimestamp": "X-FeatherPanel-Timestamp: Unix time of the attempt. Reject requests older than a few minutes.",
+                "headerEvent": "X-FeatherPanel-Event and X-FeatherPanel-Delivery: event name and event ID (the same ID on retries, so you can skip duplicates).",
+                "retries": "Answer with any 2xx status. Anything else, or no answer within 10 seconds, counts as a failure."
+            },
+            "deliveries": {
+                "title": "Recent deliveries",
+                "loadFailed": "Could not load deliveries",
+                "status": "Status",
+                "allStatuses": "All statuses",
+                "statuses": {
+                    "delivered": "Delivered",
+                    "pending": "Waiting",
+                    "failed": "Failed"
+                },
+                "emptyTitle": "No deliveries yet",
+                "emptyDescription": "Deliveries show up here after an event or a test send.",
+                "attemptsOf": "attempt {attempts} of {max}",
+                "nextRetry": "Next try {when}",
+                "eventId": "Event ID: {id}",
+                "payload": "Payload",
+                "response": "Response",
+                "noResponse": "No response body",
+                "redeliver": "Redeliver",
+                "redelivered": "Delivered again (HTTP {code})",
+                "redeliverFailed": "Redelivery failed: {error}. It will be retried.",
+                "redeliverError": "Could not redeliver"
             }
         }
     },

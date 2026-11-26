@@ -47,6 +47,8 @@ use App\Mail\templates\AccountBanned;
 use App\Helpers\ModerationReasonHelper;
 use App\Mail\templates\AccountUnBanned;
 use App\Plugins\Events\Events\UserEvent;
+use App\Services\Webhooks\WebhookPayloads;
+use App\Services\Webhooks\WebhookDispatcher;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use App\Services\Servers\UserServerAccessRevoker;
@@ -792,6 +794,12 @@ class UsersController
             }
         }
 
+        WebhookDispatcher::dispatch('user.created', static fn (): array => [
+            'user' => WebhookPayloads::user(User::getUserByUuid((string) $data['uuid'])),
+            'source' => 'admin',
+            'actor' => WebhookPayloads::actor($request->attributes->get('user')),
+        ]);
+
         return ApiResponse::success([
             'user_id' => $userId,
             'uuid' => $data['uuid'],
@@ -1094,6 +1102,12 @@ class UsersController
                 ]
             );
         }
+
+        WebhookDispatcher::dispatch('user.updated', static fn (): array => [
+            'user' => WebhookPayloads::user(User::getUserByUuid((string) $user['uuid']) ?? $user),
+            'changed' => WebhookPayloads::changedKeys($data),
+            'actor' => WebhookPayloads::actor($request->attributes->get('user')),
+        ]);
 
         if ($becameBanned) {
             $abuseipdbReport = AbuseIPDBBanReporter::maybeReport($user, $banRequestBody, $banReasonForEmail);
@@ -2158,6 +2172,13 @@ class UsersController
             );
         }
 
+        WebhookDispatcher::dispatch('user.updated', static fn (): array => [
+            'user' => WebhookPayloads::user(User::getUserByUuid((string) $user['uuid']) ?? $user),
+            'changed' => ['banned', 'ban_reason'],
+            'reason' => $parsed['reason'],
+            'actor' => WebhookPayloads::actor($staffUser),
+        ]);
+
         $config = $app->getConfig();
         AccountBanned::send([
             'email' => $user['email'],
@@ -2243,6 +2264,12 @@ class UsersController
                 ]
             );
         }
+
+        WebhookDispatcher::dispatch('user.updated', static fn (): array => [
+            'user' => WebhookPayloads::user(User::getUserByUuid((string) $user['uuid']) ?? $user),
+            'changed' => ['banned', 'ban_reason'],
+            'actor' => WebhookPayloads::actor($request->attributes->get('user')),
+        ]);
 
         $config = $app->getConfig();
         AccountUnBanned::send([
