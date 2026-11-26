@@ -427,6 +427,7 @@
             "BACKUP_NOT_REMOTE": "This backup is not stored on remote object storage",
             "CREATION_IN_PROGRESS": "This VDS is still being created. Wait for it to finish.",
             "EXTERNAL_ID_IN_USE": "This external ID is already used by another item.",
+            "EXTERNAL_ID_LOCKED": "Another request is using this external ID right now. Try again.",
             "HOSTING_PACKAGE_NOT_FOUND": "Hosting package not found",
             "METRICS_DISABLED": "Metrics are disabled",
             "METRICS_IP_NOT_ALLOWED": "This address may not read metrics",

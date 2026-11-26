@@ -33,6 +33,7 @@ use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Chat\VmInstanceBackup;
 use App\Config\ConfigInterface;
+use App\Helpers\ExternalIdLock;
 use App\Chat\VmInstanceActivity;
 use App\Helpers\FeatherTailClient;
 use App\Mail\templates\VmSuspended;
@@ -220,6 +221,12 @@ class VmInstancesController
         }
         $externalId = $externalIdCheck['value'];
         if ($externalId !== null) {
+            // Held until this request returns, so the checks below and the task insert
+            // cannot interleave with a retried order for the same ID.
+            $externalIdLock = ExternalIdLock::acquire('vm', $externalId);
+            if ($externalIdLock === null) {
+                return ApiResponse::error(ExternalId::lockedMessage(), 'EXTERNAL_ID_LOCKED', 409);
+            }
             $existing = VmInstance::getByExternalId($externalId);
             if ($existing) {
                 return ApiResponse::error('A VM instance with this external_id already exists', 'EXTERNAL_ID_IN_USE', 409, [
@@ -792,7 +799,10 @@ class VmInstancesController
             return ApiResponse::error('Invalid JSON body', 'INVALID_JSON', 400);
         }
 
-        if (array_key_exists('external_id', $data)) {
+        // external_id is checked here and written once the whole payload is valid.
+        $hasExternalId = array_key_exists('external_id', $data);
+        $newExternalId = null;
+        if ($hasExternalId) {
             $externalIdCheck = ExternalId::normalize($data['external_id']);
             if (!$externalIdCheck['ok']) {
                 return ApiResponse::error(ExternalId::invalidMessage(), 'INVALID_EXTERNAL_ID', 400);
@@ -806,11 +816,12 @@ class VmInstancesController
                     ]);
                 }
             }
-            if (!VmInstance::setExternalId($id, $newExternalId)) {
-                return ApiResponse::error('Failed to update external_id', 'UPDATE_FAILED', 500);
-            }
             unset($data['external_id']);
             if ($data === []) {
+                $claim = $this->claimExternalId($id, $newExternalId);
+                if ($claim !== null) {
+                    return $claim;
+                }
                 $instance = VmInstance::getById($id) ?? $instance;
 
                 return ApiResponse::success(['instance' => $instance], 'VM instance updated successfully', 200);
@@ -870,6 +881,13 @@ class VmInstancesController
             && (!is_numeric($data['bandwidth_limit_gb']) || (int) $data['bandwidth_limit_gb'] < 0 || (int) $data['bandwidth_limit_gb'] > 10000000)
         ) {
             return ApiResponse::error('bandwidth_limit_gb must be empty (default), 0 (unlimited) or a positive number of GB', 'INVALID_BANDWIDTH_LIMIT', 400);
+        }
+
+        if ($hasExternalId) {
+            $claim = $this->claimExternalId($id, $newExternalId);
+            if ($claim !== null) {
+                return $claim;
+            }
         }
 
         $dbKeys = ['hostname', 'notes', 'user_uuid', 'vm_ip_id', 'backup_limit', 'backup_retention_mode', 'snapshot_limit', 'iso_mode', 'bandwidth_limit_gb', 'expires_at'];
@@ -3233,5 +3251,48 @@ class VmInstancesController
         if (isset($eventManager) && $eventManager !== null) {
             $eventManager->emit($eventName, $payload);
         }
+    }
+
+    /**
+     * Set (or clear) an instance's external_id under the same lock create uses, so it
+     * cannot collide with another instance or with a VDS still being created.
+     * Returns an error response, or null on success.
+     */
+    private function claimExternalId(int $id, ?string $externalId): ?Response
+    {
+        if ($externalId === null) {
+            return VmInstance::setExternalId($id, null) ? null : ApiResponse::error('Failed to update external_id', 'UPDATE_FAILED', 500);
+        }
+        $lock = ExternalIdLock::acquire('vm', $externalId);
+        if ($lock === null) {
+            return ApiResponse::error(ExternalId::lockedMessage(), 'EXTERNAL_ID_LOCKED', 409);
+        }
+        $holder = VmInstance::getByExternalId($externalId);
+        if ($holder && (int) $holder['id'] !== $id) {
+            return ApiResponse::error('Another VM instance already uses this external_id', 'EXTERNAL_ID_IN_USE', 409, [
+                'instance_id' => (int) $holder['id'],
+            ]);
+        }
+        $pending = VmTask::getActiveCreateByExternalId($externalId);
+        if ($pending) {
+            return ApiResponse::error('A VM instance with this external_id is already being created', 'CREATION_IN_PROGRESS', 409, [
+                'creation_id' => (string) $pending['task_id'],
+            ]);
+        }
+        try {
+            $ok = VmInstance::setExternalId($id, $externalId);
+        } catch (\PDOException $e) {
+            if (!ExternalId::isDuplicateKey($e)) {
+                throw $e;
+            }
+            $holder = VmInstance::getByExternalId($externalId);
+
+            return ApiResponse::error('Another VM instance already uses this external_id', 'EXTERNAL_ID_IN_USE', 409, [
+                'instance_id' => $holder ? (int) $holder['id'] : null,
+            ]);
+        }
+        $lock->release();
+
+        return $ok ? null : ApiResponse::error('Failed to update external_id', 'UPDATE_FAILED', 500);
     }
 }

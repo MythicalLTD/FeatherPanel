@@ -1586,7 +1586,9 @@ class ServersController
         }
 
         if (isset($data['external_id']) && is_string($data['external_id']) && trim($data['external_id']) !== '') {
-            $externalHolder = Server::getServerByExternalId(trim($data['external_id']));
+            // Store exactly what was checked, so later lookups find it.
+            $data['external_id'] = trim($data['external_id']);
+            $externalHolder = Server::getServerByExternalId($data['external_id']);
             if ($externalHolder && (int) $externalHolder['id'] !== $id) {
                 return ApiResponse::error('Another server already uses this external_id', 'EXTERNAL_ID_IN_USE', 409, [
                     'server_id' => (int) $externalHolder['id'],

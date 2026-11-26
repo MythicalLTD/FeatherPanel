@@ -17,6 +17,8 @@
 
 namespace App\Helpers;
 
+use App\Chat\Database;
+
 /**
  * External IDs are set by billing systems (WHMCS, Blesta, Paymenter) to find the
  * VDS or WebSpace they provisioned. They are used in URL paths, so only a safe
@@ -61,5 +63,45 @@ class ExternalId
     public static function invalidMessage(): string
     {
         return 'external_id must be 1-' . self::MAX_LENGTH . ' characters: letters, digits, dot, underscore, colon, @ or dash';
+    }
+
+    /**
+     * Serialise "is this external ID free? then claim it" across requests, so two
+     * billing retries arriving together cannot both pass the check.
+     */
+    public static function lock(string $scope, string $externalId, int $timeoutSeconds = 10): bool
+    {
+        $stmt = Database::getPdoConnection()->prepare('SELECT GET_LOCK(:name, :timeout)');
+        $stmt->execute(['name' => self::lockName($scope, $externalId), 'timeout' => $timeoutSeconds]);
+
+        return (int) $stmt->fetchColumn() === 1;
+    }
+
+    public static function unlock(string $scope, string $externalId): void
+    {
+        try {
+            $stmt = Database::getPdoConnection()->prepare('SELECT RELEASE_LOCK(:name)');
+            $stmt->execute(['name' => self::lockName($scope, $externalId)]);
+        } catch (\Throwable) {
+            // The lock also ends with the connection.
+        }
+    }
+
+    /**
+     * True when a write failed on a unique index (another row holds the value).
+     */
+    public static function isDuplicateKey(\Throwable $e): bool
+    {
+        return $e instanceof \PDOException && ((int) ($e->errorInfo[1] ?? 0) === 1062 || (string) $e->getCode() === '23000');
+    }
+
+    public static function lockedMessage(): string
+    {
+        return 'Another request is using this external_id right now. Try again.';
+    }
+
+    private static function lockName(string $scope, string $externalId): string
+    {
+        return 'fp_external_id:' . $scope . ':' . sha1($externalId);
     }
 }
