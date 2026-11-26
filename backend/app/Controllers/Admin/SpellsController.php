@@ -25,8 +25,11 @@ use App\Chat\SpellVariable;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
+use App\Helpers\SafeUrlFetcher;
 use App\CloudFlare\CloudFlareRealIP;
+use App\Services\Spells\EggImportParser;
 use App\Plugins\Events\Events\SpellsEvent;
+use App\Services\Spells\EggImportException;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -186,7 +189,16 @@ use Symfony\Component\HttpFoundation\Response;
     required: ['realm_id'],
     properties: [
         new OA\Property(property: 'realm_id', type: 'integer', description: 'Realm ID', minimum: 1),
-        new OA\Property(property: 'file', type: 'string', format: 'binary', description: 'Spell JSON file'),
+        new OA\Property(property: 'file', type: 'string', format: 'binary', description: 'Egg file: PTDL_v1/PTDL_v2 or Pelican PLCN_v1/PLCN_v2/PLCN_v3, JSON or YAML'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'SpellImportUrl',
+    type: 'object',
+    required: ['realm_id', 'url'],
+    properties: [
+        new OA\Property(property: 'realm_id', type: 'integer', description: 'Realm ID', minimum: 1),
+        new OA\Property(property: 'url', type: 'string', description: 'Public http(s) URL of a JSON or YAML egg (GitHub page links are rewritten to the raw file). Max 2 MiB, 10 s timeout.'),
     ]
 )]
 #[OA\Schema(
@@ -986,7 +998,7 @@ class SpellsController
     #[OA\Post(
         path: '/api/admin/spells/import',
         summary: 'Import spell from file',
-        description: 'Import a spell from a JSON file with comprehensive validation, variable import, and metadata preservation.',
+        description: 'Import a spell from an egg file. Accepts Pterodactyl (PTDL_v1, PTDL_v2) and Pelican (PLCN_v1, PLCN_v2, PLCN_v3) eggs as JSON or YAML. Fields a spell cannot hold are skipped and listed in `warnings`.',
         tags: ['Admin - Spells'],
         requestBody: new OA\RequestBody(
             required: true,
@@ -1002,10 +1014,12 @@ class SpellsController
                 content: new OA\JsonContent(
                     properties: [
                         new OA\Property(property: 'spell', ref: '#/components/schemas/Spell'),
+                        new OA\Property(property: 'format', type: 'string', description: 'Detected egg format, e.g. PLCN_v3'),
+                        new OA\Property(property: 'warnings', type: 'array', items: new OA\Items(type: 'string')),
                     ]
                 )
             ),
-            new OA\Response(response: 400, description: 'Bad request - Invalid realm ID, no file uploaded, file upload error, file read error, invalid JSON format, or failed to create spell'),
+            new OA\Response(response: 400, description: 'Bad request - Invalid realm ID, no file uploaded, file upload error, file read error, invalid JSON/YAML, unsupported egg format, or failed to create spell'),
             new OA\Response(response: 401, description: 'Unauthorized'),
             new OA\Response(response: 403, description: 'Forbidden - Insufficient permissions'),
             new OA\Response(response: 404, description: 'Realm not found'),
@@ -1036,138 +1050,72 @@ class SpellsController
             return ApiResponse::error('File upload error', 'FILE_UPLOAD_ERROR', 400);
         }
 
-        // Read and parse JSON
-        $jsonContent = file_get_contents($file->getPathname());
-        if (!$jsonContent) {
+        $content = file_get_contents($file->getPathname());
+        if (!$content) {
             return ApiResponse::error('Could not read file', 'FILE_READ_ERROR', 400);
         }
 
-        $jsonData = json_decode($jsonContent, true);
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            return ApiResponse::error('Invalid JSON format', 'INVALID_JSON', 400);
+        return $this->importFromContent($request, (int) $realmId, $content);
+    }
+
+    #[OA\Post(
+        path: '/api/admin/spells/import/url',
+        summary: 'Import spell from URL',
+        description: 'Download an egg (PTDL_v1, PTDL_v2, PLCN_v1, PLCN_v2 or PLCN_v3; JSON or YAML) from a public http(s) URL and import it as a spell. Private and internal addresses are refused, downloads are capped at 2 MiB and 10 seconds.',
+        tags: ['Admin - Spells'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(ref: '#/components/schemas/SpellImportUrl')
+        ),
+        responses: [
+            new OA\Response(
+                response: 201,
+                description: 'Spell imported successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'spell', ref: '#/components/schemas/Spell'),
+                        new OA\Property(property: 'format', type: 'string', description: 'Detected egg format, e.g. PLCN_v3'),
+                        new OA\Property(property: 'warnings', type: 'array', items: new OA\Items(type: 'string')),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Invalid realm ID, invalid or non-public URL, download failed, invalid JSON/YAML, or unsupported egg format'),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden - Insufficient permissions'),
+            new OA\Response(response: 404, description: 'Realm not found'),
+        ]
+    )]
+    public function importFromUrl(Request $request): Response
+    {
+        $data = json_decode($request->getContent(), true);
+        if (!is_array($data)) {
+            return ApiResponse::error('Invalid JSON in request body', 'INVALID_JSON', 400);
+        }
+
+        $realmId = $data['realm_id'] ?? null;
+        if (!is_numeric($realmId) || (int) $realmId <= 0) {
+            return ApiResponse::error('Missing or invalid realm ID', 'INVALID_REALM_ID', 400);
+        }
+        if (!Realm::getById((int) $realmId)) {
+            return ApiResponse::error('Realm not found', 'REALM_NOT_FOUND', 404);
         }
 
         try {
-            if (!is_array($jsonData) || array_is_list($jsonData)) {
-                throw new \InvalidArgumentException('Egg JSON must be an object.');
-            }
-            $jsonData = self::preserveImportConfigObjects($jsonData, $jsonContent);
-            $jsonData = self::normalizeSpellImportJson($jsonData);
-        } catch (\InvalidArgumentException $e) {
-            return ApiResponse::error($e->getMessage(), 'INVALID_EGG', 400);
+            $url = EggImportParser::normalizeUrl($data['url'] ?? null);
+        } catch (EggImportException $e) {
+            return ApiResponse::error($e->getMessage(), $e->getErrorCode(), 400);
         }
 
-        $admin = $request->attributes->get('user');
-
-        // Map JSON data to spell format
-        $spellData = self::mapImportJsonToSpellData($jsonData, (int) $realmId);
-
-        // Preserve original UUID if it exists in FeatherPanel metadata or legacy raw exports
-        $originalUuid = $jsonData['_featherpanel']['spell_metadata']['uuid'] ?? $jsonData['uuid'] ?? null;
-        if (is_string($originalUuid) && $originalUuid !== '') {
-            $existingSpell = Spell::getSpellByUuid($originalUuid);
-            if (!$existingSpell) {
-                $spellData['uuid'] = $originalUuid;
-            }
+        if (!SafeUrlFetcher::isAllowedUrl($url)) {
+            return ApiResponse::error('This URL points to a private or unreachable address and cannot be imported.', 'EGG_URL_NOT_ALLOWED', 400);
         }
 
-        // Preserve original metadata if available
-        $importMetadata = null;
-        if (isset($jsonData['_featherpanel'])) {
-            $importMetadata = [
-                'original_export_info' => $jsonData['_featherpanel']['export_info'] ?? null,
-                'original_spell_metadata' => $jsonData['_featherpanel']['spell_metadata'] ?? null,
-                'import_info' => [
-                    'imported_by' => $admin['username'] ?? 'Unknown',
-                    'imported_at' => date('Y-m-d H:i:s'),
-                    'panel_version' => '1.0.0',
-                    'import_format_version' => '1.0',
-                ],
-            ];
+        $content = SafeUrlFetcher::fetch($url, EggImportParser::MAX_URL_BYTES, EggImportParser::URL_TIMEOUT);
+        if ($content === false || $content === '') {
+            return ApiResponse::error('Could not download the egg. Check that the URL is reachable and the file is smaller than 2 MB.', 'EGG_URL_FETCH_FAILED', 400);
         }
 
-        // Create spell
-        $spellId = Spell::createSpell($spellData);
-        if (!$spellId) {
-            return ApiResponse::error('Failed to create spell from import', 'IMPORT_CREATE_FAILED', 400);
-        }
-
-        // Import variables if present
-        $importedVariablesCount = 0;
-        $skippedVariablesCount = 0;
-        if (isset($jsonData['variables']) && is_array($jsonData['variables'])) {
-            foreach ($jsonData['variables'] as $var) {
-                // Validate required fields exist and name/env_variable are not empty
-                // Note: description and default_value can be empty strings (valid in Pterodactyl)
-                $missingFields = [];
-
-                if (!isset($var['name']) || trim((string) $var['name']) === '') {
-                    $missingFields[] = 'name';
-                }
-                if (!isset($var['env_variable']) || trim((string) $var['env_variable']) === '') {
-                    $missingFields[] = 'env_variable';
-                }
-                if (!isset($var['description'])) {
-                    $missingFields[] = 'description';
-                }
-                if (!isset($var['default_value'])) {
-                    $missingFields[] = 'default_value';
-                }
-
-                if (!empty($missingFields)) {
-                    App::getInstance(true)->getLogger()->warning(
-                        'Skipping variable during import: missing required fields (' . implode(', ', $missingFields) . '). Variable data: ' . json_encode($var)
-                    );
-                    ++$skippedVariablesCount;
-                    continue;
-                }
-
-                $variableData = [
-                    'spell_id' => $spellId,
-                    'name' => trim($var['name']),
-                    'description' => $var['description'], // Allow empty string
-                    'env_variable' => trim($var['env_variable']),
-                    'default_value' => $var['default_value'], // Allow empty string
-                    'user_viewable' => isset($var['user_viewable']) ? ($var['user_viewable'] ? 'true' : 'false') : 'true',
-                    'user_editable' => isset($var['user_editable']) ? ($var['user_editable'] ? 'true' : 'false') : 'true',
-                    'rules' => $var['rules'] ?? '',
-                    'field_type' => $var['field_type'] ?? 'text',
-                ];
-
-                $varId = SpellVariable::createVariable($variableData);
-                if ($varId) {
-                    ++$importedVariablesCount;
-                } else {
-                    App::getInstance(true)->getLogger()->error(
-                        'Failed to create variable during import: ' . ($var['env_variable'] ?? 'unknown') . '. Variable data: ' . json_encode($var)
-                    );
-                    ++$skippedVariablesCount;
-                }
-            }
-        }
-
-        $spell = Spell::getSpellById($spellId);
-
-        if ($skippedVariablesCount > 0) {
-            App::getInstance(true)->getLogger()->warning(
-                "Spell import completed with warnings: {$importedVariablesCount} variables imported, {$skippedVariablesCount} variables skipped. Spell: " . $spell['name']
-            );
-        }
-
-        // Log activity with metadata information
-        $logContext = 'Imported spell: ' . $spell['name'];
-        if ($importMetadata && isset($importMetadata['original_export_info']['exported_by'])) {
-            $logContext .= ' (originally exported by: ' . $importMetadata['original_export_info']['exported_by'] . ')';
-        }
-
-        Activity::createActivity([
-            'user_uuid' => $admin['uuid'] ?? null,
-            'name' => 'import_spell',
-            'context' => $logContext,
-            'ip_address' => CloudFlareRealIP::getRealIP(),
-        ]);
-
-        return ApiResponse::success(['spell' => $spell], 'Spell imported successfully', 201);
+        return $this->importFromContent($request, (int) $realmId, $content, $url);
     }
 
     #[OA\Get(
@@ -1760,18 +1708,12 @@ class SpellsController
                 }
             }
 
-            // Parse the downloaded JSON content
-            $jsonData = json_decode($fileContent, true);
-            if (json_last_error() !== JSON_ERROR_NONE) {
-                return ApiResponse::error('Invalid JSON format in downloaded spell', 'INVALID_JSON', 400);
-            }
-
+            // Parse the downloaded egg (PTDL or Pelican, JSON or YAML)
             try {
-                if (!is_array($jsonData) || array_is_list($jsonData)) {
-                    throw new \InvalidArgumentException('Egg JSON must be an object.');
-                }
-                $jsonData = self::preserveImportConfigObjects($jsonData, $fileContent);
+                $jsonData = EggImportParser::parse($fileContent)['data'];
                 $jsonData = self::normalizeSpellImportJson($jsonData);
+            } catch (EggImportException $e) {
+                return ApiResponse::error($e->getMessage(), $e->getErrorCode(), 400);
             } catch (\InvalidArgumentException $e) {
                 return ApiResponse::error($e->getMessage(), 'INVALID_EGG', 400);
             }
@@ -1873,6 +1815,138 @@ class SpellsController
         } catch (\Exception $e) {
             return ApiResponse::error('Failed to install spell from online repository: ' . $e->getMessage(), 'INTERNAL_SERVER_ERROR', 500);
         }
+    }
+
+    /**
+     * Create a spell (and its variables) from egg file content.
+     */
+    private function importFromContent(Request $request, int $realmId, string $content, ?string $sourceUrl = null): Response
+    {
+        try {
+            $parsed = EggImportParser::parse($content);
+            $jsonData = $parsed['data'];
+            if ($sourceUrl !== null && empty($jsonData['meta']['update_url'])) {
+                $jsonData['meta']['update_url'] = $sourceUrl;
+            }
+            $jsonData = self::normalizeSpellImportJson($jsonData);
+        } catch (EggImportException $e) {
+            return ApiResponse::error($e->getMessage(), $e->getErrorCode(), 400);
+        } catch (\InvalidArgumentException $e) {
+            return ApiResponse::error($e->getMessage(), 'INVALID_EGG', 400);
+        }
+        $warnings = $parsed['warnings'];
+
+        $admin = $request->attributes->get('user');
+
+        // Map JSON data to spell format
+        $spellData = self::mapImportJsonToSpellData($jsonData, $realmId);
+
+        // Preserve original UUID if it exists in FeatherPanel metadata or legacy raw exports
+        $originalUuid = $jsonData['_featherpanel']['spell_metadata']['uuid'] ?? $jsonData['uuid'] ?? null;
+        if (is_string($originalUuid) && $originalUuid !== '') {
+            $existingSpell = Spell::getSpellByUuid($originalUuid);
+            if (!$existingSpell) {
+                $spellData['uuid'] = $originalUuid;
+            }
+        }
+
+        // Preserve original metadata if available
+        $importMetadata = null;
+        if (isset($jsonData['_featherpanel'])) {
+            $importMetadata = [
+                'original_export_info' => $jsonData['_featherpanel']['export_info'] ?? null,
+                'original_spell_metadata' => $jsonData['_featherpanel']['spell_metadata'] ?? null,
+                'import_info' => [
+                    'imported_by' => $admin['username'] ?? 'Unknown',
+                    'imported_at' => date('Y-m-d H:i:s'),
+                    'panel_version' => '1.0.0',
+                    'import_format_version' => '1.0',
+                ],
+            ];
+        }
+
+        // Create spell
+        $spellId = Spell::createSpell($spellData);
+        if (!$spellId) {
+            return ApiResponse::error('Failed to create spell from import', 'IMPORT_CREATE_FAILED', 400);
+        }
+
+        // Import variables if present
+        $importedVariablesCount = 0;
+        $skippedVariablesCount = 0;
+        if (isset($jsonData['variables']) && is_array($jsonData['variables'])) {
+            foreach ($jsonData['variables'] as $var) {
+                // Validate required fields exist and name/env_variable are not empty
+                // Note: description and default_value can be empty strings (valid in Pterodactyl)
+                $missingFields = [];
+
+                if (!isset($var['name']) || trim((string) $var['name']) === '') {
+                    $missingFields[] = 'name';
+                }
+                if (!isset($var['env_variable']) || trim((string) $var['env_variable']) === '') {
+                    $missingFields[] = 'env_variable';
+                }
+                if (!isset($var['description'])) {
+                    $missingFields[] = 'description';
+                }
+                if (!isset($var['default_value'])) {
+                    $missingFields[] = 'default_value';
+                }
+
+                if (!empty($missingFields)) {
+                    App::getInstance(true)->getLogger()->warning(
+                        'Skipping variable during import: missing required fields (' . implode(', ', $missingFields) . '). Variable data: ' . json_encode($var)
+                    );
+                    ++$skippedVariablesCount;
+                    continue;
+                }
+
+                $variableData = [
+                    'spell_id' => $spellId,
+                    'name' => trim($var['name']),
+                    'description' => $var['description'], // Allow empty string
+                    'env_variable' => trim($var['env_variable']),
+                    'default_value' => $var['default_value'], // Allow empty string
+                    'user_viewable' => isset($var['user_viewable']) ? ($var['user_viewable'] ? 'true' : 'false') : 'true',
+                    'user_editable' => isset($var['user_editable']) ? ($var['user_editable'] ? 'true' : 'false') : 'true',
+                    'rules' => $var['rules'] ?? '',
+                    'field_type' => $var['field_type'] ?? 'text',
+                ];
+
+                $varId = SpellVariable::createVariable($variableData);
+                if ($varId) {
+                    ++$importedVariablesCount;
+                } else {
+                    App::getInstance(true)->getLogger()->error(
+                        'Failed to create variable during import: ' . ($var['env_variable'] ?? 'unknown') . '. Variable data: ' . json_encode($var)
+                    );
+                    ++$skippedVariablesCount;
+                }
+            }
+        }
+
+        $spell = Spell::getSpellById($spellId);
+
+        if ($skippedVariablesCount > 0) {
+            App::getInstance(true)->getLogger()->warning(
+                "Spell import completed with warnings: {$importedVariablesCount} variables imported, {$skippedVariablesCount} variables skipped. Spell: " . $spell['name']
+            );
+        }
+
+        // Log activity with metadata information
+        $logContext = 'Imported spell: ' . $spell['name'];
+        if ($importMetadata && isset($importMetadata['original_export_info']['exported_by'])) {
+            $logContext .= ' (originally exported by: ' . $importMetadata['original_export_info']['exported_by'] . ')';
+        }
+
+        Activity::createActivity([
+            'user_uuid' => $admin['uuid'] ?? null,
+            'name' => 'import_spell',
+            'context' => $logContext . ' [' . $parsed['format'] . ($sourceUrl !== null ? ' from ' . $sourceUrl : '') . ']',
+            'ip_address' => CloudFlareRealIP::getRealIP(),
+        ]);
+
+        return ApiResponse::success(['spell' => $spell, 'format' => $parsed['format'], 'warnings' => $warnings], 'Spell imported successfully', 201);
     }
 
     /**
@@ -2304,18 +2378,6 @@ class SpellsController
         };
 
         return $visit($spell, $id > 0 ? [$id => true] : []);
-    }
-
-    private static function preserveImportConfigObjects(array $data, string $json): array
-    {
-        $object = json_decode($json);
-        foreach (['files', 'startup', 'logs'] as $field) {
-            if (isset($object->config->{$field}) && is_object($object->config->{$field})) {
-                $data['config'][$field] = $object->config->{$field};
-            }
-        }
-
-        return $data;
     }
 
     /**

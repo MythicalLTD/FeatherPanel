@@ -38,6 +38,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/featherui/Input';
 import { toast } from 'sonner';
 import {
     Sparkles,
@@ -60,6 +61,7 @@ import {
     Wrench,
     GitBranch,
     FolderTree,
+    Link2,
 } from 'lucide-react';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { usePersistedListFilters } from '@/hooks/usePersistedListFilters';
@@ -142,6 +144,9 @@ export default function SpellsPage() {
     const [importRealmId, setImportRealmId] = useState('');
     const [importing, setImporting] = useState(false);
     const pendingImportFile = useRef<File | null>(null);
+    const [urlImportOpen, setUrlImportOpen] = useState(false);
+    const [urlImportRealmId, setUrlImportRealmId] = useState('');
+    const [urlImportUrl, setUrlImportUrl] = useState('');
     const [isReorderMode, setIsReorderMode] = useState(false);
     const [reorderLoading, setReorderLoading] = useState(false);
     const [hasOrderChanges, setHasOrderChanges] = useState(false);
@@ -267,11 +272,12 @@ export default function SpellsPage() {
             formData.append('file', file);
             formData.append('realm_id', realmId);
 
-            await axios.post('/api/admin/spells/import', formData, {
+            const { data } = await axios.post('/api/admin/spells/import', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' },
             });
 
             toast.success(t('admin.spells.messages.imported'));
+            showImportWarnings(data?.data?.warnings);
             setRefreshKey((prev) => prev + 1);
             setImportDialogOpen(false);
             setImportRealmId('');
@@ -282,6 +288,50 @@ export default function SpellsPage() {
             pendingImportFile.current = null;
         } catch (error) {
             console.error('Error importing spell:', error);
+            toast.error(getApiErrorMessage(error, t, 'admin.spells.messages.import_failed'));
+        } finally {
+            setImporting(false);
+        }
+    };
+
+    const showImportWarnings = (warnings: unknown) => {
+        if (!Array.isArray(warnings) || warnings.length === 0) return;
+        toast.warning(t('admin.spells.messages.import_warnings'), {
+            description: warnings.filter((w) => typeof w === 'string').join('\n'),
+            duration: 12000,
+        });
+    };
+
+    const openUrlImport = () => {
+        setUrlImportRealmId(realmIdParam || '');
+        setUrlImportUrl('');
+        setUrlImportOpen(true);
+    };
+
+    const handleUrlImportSubmit = async () => {
+        if (!urlImportRealmId) {
+            toast.error(t('admin.spells.messages.select_realm'));
+            return;
+        }
+        const url = urlImportUrl.trim();
+        if (!/^https?:\/\/\S+$/i.test(url)) {
+            toast.error(t('admin.spells.messages.invalid_import_url'));
+            return;
+        }
+
+        setImporting(true);
+        try {
+            const { data } = await axios.post('/api/admin/spells/import/url', {
+                realm_id: Number(urlImportRealmId),
+                url,
+            });
+            toast.success(t('admin.spells.messages.imported'));
+            showImportWarnings(data?.data?.warnings);
+            setRefreshKey((prev) => prev + 1);
+            setUrlImportOpen(false);
+            setUrlImportUrl('');
+        } catch (error) {
+            console.error('Error importing spell from URL:', error);
             toast.error(getApiErrorMessage(error, t, 'admin.spells.messages.import_failed'));
         } finally {
             setImporting(false);
@@ -459,10 +509,14 @@ export default function SpellsPage() {
                             <Upload className='mr-2 h-4 w-4' />
                             {t('admin.spells.import')}
                         </Button>
+                        <Button variant='outline' onClick={openUrlImport}>
+                            <Link2 className='mr-2 h-4 w-4' />
+                            {t('admin.spells.import_url')}
+                        </Button>
                         <input
                             ref={fileInputRef}
                             type='file'
-                            accept='application/json'
+                            accept='.json,.yaml,.yml,application/json,application/yaml,application/x-yaml,text/yaml'
                             className='hidden'
                             onChange={handleImport}
                         />
@@ -663,7 +717,9 @@ export default function SpellsPage() {
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>{t('admin.spells.import')}</DialogTitle>
-                        <DialogDescription>{t('admin.spells.import_dialog_description')}</DialogDescription>
+                        <DialogDescription>
+                            {t('admin.spells.import_dialog_description')} {t('admin.spells.import_formats')}
+                        </DialogDescription>
                     </DialogHeader>
                     <div className='space-y-4 py-4'>
                         <div className='space-y-2'>
@@ -683,6 +739,66 @@ export default function SpellsPage() {
                             {t('common.cancel')}
                         </Button>
                         <Button onClick={handleImportDialogSubmit} loading={importing}>
+                            {t('admin.spells.import')}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+            <Dialog
+                open={urlImportOpen}
+                onOpenChange={(open) => {
+                    if (importing) return;
+                    setUrlImportOpen(open);
+                }}
+            >
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>{t('admin.spells.import_url')}</DialogTitle>
+                        <DialogDescription>{t('admin.spells.import_url_description')}</DialogDescription>
+                    </DialogHeader>
+                    <form
+                        className='space-y-4 py-4'
+                        onSubmit={(e) => {
+                            e.preventDefault();
+                            void handleUrlImportSubmit();
+                        }}
+                    >
+                        <div className='space-y-2'>
+                            <Label htmlFor='spell-import-url'>{t('admin.spells.import_url_label')} *</Label>
+                            <Input
+                                id='spell-import-url'
+                                type='url'
+                                inputMode='url'
+                                autoComplete='off'
+                                placeholder={t('admin.spells.import_url_placeholder')}
+                                value={urlImportUrl}
+                                onChange={(e) => setUrlImportUrl(e.target.value)}
+                                disabled={importing}
+                            />
+                            <p className='text-muted-foreground text-xs'>{t('admin.spells.import_url_help')}</p>
+                        </div>
+                        <div className='space-y-2'>
+                            <Label>{t('admin.spells.form.realm')} *</Label>
+                            <Select
+                                value={urlImportRealmId}
+                                onChange={(e) => setUrlImportRealmId(e.target.value)}
+                                disabled={importing}
+                            >
+                                <option value=''>{t('admin.spells.form.realm_placeholder')}</option>
+                                {realms.map((realm) => (
+                                    <option key={realm.id} value={realm.id}>
+                                        {realm.name}
+                                    </option>
+                                ))}
+                            </Select>
+                        </div>
+                        <p className='text-muted-foreground text-xs'>{t('admin.spells.import_formats')}</p>
+                    </form>
+                    <DialogFooter>
+                        <Button variant='outline' onClick={() => setUrlImportOpen(false)} disabled={importing}>
+                            {t('common.cancel')}
+                        </Button>
+                        <Button onClick={handleUrlImportSubmit} loading={importing}>
                             {t('admin.spells.import')}
                         </Button>
                     </DialogFooter>

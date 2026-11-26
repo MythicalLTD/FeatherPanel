@@ -50,7 +50,7 @@ class SpellEggCompatibilityTest extends TestCase
     public function testNativeNestedObjectsSurviveImport(): void
     {
         $json = '{"meta":{"version":"PTDL_v2"},"config":{"files":{"x.json":{"parser":"json","find":{"nested":{}}}}}}';
-        $data = (new ReflectionMethod(SpellsController::class, 'preserveImportConfigObjects'))->invoke(null, json_decode($json, true), $json);
+        $data = App\Services\Spells\EggImportParser::parse($json)['data'];
         $egg = $this->normalize($data);
         self::assertInstanceOf(stdClass::class, json_decode($egg['config']['files'])->{'x.json'}->find->nested);
     }

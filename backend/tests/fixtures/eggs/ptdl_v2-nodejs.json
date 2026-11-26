@@ -1,0 +1,136 @@
+{
+    "_comment": "DO NOT EDIT: FILE GENERATED AUTOMATICALLY BY PTERODACTYL PANEL - PTERODACTYL.IO",
+    "meta": {
+        "version": "PTDL_v2",
+        "update_url": null
+    },
+    "exported_at": "2026-10-05T10:10:23+00:00",
+    "name": "Node.js generic",
+    "author": "parker@parkervcp.com",
+    "description": "a generic node.js egg This will clone a git repo. it defaults to master if no branch is specified. Installs the node_modules on install. If you set user_upload then I assume you know what you are doing.",
+    "features": [],
+    "docker_images": {
+        "Nodejs 26": "ghcr.io\/pelican-eggs\/yolks:nodejs_26",
+        "Nodejs 25": "ghcr.io\/pelican-eggs\/yolks:nodejs_25",
+        "Nodejs 24": "ghcr.io\/pelican-eggs\/yolks:nodejs_24",
+        "Nodejs 23": "ghcr.io\/pelican-eggs\/yolks:nodejs_23",
+        "Nodejs 22": "ghcr.io\/pelican-eggs\/yolks:nodejs_22"
+    },
+    "file_denylist": [],
+    "startup": "if [[ -d .git ]] && [[ {{AUTO_UPDATE}} == \"1\" ]]; then git pull; fi; if [[ ! -z ${NODE_PACKAGES} ]]; then \/usr\/local\/bin\/npm install ${NODE_PACKAGES}; fi; if [[ ! -z ${UNNODE_PACKAGES} ]]; then \/usr\/local\/bin\/npm uninstall ${UNNODE_PACKAGES}; fi; if [ -f \/home\/container\/package.json ]; then \/usr\/local\/bin\/npm install; fi; if [[ \"${MAIN_FILE}\" == \"*.js\" ]]; then \/usr\/local\/bin\/node \"\/home\/container\/${MAIN_FILE}\" ${NODE_ARGS}; else \/usr\/local\/bin\/tsx \"\/home\/container\/${MAIN_FILE}\" ${NODE_ARGS}; fi",
+    "config": {
+        "files": "{}",
+        "startup": "{\n    \"done\": [\n        \"change this text 1\",\n        \"change this text 2\"\n    ]\n}",
+        "logs": "{}",
+        "stop": "^C"
+    },
+    "scripts": {
+        "installation": {
+            "script": "#!\/bin\/bash\n# NodeJS App Installation Script\n#\n# Server Files: \/mnt\/server\napt update\napt install -y git curl jq file unzip make gcc g++ python3 python3-dev python3-pip libtool\n\necho -e \"updating npm. please wait...\"\nnpm install npm@latest --location=global\n\nmkdir -p \/mnt\/server\ncd \/mnt\/server\n\nif [ \"${USER_UPLOAD}\" == \"true\" ] || [ \"${USER_UPLOAD}\" == \"1\" ]; then\n    echo -e \"assuming user knows what they are doing have a good day.\"\n    exit 0\nfi\n\n## add git ending if it's not on the address\nif [[ ${GIT_ADDRESS} != *.git ]]; then\n    GIT_ADDRESS=${GIT_ADDRESS}.git\nfi\n\nif [ -z \"${USERNAME}\" ] && [ -z \"${ACCESS_TOKEN}\" ]; then\n    echo -e \"using anon api call\"\nelse\n    GIT_ADDRESS=\"https:\/\/${USERNAME}:${ACCESS_TOKEN}@$(echo -e ${GIT_ADDRESS} | cut -d\/ -f3-)\"\nfi\n\n## pull git js repo\nif [ \"$(ls -A \/mnt\/server)\" ]; then\n    echo -e \"\/mnt\/server directory is not empty.\"\n    if [ -d .git ]; then\n        echo -e \".git directory exists\"\n        if [ -f .git\/config ]; then\n            echo -e \"loading info from git config\"\n            ORIGIN=$(git config --get remote.origin.url)\n        else\n            echo -e \"files found with no git config\"\n            echo -e \"closing out without touching things to not break anything\"\n            exit 10\n        fi\n    fi\n\n    if [ \"${ORIGIN}\" == \"${GIT_ADDRESS}\" ]; then\n        echo \"pulling latest from github\"\n        git pull\n    fi\nelse\n    echo -e \"\/mnt\/server is empty.\\ncloning files into repo\"\n    if [ -z ${BRANCH} ]; then\n        echo -e \"cloning default branch\"\n        git clone ${GIT_ADDRESS} .\n    else\n        echo -e \"cloning ${BRANCH}'\"\n        git clone --single-branch --branch ${BRANCH} ${GIT_ADDRESS} .\n    fi\n\nfi\n\necho \"Installing nodejs packages\"\nif [[ ! -z ${NODE_PACKAGES} ]]; then\n    \/usr\/local\/bin\/npm install ${NODE_PACKAGES}\nfi\n\nif [ -f \/mnt\/server\/package.json ]; then\n    \/usr\/local\/bin\/npm install --production\nfi\n\necho -e \"install complete\"\nexit 0",
+            "container": "node:22-trixie-slim",
+            "entrypoint": "bash"
+        }
+    },
+    "variables": [
+        {
+            "name": "Main file",
+            "description": "The file that starts the app. Can be .js and .ts",
+            "env_variable": "MAIN_FILE",
+            "default_value": "index.js",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|string|max:16",
+            "field_type": "text"
+        },
+        {
+            "name": "Auto Update",
+            "description": "Pull the latest files on startup when using a GitHub repo.",
+            "env_variable": "AUTO_UPDATE",
+            "default_value": "0",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|boolean",
+            "field_type": "text"
+        },
+        {
+            "name": "Git Repo Address",
+            "description": "GitHub Repo to clone I.E. https:\/\/github.com\/parkervcp\/repo_name",
+            "env_variable": "GIT_ADDRESS",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string",
+            "field_type": "text"
+        },
+        {
+            "name": "Install Branch",
+            "description": "The branch to install.",
+            "env_variable": "BRANCH",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string",
+            "field_type": "text"
+        },
+        {
+            "name": "Git Username",
+            "description": "Username to auth with git.",
+            "env_variable": "USERNAME",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string",
+            "field_type": "text"
+        },
+        {
+            "name": "Git Access Token",
+            "description": "Password to use with git. It's best practice to use a Personal Access Token. https:\/\/github.com\/settings\/tokens https:\/\/gitlab.com\/-\/profile\/personal_access_tokens",
+            "env_variable": "ACCESS_TOKEN",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string",
+            "field_type": "text"
+        },
+        {
+            "name": "User Uploaded Files",
+            "description": "Skip all the install stuff if you are letting a user upload files. 0 = false (default) 1 = true",
+            "env_variable": "USER_UPLOAD",
+            "default_value": "0",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|boolean",
+            "field_type": "text"
+        },
+        {
+            "name": "Additional Node packages",
+            "description": "Install additional node packages. Use spaces to separate.",
+            "env_variable": "NODE_PACKAGES",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string",
+            "field_type": "text"
+        },
+        {
+            "name": "Uninstall Node packages",
+            "description": "Uninstall node packages. Use spaces to separate.",
+            "env_variable": "UNNODE_PACKAGES",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string",
+            "field_type": "text"
+        },
+        {
+            "name": "Additional Arguments.",
+            "description": "Any extra arguments for nodejs or tsx",
+            "env_variable": "NODE_ARGS",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string|max:64",
+            "field_type": "text"
+        }
+    ]
+}

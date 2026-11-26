@@ -1,0 +1,132 @@
+{
+    "_comment": "DO NOT EDIT: FILE GENERATED AUTOMATICALLY BY PANEL",
+    "meta": {
+        "version": "PLCN_v3",
+        "update_url": null
+    },
+    "exported_at": "2026-04-06T02:01:23+00:00",
+    "name": "Nightingale",
+    "author": "quinten@pelican.dev",
+    "uuid": "01e7a042-e6c0-4701-957b-3834c84fa281",
+    "description": "Nightingale is an open world survival crafting game, where you\u2019ll adventure across the mysterious and dangerous Fae Realms. As a daring Realmwalker, you\u2019ll defeat monstrous enemies, survive hostile environments, and build elaborate estates in a visually stunning Gaslamp Fantasy world. ",
+    "tags": [
+        "steamcmd"
+    ],
+    "features": [
+        "steam_disk_space"
+    ],
+    "docker_images": {
+        "Steamcmd": "ghcr.io/parkervcp/steamcmd:debian"
+    },
+    "file_denylist": [],
+    "startup_commands": {
+        "Default": "NWX/Binaries/Linux/NWXServer-Linux-Shipping -port={{SERVER_PORT}} -multihome=0.0.0.0 -ini:Game:[/Script/Engine.GameSession]:MaxPlayers={{MAX_PLAYERS}}  -ini:ServerSettings:[/Script/NWX.NWXServerSettings]:Password={{CONNECTION_PASSWORD}} -ini:ServerSettings:[/Script/NWX.NWXServerSettings]:AdminPassword={{ADMIN_PASSWORD}} -ini:ServerSettings:[/Script/NWX.NWXServerSettings]:StartingDifficulty={{DIFFICULTY}}",
+        "With cheats": "NWX/Binaries/Linux/NWXServer-Linux-Shipping -port={{SERVER_PORT}} -multihome=0.0.0.0 -ini:Game:[/Script/Engine.GameSession]:MaxPlayers={{MAX_PLAYERS}}  -ini:ServerSettings:[/Script/NWX.NWXServerSettings]:Password={{CONNECTION_PASSWORD}} -ini:ServerSettings:[/Script/NWX.NWXServerSettings]:AdminPassword={{ADMIN_PASSWORD}} -ini:ServerSettings:[/Script/NWX.NWXServerSettings]:StartingDifficulty={{DIFFICULTY}} -EnableCheats"
+    },
+    "config": {
+        "files": "{}",
+        "startup": "{\n    \"done\": \"LogNWXGameMode: GameModeAwaiter became ready.\"\n}",
+        "logs": "{}",
+        "stop": "^C"
+    },
+    "scripts": {
+        "installation": {
+            "script": "#!/bin/bash\n# steamcmd Base Installation Script\n#\n# Server Files: /mnt/server\n# Image to install with is 'ghcr.io/parkervcp/installers:debian'\n\n## just in case someone removed the defaults.\nif [[ \"${STEAM_USER}\" == \"\" ]] || [[ \"${STEAM_PASS}\" == \"\" ]]; then\n    echo -e \"steam user is not set.\\n\"\n    echo -e \"Using anonymous user.\\n\"\n    STEAM_USER=anonymous\n    STEAM_PASS=\"\"\n    STEAM_AUTH=\"\"\nelse\n    echo -e \"user set to ${STEAM_USER}\"\nfi\n\n## download and install steamcmd\ncd /tmp\nmkdir -p /mnt/server/steamcmd\ncurl -sSL -o steamcmd.tar.gz https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz\ntar -xzvf steamcmd.tar.gz -C /mnt/server/steamcmd\nmkdir -p /mnt/server/steamapps # Fix steamcmd disk write error when this folder is missing\ncd /mnt/server/steamcmd\n\n# SteamCMD fails otherwise for some reason, even running as root.\n# This is changed at the end of the install process anyways.\nchown -R root:root /mnt\nexport HOME=/mnt/server\n\n## install game using steamcmd\n./steamcmd.sh +force_install_dir /mnt/server +login ${STEAM_USER} ${STEAM_PASS} ${STEAM_AUTH} $( [[ \"${WINDOWS_INSTALL}\" == \"1\" ]] && printf %s '+@sSteamCmdForcePlatformType windows' ) +app_update ${SRCDS_APPID} $( [[ -z ${SRCDS_BETAID} ]] || printf %s \"-beta ${SRCDS_BETAID}\" ) $( [[ -z ${SRCDS_BETAPASS} ]] || printf %s \"-betapassword ${SRCDS_BETAPASS}\" ) ${INSTALL_FLAGS} validate +quit ## other flags may be needed depending on install. looking at you cs 1.6\n\n## set up 32 bit libraries\nmkdir -p /mnt/server/.steam/sdk32\ncp -v linux32/steamclient.so ../.steam/sdk32/steamclient.so\n\n## set up 64 bit libraries\nmkdir -p /mnt/server/.steam/sdk64\ncp -v linux64/steamclient.so ../.steam/sdk64/steamclient.so\n\n## add below your custom commands if needed\n\nif [ ! -e \"/mnt/server/NWX/Config/ServerSettings.ini\" ]; then\n    cp /mnt/server/NWX/Config/ExampleServerSettings.ini /mnt/server/NWX/Config/ServerSettings.ini\nfi \n\n## install end\necho \"-----------------------------------------\"\necho \"Installation completed...\"\necho \"-----------------------------------------\"",
+            "container": "ghcr.io/pelican-eggs/installers:debian",
+            "entrypoint": "bash"
+        }
+    },
+    "variables": [
+        {
+            "sort": 5,
+            "name": "Admin Password",
+            "description": "If an admin password is set, players with the correct password can authenticate in-game in\norder to kick and ban other players.",
+            "env_variable": "ADMIN_PASSWORD",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "string",
+                "nullable"
+            ]
+        },
+        {
+            "sort": 1,
+            "name": "Auto Update",
+            "description": "Auto update the server on startup",
+            "env_variable": "AUTO_UPDATE",
+            "default_value": "1",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "boolean"
+            ]
+        },
+        {
+            "sort": 4,
+            "name": "Connection Password",
+            "description": "",
+            "env_variable": "CONNECTION_PASSWORD",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "nullable",
+                "string"
+            ]
+        },
+        {
+            "sort": 7,
+            "name": "Difficulty",
+            "description": "Starting map difficulty, choose from [easy, medium, hard, extreme].",
+            "env_variable": "DIFFICULTY",
+            "default_value": "easy",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "string",
+                "in:easy,medium,hard,extreme"
+            ]
+        },
+        {
+            "sort": 3,
+            "name": "Max Players",
+            "description": "The maximum amount of players that can join.\n\nPlease note that increasing the maximum number of players past 6 is unsupported and may\nresult in unintended behaviour.",
+            "env_variable": "MAX_PLAYERS",
+            "default_value": "6",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "numeric",
+                "between:1,8"
+            ]
+        },
+        {
+            "sort": 2,
+            "name": "App ID",
+            "description": "",
+            "env_variable": "SRCDS_APPID",
+            "default_value": "3796810",
+            "user_viewable": false,
+            "user_editable": false,
+            "rules": [
+                "required",
+                "in:3796810"
+            ]
+        },
+        {
+            "sort": 6,
+            "name": "Beta ID",
+            "description": "beta branch of a steam app. Leave blank to install normal branch",
+            "env_variable": "SRCDS_BETAID",
+            "default_value": "",
+            "user_viewable": false,
+            "user_editable": false,
+            "rules": [
+                "nullable"
+            ]
+        }
+    ]
+}

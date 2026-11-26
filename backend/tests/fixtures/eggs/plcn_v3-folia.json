@@ -1,0 +1,120 @@
+{
+    "_comment": "DO NOT EDIT: FILE GENERATED AUTOMATICALLY BY PANEL",
+    "meta": {
+        "version": "PLCN_v3",
+        "update_url": "https://raw.githubusercontent.com/pelican-eggs/minecraft/refs/heads/main/java/folia/egg-folia.json"
+    },
+    "exported_at": "2026-04-07T15:39:30+00:00",
+    "name": "Folia",
+    "author": "Hosting@NeverStopGaming.net",
+    "uuid": "09414ef6-cd47-496e-ba13-920a8215144c",
+    "description": "Fork of Paper which adds regionised multithreading to the dedicated server.",
+    "image": null,
+    "tags": [],
+    "features": [
+        "eula",
+        "java_version",
+        "pid_limit"
+    ],
+    "docker_images": {
+        "Java 17": "ghcr.io/pelican-eggs/yolks:java_17",
+        "Java 18": "ghcr.io/pelican-eggs/yolks:java_18",
+        "Java 21": "ghcr.io/pelican-eggs/yolks:java_21",
+        "Java 25": "ghcr.io/pelican-eggs/yolks:java_25"
+    },
+    "file_denylist": [],
+    "startup_commands": {
+        "Default": "java -Xms128M -XX:MaxRAMPercentage=95.0 -Dterminal.jline=false -Dterminal.ansi=true -jar {{SERVER_JARFILE}}"
+    },
+    "config": {
+        "files": "{\n    \"server.properties\": {\n        \"parser\": \"properties\",\n        \"find\": {\n            \"server-ip\": \"0.0.0.0\",\n            \"server-port\": \"{{server.allocations.default.port}}\",\n            \"query.port\": \"{{server.allocations.default.port}}\"\n        }\n    }\n}",
+        "startup": "{\n    \"done\": \")! For help, type \"\n}",
+        "logs": "{}",
+        "stop": "stop"
+    },
+    "scripts": {
+        "installation": {
+            "script": "#!/bin/ash\r\n# shellcheck shell=dash\r\n# Folia Installation Script\r\n#\r\n# Server Files: /mnt/server\r\n: \"${SERVER_DIR:=/mnt/server}\"\r\n: \"${SERVER_JARFILE:=server.jar}\"\r\n: \"${PROJECT:=}\"\r\n\r\nif [ -z ${USER_AGENT} ]; then\r\n    echo \"The \\\"USER_AGENT\\\" variable needs to be set\"\r\n    exit 1\r\nfi\r\n\r\nif [ -z ${PROJECT} ]; then\r\n    echo \"The \\\"PROJECT\\\" variable needs to be set\"\r\n    exit 1\r\nfi\r\n\r\nif [ ! -d \"${SERVER_DIR}\" ]; then\r\n    mkdir -p /mnt/server || echo \"Cannot create server dir\"\r\nfi\r\n\r\ncd /mnt/server || echo \"can't change to /mnt/server\"\r\n\r\nif [ -n \"${DL_PATH}\" ]; then\r\n\techo \"Using supplied download url: ${DL_PATH}\"\r\n\tDOWNLOAD_URL=$(eval echo \"$(echo \"${DL_PATH}\" | sed 's/{{/${/g' 's/}}/}/g')\")\r\nelse\r\n\tVER_EXISTS=$(curl -A \"${USER_AGENT}\" -s https://api.papermc.io/v2/projects/${PROJECT} | jq -r --arg VERSION $MINECRAFT_VERSION '.versions[] | contains($VERSION)' | grep -m1 true)\r\n\tLATEST_VERSION=$(curl -A \"${USER_AGENT}\" -s https://api.papermc.io/v2/projects/${PROJECT} | jq -r '.versions' | jq -r '.[-1]')\r\n\r\n\tif [ \"${VER_EXISTS}\" = \"true\" ]; then\r\n\t\techo \"Version is valid. Using version ${MINECRAFT_VERSION}\"\r\n\telse\r\n\t\techo \"Specified version not found. Defaulting to the latest ${PROJECT} version\"\r\n\t\tMINECRAFT_VERSION=${LATEST_VERSION}\r\n\tfi\r\n\r\n\tBUILD_EXISTS=$(curl -A \"${USER_AGENT}\" -s https://api.papermc.io/v2/projects/${PROJECT}/versions/${MINECRAFT_VERSION} | jq -r --arg BUILD ${BUILD_NUMBER} '.builds[] | tostring | contains($BUILD)' | grep -m1 true)\r\n\tLATEST_BUILD=$(curl -A \"${USER_AGENT}\" -s https://api.papermc.io/v2/projects/${PROJECT}/versions/${MINECRAFT_VERSION} | jq -r '.builds' | jq -r '.[-1]')\r\n\r\n\tif [ \"${BUILD_EXISTS}\" = \"true\" ]; then\r\n\t\techo \"Build is valid for version ${MINECRAFT_VERSION}. Using build ${BUILD_NUMBER}\"\r\n\telse\r\n\t\techo \"Using the latest ${PROJECT} build for version ${MINECRAFT_VERSION}\"\r\n\t\tBUILD_NUMBER=${LATEST_BUILD}\r\n\tfi\r\n\r\n\tJAR_NAME=${PROJECT}-${MINECRAFT_VERSION}-${BUILD_NUMBER}.jar\r\n\r\n\techo \"Version being downloaded\"\r\n\techo \"MC Version: ${MINECRAFT_VERSION}\"\r\n\techo \"Build: ${BUILD_NUMBER}\"\r\n\techo \"JAR Name of Build: ${JAR_NAME}\"\r\n\tDOWNLOAD_URL=https://api.papermc.io/v2/projects/${PROJECT}/versions/${MINECRAFT_VERSION}/builds/${BUILD_NUMBER}/downloads/${JAR_NAME}\r\nfi\r\n\r\necho \"Running curl -A ${USER_AGENT} -o ${SERVER_JARFILE} ${DOWNLOAD_URL}\"\r\n\r\nif [ -f \"${SERVER_JARFILE}\" ]; then\r\n\tmv \"${SERVER_JARFILE}\" \"${SERVER_JARFILE}.old\"\r\nfi\r\n\r\ncurl -A \"${USER_AGENT}\" -o \"${SERVER_JARFILE}\" \"${DOWNLOAD_URL}\"\r\n\r\nif [ ! -f server.properties ]; then\r\n    echo \"Downloading MC server.properties\"\r\n    curl -A \"${USER_AGENT}\" -o server.properties https://raw.githubusercontent.com/parkervcp/eggs/master/minecraft/java/server.properties\r\nfi",
+            "container": "ghcr.io/pelican-eggs/installers:alpine",
+            "entrypoint": "ash"
+        }
+    },
+    "variables": [
+        {
+            "sort": 4,
+            "name": "Build Number",
+            "description": "The build number for the folia release.\r\n\r\nLeave at latest to always get the latest version. Invalid versions will default to latest.",
+            "env_variable": "BUILD_NUMBER",
+            "default_value": "latest",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "string",
+                "max:20"
+            ]
+        },
+        {
+            "sort": 3,
+            "name": "Download Path",
+            "description": "A URL to use to download a server.jar rather than the ones in the install script. This is not user viewable.",
+            "env_variable": "DL_PATH",
+            "default_value": "",
+            "user_viewable": false,
+            "user_editable": false,
+            "rules": [
+                "nullable",
+                "string"
+            ]
+        },
+        {
+            "sort": 1,
+            "name": "Minecraft Version",
+            "description": "The version of minecraft to download. \r\n\r\nLeave at latest to always get the latest version. Invalid versions will default to latest.",
+            "env_variable": "MINECRAFT_VERSION",
+            "default_value": "latest",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "nullable",
+                "string",
+                "max:20"
+            ]
+        },
+        {
+            "sort": 6,
+            "name": "Project",
+            "description": "",
+            "env_variable": "PROJECT",
+            "default_value": "folia",
+            "user_viewable": false,
+            "user_editable": false,
+            "rules": []
+        },
+        {
+            "sort": 2,
+            "name": "Server Jar File",
+            "description": "The name of the server jarfile to run the server with.",
+            "env_variable": "SERVER_JARFILE",
+            "default_value": "server.jar",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "regex:/^([\\w\\d._-]+)(\\.jar)$/"
+            ]
+        },
+        {
+            "sort": 5,
+            "name": "User Agent",
+            "description": "Required to use the paper. Set to something for yourself",
+            "env_variable": "USER_AGENT",
+            "default_value": "",
+            "user_viewable": false,
+            "user_editable": false,
+            "rules": [
+                "required"
+            ]
+        }
+    ]
+}
