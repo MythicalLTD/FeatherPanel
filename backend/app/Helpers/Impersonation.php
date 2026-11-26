@@ -19,8 +19,8 @@ namespace App\Helpers;
 
 use App\App;
 use App\Chat\User;
-use App\Chat\Activity;
 use App\Permissions;
+use App\Chat\Activity;
 use App\CloudFlare\CloudFlareRealIP;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;

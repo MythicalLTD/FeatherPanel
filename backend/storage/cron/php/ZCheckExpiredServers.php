@@ -33,8 +33,8 @@ use App\Chat\VmInstance;
 use App\Config\ConfigInterface;
 use App\Services\Vm\VmInstanceUtil;
 use App\Helpers\ModerationReasonHelper;
-use App\Services\Server\WingsSuspensionSync;
 use App\Cli\Utils\MinecraftColorCodeSupport;
+use App\Services\Server\WingsSuspensionSync;
 use App\Services\Notifications\InboxNotifier;
 
 class ZCheckExpiredServers implements TimeTask

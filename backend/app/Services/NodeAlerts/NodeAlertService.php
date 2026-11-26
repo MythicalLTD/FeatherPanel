@@ -202,6 +202,26 @@ class NodeAlertService
         return $this->deliver(['id' => $id, 'node_id' => null, 'type' => self::TYPE_TEST, 'severity' => 'info', 'message' => 'This is a test node alert', 'details' => [], 'state' => 'test'], $policy);
     }
 
+    /**
+     * Failed-backup scan position: "completed_at|id". Anything else (unset, or the old id-only
+     * watermark) returns null so the scan restarts from now.
+     *
+     * @return array{0: string, 1: int}|null
+     */
+    public static function parseBackupCursor(mixed $raw): ?array
+    {
+        if (!is_string($raw) || !preg_match('/^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\|(\d+)$/', $raw, $m)) {
+            return null;
+        }
+
+        return [$m[1], (int) $m[2]];
+    }
+
+    public static function formatBackupCursor(string $completedAt, int $id): string
+    {
+        return substr($completedAt, 0, 19) . '|' . max(0, $id);
+    }
+
     /** @return array<string, mixed> the stored health row */
     private function recordHealth(int $nodeId, bool $online, array $u, ?string $error): array
     {
@@ -304,26 +324,6 @@ class NodeAlertService
         }
 
         return $out;
-    }
-
-    /**
-     * Failed-backup scan position: "completed_at|id". Anything else (unset, or the old id-only
-     * watermark) returns null so the scan restarts from now.
-     *
-     * @return array{0: string, 1: int}|null
-     */
-    public static function parseBackupCursor(mixed $raw): ?array
-    {
-        if (!is_string($raw) || !preg_match('/^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\|(\d+)$/', $raw, $m)) {
-            return null;
-        }
-
-        return [$m[1], (int) $m[2]];
-    }
-
-    public static function formatBackupCursor(string $completedAt, int $id): string
-    {
-        return substr($completedAt, 0, 19) . '|' . max(0, $id);
     }
 
     /** @return array{new: int, notified: int} */

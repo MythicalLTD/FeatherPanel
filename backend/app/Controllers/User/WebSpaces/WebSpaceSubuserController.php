@@ -17,18 +17,18 @@
 
 namespace App\Controllers\User\WebSpaces;
 
+use App\App;
 use App\Chat\User;
 use App\Permissions;
 use App\Chat\WebNode;
-use App\Helpers\ApiResponse;
 use App\Chat\WebSpace;
+use App\Helpers\ApiResponse;
 use App\Chat\WebSpaceSubuser;
-use App\Chat\WebSpaceSubuserInvite;
-use App\App;
-use App\Config\ConfigInterface;
 use OpenApi\Attributes as OA;
+use App\Config\ConfigInterface;
 use App\Helpers\WebSpaceGateway;
 use App\Helpers\PermissionHelper;
+use App\Chat\WebSpaceSubuserInvite;
 use App\WebSpaceSubuserPermissions;
 use App\Helpers\FeatherQuilldClient;
 use App\Helpers\WebSpacePluginEvents;
@@ -184,24 +184,6 @@ class WebSpaceSubuserController
         return ApiResponse::success(['server' => ['name' => $space['name'], 'uuidShort' => $space['uuidShort']]], 'Joined', 201);
     }
 
-    /** @return array{0: ?array, 1: ?array, 2: ?Response} */
-    private function usableInvite(Request $request, string $token): array
-    {
-        $user = $request->attributes->get('user');
-        if (!$user) {
-            return [null, null, ApiResponse::error('User not authenticated', 'NOT_AUTHENTICATED', 401)];
-        }
-        $invite = WebSpaceSubuserInvite::findUsableByToken($token);
-        $space = $invite ? WebSpace::getById((int) $invite['webspace_id']) : null;
-        if (!$invite || !$space) {
-            return [null, null, ApiResponse::error('This invite link is invalid, expired or used up', 'INVITE_INVALID', 404)];
-        }
-        if ((int) ($space['owner_id'] ?? 0) === (int) $user['id']) {
-            return [null, null, ApiResponse::error('You already own this WebSpace', 'INVITE_OWN_SERVER', 400)];
-        }
-
-        return [$invite, $space, null];
-    }
     #[OA\Get(path: '/api/user/webspaces/{uuidShort}/users', summary: 'List WebSpace subusers', tags: ['User - WebSpace Subusers'])]
     public function index(Request $request, string $uuidShort): Response
     {
@@ -373,6 +355,25 @@ class WebSpaceSubuserController
         ));
 
         return ApiResponse::success([], 'OK', 200);
+    }
+
+    /** @return array{0: ?array, 1: ?array, 2: ?Response} */
+    private function usableInvite(Request $request, string $token): array
+    {
+        $user = $request->attributes->get('user');
+        if (!$user) {
+            return [null, null, ApiResponse::error('User not authenticated', 'NOT_AUTHENTICATED', 401)];
+        }
+        $invite = WebSpaceSubuserInvite::findUsableByToken($token);
+        $space = $invite ? WebSpace::getById((int) $invite['webspace_id']) : null;
+        if (!$invite || !$space) {
+            return [null, null, ApiResponse::error('This invite link is invalid, expired or used up', 'INVITE_INVALID', 404)];
+        }
+        if ((int) ($space['owner_id'] ?? 0) === (int) $user['id']) {
+            return [null, null, ApiResponse::error('You already own this WebSpace', 'INVITE_OWN_SERVER', 400)];
+        }
+
+        return [$invite, $space, null];
     }
 
     /**

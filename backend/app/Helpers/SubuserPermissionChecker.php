@@ -64,15 +64,6 @@ class SubuserPermissionChecker
             || in_array(Permissions::ADMIN_SERVERS_DELETE, $nodes, true);
     }
 
-    private static function subuserRow(int $userId, int $serverId): ?array
-    {
-        $row = self::$subuserResolver !== null
-            ? (self::$subuserResolver)($userId, $serverId)
-            : Subuser::getSubuserByUserAndServer($userId, $serverId);
-
-        return $row ?: null;
-    }
-
     /**
      * Check if a user has a specific permission for a server.
      *
@@ -287,5 +278,14 @@ class SubuserPermissionChecker
         ];
 
         return $permissionMap[$controller][$action] ?? null;
+    }
+
+    private static function subuserRow(int $userId, int $serverId): ?array
+    {
+        $row = self::$subuserResolver !== null
+            ? (self::$subuserResolver)($userId, $serverId)
+            : Subuser::getSubuserByUserAndServer($userId, $serverId);
+
+        return $row ?: null;
     }
 }

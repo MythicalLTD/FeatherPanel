@@ -15,8 +15,8 @@
  * See the LICENSE file or <https://www.gnu.org/licenses/>.
  */
 
-use PHPUnit\Framework\TestCase;
 use App\Helpers\DnsProvisioner;
+use PHPUnit\Framework\TestCase;
 use App\Services\Dns\Providers\DnsProviderRegistry;
 use App\Services\Dns\Providers\AbstractApiDnsProvider;
 
@@ -554,16 +554,6 @@ class ApiDnsProvidersTest extends TestCase
         $this->assertSame('198.51.100.7', $fake->state('example.com', 'A', 'www.example.com')[0]['content']);
     }
 
-    /**
-     * @return array{provider: mixed, zone_id: string}
-     */
-    private function webContext(string $id, FakeDnsApi $fake): array
-    {
-        $p = DnsProviderRegistry::create($id, 'tok', $fake);
-
-        return ['provider' => $p, 'zone_id' => $p->findZoneForDomain('example.com')['id']];
-    }
-
     #[PHPUnit\Framework\Attributes\DataProvider('providers')]
     public function testWebRecordsPointTheDomainAtTheNodeAndTouchNothingElse(string $id): void
     {
@@ -704,6 +694,16 @@ class ApiDnsProvidersTest extends TestCase
     public static function recordProviders(): array
     {
         return ['cloudflare' => ['cloudflare'], 'ionos' => ['ionos'], 'digitalocean' => ['digitalocean']];
+    }
+
+    /**
+     * @return array{provider: mixed, zone_id: string}
+     */
+    private function webContext(string $id, FakeDnsApi $fake): array
+    {
+        $p = DnsProviderRegistry::create($id, 'tok', $fake);
+
+        return ['provider' => $p, 'zone_id' => $p->findZoneForDomain('example.com')['id']];
     }
 }
 

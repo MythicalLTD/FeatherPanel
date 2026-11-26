@@ -24,8 +24,8 @@ use App\Chat\Server;
 use App\Config\ConfigInterface;
 use App\Mail\templates\ServerBanned;
 use App\Helpers\ModerationReasonHelper;
-use App\Services\Server\WingsSuspensionSync;
 use App\Plugins\Events\Events\ServerEvent;
+use App\Services\Server\WingsSuspensionSync;
 
 /**
  * Suspension Service for FeatherZeroTrust.

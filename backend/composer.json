@@ -75,8 +75,13 @@
 	"scripts": {
 		"lint": [
 			"export COMPOSER_ALLOW_SUPERUSER=1",
-			"storage/packages/bin/php-cs-fixer fix --config=.php-cs-fixer.dist.php --show-progress bar || exit 0",
-			"storage/packages/bin/phpcs --standard=phpcs.xml --report=full --colors app/ || storage/packages/bin/phpcbf --standard=phpcs.xml app/ || exit 0"
+			"storage/packages/bin/php-cs-fixer check --config=.php-cs-fixer.dist.php --diff --show-progress=none",
+			"storage/packages/bin/phpcs --standard=phpcs.xml --report=full --colors app/"
+		],
+		"lint:fix": [
+			"export COMPOSER_ALLOW_SUPERUSER=1",
+			"storage/packages/bin/php-cs-fixer fix --config=.php-cs-fixer.dist.php --show-progress=bar",
+			"storage/packages/bin/phpcbf --standard=phpcs.xml app/ || [ $? -eq 1 ]"
 		],
 		"phpcs": [
 			"storage/packages/bin/phpcs --standard=phpcs.xml app/"
@@ -91,11 +96,11 @@
 		],
 		"phpstan": [
 			"export COMPOSER_ALLOW_SUPERUSER=1",
-			"storage/packages/bin/phpstan analyse"
+			"storage/packages/bin/phpstan analyse --memory-limit=2G"
 		],
 		"phpstan-baseline": [
 			"export COMPOSER_ALLOW_SUPERUSER=1",
-			"storage/packages/bin/phpstan analyse --generate-baseline"
+			"storage/packages/bin/phpstan analyse --memory-limit=2G --generate-baseline=phpstan-baseline.neon"
 		]
 	}
 }

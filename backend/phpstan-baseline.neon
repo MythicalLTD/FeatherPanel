@@ -1,0 +1,3607 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Strict comparison using \=\=\= between mixed and null will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/App.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between non\-empty\-array\<string, mixed\> and array\{\} will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Chat/BackupPolicy.php
+
+		-
+			message: '#^Result of && is always false\.$#'
+			identifier: booleanAnd.alwaysFalse
+			count: 1
+			path: app/Chat/BlockedEmailDomain.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between ''import'' and ''import'' will always evaluate to false\.$#'
+			identifier: notIdentical.alwaysFalse
+			count: 1
+			path: app/Chat/BlockedEmailDomain.php
+
+		-
+			message: '#^Match arm comparison between ''y'' and ''y'' is always true\.$#'
+			identifier: match.alwaysTrue
+			count: 1
+			path: app/Chat/BlockedIp.php
+
+		-
+			message: '#^Call to function is_string\(\) with string will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 2
+			path: app/Chat/CommandSnippet.php
+
+		-
+			message: '#^Offset ''command'' on array\{uuid\: string, user_uuid\: string, name\: non\-empty\-string, command\: string, eggs\: array\<string\>\|string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Chat/CommandSnippet.php
+
+		-
+			message: '#^Offset ''eggs'' on array\{uuid\: string, user_uuid\: string, name\: non\-empty\-string, command\: string, eggs\: array\<string\>\|string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Chat/CommandSnippet.php
+
+		-
+			message: '#^Offset ''name'' on array\{uuid\: string, user_uuid\: string, name\: string, command\: string, eggs\: array\<string\>\|string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Chat/CommandSnippet.php
+
+		-
+			message: '#^Offset ''user_uuid'' on array\{uuid\: string, user_uuid\: string, name\: string, command\: string, eggs\: array\<string\>\|string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Chat/CommandSnippet.php
+
+		-
+			message: '#^Offset ''uuid'' on array\{uuid\: string, user_uuid\: string, name\: string, command\: string, eggs\: array\<string\>\|string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Chat/CommandSnippet.php
+
+		-
+			message: '#^Property App\\Chat\\Database\:\:\$mysqli is unused\.$#'
+			identifier: property.unused
+			count: 1
+			path: app/Chat/Database.php
+
+		-
+			message: '#^Offset ''database_password'' on non\-empty\-array in isset\(\) always exists and is not nullable\.$#'
+			identifier: isset.offset
+			count: 1
+			path: app/Chat/DatabaseInstance.php
+
+		-
+			message: '#^Offset ''name'' on non\-empty\-array on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Chat/DatabaseInstance.php
+
+		-
+			message: '#^Result of && is always true\.$#'
+			identifier: booleanAnd.alwaysTrue
+			count: 1
+			path: app/Chat/DatabaseInstance.php
+
+		-
+			message: '#^Right side of && is always true\.$#'
+			identifier: booleanAnd.rightAlwaysTrue
+			count: 1
+			path: app/Chat/DatabaseInstance.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 2
+			path: app/Chat/DatabaseInstance.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between non\-empty\-string and '''' will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Chat/DatabaseInstance.php
+
+		-
+			message: '#^Static property App\\Chat\\HostingPackage\:\:\$allowedFields is never read, only written\.$#'
+			identifier: property.onlyWritten
+			count: 1
+			path: app/Chat/HostingPackage.php
+
+		-
+			message: '#^Offset ''name'' on array\{name\: string, description\?\: string\|null, source\: string, target\: string, read_only\?\: bool, user_mountable\?\: bool\} in isset\(\) always exists and is not nullable\.$#'
+			identifier: isset.offset
+			count: 1
+			path: app/Chat/Mount.php
+
+		-
+			message: '#^Offset ''source'' on array\{name\: string, description\?\: string\|null, source\: string, target\: string, read_only\?\: bool, user_mountable\?\: bool\} in isset\(\) always exists and is not nullable\.$#'
+			identifier: isset.offset
+			count: 1
+			path: app/Chat/Mount.php
+
+		-
+			message: '#^Offset ''target'' on array\{name\: string, description\?\: string\|null, source\: string, target\: string, read_only\?\: bool, user_mountable\?\: bool\} in isset\(\) always exists and is not nullable\.$#'
+			identifier: isset.offset
+			count: 1
+			path: app/Chat/Mount.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 2
+			path: app/Chat/Node.php
+
+		-
+			message: '#^Call to function is_string\(\) with string will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: app/Chat/NodeBackupDestination.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between non\-empty\-array\<string, mixed\> and array\{\} will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Chat/NodeBackupDestination.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between non\-empty\-string and false will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Chat/NodeBackupDestination.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between non\-empty\-string and null will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Chat/NodeBackupDestination.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between non\-empty\-array\<string, mixed\> and array\{\} will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Chat/NodeBackupPolicy.php
+
+		-
+			message: '#^Call to function is_string\(\) with string will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 2
+			path: app/Chat/Notification.php
+
+		-
+			message: '#^Negated boolean expression is always true\.$#'
+			identifier: booleanNot.alwaysTrue
+			count: 1
+			path: app/Chat/Notification.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 2
+			path: app/Chat/Notification.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Chat/RedirectLink.php
+
+		-
+			message: '#^Offset ''name'' on non\-empty\-array on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 8
+			path: app/Chat/Server.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between mixed and null will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Chat/Server.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Chat/ServerActivity.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 2
+			path: app/Chat/Ticket.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between mixed and null will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Chat/Ticket.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 2
+			path: app/Chat/TicketAttachment.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between mixed and null will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 3
+			path: app/Chat/TicketAttachment.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Chat/TicketMessage.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between mixed and null will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Chat/TicketMessage.php
+
+		-
+			message: '#^Variable \$insert in empty\(\) always exists and is not falsy\.$#'
+			identifier: empty.variable
+			count: 1
+			path: app/Chat/TimedTask.php
+
+		-
+			message: '#^Comparison operation "\>" between int\<2, max\> and 0 is always true\.$#'
+			identifier: greater.alwaysTrue
+			count: 1
+			path: app/Chat/User.php
+
+		-
+			message: '#^Call to function is_string\(\) with string will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 2
+			path: app/Chat/UserDevice.php
+
+		-
+			message: '#^Method App\\Chat\\VmInstance\:\:table\(\) is unused\.$#'
+			identifier: method.unused
+			count: 1
+			path: app/Chat/VmInstance.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 3
+			path: app/Chat/VmInstanceActivity.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 2
+			path: app/Chat/VmIp.php
+
+		-
+			message: '#^Negated boolean expression is always false\.$#'
+			identifier: booleanNot.alwaysFalse
+			count: 2
+			path: app/Chat/VmNode.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between ''permissions'' and ''permissions'' will always evaluate to true\.$#'
+			identifier: identical.alwaysTrue
+			count: 1
+			path: app/Chat/VmSubuser.php
+
+		-
+			message: '#^Comparison operation "\>\=" between int\<0, max\> and 0 is always true\.$#'
+			identifier: greaterOrEqual.alwaysTrue
+			count: 1
+			path: app/Chat/VmTemplate.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 3
+			path: app/Chat/WebNode.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between non\-empty\-array\<mixed, mixed\> and array\{\} will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Chat/WebPlate.php
+
+		-
+			message: '#^Offset ''domain'' on array\{id\: int, domain\: string, type\: string, redirect_target\: string\|null, document_root\: string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Chat/WebSpace.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 3
+			path: app/Chat/WebSpace.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 3
+			path: app/Chat/WebSpaceActivity.php
+
+		-
+			message: '#^Call to function is_array\(\) with array\{domain\: string, type\?\: string, redirect_target\?\: string\|null, document_root\?\: string\} will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: app/Chat/WebSpaceDomain.php
+
+		-
+			message: '#^Offset ''document_root'' on array\{domain\: non\-empty\-string, type\: string, redirect_target\: string\|null, document_root\: string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Chat/WebSpaceDomain.php
+
+		-
+			message: '#^Offset ''domain'' on array\{domain\: string, type\?\: string, redirect_target\?\: string\|null, document_root\?\: string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Chat/WebSpaceDomain.php
+
+		-
+			message: '#^Offset ''type'' on array\{domain\: non\-empty\-string, type\: string, redirect_target\: string\|null, document_root\: string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Chat/WebSpaceDomain.php
+
+		-
+			message: '#^Offset ''type'' on array\{domain\: string, type\: string, redirect_target\: string\|null, document_root\: string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 2
+			path: app/Chat/WebSpaceDomain.php
+
+		-
+			message: '#^Call to function is_array\(\) with array will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: app/Chat/WebSpaceMailingList.php
+
+		-
+			message: '#^Call to function is_array\(\) with array\<string, mixed\> will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 2
+			path: app/Chat/WebSpaceSchedule.php
+
+		-
+			message: '#^Offset ''permissions''\|''user_id''\|''webspace_id'' on array\{user_id\: int, webspace_id\: int, permissions\: array\<int, string\>\|string\} in isset\(\) always exists and is not nullable\.$#'
+			identifier: isset.offset
+			count: 1
+			path: app/Chat/WebSpaceSubuser.php
+
+		-
+			message: '#^PHPDoc tag @var above a method has no effect\.$#'
+			identifier: varTag.misplaced
+			count: 1
+			path: app/Cli/CommandBuilder.php
+
+		-
+			message: '#^If condition is always false\.$#'
+			identifier: if.alwaysFalse
+			count: 3
+			path: app/Cli/Commands/Developer.php
+
+		-
+			message: '#^If condition is always true\.$#'
+			identifier: if.alwaysTrue
+			count: 3
+			path: app/Cli/Commands/Developer.php
+
+		-
+			message: '#^Negated boolean expression is always false\.$#'
+			identifier: booleanNot.alwaysFalse
+			count: 2
+			path: app/Cli/Commands/Developer.php
+
+		-
+			message: '#^Comparison operation "\>" between 0 and 0 is always false\.$#'
+			identifier: greater.alwaysFalse
+			count: 1
+			path: app/Cli/Commands/Migrate.php
+
+		-
+			message: '#^Call to function method_exists\(\) with ''App\\\\Cli\\\\Commands\\\\Module'' and ''installPhpMyAdmin'' will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: app/Cli/Commands/Module.php
+
+		-
+			message: '#^Result of && is always false\.$#'
+			identifier: booleanAnd.alwaysFalse
+			count: 1
+			path: app/Cli/Commands/Module.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between ''pma'' and ''pma'' will always evaluate to true\.$#'
+			identifier: identical.alwaysTrue
+			count: 2
+			path: app/Cli/Commands/Module.php
+
+		-
+			message: '#^Unreachable statement \- code above always terminates\.$#'
+			identifier: deadCode.unreachable
+			count: 1
+			path: app/Cli/Commands/Module.php
+
+		-
+			message: '#^Variable \$availableModules in empty\(\) always exists and is not falsy\.$#'
+			identifier: empty.variable
+			count: 1
+			path: app/Cli/Commands/Module.php
+
+		-
+			message: '#^Static property App\\Cli\\Commands\\Settings\:\:\$currentIndex is never read, only written\.$#'
+			identifier: property.onlyWritten
+			count: 1
+			path: app/Cli/Commands/Settings.php
+
+		-
+			message: '#^Static method App\\Cli\\Commands\\Snapshots\:\:validateSqlContent\(\) is unused\.$#'
+			identifier: method.unused
+			count: 1
+			path: app/Cli/Commands/Snapshots.php
+
+		-
+			message: '#^PHPDoc tag @return with type string is incompatible with native type void\.$#'
+			identifier: return.phpDocType
+			count: 2
+			path: app/Cli/Utils/MinecraftColorCodeSupport.php
+
+		-
+			message: '#^Dead catch \- Exception is never thrown in the try block\.$#'
+			identifier: catch.neverThrown
+			count: 1
+			path: app/Config/ConfigFactory.php
+
+		-
+			message: '#^PHPDoc tag @param for parameter \$fallback with type mixed is not subtype of native type string\|null\.$#'
+			identifier: parameter.phpDocType
+			count: 1
+			path: app/Config/ConfigFactory.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 6
+			path: app/Controllers/Admin/AllocationsController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 5
+			path: app/Controllers/Admin/BackupSchedulesController.php
+
+		-
+			message: '#^Offset ''code'' on array\{error\: string, code\: string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Controllers/Admin/BlockedIpsController.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between string and true will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Controllers/Admin/BlockedIpsController.php
+
+		-
+			message: '#^Offset ''synced'' on array\{synced\: int, map\: array\<string, mixed\>\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Controllers/Admin/CloudManagementController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 5
+			path: app/Controllers/Admin/CloudManagementController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between non\-empty\-string and '''' will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Controllers/Admin/CloudManagementController.php
+
+		-
+			message: '#^Call to function array_is_list\(\) with array\<string, mixed\> will always evaluate to false\.$#'
+			identifier: function.impossibleType
+			count: 2
+			path: app/Controllers/Admin/CloudPluginsController.php
+
+		-
+			message: '#^Call to function is_array\(\) with array\<string, mixed\> will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 6
+			path: app/Controllers/Admin/CloudPluginsController.php
+
+		-
+			message: '#^Call to function is_array\(\) with string\|null will always evaluate to false\.$#'
+			identifier: function.impossibleType
+			count: 1
+			path: app/Controllers/Admin/CloudPluginsController.php
+
+		-
+			message: '#^Offset ''lines'' on array\{executed\: int, skipped\: int, failed\: int\<1, max\>, lines\: array\<string\>\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Controllers/Admin/CloudPluginsController.php
+
+		-
+			message: '#^Right side of && is always true\.$#'
+			identifier: booleanAnd.rightAlwaysTrue
+			count: 1
+			path: app/Controllers/Admin/CloudPluginsController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Controllers/Admin/CloudPluginsController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between non\-falsy\-string and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Controllers/Admin/CloudPluginsController.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between '''' and '''' will always evaluate to true\.$#'
+			identifier: identical.alwaysTrue
+			count: 1
+			path: app/Controllers/Admin/CloudPluginsController.php
+
+		-
+			message: '#^Variable \$pluginDir might not be defined\.$#'
+			identifier: variable.undefined
+			count: 2
+			path: app/Controllers/Admin/CloudPluginsController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Controllers/Admin/ConsoleController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Controllers/Admin/DashboardController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Controllers/Admin/DatabaseManagmentController.php
+
+		-
+			message: '#^Method App\\Controllers\\Admin\\DatabaseSnapshotsController\:\:checkDeveloperMode\(\) never returns null so it can be removed from the return type\.$#'
+			identifier: return.unusedType
+			count: 1
+			path: app/Controllers/Admin/DatabaseSnapshotsController.php
+
+		-
+			message: '#^Result of \|\| is always true\.$#'
+			identifier: booleanOr.alwaysTrue
+			count: 1
+			path: app/Controllers/Admin/DatabaseSnapshotsController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between false and true will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Controllers/Admin/DatabaseSnapshotsController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 4
+			path: app/Controllers/Admin/DatabaseSnapshotsController.php
+
+		-
+			message: '#^Unreachable statement \- code above always terminates\.$#'
+			identifier: deadCode.unreachable
+			count: 1
+			path: app/Controllers/Admin/DatabaseSnapshotsController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 5
+			path: app/Controllers/Admin/DatabasesController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Controllers/Admin/DnsHostsController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 4
+			path: app/Controllers/Admin/FeatherZeroTrustController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 3
+			path: app/Controllers/Admin/FileManagerController.php
+
+		-
+			message: '#^Variable \$isDirectory might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: app/Controllers/Admin/FileManagerController.php
+
+		-
+			message: '#^Offset ''status'' on array\{status\: ''unhealthy'', error\: ''No response''\}\|array\{status\: string, utilization\: array\|null, error\: string\|null, latency_ms\: int\|null\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Controllers/Admin/HealthController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Controllers/Admin/HostingPackagesController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 3
+			path: app/Controllers/Admin/ImagesController.php
+
+		-
+			message: '#^Offset ''filename'' on array\{dirname\?\: string, basename\: string, extension\?\: string, filename\: string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Controllers/Admin/KnowledgebaseController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 18
+			path: app/Controllers/Admin/KnowledgebaseController.php
+
+		-
+			message: '#^Ternary operator condition is always true\.$#'
+			identifier: ternary.alwaysTrue
+			count: 1
+			path: app/Controllers/Admin/KnowledgebaseController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Controllers/Admin/LdapProvidersController.php
+
+		-
+			message: '#^Method App\\Controllers\\Admin\\LocationsController\:\:normalizeCoordinates\(\) should return array\{latitude\: float\|null, longitude\: float\|null\}\|Symfony\\Component\\HttpFoundation\\Response but returns array\{\}\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Controllers/Admin/LocationsController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 4
+			path: app/Controllers/Admin/LocationsController.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between mixed and null will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Controllers/Admin/LocationsController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 2
+			path: app/Controllers/Admin/LogViewerController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Controllers/Admin/MailHostsController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 3
+			path: app/Controllers/Admin/MailTemplatesController.php
+
+		-
+			message: '#^Comparison operation "\>" between int\<1, 100\> and 0 is always true\.$#'
+			identifier: greater.alwaysTrue
+			count: 1
+			path: app/Controllers/Admin/MountsController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Controllers/Admin/MountsController.php
+
+		-
+			message: '#^Call to function is_array\(\) with array\<mixed\> will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: app/Controllers/Admin/MythicTranslationsController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between int and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Controllers/Admin/NodeStatusController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 2
+			path: app/Controllers/Admin/NodeStatusController.php
+
+		-
+			message: '#^Offset ''systemd_unit'' on array\{daemon_base\: string, config_dir\: string, config_path\: string, systemd_unit\: string, github_owner\: string, github_repo\: string, display_name\: string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Controllers/Admin/NodesController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 3
+			path: app/Controllers/Admin/NodesController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 6
+			path: app/Controllers/Admin/NotificationsController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Controllers/Admin/OidcProvidersController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 3
+			path: app/Controllers/Admin/PermissionsController.php
+
+		-
+			message: '#^Method App\\Controllers\\Admin\\PluginManagerController\:\:createPluginWidget\(\) is unused\.$#'
+			identifier: method.unused
+			count: 1
+			path: app/Controllers/Admin/PluginManagerController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 6
+			path: app/Controllers/Admin/PluginManagerController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between array\<string, mixed\>\|bool\|string and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Controllers/Admin/PluginsController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 2
+			path: app/Controllers/Admin/PluginsController.php
+
+		-
+			message: '#^Variable \$exclusionArgs in empty\(\) always exists and is not falsy\.$#'
+			identifier: empty.variable
+			count: 1
+			path: app/Controllers/Admin/PluginsController.php
+
+		-
+			message: '#^Variable \$exclusions in empty\(\) always exists and is not falsy\.$#'
+			identifier: empty.variable
+			count: 1
+			path: app/Controllers/Admin/PluginsController.php
+
+		-
+			message: '#^Call to function is_array\(\) with array\<mixed\> will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: app/Controllers/Admin/PterodactylImporterController.php
+
+		-
+			message: '#^Cannot unset offset ''password'' on array\{uuid\: mixed, uuidShort\: mixed, node_id\: int, name\: mixed, owner_id\: int, memory\: int, swap\: int, disk\: int, \.\.\.\}\.$#'
+			identifier: unset.offset
+			count: 1
+			path: app/Controllers/Admin/PterodactylImporterController.php
+
+		-
+			message: '#^Negated boolean expression is always false\.$#'
+			identifier: booleanNot.alwaysFalse
+			count: 3
+			path: app/Controllers/Admin/PterodactylImporterController.php
+
+		-
+			message: '#^Offset ''action'' on non\-empty\-array\<mixed\> on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Controllers/Admin/PterodactylImporterController.php
+
+		-
+			message: '#^Offset ''allocation_id'' on array\{uuid\: mixed, uuidShort\: mixed, node_id\: int, name\: mixed, owner_id\: int, memory\: int, swap\: int, disk\: int, \.\.\.\} in isset\(\) always exists and is not nullable\.$#'
+			identifier: isset.offset
+			count: 1
+			path: app/Controllers/Admin/PterodactylImporterController.php
+
+		-
+			message: '#^Offset ''allocation_id''\|''node_id''\|''owner_id''\|''realms_id''\|''spell_id'' on array\{uuid\: mixed, uuidShort\: mixed, node_id\: int, name\: mixed, owner_id\: int, memory\: int, swap\: int, disk\: int, \.\.\.\} in isset\(\) always exists and is not nullable\.$#'
+			identifier: isset.offset
+			count: 1
+			path: app/Controllers/Admin/PterodactylImporterController.php
+
+		-
+			message: '#^Offset ''cpu''\|''disk''\|''io''\|''memory'' on array\{uuid\: mixed, uuidShort\: mixed, node_id\: int, name\: mixed, owner_id\: int, memory\: int, swap\: int, disk\: int, \.\.\.\} in isset\(\) always exists and is not nullable\.$#'
+			identifier: isset.offset
+			count: 1
+			path: app/Controllers/Admin/PterodactylImporterController.php
+
+		-
+			message: '#^Offset ''name'' on non\-empty\-array\<mixed\> on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Controllers/Admin/PterodactylImporterController.php
+
+		-
+			message: '#^Offset ''node_id'' on array\{uuid\: mixed, uuidShort\: mixed, node_id\: int, name\: mixed, owner_id\: int, memory\: int, swap\: int, disk\: int, \.\.\.\} in isset\(\) always exists and is not nullable\.$#'
+			identifier: isset.offset
+			count: 1
+			path: app/Controllers/Admin/PterodactylImporterController.php
+
+		-
+			message: '#^Offset ''owner_id'' on array\{uuid\: mixed, uuidShort\: mixed, node_id\: int, name\: mixed, owner_id\: int, memory\: int, swap\: int, disk\: int, \.\.\.\} in isset\(\) always exists and is not nullable\.$#'
+			identifier: isset.offset
+			count: 1
+			path: app/Controllers/Admin/PterodactylImporterController.php
+
+		-
+			message: '#^Offset ''realms_id'' on array\{uuid\: mixed, uuidShort\: mixed, node_id\: int, name\: mixed, owner_id\: int, memory\: int, swap\: int, disk\: int, \.\.\.\} in isset\(\) always exists and is not nullable\.$#'
+			identifier: isset.offset
+			count: 1
+			path: app/Controllers/Admin/PterodactylImporterController.php
+
+		-
+			message: '#^Offset ''sequence_id'' on non\-empty\-array\<mixed\> on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Controllers/Admin/PterodactylImporterController.php
+
+		-
+			message: '#^Offset ''spell_id'' on array\{uuid\: mixed, uuidShort\: mixed, node_id\: int, name\: mixed, owner_id\: int, memory\: int, swap\: int, disk\: int, \.\.\.\} in isset\(\) always exists and is not nullable\.$#'
+			identifier: isset.offset
+			count: 1
+			path: app/Controllers/Admin/PterodactylImporterController.php
+
+		-
+			message: '#^Offset ''swap'' on array\{uuid\: mixed, uuidShort\: mixed, node_id\: int, name\: mixed, owner_id\: int, memory\: int, swap\: int, disk\: int, \.\.\.\} in isset\(\) always exists and is not nullable\.$#'
+			identifier: isset.offset
+			count: 1
+			path: app/Controllers/Admin/PterodactylImporterController.php
+
+		-
+			message: '#^Offset ''uuid'' on array\{uuid\: mixed, name\: mixed, description\: mixed, location_id\: int, fqdn\: mixed, scheme\: mixed, public\: bool, behind_proxy\: bool, \.\.\.\} in isset\(\) always exists and is not nullable\.$#'
+			identifier: isset.offset
+			count: 1
+			path: app/Controllers/Admin/PterodactylImporterController.php
+
+		-
+			message: '#^Offset ''uuid'' on array\{uuid\: mixed, realm_id\: int, author\: mixed, name\: mixed, description\: mixed, features\: mixed, docker_images\: mixed, file_denylist\: mixed, \.\.\.\} in isset\(\) always exists and is not nullable\.$#'
+			identifier: isset.offset
+			count: 1
+			path: app/Controllers/Admin/PterodactylImporterController.php
+
+		-
+			message: '#^Offset ''uuid'' on array\{uuid\: mixed, uuidShort\: mixed, node_id\: int, name\: mixed, owner_id\: int, memory\: int, swap\: int, disk\: int, \.\.\.\} in isset\(\) always exists and is not nullable\.$#'
+			identifier: isset.offset
+			count: 1
+			path: app/Controllers/Admin/PterodactylImporterController.php
+
+		-
+			message: '#^Offset ''uuidShort'' on array\{uuid\: mixed, uuidShort\: mixed, node_id\: int, name\: mixed, owner_id\: int, memory\: int, swap\: int, disk\: int, \.\.\.\} in isset\(\) always exists and is not nullable\.$#'
+			identifier: isset.offset
+			count: 1
+			path: app/Controllers/Admin/PterodactylImporterController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 7
+			path: app/Controllers/Admin/PterodactylImporterController.php
+
+		-
+			message: '#^Offset ''routes'' on non\-empty\-array in isset\(\) always exists and is not nullable\.$#'
+			identifier: isset.offset
+			count: 1
+			path: app/Controllers/Admin/RateLimitController.php
+
+		-
+			message: '#^Offset ''routes'' on non\-empty\-array on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Controllers/Admin/RateLimitController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Controllers/Admin/RateLimitController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 3
+			path: app/Controllers/Admin/RealmsController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 3
+			path: app/Controllers/Admin/RolesController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 8
+			path: app/Controllers/Admin/ServersController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between string and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Controllers/Admin/ServersController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between lowercase\-string&non\-falsy\-string and '''' will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Controllers/Admin/SettingsController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 5
+			path: app/Controllers/Admin/SettingsController.php
+
+		-
+			message: '#^Variable \$http_response_header on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.variable
+			count: 1
+			path: app/Controllers/Admin/SettingsController.php
+
+		-
+			message: '#^Variable \$raw on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.variable
+			count: 1
+			path: app/Controllers/Admin/SettingsController.php
+
+		-
+			message: '#^Call to function is_array\(\) with array\<string, mixed\> will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: app/Controllers/Admin/SpellsController.php
+
+		-
+			message: '#^Call to function is_array\(\) with list\<array\<string, mixed\>\> will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: app/Controllers/Admin/SpellsController.php
+
+		-
+			message: '#^Offset ''data'' on array\{data\: list\<array\<string, mixed\>\>, meta\: array\<string, mixed\>\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Controllers/Admin/SpellsController.php
+
+		-
+			message: '#^Offset ''meta'' on array\{data\: list\<array\<string, mixed\>\>, meta\: array\<string, mixed\>\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Controllers/Admin/SpellsController.php
+
+		-
+			message: '#^Static method App\\Controllers\\Admin\\SpellsController\:\:decodeSpellConfigField\(\) is unused\.$#'
+			identifier: method.unused
+			count: 1
+			path: app/Controllers/Admin/SpellsController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between int\|non\-empty\-string and '''' will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Controllers/Admin/SpellsController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 12
+			path: app/Controllers/Admin/SpellsController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 9
+			path: app/Controllers/Admin/SubdomainsController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between non\-empty\-string and '''' will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Controllers/Admin/SubdomainsController.php
+
+		-
+			message: '#^Offset ''filename'' on array\{dirname\?\: string, basename\: string, extension\?\: string, filename\: string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Controllers/Admin/TicketAttachmentsController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 2
+			path: app/Controllers/Admin/TicketAttachmentsController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 3
+			path: app/Controllers/Admin/TicketCategoriesController.php
+
+		-
+			message: '#^Variable \$data in empty\(\) always exists and is not falsy\.$#'
+			identifier: empty.variable
+			count: 1
+			path: app/Controllers/Admin/TicketCategoriesController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 3
+			path: app/Controllers/Admin/TicketMessagesController.php
+
+		-
+			message: '#^Variable \$data in empty\(\) always exists and is not falsy\.$#'
+			identifier: empty.variable
+			count: 1
+			path: app/Controllers/Admin/TicketMessagesController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 3
+			path: app/Controllers/Admin/TicketPrioritiesController.php
+
+		-
+			message: '#^Variable \$data in empty\(\) always exists and is not falsy\.$#'
+			identifier: empty.variable
+			count: 1
+			path: app/Controllers/Admin/TicketPrioritiesController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 3
+			path: app/Controllers/Admin/TicketStatusesController.php
+
+		-
+			message: '#^Variable \$data in empty\(\) always exists and is not falsy\.$#'
+			identifier: empty.variable
+			count: 1
+			path: app/Controllers/Admin/TicketStatusesController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 8
+			path: app/Controllers/Admin/TicketsController.php
+
+		-
+			message: '#^Variable \$data in empty\(\) always exists and is not falsy\.$#'
+			identifier: empty.variable
+			count: 1
+			path: app/Controllers/Admin/TicketsController.php
+
+		-
+			message: '#^Call to function is_string\(\) with string will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: app/Controllers/Admin/UsersController.php
+
+		-
+			message: '#^Offset ''attempted'' on array\{attempted\: bool, reported\: list\<array\{ip\: string, success\: bool, error\?\: string, score\?\: int\}\>\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 2
+			path: app/Controllers/Admin/UsersController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 5
+			path: app/Controllers/Admin/UsersController.php
+
+		-
+			message: '#^Call to function is_string\(\) with string will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 4
+			path: app/Controllers/Admin/VmInstancesController.php
+
+		-
+			message: '#^Offset ''bridge'' on array\{vm_ip_id\: int, network_key\: non\-falsy\-string, bridge\: string, interface_name\: non\-falsy\-string, is_primary\: bool, sort_order\: int\<0, max\>\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Controllers/Admin/VmInstancesController.php
+
+		-
+			message: '#^Offset ''interface_name'' on array\{vm_ip_id\: int, network_key\: non\-falsy\-string, bridge\: string, interface_name\: non\-falsy\-string, is_primary\: bool, sort_order\: int\<0, max\>\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Controllers/Admin/VmInstancesController.php
+
+		-
+			message: '#^Offset ''ip'' on non\-empty\-array on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Controllers/Admin/VmInstancesController.php
+
+		-
+			message: '#^Offset ''reinstall_id'' on array\{ok\: true, reinstall_id\: string, message\: string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Controllers/Admin/VmInstancesController.php
+
+		-
+			message: '#^Offset ''sort_order'' on array\{vm_ip_id\: int, network_key\: non\-falsy\-string, bridge\: string, interface_name\: non\-falsy\-string, is_primary\: bool, sort_order\: int\<0, max\>\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Controllers/Admin/VmInstancesController.php
+
+		-
+			message: '#^Offset ''status'' on array\{status\: string, http_status\: int\|null, body\: array\<string, mixed\>\|null, error\: string\|null, url\: string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Controllers/Admin/VmInstancesController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 3
+			path: app/Controllers/Admin/VmInstancesController.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between '''' and '''' will always evaluate to true\.$#'
+			identifier: identical.alwaysTrue
+			count: 1
+			path: app/Controllers/Admin/VmInstancesController.php
+
+		-
+			message: '#^Call to function is_string\(\) with string will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 2
+			path: app/Controllers/Admin/VmNodesController.php
+
+		-
+			message: '#^Offset ''status'' on array\{status\: string, http_status\: int\|null, body\: array\<string, mixed\>\|null, error\: string\|null, url\: string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 4
+			path: app/Controllers/Admin/VmNodesController.php
+
+		-
+			message: '#^Offset ''storage'' on array\{ok\: true, storage\: array\<int, string\>, error\: string\|null\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Controllers/Admin/VmNodesController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Controllers/Admin/VmNodesController.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between numeric\-string and '''' will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Controllers/Admin/VmNodesController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Controllers/Admin/WebNodesController.php
+
+		-
+			message: '#^If condition is always true\.$#'
+			identifier: if.alwaysTrue
+			count: 1
+			path: app/Controllers/Admin/WebPlatesController.php
+
+		-
+			message: '#^Negated boolean expression is always false\.$#'
+			identifier: booleanNot.alwaysFalse
+			count: 1
+			path: app/Controllers/Admin/WebPlatesController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Controllers/Admin/WebPlatesController.php
+
+		-
+			message: '#^Ternary operator condition is always true\.$#'
+			identifier: ternary.alwaysTrue
+			count: 1
+			path: app/Controllers/Admin/WebPlatesController.php
+
+		-
+			message: '#^Offset ''space'' does not exist on array\{zone\: array\<string, mixed\>, provider\: App\\Services\\Dns\\DnsProviderInterface\}\.$#'
+			identifier: offsetAccess.notFound
+			count: 3
+			path: app/Controllers/Admin/WebSpaceDnsController.php
+
+		-
+			message: '#^Call to function array_key_exists\(\) with ''external_id'' and array\{\} will always evaluate to false\.$#'
+			identifier: function.impossibleType
+			count: 3
+			path: app/Controllers/Admin/WebSpacesController.php
+
+		-
+			message: '#^Call to function array_key_exists\(\) with ''hosting_package_id'' and array\{\} will always evaluate to false\.$#'
+			identifier: function.impossibleType
+			count: 2
+			path: app/Controllers/Admin/WebSpacesController.php
+
+		-
+			message: '#^Offset ''status'' on array\{ok\: bool, status\: int, body\: mixed, error\: string\|null\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 2
+			path: app/Controllers/Admin/WebSpacesController.php
+
+		-
+			message: '#^Offset ''status'' on array\{ok\: false, status\: int, body\: mixed, error\: string\|null\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 6
+			path: app/Controllers/Admin/WebSpacesController.php
+
+		-
+			message: '#^Offset ''status'' on array\{ok\: false, status\: int\<400, max\>, body\: mixed, error\: string\|null\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Controllers/Admin/WebSpacesController.php
+
+		-
+			message: '#^Offset ''status'' on array\{ok\: true, status\: int, body\: mixed, error\: string\|null, created\?\: bool\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 2
+			path: app/Controllers/Admin/WebSpacesController.php
+
+		-
+			message: '#^Offset ''status'' on array\{ok\: true, status\: int, body\: mixed, error\: string\|null\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Controllers/Admin/WebSpacesController.php
+
+		-
+			message: '#^Offset ''status'' on array\{success\: true, error\?\: string, code\?\: string, http_status\?\: int, transfer_id\?\: int\} on left side of \?\? does not exist\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Controllers/Admin/WebSpacesController.php
+
+		-
+			message: '#^Offset ''destinations'' on array\{destinations\: list\<array\<string, mixed\>\>, total\: int\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Controllers/Admin/WingsBackupsController.php
+
+		-
+			message: '#^Offset ''items'' on \*NEVER\* on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Controllers/Admin/WingsBackupsController.php
+
+		-
+			message: '#^Offset ''policies'' on array\{policies\: list\<array\<string, mixed\>\>, total\: int\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Controllers/Admin/WingsBackupsController.php
+
+		-
+			message: '#^Offset ''runs'' on array\{runs\: list\<array\<string, mixed\>\>, total\: int\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Controllers/Admin/WingsBackupsController.php
+
+		-
+			message: '#^Ternary operator condition is always true\.$#'
+			identifier: ternary.alwaysTrue
+			count: 1
+			path: app/Controllers/Admin/WingsBackupsController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Controllers/Quilld/FeatherQuilldConfigController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Controllers/Quilld/FeatherQuilldTransferController.php
+
+		-
+			message: '#^Offset ''deleted'' on array\{ok\: true, deleted\: int, error\?\: string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Controllers/Quilld/FeatherQuilldWebSpaceController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Controllers/Quilld/FeatherQuilldWebSpaceController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Controllers/Quilld/QuilldActivityController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Controllers/Quilld/Sftp/SftpAuthController.php
+
+		-
+			message: '#^Left side of && is always true\.$#'
+			identifier: booleanAnd.leftAlwaysTrue
+			count: 1
+			path: app/Controllers/System/ApiDocs.php
+
+		-
+			message: '#^Result of && is always false\.$#'
+			identifier: booleanAnd.alwaysFalse
+			count: 1
+			path: app/Controllers/System/ApiDocs.php
+
+		-
+			message: '#^Result of \|\| is always true\.$#'
+			identifier: booleanOr.alwaysTrue
+			count: 2
+			path: app/Controllers/System/ApiDocs.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between false and true will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 2
+			path: app/Controllers/System/ApiDocs.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between false and true will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Controllers/System/ApiDocs.php
+
+		-
+			message: '#^Offset ''synced'' on array\{synced\: int, map\: array\<string, mixed\>\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Controllers/System/CloudV1Controller.php
+
+		-
+			message: '#^Call to function is_array\(\) with list\<string\|null\> will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: app/Controllers/System/DebugController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Controllers/System/PluginOverridesController.php
+
+		-
+			message: '#^Call to function is_string\(\) with string will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: app/Controllers/System/PluginPublicPagesController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 2
+			path: app/Controllers/System/PluginPublicPagesController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 3
+			path: app/Controllers/System/PluginSidebarController.php
+
+		-
+			message: '#^Method App\\Controllers\\System\\PluginThemesController\:\:normalizeTheme\(\) never returns null so it can be removed from the return type\.$#'
+			identifier: return.unusedType
+			count: 1
+			path: app/Controllers/System/PluginThemesController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Controllers/System/PluginThemesController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Controllers/System/PluginUiPacksController.php
+
+		-
+			message: '#^Method App\\Controllers\\System\\PluginWidgetController\:\:normalizeCardOptions\(\) never returns null so it can be removed from the return type\.$#'
+			identifier: return.unusedType
+			count: 1
+			path: app/Controllers/System/PluginWidgetController.php
+
+		-
+			message: '#^Offset ''priority'' on array\{id\: mixed, plugin\: string, pluginName\: mixed, component\: string, enabled\: true, hidden\: false, priority\: mixed, page\: mixed, \.\.\.\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 2
+			path: app/Controllers/System/PluginWidgetController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 2
+			path: app/Controllers/System/PluginWidgetController.php
+
+		-
+			message: '#^If condition is always true\.$#'
+			identifier: if.alwaysTrue
+			count: 4
+			path: app/Controllers/System/TranslationsController.php
+
+		-
+			message: '#^Offset 0 on non\-empty\-list\<string\> on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Controllers/System/TranslationsController.php
+
+		-
+			message: '#^Result of \|\| is always true\.$#'
+			identifier: booleanOr.alwaysTrue
+			count: 1
+			path: app/Controllers/System/TranslationsController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between false and true will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Controllers/System/TranslationsController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 2
+			path: app/Controllers/User/Auth/AuthLogoutController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 4
+			path: app/Controllers/User/Auth/EmailLoginController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 2
+			path: app/Controllers/User/Auth/ForgotPasswordController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Controllers/User/Auth/LdapController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 4
+			path: app/Controllers/User/Auth/LoginController.php
+
+		-
+			message: '#^Call to function is_array\(\) with non\-empty\-array will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: app/Controllers/User/Auth/OidcController.php
+
+		-
+			message: '#^Call to function is_string\(\) with non\-falsy\-string will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 2
+			path: app/Controllers/User/Auth/OidcController.php
+
+		-
+			message: '#^Call to function is_string\(\) with string will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: app/Controllers/User/Auth/OidcController.php
+
+		-
+			message: '#^Offset ''nonce'' on non\-empty\-array in isset\(\) always exists and is not nullable\.$#'
+			identifier: isset.offset
+			count: 1
+			path: app/Controllers/User/Auth/OidcController.php
+
+		-
+			message: '#^Offset 0 on non\-empty\-list\<string\> on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Controllers/User/Auth/OidcController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between array\<string, mixed\> and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Controllers/User/Auth/PasskeyController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Controllers/User/Auth/PasskeyController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 8
+			path: app/Controllers/User/Auth/RegisterController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 3
+			path: app/Controllers/User/Auth/ResetPasswordController.php
+
+		-
+			message: '#^Offset 0 on non\-empty\-list\<string\> on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Controllers/User/Auth/SsoController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 4
+			path: app/Controllers/User/Auth/TwoFactorController.php
+
+		-
+			message: '#^Call to function is_array\(\) with array\<string, mixed\> will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 2
+			path: app/Controllers/User/CalagopusClientCompatController.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between string and null will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 3
+			path: app/Controllers/User/CalagopusClientCompatController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Controllers/User/ChatbotController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 5
+			path: app/Controllers/User/KnowledgebaseController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between int and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Controllers/User/NodeStatusController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Controllers/User/NotificationController.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between non\-falsy\-string and '''' will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Controllers/User/Server/Files/FileTransferController.php
+
+		-
+			message: '#^Call to function is_array\(\) with non\-empty\-array will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: app/Controllers/User/Server/Files/ServerFilesController.php
+
+		-
+			message: '#^Method App\\Controllers\\User\\Server\\Files\\ServerFilesController\:\:executeWingsOperation\(\) is unused\.$#'
+			identifier: method.unused
+			count: 1
+			path: app/Controllers/User/Server/Files/ServerFilesController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 11
+			path: app/Controllers/User/Server/Files/ServerFilesController.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between non\-empty\-string and false will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Controllers/User/Server/Files/ServerFilesController.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between string and null will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 3
+			path: app/Controllers/User/Server/Files/ServerFilesController.php
+
+		-
+			message: '#^Variable \$copiedFiles in empty\(\) always exists and is not falsy\.$#'
+			identifier: empty.variable
+			count: 1
+			path: app/Controllers/User/Server/Files/ServerFilesController.php
+
+		-
+			message: '#^Call to function is_string\(\) with non\-falsy\-string will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: app/Controllers/User/Server/Logs/ServerLogsController.php
+
+		-
+			message: '#^Variable \$logData on left side of \?\? is never defined\.$#'
+			identifier: nullCoalesce.variable
+			count: 1
+			path: app/Controllers/User/Server/Logs/ServerLogsController.php
+
+		-
+			message: '#^Match arm comparison between ''kill'' and ''kill'' is always true\.$#'
+			identifier: match.alwaysTrue
+			count: 1
+			path: app/Controllers/User/Server/Power/ServerPowerController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Controllers/User/Server/Power/ServerPowerController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 3
+			path: app/Controllers/User/Server/ServerAllocationController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 7
+			path: app/Controllers/User/Server/ServerBackupController.php
+
+		-
+			message: '#^Method App\\Controllers\\User\\Server\\ServerDatabaseController\:\:splitSqlStatements\(\) is unused\.$#'
+			identifier: method.unused
+			count: 1
+			path: app/Controllers/User/Server/ServerDatabaseController.php
+
+		-
+			message: '#^Method App\\Controllers\\User\\Server\\ServerDatabaseController\:\:userCanAccessServer\(\) is unused\.$#'
+			identifier: method.unused
+			count: 1
+			path: app/Controllers/User/Server/ServerDatabaseController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 4
+			path: app/Controllers/User/Server/ServerDatabaseController.php
+
+		-
+			message: '#^Offset ''directory'' on array\{directory\: string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Controllers/User/Server/ServerFastDlController.php
+
+		-
+			message: '#^Offset ''directory'' on non\-empty\-array\<string, mixed\> on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 2
+			path: app/Controllers/User/Server/ServerFastDlController.php
+
+		-
+			message: '#^Result of && is always false\.$#'
+			identifier: booleanAnd.alwaysFalse
+			count: 1
+			path: app/Controllers/User/Server/ServerFastDlController.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between mixed and null will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Controllers/User/Server/ServerFastDlController.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between non\-falsy\-string and '''' will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Controllers/User/Server/ServerFastDlController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Controllers/User/Server/ServerFirewallController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Controllers/User/Server/ServerImportController.php
+
+		-
+			message: '#^Right side of && is always true\.$#'
+			identifier: booleanAnd.rightAlwaysTrue
+			count: 2
+			path: app/Controllers/User/Server/ServerLifecycleHookController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Controllers/User/Server/ServerLifecycleHookController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Controllers/User/Server/ServerProxyController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 6
+			path: app/Controllers/User/Server/ServerScheduleController.php
+
+		-
+			message: '#^Call to function is_array\(\) with non\-empty\-array will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: app/Controllers/User/Server/ServerUserController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 4
+			path: app/Controllers/User/Server/ServerUserController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between string\|null and 1 will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Controllers/User/Server/ServerUserController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between string\|null and true will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Controllers/User/Server/ServerUserController.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between string and 1 will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 2
+			path: app/Controllers/User/Server/ServerUserController.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between string and true will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 2
+			path: app/Controllers/User/Server/ServerUserController.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between string\|null and 1 will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 5
+			path: app/Controllers/User/Server/ServerUserController.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between string\|null and true will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 5
+			path: app/Controllers/User/Server/ServerUserController.php
+
+		-
+			message: '#^Variable \$validatedVariables in empty\(\) always exists and is not falsy\.$#'
+			identifier: empty.variable
+			count: 1
+			path: app/Controllers/User/Server/ServerUserController.php
+
+		-
+			message: '#^If condition is always false\.$#'
+			identifier: if.alwaysFalse
+			count: 2
+			path: app/Controllers/User/Server/SubdomainController.php
+
+		-
+			message: '#^Offset ''created_at'' on \*NEVER\* on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Controllers/User/Server/SubdomainController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 2
+			path: app/Controllers/User/Server/SubdomainController.php
+
+		-
+			message: '#^Expression on left side of \?\? is not nullable\.$#'
+			identifier: nullCoalesce.expr
+			count: 2
+			path: app/Controllers/User/Server/SubuserController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 3
+			path: app/Controllers/User/Server/SubuserController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Controllers/User/Server/SubuserInviteController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 5
+			path: app/Controllers/User/Server/TaskController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 5
+			path: app/Controllers/User/TicketsController.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between mixed and null will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Controllers/User/TicketsController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 4
+			path: app/Controllers/User/User/ApiClientController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 2
+			path: app/Controllers/User/User/SessionController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 5
+			path: app/Controllers/User/User/UserSshKeyController.php
+
+		-
+			message: '#^Call to function is_array\(\) with array\<int, array\<string, mixed\>\> will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: app/Controllers/User/Vds/VmUserActivityController.php
+
+		-
+			message: '#^Call to function is_string\(\) with string will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: app/Controllers/User/Vds/VmUserActivityController.php
+
+		-
+			message: '#^Offset ''data'' on array\{data\: array\<int, array\<string, mixed\>\>, pagination\: array\{current_page\: int, per_page\: int, total\: int, last_page\: int, from\: int, to\: int\}\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Controllers/User/Vds/VmUserActivityController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Controllers/User/Vds/VmUserBackupController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed~'''' and '''' will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Controllers/User/Vds/VmUserBackupController.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between '''' and '''' will always evaluate to true\.$#'
+			identifier: identical.alwaysTrue
+			count: 1
+			path: app/Controllers/User/Vds/VmUserBackupController.php
+
+		-
+			message: '#^Call to function is_string\(\) with string will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 5
+			path: app/Controllers/User/Vds/VmUserInstanceController.php
+
+		-
+			message: '#^Comparison operation "\>" between int\<1, 100\> and 0 is always true\.$#'
+			identifier: greater.alwaysTrue
+			count: 1
+			path: app/Controllers/User/Vds/VmUserInstanceController.php
+
+		-
+			message: '#^Negated boolean expression is always true\.$#'
+			identifier: booleanNot.alwaysTrue
+			count: 2
+			path: app/Controllers/User/Vds/VmUserInstanceController.php
+
+		-
+			message: '#^Offset ''reinstall_id'' on array\{ok\: true, reinstall_id\: string, message\: string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Controllers/User/Vds/VmUserInstanceController.php
+
+		-
+			message: '#^Offset 0 on non\-empty\-list\<string\> on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 3
+			path: app/Controllers/User/Vds/VmUserInstanceController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Controllers/User/Vds/VmUserInstanceController.php
+
+		-
+			message: '#^Unreachable statement \- code above always terminates\.$#'
+			identifier: deadCode.unreachable
+			count: 2
+			path: app/Controllers/User/Vds/VmUserInstanceController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Controllers/User/Vds/VmUserSubuserController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Controllers/User/VdsChatbotController.php
+
+		-
+			message: '#^Call to function is_array\(\) with ''''\|null will always evaluate to false\.$#'
+			identifier: function.impossibleType
+			count: 1
+			path: app/Controllers/User/WebSpaces/WebSpaceFilesController.php
+
+		-
+			message: '#^Call to function is_array\(\) with array\<mixed\> will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: app/Controllers/User/WebSpaces/WebSpaceFilesController.php
+
+		-
+			message: '#^Negated boolean expression is always true\.$#'
+			identifier: booleanNot.alwaysTrue
+			count: 1
+			path: app/Controllers/User/WebSpaces/WebSpaceFilesController.php
+
+		-
+			message: '#^Offset ''identifier'' on array\{identifier\: string, file\: string, status\: string, progress\: int, error\?\: string, result\?\: array\<string, mixed\>\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Controllers/User/WebSpaces/WebSpaceFilesController.php
+
+		-
+			message: '#^PHPDoc tag @param for parameter \$resolved with type array\<string, array\<string, mixed\>\|string\>\|Symfony\\Component\\HttpFoundation\\Response is not subtype of native type array\.$#'
+			identifier: parameter.phpDocType
+			count: 1
+			path: app/Controllers/User/WebSpaces/WebSpaceFilesController.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between non\-empty\-array\<mixed\> and null will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Controllers/User/WebSpaces/WebSpaceFilesController.php
+
+		-
+			message: '#^Call to function is_array\(\) with list\<array\<string, mixed\>\> will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 2
+			path: app/Controllers/User/WebSpaces/WebSpaceMailboxController.php
+
+		-
+			message: '#^Offset ''dkim_ready'' on array\{ok\: bool, results\: list\<array\{type\: string, name\: string, ok\: bool, action\?\: string, error\?\: string\}\>, skipped\?\: bool, error\?\: string\} in empty\(\) does not exist\.$#'
+			identifier: empty.offset
+			count: 1
+			path: app/Controllers/User/WebSpaces/WebSpaceMailboxController.php
+
+		-
+			message: '#^Offset ''name'' on array\{type\: string, name\: string, value\: string, priority\?\: int\|null\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Controllers/User/WebSpaces/WebSpaceMailboxController.php
+
+		-
+			message: '#^Offset ''records'' on array\{records\: list\<array\<string, mixed\>\>, page\: int, per_page\: int, total_count\: int\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 2
+			path: app/Controllers/User/WebSpaces/WebSpaceMailboxController.php
+
+		-
+			message: '#^Offset ''results'' on array\{ok\: bool, results\: list\<array\{type\: string, name\: string, ok\: bool, action\?\: string, error\?\: string, content\?\: string, existing\?\: list\<string\>\}\>, expected_ips\: list\<string\>, error\?\: string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 2
+			path: app/Controllers/User/WebSpaces/WebSpaceMailboxController.php
+
+		-
+			message: '#^Offset ''type'' on array\{type\: string, name\: string, value\: string, priority\?\: int\|null\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Controllers/User/WebSpaces/WebSpaceMailboxController.php
+
+		-
+			message: '#^Offset ''value'' on array\{type\: string, name\: string, value\: string, priority\?\: int\|null\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Controllers/User/WebSpaces/WebSpaceMailboxController.php
+
+		-
+			message: '#^Offset 0 on non\-empty\-list\<string\> on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Controllers/User/WebSpaces/WebSpaceMailboxController.php
+
+		-
+			message: '#^Offset ''status'' on array\{ok\: false, status\: int, body\: mixed, error\: string\|null\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Controllers/User/WebSpaces/WebSpaceScheduleController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between non\-falsy\-string&numeric\-string and '''' will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Controllers/User/WebSpaces/WebSpaceWafController.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between non\-empty\-string and '''' will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Controllers/User/WebSpaces/WebSpaceWafController.php
+
+		-
+			message: '#^Offset ''status'' on array\{ok\: false, status\: int, body\: mixed, error\: string\|null\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Controllers/User/WebSpaces/WebSpacesController.php
+
+		-
+			message: '#^Offset ''status'' on array\{ok\: true, status\: int, body\: mixed, error\: string\|null, created\?\: bool\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Controllers/User/WebSpaces/WebSpacesController.php
+
+		-
+			message: '#^Call to function is_string\(\) with string will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 2
+			path: app/Controllers/Wings/Server/WingsServerInfoController.php
+
+		-
+			message: '#^Offset 3 on array\{non\-falsy\-string, ''\-Xms''\|''\-Xmx'', numeric\-string, ''''\|''G''\|''g''\|''K''\|''k''\|''M''\|''m''\|''T''\|''t''\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Controllers/Wings/Server/WingsServerInfoController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Controllers/Wings/Server/WingsServerInfoController.php
+
+		-
+			message: '#^Variable \$uuid on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.variable
+			count: 2
+			path: app/Controllers/Wings/Server/WingsServerInfoController.php
+
+		-
+			message: '#^Call to function is_string\(\) with string will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: app/Controllers/Wings/Server/WingsServerListController.php
+
+		-
+			message: '#^Offset 3 on array\{non\-falsy\-string, ''\-Xms''\|''\-Xmx'', numeric\-string, ''''\|''G''\|''g''\|''K''\|''k''\|''M''\|''m''\|''T''\|''t''\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Controllers/Wings/Server/WingsServerListController.php
+
+		-
+			message: '#^Call to function is_array\(\) with non\-empty\-array will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: app/Controllers/Wings/Sftp/SftpAuthController.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between mixed and null will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Controllers/Wings/Sftp/SftpAuthController.php
+
+		-
+			message: '#^Variable \$lines in empty\(\) always exists and is not falsy\.$#'
+			identifier: empty.variable
+			count: 1
+			path: app/Controllers/Wings/Sftp/SftpAuthController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 4
+			path: app/Controllers/Wings/Transfer/WingsTransferStatusController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 2
+			path: app/Controllers/Wings/WingsHealthController.php
+
+		-
+			message: '#^Offset ''D''\|''H''\|''M''\|''MO''\|''S''\|''W''\|''Y'' on array\{S\: 1, M\: 60, H\: 3600, D\: 86400, W\: 604800, MO\: 2592000, Y\: 31536000\} in isset\(\) always exists and is not nullable\.$#'
+			identifier: isset.offset
+			count: 1
+			path: app/Cron/Cron.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Helpers/AccountLockoutHelper.php
+
+		-
+			message: '#^Variable \$lockoutSeconds on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.variable
+			count: 2
+			path: app/Helpers/AccountLockoutHelper.php
+
+		-
+			message: '#^Variable \$maxAttempts on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.variable
+			count: 1
+			path: app/Helpers/AccountLockoutHelper.php
+
+		-
+			message: '#^Call to function method_exists\(\) with ZipArchive and ''getExternalAttribut…'' will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: app/Helpers/AddonPackageHelper.php
+
+		-
+			message: '#^Offset ''size'' on array\{name\: string, index\: int, crc\: int, size\: int, mtime\: int, comp_size\: int, comp_method\: int, encryption_method\: int\} in isset\(\) always exists and is not nullable\.$#'
+			identifier: isset.offset
+			count: 1
+			path: app/Helpers/AddonPackageHelper.php
+
+		-
+			message: '#^Instanceof between string\|null and Exception will always evaluate to false\.$#'
+			identifier: instanceof.alwaysFalse
+			count: 1
+			path: app/Helpers/ApiResponse.php
+
+		-
+			message: '#^Ternary operator condition is always true\.$#'
+			identifier: ternary.alwaysTrue
+			count: 4
+			path: app/Helpers/ApiResponse.php
+
+		-
+			message: '#^Offset ''name'' on array\{type\: ''TXT'', name\: string, ok\: bool, action\: mixed, error\: mixed\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Helpers/DnsProvisioner.php
+
+		-
+			message: '#^Offset ''source'' on array\{provider\: App\\Services\\Dns\\DnsProviderInterface, zone_id\: string, source\: string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Helpers/DnsProvisioner.php
+
+		-
+			message: '#^Offset ''type'' on array\{type\: ''MX''\|''TXT'', name\: string, ok\: bool, action\: mixed, error\: mixed\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Helpers/DnsProvisioner.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between array\{type\?\: non\-empty\-string, name\?\: non\-empty\-string, page\: int, per_page\: int\} and array\{\} will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Helpers/FeatherQuilldClient.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between non\-falsy\-string and '''' will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Helpers/FileCounterStore.php
+
+		-
+			message: '#^Offset 1 on non\-empty\-list\<string\> on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Helpers/GameServerQuery.php
+
+		-
+			message: '#^Offset 4 on non\-empty\-list\<string\> on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Helpers/GameServerQuery.php
+
+		-
+			message: '#^Offset 5 on non\-empty\-list\<string\> on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Helpers/GameServerQuery.php
+
+		-
+			message: '#^Offset ''uuid'' on non\-empty\-array on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Helpers/Impersonation.php
+
+		-
+			message: '#^Offset ''status'' on array\{id\: string, status\: string, label\: string, detail\?\: mixed, fixable\: bool\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 2
+			path: app/Helpers/MailDeliverabilityChecker.php
+
+		-
+			message: '#^Variable \$jwks on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.variable
+			count: 1
+			path: app/Helpers/OidcIdTokenVerifier.php
+
+		-
+			message: '#^Variable \$http_response_header on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.variable
+			count: 2
+			path: app/Helpers/SafeUrlFetcher.php
+
+		-
+			message: '#^Call to function is_string\(\) with string will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: app/Helpers/ServerEnvPlaceholderHelper.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Helpers/TotpVerifier.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 3
+			path: app/Helpers/WebAuthnHelper.php
+
+		-
+			message: '#^Call to function is_array\(\) with array\<string, mixed\> will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: app/Helpers/WebNodeCustomHeaders.php
+
+		-
+			message: '#^Call to function is_string\(\) with string will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: app/Helpers/WebNodeCustomHeaders.php
+
+		-
+			message: '#^Left side of \|\| is always false\.$#'
+			identifier: booleanOr.leftAlwaysFalse
+			count: 1
+			path: app/Helpers/WebNodeCustomHeaders.php
+
+		-
+			message: '#^Negated boolean expression is always true\.$#'
+			identifier: booleanNot.alwaysTrue
+			count: 1
+			path: app/Helpers/WebNodeCustomHeaders.php
+
+		-
+			message: '#^Offset ''keep_value'' on array\{key\: string, value\: string, secret\: bool\} on left side of \?\? does not exist\.$#'
+			identifier: nullCoalesce.offset
+			count: 2
+			path: app/Helpers/WebNodeCustomHeaders.php
+
+		-
+			message: '#^Offset ''key'' on array\{key\: string, value\: string, secret\: bool\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 2
+			path: app/Helpers/WebNodeCustomHeaders.php
+
+		-
+			message: '#^Offset ''secret'' on array\{key\: string, value\: string, secret\: bool\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 4
+			path: app/Helpers/WebNodeCustomHeaders.php
+
+		-
+			message: '#^Offset ''value'' on array\{key\: string, value\: string, secret\: bool\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 4
+			path: app/Helpers/WebNodeCustomHeaders.php
+
+		-
+			message: '#^Offset ''container_port'' on array\{id\: string, name\: string, runtime\: string\} on left side of \?\? does not exist\.$#'
+			identifier: nullCoalesce.offset
+			count: 2
+			path: app/Helpers/WebPlateCascadeService.php
+
+		-
+			message: '#^Offset ''docker_image'' on array\{id\: string, name\: string, runtime\: string\} on left side of \?\? does not exist\.$#'
+			identifier: nullCoalesce.offset
+			count: 2
+			path: app/Helpers/WebPlateCascadeService.php
+
+		-
+			message: '#^Offset ''startup'' on array\{id\: string, name\: string, runtime\: string\} on left side of \?\? does not exist\.$#'
+			identifier: nullCoalesce.offset
+			count: 2
+			path: app/Helpers/WebPlateCascadeService.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between 0 and 0 will always evaluate to false\.$#'
+			identifier: notIdentical.alwaysFalse
+			count: 1
+			path: app/Helpers/WebPlateCascadeService.php
+
+		-
+			message: '#^Offset ''container_port'' on array\{id\: string, name\: string, runtime\: string\} on left side of \?\? does not exist\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Helpers/WebSpaceDaemonSync.php
+
+		-
+			message: '#^Offset ''docker_image'' on array\{id\: string, name\: string, runtime\: string\} on left side of \?\? does not exist\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Helpers/WebSpaceDaemonSync.php
+
+		-
+			message: '#^Offset ''startup'' on array\{id\: string, name\: string, runtime\: string\} on left side of \?\? does not exist\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Helpers/WebSpaceDaemonSync.php
+
+		-
+			message: '#^Constant App\\Helpers\\WebSpaceFileShare\:\:TTL_SECONDS is unused\.$#'
+			identifier: classConstant.unused
+			count: 1
+			path: app/Helpers/WebSpaceFileShare.php
+
+		-
+			message: '#^Offset ''size'' on array\{ok\: true, status\: int, filename\: string\|null, size\: int, content_type\: string\|null, error\: string\|null\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Helpers/WebSpaceFileShare.php
+
+		-
+			message: '#^Comparison operation "\>" between 10 and 0 is always true\.$#'
+			identifier: greater.alwaysTrue
+			count: 1
+			path: app/Helpers/WebSpaceHostingMaturity.php
+
+		-
+			message: '#^Offset ''href'' on array\{label\: string, href\: string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Helpers/WebSpaceHostingMaturity.php
+
+		-
+			message: '#^Offset ''id'' on array\{id\: string, status\: string, detail\: string\|null, action\?\: array\{label\: string, href\: string\}\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 2
+			path: app/Helpers/WebSpaceHostingMaturity.php
+
+		-
+			message: '#^Offset ''label'' on array\{label\: string, href\: string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Helpers/WebSpaceHostingMaturity.php
+
+		-
+			message: '#^Offset ''score'' on array\{score\: int, tier\: string, summary\: array\{ready\: int, setup\: int, builtin\: int, roadmap\: int\}, builtin\: list\<array\{id\: string, status\: string\}\>, setup\: list\<array\{id\: string, status\: string, detail\: string\|null, action\?\: array\{label\: string, href\: string\}\}\>, roadmap\: list\<array\{id\: string\}\>, sample_node_id\: int\|null\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Helpers/WebSpaceHostingMaturity.php
+
+		-
+			message: '#^Offset ''status'' on array\{id\: string, status\: string, detail\: string\|null, action\?\: array\{label\: string, href\: string\}\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 2
+			path: app/Helpers/WebSpaceHostingMaturity.php
+
+		-
+			message: '#^Offset ''status'' on array\{id\: string, status\: string, detail\?\: string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 2
+			path: app/Helpers/WebSpaceHostingMaturity.php
+
+		-
+			message: '#^Offset ''tier'' on array\{score\: int, tier\: string, summary\: array\{ready\: int, setup\: int, builtin\: int, roadmap\: int\}, builtin\: list\<array\{id\: string, status\: string\}\>, setup\: list\<array\{id\: string, status\: string, detail\: string\|null, action\?\: array\{label\: string, href\: string\}\}\>, roadmap\: list\<array\{id\: string\}\>, sample_node_id\: int\|null\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Helpers/WebSpaceHostingMaturity.php
+
+		-
+			message: '#^Match arm comparison between ''panel'' and ''panel'' is always true\.$#'
+			identifier: match.alwaysTrue
+			count: 1
+			path: app/Helpers/WebSpaceInfrastructureReadiness.php
+
+		-
+			message: '#^Offset ''id'' on array\{id\: string, status\: string, message\: string, detail\: string\|null, action\?\: array\{label\: string, href\: string\}\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Helpers/WebSpaceInfrastructureReadiness.php
+
+		-
+			message: '#^Offset ''status'' on array\{id\: string, status\: string, message\: string, detail\: string\|null, action\?\: array\{label\: string, href\: string\}, category\?\: string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 2
+			path: app/Helpers/WebSpaceInfrastructureReadiness.php
+
+		-
+			message: '#^Offset ''status'' on array\{id\: string, status\: string, message\: string, detail\: string\|null, action\?\: array\{label\: string, href\: string\}\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Helpers/WebSpaceInfrastructureReadiness.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between array\{id\: int\<1, max\>, fqdn\: string, expected_ips\: list\<string\>, behind_proxy\: bool, proxy_provider\: null\} and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Helpers/WebSpaceInfrastructureReadiness.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Helpers/WebSpacePluginEvents.php
+
+		-
+			message: '#^Result of && is always false\.$#'
+			identifier: booleanAnd.alwaysFalse
+			count: 1
+			path: app/KPI/Admin/VdsAnalytics.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between false and true will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/KPI/Admin/VdsAnalytics.php
+
+		-
+			message: '#^Loose comparison using \=\= between false and true will always evaluate to false\.$#'
+			identifier: equal.alwaysFalse
+			count: 1
+			path: app/Logger/LoggerFactory.php
+
+		-
+			message: '#^Offset 0 on non\-empty\-list\<string\> on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Middleware/FeatherQuilldMiddleware.php
+
+		-
+			message: '#^Offset 0 on non\-empty\-list\<string\> on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Middleware/WingsMiddleware.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Middleware/WingsMiddleware.php
+
+		-
+			message: '#^Empty array passed to foreach\.$#'
+			identifier: foreach.emptyArray
+			count: 1
+			path: app/Plugins/Mixins/MixinRegistry.php
+
+		-
+			message: '#^Method App\\Plugins\\Mixins\\MixinRegistry\:\:registerBuiltInMixins\(\) returns void but does not have any side effects\.$#'
+			identifier: void.pure
+			count: 1
+			path: app/Plugins/Mixins/MixinRegistry.php
+
+		-
+			message: '#^Trait App\\Plugins\\Mixins\\Reflection\\MethodInterceptor is used zero times and is not analysed\.$#'
+			identifier: trait.unused
+			count: 1
+			path: app/Plugins/Mixins/Reflection/MethodInterceptor.php
+
+		-
+			message: '#^Trait App\\Plugins\\Mixins\\Reflection\\PropertyAccessor is used zero times and is not analysed\.$#'
+			identifier: trait.unused
+			count: 1
+			path: app/Plugins/Mixins/Reflection/PropertyAccessor.php
+
+		-
+			message: '#^Call to function is_string\(\) with string will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: app/Plugins/PluginFrontendScanner.php
+
+		-
+			message: '#^Offset ''adapters'' does not exist on array\{default_adapter\?\: string, pbs\?\: array\{enabled\?\: bool, namespace\?\: string, configured\?\: bool\}\}\.$#'
+			identifier: offsetAccess.notFound
+			count: 1
+			path: app/Services/Backup/BackupAdapterResolver.php
+
+		-
+			message: '#^Offset ''adapters'' on array\{default_adapter\?\: string, pbs\?\: array\{enabled\?\: bool, namespace\?\: string, configured\?\: bool\}\} in empty\(\) does not exist\.$#'
+			identifier: empty.offset
+			count: 1
+			path: app/Services/Backup/BackupAdapterResolver.php
+
+		-
+			message: '#^Offset ''available'' does not exist on array\{default_adapter\?\: string, pbs\?\: array\{enabled\?\: bool, namespace\?\: string, configured\?\: bool\}\}\.$#'
+			identifier: offsetAccess.notFound
+			count: 1
+			path: app/Services/Backup/BackupAdapterResolver.php
+
+		-
+			message: '#^Offset ''available'' on array\{default_adapter\?\: string, pbs\?\: array\{enabled\?\: bool, namespace\?\: string, configured\?\: bool\}\} in empty\(\) does not exist\.$#'
+			identifier: empty.offset
+			count: 1
+			path: app/Services/Backup/BackupAdapterResolver.php
+
+		-
+			message: '#^Offset ''s3'' on array\{default_adapter\?\: string, pbs\?\: array\{enabled\?\: bool, namespace\?\: string, configured\?\: bool\}\} in empty\(\) does not exist\.$#'
+			identifier: empty.offset
+			count: 2
+			path: app/Services/Backup/BackupAdapterResolver.php
+
+		-
+			message: '#^Result of && is always false\.$#'
+			identifier: booleanAnd.alwaysFalse
+			count: 2
+			path: app/Services/Backup/BackupAdapterResolver.php
+
+		-
+			message: '#^Result of \|\| is always false\.$#'
+			identifier: booleanOr.alwaysFalse
+			count: 1
+			path: app/Services/Backup/BackupAdapterResolver.php
+
+		-
+			message: '#^Expression on left side of \?\? is not nullable\.$#'
+			identifier: nullCoalesce.expr
+			count: 1
+			path: app/Services/Backup/ServerMetadataBackupService.php
+
+		-
+			message: '#^Offset ''data'' on array\{version\: int, exported_at\: string, server_uuid\: string, include_encrypted\: bool, data\: array\<string, mixed\>\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Services/Backup/ServerMetadataBackupService.php
+
+		-
+			message: '#^Offset ''exported_at'' on array\{version\: int, exported_at\: string, server_uuid\: string, include_encrypted\: bool, data\: array\<string, mixed\>\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Services/Backup/ServerMetadataBackupService.php
+
+		-
+			message: '#^Offset ''server_uuid'' on array\{version\: int, exported_at\: string, server_uuid\: string, include_encrypted\: bool, data\: array\<string, mixed\>\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Services/Backup/ServerMetadataBackupService.php
+
+		-
+			message: '#^Offset ''version'' on array\{version\: int, exported_at\: string, server_uuid\: string, include_encrypted\: bool, data\: array\<string, mixed\>\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Services/Backup/ServerMetadataBackupService.php
+
+		-
+			message: '#^Parameter &\$cache by\-ref type of method App\\Services\\Backup\\ServerMetadataBackupService\:\:cachedUser\(\) expects array\<int, array\<string, mixed\>\|null\>, array\<int, array\|null\> given\.$#'
+			identifier: parameterByRef.type
+			count: 1
+			path: app/Services/Backup/ServerMetadataBackupService.php
+
+		-
+			message: '#^Offset ''backups'' on array\{ok\: true, backups\: array\<int, mixed\>, storages\: array\<int, string\>, error\: string\|null\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Services/Backup/VmBackupReconciler.php
+
+		-
+			message: '#^Offset ''model'' on array\{response\: string, model\: string, usage\?\: array\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Services/Chatbot/AiEditorHelperService.php
+
+		-
+			message: '#^Offset 1 on array\{list\<string\>, list\<non\-empty\-string\>\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Services/Chatbot/ChatbotService.php
+
+		-
+			message: '#^Method App\\Services\\Chatbot\\ContextBuilder\:\:getServerLogs\(\) never returns string so it can be removed from the return type\.$#'
+			identifier: return.unusedType
+			count: 1
+			path: app/Services/Chatbot/ContextBuilder.php
+
+		-
+			message: '#^Unreachable statement \- code above always terminates\.$#'
+			identifier: deadCode.unreachable
+			count: 1
+			path: app/Services/Chatbot/ContextBuilder.php
+
+		-
+			message: '#^Call to function is_array\(\) with array\<int, mixed\> will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: app/Services/Chatbot/DashboardContextBuilder.php
+
+		-
+			message: '#^Negated boolean expression is always true\.$#'
+			identifier: booleanNot.alwaysTrue
+			count: 1
+			path: app/Services/Chatbot/Tools/AutoAllocateTool.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Services/Chatbot/Tools/AutoAllocateTool.php
+
+		-
+			message: '#^Negated boolean expression is always true\.$#'
+			identifier: booleanNot.alwaysTrue
+			count: 1
+			path: app/Services/Chatbot/Tools/CompressFilesTool.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Services/Chatbot/Tools/CompressFilesTool.php
+
+		-
+			message: '#^Variable \$files in empty\(\) always exists and is not falsy\.$#'
+			identifier: empty.variable
+			count: 1
+			path: app/Services/Chatbot/Tools/CompressFilesTool.php
+
+		-
+			message: '#^Negated boolean expression is always true\.$#'
+			identifier: booleanNot.alwaysTrue
+			count: 1
+			path: app/Services/Chatbot/Tools/CopyFilesTool.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Services/Chatbot/Tools/CopyFilesTool.php
+
+		-
+			message: '#^Variable \$files in empty\(\) always exists and is not falsy\.$#'
+			identifier: empty.variable
+			count: 1
+			path: app/Services/Chatbot/Tools/CopyFilesTool.php
+
+		-
+			message: '#^Negated boolean expression is always true\.$#'
+			identifier: booleanNot.alwaysTrue
+			count: 1
+			path: app/Services/Chatbot/Tools/CreateBackupTool.php
+
+		-
+			message: '#^Right side of && is always true\.$#'
+			identifier: booleanAnd.rightAlwaysTrue
+			count: 1
+			path: app/Services/Chatbot/Tools/CreateBackupTool.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Services/Chatbot/Tools/CreateBackupTool.php
+
+		-
+			message: '#^Negated boolean expression is always true\.$#'
+			identifier: booleanNot.alwaysTrue
+			count: 1
+			path: app/Services/Chatbot/Tools/CreateDatabaseTool.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Services/Chatbot/Tools/CreateDatabaseTool.php
+
+		-
+			message: '#^Negated boolean expression is always true\.$#'
+			identifier: booleanNot.alwaysTrue
+			count: 1
+			path: app/Services/Chatbot/Tools/CreateDirectoryTool.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Services/Chatbot/Tools/CreateDirectoryTool.php
+
+		-
+			message: '#^Negated boolean expression is always true\.$#'
+			identifier: booleanNot.alwaysTrue
+			count: 1
+			path: app/Services/Chatbot/Tools/CreateScheduleTool.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Services/Chatbot/Tools/CreateScheduleTool.php
+
+		-
+			message: '#^Negated boolean expression is always true\.$#'
+			identifier: booleanNot.alwaysTrue
+			count: 1
+			path: app/Services/Chatbot/Tools/CreateSubdomainTool.php
+
+		-
+			message: '#^Offset ''port'' does not exist on null\.$#'
+			identifier: offsetAccess.notFound
+			count: 1
+			path: app/Services/Chatbot/Tools/CreateSubdomainTool.php
+
+		-
+			message: '#^Offset ''uuid'' does not exist on null\.$#'
+			identifier: offsetAccess.notFound
+			count: 2
+			path: app/Services/Chatbot/Tools/CreateSubdomainTool.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Services/Chatbot/Tools/CreateSubdomainTool.php
+
+		-
+			message: '#^Negated boolean expression is always true\.$#'
+			identifier: booleanNot.alwaysTrue
+			count: 1
+			path: app/Services/Chatbot/Tools/CreateTaskTool.php
+
+		-
+			message: '#^Property App\\Services\\Chatbot\\Tools\\CreateTaskTool\:\:\$app is never read, only written\.$#'
+			identifier: property.onlyWritten
+			count: 1
+			path: app/Services/Chatbot/Tools/CreateTaskTool.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Services/Chatbot/Tools/CreateTaskTool.php
+
+		-
+			message: '#^Negated boolean expression is always true\.$#'
+			identifier: booleanNot.alwaysTrue
+			count: 1
+			path: app/Services/Chatbot/Tools/DecompressArchiveTool.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Services/Chatbot/Tools/DecompressArchiveTool.php
+
+		-
+			message: '#^Negated boolean expression is always true\.$#'
+			identifier: booleanNot.alwaysTrue
+			count: 1
+			path: app/Services/Chatbot/Tools/DeleteAllocationTool.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Services/Chatbot/Tools/DeleteAllocationTool.php
+
+		-
+			message: '#^Negated boolean expression is always true\.$#'
+			identifier: booleanNot.alwaysTrue
+			count: 1
+			path: app/Services/Chatbot/Tools/DeleteBackupTool.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Services/Chatbot/Tools/DeleteBackupTool.php
+
+		-
+			message: '#^Negated boolean expression is always true\.$#'
+			identifier: booleanNot.alwaysTrue
+			count: 1
+			path: app/Services/Chatbot/Tools/DeleteDatabaseTool.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Services/Chatbot/Tools/DeleteDatabaseTool.php
+
+		-
+			message: '#^Negated boolean expression is always true\.$#'
+			identifier: booleanNot.alwaysTrue
+			count: 1
+			path: app/Services/Chatbot/Tools/DeleteFilesTool.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Services/Chatbot/Tools/DeleteFilesTool.php
+
+		-
+			message: '#^Variable \$files in empty\(\) always exists and is not falsy\.$#'
+			identifier: empty.variable
+			count: 1
+			path: app/Services/Chatbot/Tools/DeleteFilesTool.php
+
+		-
+			message: '#^Negated boolean expression is always true\.$#'
+			identifier: booleanNot.alwaysTrue
+			count: 1
+			path: app/Services/Chatbot/Tools/DeleteScheduleTool.php
+
+		-
+			message: '#^Property App\\Services\\Chatbot\\Tools\\DeleteScheduleTool\:\:\$app is never read, only written\.$#'
+			identifier: property.onlyWritten
+			count: 1
+			path: app/Services/Chatbot/Tools/DeleteScheduleTool.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Services/Chatbot/Tools/DeleteScheduleTool.php
+
+		-
+			message: '#^Negated boolean expression is always true\.$#'
+			identifier: booleanNot.alwaysTrue
+			count: 1
+			path: app/Services/Chatbot/Tools/DeleteSubdomainTool.php
+
+		-
+			message: '#^Property App\\Services\\Chatbot\\Tools\\DeleteSubdomainTool\:\:\$app is never read, only written\.$#'
+			identifier: property.onlyWritten
+			count: 1
+			path: app/Services/Chatbot/Tools/DeleteSubdomainTool.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Services/Chatbot/Tools/DeleteSubdomainTool.php
+
+		-
+			message: '#^Negated boolean expression is always true\.$#'
+			identifier: booleanNot.alwaysTrue
+			count: 1
+			path: app/Services/Chatbot/Tools/DeleteTaskTool.php
+
+		-
+			message: '#^Property App\\Services\\Chatbot\\Tools\\DeleteTaskTool\:\:\$app is never read, only written\.$#'
+			identifier: property.onlyWritten
+			count: 1
+			path: app/Services/Chatbot/Tools/DeleteTaskTool.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Services/Chatbot/Tools/DeleteTaskTool.php
+
+		-
+			message: '#^Negated boolean expression is always true\.$#'
+			identifier: booleanNot.alwaysTrue
+			count: 1
+			path: app/Services/Chatbot/Tools/GetDatabaseCredentialsTool.php
+
+		-
+			message: '#^Property App\\Services\\Chatbot\\Tools\\GetDatabaseCredentialsTool\:\:\$app is never read, only written\.$#'
+			identifier: property.onlyWritten
+			count: 1
+			path: app/Services/Chatbot/Tools/GetDatabaseCredentialsTool.php
+
+		-
+			message: '#^Negated boolean expression is always true\.$#'
+			identifier: booleanNot.alwaysTrue
+			count: 1
+			path: app/Services/Chatbot/Tools/GetFileContentTool.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between string and null will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Services/Chatbot/Tools/GetFileContentTool.php
+
+		-
+			message: '#^Negated boolean expression is always true\.$#'
+			identifier: booleanNot.alwaysTrue
+			count: 1
+			path: app/Services/Chatbot/Tools/GetFilesTool.php
+
+		-
+			message: '#^Negated boolean expression is always true\.$#'
+			identifier: booleanNot.alwaysTrue
+			count: 1
+			path: app/Services/Chatbot/Tools/GetScheduleTasksTool.php
+
+		-
+			message: '#^Negated boolean expression is always true\.$#'
+			identifier: booleanNot.alwaysTrue
+			count: 1
+			path: app/Services/Chatbot/Tools/GetServerActivitiesTool.php
+
+		-
+			message: '#^Property App\\Services\\Chatbot\\Tools\\GetServerActivitiesTool\:\:\$app is never read, only written\.$#'
+			identifier: property.onlyWritten
+			count: 1
+			path: app/Services/Chatbot/Tools/GetServerActivitiesTool.php
+
+		-
+			message: '#^Negated boolean expression is always true\.$#'
+			identifier: booleanNot.alwaysTrue
+			count: 1
+			path: app/Services/Chatbot/Tools/GetServerAllocationsTool.php
+
+		-
+			message: '#^Negated boolean expression is always true\.$#'
+			identifier: booleanNot.alwaysTrue
+			count: 1
+			path: app/Services/Chatbot/Tools/GetServerBackupsTool.php
+
+		-
+			message: '#^Property App\\Services\\Chatbot\\Tools\\GetServerBackupsTool\:\:\$app is never read, only written\.$#'
+			identifier: property.onlyWritten
+			count: 1
+			path: app/Services/Chatbot/Tools/GetServerBackupsTool.php
+
+		-
+			message: '#^Negated boolean expression is always true\.$#'
+			identifier: booleanNot.alwaysTrue
+			count: 1
+			path: app/Services/Chatbot/Tools/GetServerDetailsTool.php
+
+		-
+			message: '#^Negated boolean expression is always true\.$#'
+			identifier: booleanNot.alwaysTrue
+			count: 1
+			path: app/Services/Chatbot/Tools/GetServerFirewallRulesTool.php
+
+		-
+			message: '#^Negated boolean expression is always true\.$#'
+			identifier: booleanNot.alwaysTrue
+			count: 1
+			path: app/Services/Chatbot/Tools/GetServerImportsTool.php
+
+		-
+			message: '#^Negated boolean expression is always true\.$#'
+			identifier: booleanNot.alwaysTrue
+			count: 1
+			path: app/Services/Chatbot/Tools/GetServerProxiesTool.php
+
+		-
+			message: '#^Negated boolean expression is always true\.$#'
+			identifier: booleanNot.alwaysTrue
+			count: 1
+			path: app/Services/Chatbot/Tools/GetServerSchedulesTool.php
+
+		-
+			message: '#^Property App\\Services\\Chatbot\\Tools\\GetServerSchedulesTool\:\:\$app is never read, only written\.$#'
+			identifier: property.onlyWritten
+			count: 1
+			path: app/Services/Chatbot/Tools/GetServerSchedulesTool.php
+
+		-
+			message: '#^Negated boolean expression is always true\.$#'
+			identifier: booleanNot.alwaysTrue
+			count: 1
+			path: app/Services/Chatbot/Tools/GetServerStartupTool.php
+
+		-
+			message: '#^Negated boolean expression is always true\.$#'
+			identifier: booleanNot.alwaysTrue
+			count: 1
+			path: app/Services/Chatbot/Tools/GetServerStatusTool.php
+
+		-
+			message: '#^Negated boolean expression is always true\.$#'
+			identifier: booleanNot.alwaysTrue
+			count: 1
+			path: app/Services/Chatbot/Tools/GetServerSubusersTool.php
+
+		-
+			message: '#^Negated boolean expression is always true\.$#'
+			identifier: booleanNot.alwaysTrue
+			count: 1
+			path: app/Services/Chatbot/Tools/GetSubdomainsTool.php
+
+		-
+			message: '#^Negated boolean expression is always true\.$#'
+			identifier: booleanNot.alwaysTrue
+			count: 1
+			path: app/Services/Chatbot/Tools/PullFileTool.php
+
+		-
+			message: '#^Negated boolean expression is always true\.$#'
+			identifier: booleanNot.alwaysTrue
+			count: 1
+			path: app/Services/Chatbot/Tools/RenameFileTool.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Services/Chatbot/Tools/RenameFileTool.php
+
+		-
+			message: '#^Variable \$files in empty\(\) always exists and is not falsy\.$#'
+			identifier: empty.variable
+			count: 1
+			path: app/Services/Chatbot/Tools/RenameFileTool.php
+
+		-
+			message: '#^Match arm comparison between ''kill'' and ''kill'' is always true\.$#'
+			identifier: match.alwaysTrue
+			count: 1
+			path: app/Services/Chatbot/Tools/ServerPowerActionTool.php
+
+		-
+			message: '#^Negated boolean expression is always false\.$#'
+			identifier: booleanNot.alwaysFalse
+			count: 1
+			path: app/Services/Chatbot/Tools/ServerPowerActionTool.php
+
+		-
+			message: '#^Negated boolean expression is always true\.$#'
+			identifier: booleanNot.alwaysTrue
+			count: 1
+			path: app/Services/Chatbot/Tools/ServerPowerActionTool.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Services/Chatbot/Tools/ServerPowerActionTool.php
+
+		-
+			message: '#^Ternary operator condition is always true\.$#'
+			identifier: ternary.alwaysTrue
+			count: 1
+			path: app/Services/Chatbot/Tools/ServerPowerActionTool.php
+
+		-
+			message: '#^Variable \$hookResult on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.variable
+			count: 1
+			path: app/Services/Chatbot/Tools/ServerPowerActionTool.php
+
+		-
+			message: '#^Negated boolean expression is always true\.$#'
+			identifier: booleanNot.alwaysTrue
+			count: 1
+			path: app/Services/Chatbot/Tools/SetPrimaryAllocationTool.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Services/Chatbot/Tools/SetPrimaryAllocationTool.php
+
+		-
+			message: '#^Negated boolean expression is always true\.$#'
+			identifier: booleanNot.alwaysTrue
+			count: 1
+			path: app/Services/Chatbot/Tools/UpdateDatabaseTool.php
+
+		-
+			message: '#^Property App\\Services\\Chatbot\\Tools\\UpdateDatabaseTool\:\:\$app is never read, only written\.$#'
+			identifier: property.onlyWritten
+			count: 1
+			path: app/Services/Chatbot/Tools/UpdateDatabaseTool.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Services/Chatbot/Tools/UpdateDatabaseTool.php
+
+		-
+			message: '#^Negated boolean expression is always true\.$#'
+			identifier: booleanNot.alwaysTrue
+			count: 1
+			path: app/Services/Chatbot/Tools/UpdateScheduleTool.php
+
+		-
+			message: '#^Property App\\Services\\Chatbot\\Tools\\UpdateScheduleTool\:\:\$app is never read, only written\.$#'
+			identifier: property.onlyWritten
+			count: 1
+			path: app/Services/Chatbot/Tools/UpdateScheduleTool.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Services/Chatbot/Tools/UpdateScheduleTool.php
+
+		-
+			message: '#^Negated boolean expression is always true\.$#'
+			identifier: booleanNot.alwaysTrue
+			count: 1
+			path: app/Services/Chatbot/Tools/UpdateServerTool.php
+
+		-
+			message: '#^Property App\\Services\\Chatbot\\Tools\\UpdateServerTool\:\:\$app is never read, only written\.$#'
+			identifier: property.onlyWritten
+			count: 1
+			path: app/Services/Chatbot/Tools/UpdateServerTool.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Services/Chatbot/Tools/UpdateServerTool.php
+
+		-
+			message: '#^Negated boolean expression is always true\.$#'
+			identifier: booleanNot.alwaysTrue
+			count: 1
+			path: app/Services/Chatbot/Tools/UpdateTaskTool.php
+
+		-
+			message: '#^Property App\\Services\\Chatbot\\Tools\\UpdateTaskTool\:\:\$app is never read, only written\.$#'
+			identifier: property.onlyWritten
+			count: 1
+			path: app/Services/Chatbot/Tools/UpdateTaskTool.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Services/Chatbot/Tools/UpdateTaskTool.php
+
+		-
+			message: '#^Offset ''message'' on array\{message\: string, code\: string, status\: int\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Services/Chatbot/Tools/Vds/CreateVdsBackupTool.php
+
+		-
+			message: '#^Property App\\Services\\Chatbot\\Tools\\Vds\\CreateVdsBackupTool\:\:\$app is never read, only written\.$#'
+			identifier: property.onlyWritten
+			count: 1
+			path: app/Services/Chatbot/Tools/Vds/CreateVdsBackupTool.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Services/Chatbot/Tools/Vds/CreateVdsBackupTool.php
+
+		-
+			message: '#^Match arm comparison between ''reboot'' and ''reboot'' is always true\.$#'
+			identifier: match.alwaysTrue
+			count: 1
+			path: app/Services/Chatbot/Tools/Vds/VdsPowerActionTool.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Services/Chatbot/Tools/Vds/VdsPowerActionTool.php
+
+		-
+			message: '#^Negated boolean expression is always true\.$#'
+			identifier: booleanNot.alwaysTrue
+			count: 1
+			path: app/Services/Chatbot/Tools/WriteFileTool.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Services/Chatbot/Tools/WriteFileTool.php
+
+		-
+			message: '#^Offset 1 on array\{list\<string\>, list\<non\-empty\-string\>\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Services/Chatbot/VdsChatbotService.php
+
+		-
+			message: '#^Call to function is_array\(\) with array\<int, mixed\> will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: app/Services/Chatbot/VdsContextBuilder.php
+
+		-
+			message: '#^Call to function is_array\(\) with array\<string, mixed\> will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 2
+			path: app/Services/Dns/NodeDnsProvider.php
+
+		-
+			message: '#^Call to function is_array\(\) with list\<array\<string, mixed\>\> will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 2
+			path: app/Services/Dns/NodeDnsProvider.php
+
+		-
+			message: '#^Offset ''id'' on array\{id\: string, name\: string, status\?\: string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Services/Dns/NodeDnsProvider.php
+
+		-
+			message: '#^Offset ''name'' on array\{id\: string, name\: string, status\?\: string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Services/Dns/NodeDnsProvider.php
+
+		-
+			message: '#^Offset ''records'' on array\{records\: list\<array\<string, mixed\>\>, page\: int, per_page\: int, total_count\: int\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 2
+			path: app/Services/Dns/NodeDnsProvider.php
+
+		-
+			message: '#^Call to function is_string\(\) with string will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: app/Services/FeatherCloud/FeatherPanelPremium.php
+
+		-
+			message: '#^Call to function array_is_list\(\) with array\<string, mixed\> will always evaluate to false\.$#'
+			identifier: function.impossibleType
+			count: 2
+			path: app/Services/FeatherCloud/MythicEggsClient.php
+
+		-
+			message: '#^Call to function is_array\(\) with array\<string, mixed\> will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: app/Services/FeatherCloud/MythicEggsClient.php
+
+		-
+			message: '#^Offset ''logs_summary'' on array\{diagnostics\: array\<string, mixed\>, log_pastes\: array\<string, array\<string, mixed\>\>, node_pastes\: list\<array\<string, mixed\>\>, logs_summary\: string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 2
+			path: app/Services/FeatherCloud/MythicIssueReportCollector.php
+
+		-
+			message: '#^Call to function array_is_list\(\) with array\<string, mixed\> will always evaluate to false\.$#'
+			identifier: function.impossibleType
+			count: 1
+			path: app/Services/FeatherCloud/MythicMemberResolver.php
+
+		-
+			message: '#^Offset ''by_email'' on array\{by_email\: array\<string, string\>, by_feather_uuid\: array\<string, string\>, synced_at\: string\|null\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Services/FeatherCloud/MythicMemberResolver.php
+
+		-
+			message: '#^Offset ''by_feather_uuid'' on array\{by_email\: array\<string, string\>, by_feather_uuid\: array\<string, string\>, synced_at\: string\|null\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Services/FeatherCloud/MythicMemberResolver.php
+
+		-
+			message: '#^Property App\\Services\\FeatherZeroTrust\\Configuration\:\:\$cache is never read, only written\.$#'
+			identifier: property.onlyWritten
+			count: 1
+			path: app/Services/FeatherZeroTrust/Configuration.php
+
+		-
+			message: '#^Parameter &\$detections by\-ref type of method App\\Services\\FeatherZeroTrust\\Scanner\:\:scanDirectory\(\) expects array\<string, mixed\>, array\<int\|string, mixed\> given\.$#'
+			identifier: parameterByRef.type
+			count: 2
+			path: app/Services/FeatherZeroTrust/Scanner.php
+
+		-
+			message: '#^Parameter &\$errors by\-ref type of method App\\Services\\FeatherZeroTrust\\Scanner\:\:scanDirectory\(\) expects array\<string, mixed\>, array\<int\|string, mixed\> given\.$#'
+			identifier: parameterByRef.type
+			count: 2
+			path: app/Services/FeatherZeroTrust/Scanner.php
+
+		-
+			message: '#^Property App\\Services\\FeatherZeroTrust\\Scanner\:\:\$wings is never read, only written\.$#'
+			identifier: property.onlyWritten
+			count: 1
+			path: app/Services/FeatherZeroTrust/Scanner.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Services/FeatherZeroTrust/SuspensionService.php
+
+		-
+			message: '#^Offset ''adapter'' on array\{id\: int, uuid\: string, name\: string, adapter\: string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Services/InactiveCleanup/InactiveCleanupService.php
+
+		-
+			message: '#^Offset ''status'' on array\{status\: string, reason\?\: string, backup_uuid\?\: string, remote_path\?\: string, bytes\?\: int, checksum\?\: string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Services/NodeBackup/NodeBackupAgentRunner.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between 0 and 0 will always evaluate to true\.$#'
+			identifier: identical.alwaysTrue
+			count: 1
+			path: app/Services/NodeBackup/NodeBackupAgentRunner.php
+
+		-
+			message: '#^Offset ''mtime'' on array\{path\: string, mtime\: int, size\: int\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Services/NodeBackup/NodeBackupRetentionService.php
+
+		-
+			message: '#^Offset ''path'' on array\{path\: string, mtime\: int, size\: int\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Services/NodeBackup/NodeBackupRetentionService.php
+
+		-
+			message: '#^Property App\\Services\\NodeBackup\\SftpDestinationClient\:\:\$passphrase is never read, only written\.$#'
+			identifier: property.onlyWritten
+			count: 1
+			path: app/Services/NodeBackup/SftpDestinationClient.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between string and false will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Services/NodeBackup/SftpDestinationClient.php
+
+		-
+			message: '#^Offset ''message_markdown'' on array\{title\: string, message_markdown\: string, type\?\: string, user_id\?\: int\|null, server_id\?\: int\|null, is_dismissible\?\: bool, is_sticky\?\: bool, send_email\?\: bool, \.\.\.\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Services/Notifications/WarningService.php
+
+		-
+			message: '#^Offset ''title'' on array\{title\: string, message_markdown\: string, type\?\: string, user_id\?\: int\|null, server_id\?\: int\|null, is_dismissible\?\: bool, is_sticky\?\: bool, send_email\?\: bool, \.\.\.\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Services/Notifications/WarningService.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between int\<1, max\> and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Services/Notifications/WarningService.php
+
+		-
+			message: '#^Call to function is_array\(\) with array\<int, array\{vmid\: int, name\: string, node\: string, template\: int, type\: string\}\> will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: app/Services/Proxmox/Proxmox.php
+
+		-
+			message: '#^Offset ''error'' on \*NEVER\* on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Services/Proxmox/Proxmox.php
+
+		-
+			message: '#^Offset ''exitstatus'' on \*NEVER\* on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Services/Proxmox/Proxmox.php
+
+		-
+			message: '#^Offset ''exitstatus'' on array\{ok\: true, error\: string\|null\} on left side of \?\? does not exist\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Services/Proxmox/Proxmox.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between ''OK'' and ''OK'' will always evaluate to false\.$#'
+			identifier: notIdentical.alwaysFalse
+			count: 1
+			path: app/Services/Proxmox/Proxmox.php
+
+		-
+			message: '#^Call to function is_array\(\) with array will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: app/Services/Server/LifecycleHookExecutorService.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between string\|false and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Services/Server/LifecycleHookExecutorService.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between mixed and null will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Services/Server/LifecycleHookExecutorService.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Services/Servers/ServerTransferInitiator.php
+
+		-
+			message: '#^Expression on left side of \?\? is not nullable\.$#'
+			identifier: nullCoalesce.expr
+			count: 1
+			path: app/Services/Servers/UserServerAccessRevoker.php
+
+		-
+			message: '#^Negated boolean expression is always true\.$#'
+			identifier: booleanNot.alwaysTrue
+			count: 1
+			path: app/Services/Storage/Providers/SftpProvider.php
+
+		-
+			message: '#^Call to function is_string\(\) with string will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: app/Services/StorageSense/StorageSenseService.php
+
+		-
+			message: '#^Property App\\Services\\Subdomain\\CloudflareSubdomainService\:\:\$zones is never read, only written\.$#'
+			identifier: property.onlyWritten
+			count: 1
+			path: app/Services/Subdomain/CloudflareSubdomainService.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Services/User/UserDeletionService.php
+
+		-
+			message: '#^Offset ''message'' on array\{type\: int, message\: string, file\: string, line\: int, trace\?\: list\<array\{function\: string, line\?\: int, file\?\: string, class\?\: class\-string, type\?\: ''\-\>''\|''\:\:'', args\?\: list\<mixed\>, object\?\: object\}\>\} in isset\(\) always exists and is not nullable\.$#'
+			identifier: isset.offset
+			count: 1
+			path: app/Services/UserDataExport/UserDataExportService.php
+
+		-
+			message: '#^Call to function is_array\(\) with array\<string, mixed\> will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: app/Services/Vm/VmInstanceUtil.php
+
+		-
+			message: '#^Call to function is_string\(\) with string will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: app/Services/Vm/VmInstanceUtil.php
+
+		-
+			message: '#^Comparison operation "\>" between int\<1, max\> and 0 is always true\.$#'
+			identifier: greater.alwaysTrue
+			count: 1
+			path: app/Services/Vm/VmInstanceUtil.php
+
+		-
+			message: '#^Negated boolean expression is always false\.$#'
+			identifier: booleanNot.alwaysFalse
+			count: 1
+			path: app/Services/Vm/VmInstanceUtil.php
+
+		-
+			message: '#^Offset ''ip'' on non\-empty\-array on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Services/Vm/VmInstanceUtil.php
+
+		-
+			message: '#^Offset 0 on non\-empty\-list\<array\{vm_ip_id\: int\<min, \-1\>\|int\<1, max\>, network_key\: non\-falsy\-string, bridge\: mixed, interface_name\: non\-falsy\-string, is_primary\: bool, sort_order\: int\<0, max\>, ip\: mixed, cidr\: int, \.\.\.\}\> on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Services/Vm/VmInstanceUtil.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between non\-empty\-string and '''' will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Services/Vm/VmInstanceUtil.php
+
+		-
+			message: '#^Call to function is_array\(\) with array will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 4
+			path: app/Services/Wings/Services/ServerService.php
+
+		-
+			message: '#^Right side of && is always true\.$#'
+			identifier: booleanAnd.rightAlwaysTrue
+			count: 1
+			path: app/Services/Wings/Services/ServerService.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between non\-falsy\-string and '''' will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Services/Wings/Services/ServerService.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between mixed and null will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Services/Wings/Utils/TokenGenerator.php
+
+		-
+			message: '#^Right side of \|\| is always true\.$#'
+			identifier: booleanOr.rightAlwaysTrue
+			count: 1
+			path: app/Telemetry/UmamiTelemetry.php

@@ -565,7 +565,7 @@ class LocationsController
      *
      * @return array{latitude: ?float, longitude: ?float}|Response
      */
-    private static function normalizeCoordinates(array $data, bool $allowClear = false): array|Response
+    private static function normalizeCoordinates(array $data, bool $allowClear = false): array | Response
     {
         $hasLat = array_key_exists('latitude', $data);
         $hasLng = array_key_exists('longitude', $data);

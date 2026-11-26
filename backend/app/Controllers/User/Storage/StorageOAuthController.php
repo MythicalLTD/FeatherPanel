@@ -102,8 +102,10 @@ class StorageOAuthController
         $row = (count($parts) === 2 && preg_match('/^[a-f0-9-]{36}$/', $parts[0])) ? UserStorageDestination::getByUuidForUser($parts[0], $userId) : null;
         $config = $row !== null ? UserStorageDestination::config($row) : [];
         $fresh = (int) ($config['oauth_started'] ?? 0) > time() - UserStorageDestination::PENDING_TTL_SECONDS;
-        if ($row === null || (string) $row['provider'] !== $provider || empty($config['oauth_state']) || !$fresh
-            || !hash_equals((string) $config['oauth_state'], hash('sha256', (string) $parts[1]))) {
+        if (
+            $row === null || (string) $row['provider'] !== $provider || empty($config['oauth_state']) || !$fresh
+            || !hash_equals((string) $config['oauth_state'], hash('sha256', (string) $parts[1]))
+        ) {
             return $this->back(null, 'OAUTH_STATE_INVALID');
         }
         $isPending = (string) $row['status'] === UserStorageDestination::STATUS_PENDING;

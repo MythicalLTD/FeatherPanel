@@ -21,11 +21,11 @@ use App\App;
 use App\Chat\User;
 use App\Chat\Subuser;
 use App\Chat\VmSubuser;
-use App\Chat\WebSpaceSubuser;
-use App\WebSpaceSubuserPermissions;
 use App\Realtime\Mercure;
 use App\SubuserPermissions;
+use App\Chat\WebSpaceSubuser;
 use App\Chat\UserNotification;
+use App\WebSpaceSubuserPermissions;
 
 /**
  * Writes inbox notifications for the events users care about and nudges their open tabs.
@@ -243,6 +243,53 @@ class InboxNotifier
         ], 30 * 86400, 'vds-backup:' . $taskId);
     }
 
+    /**
+     * A FeatherQuilld event for a WebSpace (install result, backup, limit or malware).
+     * Unknown events are ignored. Each user can opt out per event in their notification settings.
+     */
+    public static function webspaceEvent(array $space, string $event, array $metadata = []): void
+    {
+        $uuidShort = (string) ($space['uuidShort'] ?? '');
+        $base = '/webspace/' . rawurlencode($uuidShort);
+        $id = (int) ($space['id'] ?? 0);
+        switch ($event) {
+            case 'install_completed':
+            case 'install_failed':
+                $ok = $event === 'install_completed';
+                self::webspaceSend($space, $ok ? UserNotification::KIND_WEBSPACE_INSTALLED : UserNotification::KIND_WEBSPACE_INSTALL_FAILED, 'webspace_install', WebSpaceSubuserPermissions::CONSOLE_OUTPUT, [], $base, 'ws-install:' . $id, 0);
+                break;
+            case 'backup_completed':
+                self::webspaceSend($space, UserNotification::KIND_WEBSPACE_BACKUP_COMPLETED, 'webspace_backup_completed', WebSpaceSubuserPermissions::BACKUP_READ, [], $base . '/backups', 'ws-backup:' . $id, 0);
+                break;
+            case 'backup_failed':
+                self::webspaceSend($space, UserNotification::KIND_WEBSPACE_BACKUP_FAILED, 'webspace_backup_failed', WebSpaceSubuserPermissions::BACKUP_READ, [
+                    'error' => mb_substr((string) ($metadata['error'] ?? ''), 0, 300),
+                ], $base . '/backups', 'ws-backup-failed:' . $id, 0);
+                break;
+            case 'limit_reached':
+                $resource = (string) ($metadata['resource'] ?? '');
+                if (!in_array($resource, ['disk', 'bandwidth', 'memory'], true)) {
+                    return;
+                }
+                $limit = (float) ($metadata['limit_bytes'] ?? 0);
+                $percent = $limit > 0 ? (int) min(100, round(((float) ($metadata['used_bytes'] ?? 0)) / $limit * 100)) : 0;
+                self::webspaceSend($space, UserNotification::KIND_WEBSPACE_LIMIT, 'webspace_limit', WebSpaceSubuserPermissions::CONSOLE_OUTPUT, [
+                    'resource' => $resource,
+                    'percent' => (string) $percent,
+                ], $base, 'ws-limit:' . $id . ':' . $resource, self::RESOURCE_ALERT_COOLDOWN);
+                break;
+            case 'malware_scan_completed':
+                $count = (int) ($metadata['infected_count'] ?? $metadata['infectedCount'] ?? 0);
+                if ($count <= 0) {
+                    return;
+                }
+                self::webspaceSend($space, UserNotification::KIND_WEBSPACE_MALWARE, 'webspace_malware', WebSpaceSubuserPermissions::SETTINGS_READ, [
+                    'count' => (string) $count,
+                ], $base . '/malware', 'ws-malware:' . $id, 0);
+                break;
+        }
+    }
+
     private static function vdsSend(array $vds, string $kind, string $event, string $permission, array $extra, int $cooldownSeconds, ?string $groupKey = null): void
     {
         self::guard(static function () use ($vds, $kind, $event, $permission, $extra, $cooldownSeconds, $groupKey): void {
@@ -295,53 +342,6 @@ class InboxNotifier
         }
 
         return array_values($users);
-    }
-
-    /**
-     * A FeatherQuilld event for a WebSpace (install result, backup, limit or malware).
-     * Unknown events are ignored. Each user can opt out per event in their notification settings.
-     */
-    public static function webspaceEvent(array $space, string $event, array $metadata = []): void
-    {
-        $uuidShort = (string) ($space['uuidShort'] ?? '');
-        $base = '/webspace/' . rawurlencode($uuidShort);
-        $id = (int) ($space['id'] ?? 0);
-        switch ($event) {
-            case 'install_completed':
-            case 'install_failed':
-                $ok = $event === 'install_completed';
-                self::webspaceSend($space, $ok ? UserNotification::KIND_WEBSPACE_INSTALLED : UserNotification::KIND_WEBSPACE_INSTALL_FAILED, 'webspace_install', WebSpaceSubuserPermissions::CONSOLE_OUTPUT, [], $base, 'ws-install:' . $id, 0);
-                break;
-            case 'backup_completed':
-                self::webspaceSend($space, UserNotification::KIND_WEBSPACE_BACKUP_COMPLETED, 'webspace_backup_completed', WebSpaceSubuserPermissions::BACKUP_READ, [], $base . '/backups', 'ws-backup:' . $id, 0);
-                break;
-            case 'backup_failed':
-                self::webspaceSend($space, UserNotification::KIND_WEBSPACE_BACKUP_FAILED, 'webspace_backup_failed', WebSpaceSubuserPermissions::BACKUP_READ, [
-                    'error' => mb_substr((string) ($metadata['error'] ?? ''), 0, 300),
-                ], $base . '/backups', 'ws-backup-failed:' . $id, 0);
-                break;
-            case 'limit_reached':
-                $resource = (string) ($metadata['resource'] ?? '');
-                if (!in_array($resource, ['disk', 'bandwidth', 'memory'], true)) {
-                    return;
-                }
-                $limit = (float) ($metadata['limit_bytes'] ?? 0);
-                $percent = $limit > 0 ? (int) min(100, round(((float) ($metadata['used_bytes'] ?? 0)) / $limit * 100)) : 0;
-                self::webspaceSend($space, UserNotification::KIND_WEBSPACE_LIMIT, 'webspace_limit', WebSpaceSubuserPermissions::CONSOLE_OUTPUT, [
-                    'resource' => $resource,
-                    'percent' => (string) $percent,
-                ], $base, 'ws-limit:' . $id . ':' . $resource, self::RESOURCE_ALERT_COOLDOWN);
-                break;
-            case 'malware_scan_completed':
-                $count = (int) ($metadata['infected_count'] ?? $metadata['infectedCount'] ?? 0);
-                if ($count <= 0) {
-                    return;
-                }
-                self::webspaceSend($space, UserNotification::KIND_WEBSPACE_MALWARE, 'webspace_malware', WebSpaceSubuserPermissions::SETTINGS_READ, [
-                    'count' => (string) $count,
-                ], $base . '/malware', 'ws-malware:' . $id, 0);
-                break;
-        }
     }
 
     private static function webspaceSend(array $space, string $kind, string $event, string $permission, array $extra, string $link, string $groupKey, int $cooldownSeconds): void
