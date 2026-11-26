@@ -1180,19 +1180,6 @@ class VmInstancesController
                 }
             }
 
-            // memory/cpus/cores/on_boot are only known after the Proxmox branch above; keep the
-            // panel row in step with what was applied to the VM.
-            $resourceUpdate = array_intersect_key($dbUpdate, array_flip(['memory', 'cpus', 'cores', 'on_boot']));
-            if ($resourceUpdate !== []) {
-                if (isset($resourceUpdate['on_boot'])) {
-                    $resourceUpdate['on_boot'] = $resourceUpdate['on_boot'] ? 1 : 0;
-                }
-                if (!VmInstance::update($id, $resourceUpdate)) {
-                    return ApiResponse::error('Failed to update VM instance', 'UPDATE_FAILED', 500);
-                }
-                $instance = VmInstance::getById($id) ?? $instance;
-            }
-
             if ($networks !== null) {
                 $savedAssignments = [];
                 foreach (array_values($networks) as $index => $network) {
@@ -1562,21 +1549,7 @@ class VmInstancesController
             }
         }
 
-        // Track the new size of the boot disk in disk_gb (the value shown and billed for the VDS).
-        $diskGb = null;
-        $cfg = $client->getVmConfig($node, (int) $instance['vmid'], $vmType);
-        $cfgArr = $cfg['ok'] && is_array($cfg['config'] ?? null) ? $cfg['config'] : [];
-        if ($disk === self::primaryDiskKey($vmType, $cfgArr)) {
-            $diskGb = self::diskSizeGb(is_string($cfgArr[$disk] ?? null) ? $cfgArr[$disk] : '');
-            if ($diskGb === null && preg_match('/^(\+?)(\d+)G$/i', $size, $m)) {
-                $diskGb = $m[1] === '+' ? (int) ($instance['disk_gb'] ?? 0) + (int) $m[2] : (int) $m[2];
-            }
-            if ($diskGb !== null && $diskGb > 0) {
-                VmInstance::update($id, ['disk_gb' => $diskGb]);
-            }
-        }
-
-        return ApiResponse::success(['message' => 'Disk resized', 'disk_gb' => $diskGb], 'Disk resized successfully', 200);
+        return ApiResponse::success(['message' => 'Disk resized'], 'Disk resized successfully', 200);
     }
 
     #[OA\Post(
@@ -3212,51 +3185,5 @@ class VmInstancesController
         if (isset($eventManager) && $eventManager !== null) {
             $eventManager->emit($eventName, $payload);
         }
-    }
-
-    /**
-     * Disk key that disk_gb tracks: rootfs for LXC, the first disk in the QEMU boot order otherwise.
-     *
-     * @param array<string, mixed> $config
-     */
-    private static function primaryDiskKey(string $vmType, array $config): string
-    {
-        if ($vmType === 'lxc') {
-            return 'rootfs';
-        }
-        $boot = is_string($config['boot'] ?? null) ? $config['boot'] : '';
-        if (preg_match('/order=([^,]+)/', $boot, $m)) {
-            foreach (explode(';', $m[1]) as $key) {
-                $key = trim($key);
-                if (preg_match('/^(scsi|virtio|sata|ide)\d+$/', $key) && is_string($config[$key] ?? null) && !str_contains($config[$key], 'media=cdrom')) {
-                    return $key;
-                }
-            }
-        }
-        if (is_string($config['bootdisk'] ?? null) && $config['bootdisk'] !== '') {
-            return $config['bootdisk'];
-        }
-
-        return 'scsi0';
-    }
-
-    /**
-     * Size in whole GB from a Proxmox disk string such as "local-lvm:vm-100-disk-0,size=32G".
-     */
-    private static function diskSizeGb(string $diskConfig): ?int
-    {
-        if (!preg_match('/(?:^|,)size=(\d+(?:\.\d+)?)([KMGT]?)(?:,|$)/i', $diskConfig, $m)) {
-            return null;
-        }
-        $value = (float) $m[1];
-        $gb = match (strtoupper($m[2])) {
-            'T' => $value * 1024,
-            'M' => $value / 1024,
-            'K' => $value / 1048576,
-            'G' => $value,
-            default => $value / 1073741824,
-        };
-
-        return (int) round($gb);
     }
 }
