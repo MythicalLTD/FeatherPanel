@@ -73,7 +73,7 @@ use App\Services\Servers\UserServerAccessRevoker;
             new OA\Property(property: 'color', type: 'string', description: 'Role color'),
         ], description: 'User role information'),
         new OA\Property(property: 'activities', type: 'array', items: new OA\Items(type: 'object'), description: 'User activities'),
-        new OA\Property(property: 'mails', type: 'array', items: new OA\Items(type: 'object'), description: 'User mail history'),
+        new OA\Property(property: 'mails', type: 'array', items: new OA\Items(ref: '#/components/schemas/UserMail'), description: 'User mail history (subject, status and date; open one mail with /api/admin/users/{uuid}/mails/{id})'),
     ]
 )]
 #[OA\Schema(
@@ -132,9 +132,8 @@ use App\Services\Servers\UserServerAccessRevoker;
     schema: 'UserMail',
     type: 'object',
     properties: [
+        new OA\Property(property: 'id', type: 'integer', description: 'Mail list entry ID'),
         new OA\Property(property: 'subject', type: 'string', description: 'Mail subject'),
-        new OA\Property(property: 'template', type: 'string', description: 'Mail template'),
-        new OA\Property(property: 'data', type: 'object', description: 'Mail data'),
         new OA\Property(property: 'status', type: 'string', description: 'Mail status'),
         new OA\Property(property: 'created_at', type: 'string', format: 'date-time', description: 'Mail timestamp'),
     ]
@@ -504,20 +503,7 @@ class UsersController
             return $activity;
         }, Activity::getActivitiesByUser($user['uuid']));
 
-        $mailList = MailList::getByUserUuid($user['uuid']);
-        $queueIds = array_column($mailList, 'queue_id');
-        $mailQueues = MailQueue::getByIds($queueIds);
-        $user['mails'] = [];
-        foreach ($mailList as $mailListEntry) {
-            $queueId = (int) ($mailListEntry['queue_id'] ?? 0);
-            if (!isset($mailQueues[$queueId])) {
-                continue;
-            }
-            $mail = MailQueue::redactOneTimeCode($mailQueues[$queueId]);
-            $mail['id'] = (int) $mailListEntry['id'];
-            unset($mail['user_uuid'], $mail['deleted'], $mail['locked'], $mail['updated_at']);
-            $user['mails'][] = $mail;
-        }
+        $user['mails'] = self::mailSummaries($user['uuid']);
         if ($app->isDemoMode()) {
             $user['first_ip'] = $app->getIPIntoFBIFormat();
             $user['last_ip'] = $app->getIPIntoFBIFormat();
@@ -605,20 +591,7 @@ class UsersController
             return $activity;
         }, Activity::getActivitiesByUser($user['uuid']));
 
-        $mailList = MailList::getByUserUuid($user['uuid']);
-        $queueIds = array_column($mailList, 'queue_id');
-        $mailQueues = MailQueue::getByIds($queueIds);
-        $user['mails'] = [];
-        foreach ($mailList as $mailListEntry) {
-            $queueId = (int) ($mailListEntry['queue_id'] ?? 0);
-            if (!isset($mailQueues[$queueId])) {
-                continue;
-            }
-            $mail = MailQueue::redactOneTimeCode($mailQueues[$queueId]);
-            $mail['id'] = (int) $mailListEntry['id'];
-            unset($mail['user_uuid'], $mail['deleted'], $mail['locked'], $mail['updated_at']);
-            $user['mails'][] = $mail;
-        }
+        $user['mails'] = self::mailSummaries($user['uuid']);
 
         if ($app->isDemoMode()) {
             $user['first_ip'] = $app->getIPIntoFBIFormat();
@@ -1819,6 +1792,88 @@ class UsersController
         return ApiResponse::success([
             'queue_id' => $queueId,
         ], 'Email queued successfully', 200);
+    }
+
+    #[OA\Get(
+        path: '/api/admin/users/{uuid}/mails/{id}',
+        summary: 'Get one mail sent to a user',
+        description: 'Returns one mail from the user mail history, including its HTML body.',
+        tags: ['Admin - Users'],
+        parameters: [
+            new OA\Parameter(name: 'uuid', in: 'path', description: 'User UUID', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
+            new OA\Parameter(name: 'id', in: 'path', description: 'Mail list entry ID', required: true, schema: new OA\Schema(type: 'integer', minimum: 1)),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Mail retrieved successfully'),
+            new OA\Response(response: 400, description: 'Bad request'),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden - Insufficient permissions'),
+            new OA\Response(response: 404, description: 'User or mail not found'),
+        ]
+    )]
+    public function showMail(Request $request, string $uuid, int $mailId): Response
+    {
+        if (!preg_match('/^[a-f0-9\-]{36}$/i', $uuid)) {
+            return ApiResponse::error('Invalid UUID format', 'INVALID_UUID', 400);
+        }
+        if ($mailId <= 0) {
+            return ApiResponse::error('Invalid mail ID', 'INVALID_MAIL_ID', 400);
+        }
+
+        $user = User::getUserByUuid($uuid);
+        if (!$user) {
+            return ApiResponse::error('User not found', 'USER_NOT_FOUND', 404);
+        }
+
+        $mailListEntry = MailList::getById($mailId);
+        if (!$mailListEntry || ($mailListEntry['user_uuid'] ?? '') !== $user['uuid']) {
+            return ApiResponse::error('Mail not found', 'MAIL_NOT_FOUND', 404);
+        }
+
+        $queueEntry = MailQueue::getById((int) ($mailListEntry['queue_id'] ?? 0));
+        if (!$queueEntry) {
+            return ApiResponse::error('Mail not found', 'MAIL_NOT_FOUND', 404);
+        }
+
+        $queueEntry = MailQueue::redactOneTimeCode($queueEntry);
+
+        return ApiResponse::success([
+            'mail' => [
+                'id' => $mailId,
+                'subject' => (string) ($queueEntry['subject'] ?? ''),
+                'status' => (string) ($queueEntry['status'] ?? ''),
+                'created_at' => $queueEntry['created_at'] ?? null,
+                'body' => (string) ($queueEntry['body'] ?? ''),
+            ],
+        ], 'Mail fetched successfully', 200);
+    }
+
+    /**
+     * Mail history for the user detail views: subject, status and date only.
+     * The body of one mail is loaded on demand with showMail().
+     *
+     * @return array<int, array{id: int, subject: string, status: string, created_at: mixed}>
+     */
+    public static function mailSummaries(string $userUuid): array
+    {
+        $mailList = MailList::getByUserUuid($userUuid);
+        $mailQueues = MailQueue::getByIds(array_column($mailList, 'queue_id'));
+        $mails = [];
+        foreach ($mailList as $mailListEntry) {
+            $queueId = (int) ($mailListEntry['queue_id'] ?? 0);
+            if (!isset($mailQueues[$queueId])) {
+                continue;
+            }
+            $queueEntry = $mailQueues[$queueId];
+            $mails[] = [
+                'id' => (int) $mailListEntry['id'],
+                'subject' => (string) ($queueEntry['subject'] ?? ''),
+                'status' => (string) ($queueEntry['status'] ?? ''),
+                'created_at' => $queueEntry['created_at'] ?? null,
+            ];
+        }
+
+        return $mails;
     }
 
     #[OA\Post(
