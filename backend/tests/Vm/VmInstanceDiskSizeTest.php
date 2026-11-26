@@ -43,4 +43,15 @@ class VmInstanceDiskSizeTest extends TestCase
         $this->assertNull(VmInstanceUtil::diskSizeGbFromSpec('local:100/vm.raw'));
         $this->assertNull(VmInstanceUtil::diskSizeGbFromSpec('local:100/vm.raw,size=abc'));
     }
+
+    public function testDiskSizeGbAfterResize(): void
+    {
+        $this->assertSame(40, VmInstanceUtil::diskSizeGbAfterResize('40G', 10));
+        $this->assertSame(15, VmInstanceUtil::diskSizeGbAfterResize('+5G', 10));
+        $this->assertSame(15, VmInstanceUtil::diskSizeGbAfterResize('+5', 10));
+        $this->assertSame(12, VmInstanceUtil::diskSizeGbAfterResize('+1536M', 10));
+        $this->assertSame(1034, VmInstanceUtil::diskSizeGbAfterResize('+1T', 10));
+        $this->assertNull(VmInstanceUtil::diskSizeGbAfterResize('-5G', 10));
+        $this->assertNull(VmInstanceUtil::diskSizeGbAfterResize('big', 10));
+    }
 }

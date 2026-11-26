@@ -934,7 +934,7 @@ class VmInstancesController
                 } elseif ($cores !== null) {
                     $config['cores'] = $cores;
                     $dbUpdate['cores'] = $cores;
-                    $dbUpdate['cpus'] = $cores;
+                    $dbUpdate['cpus'] = 1;
                 }
                 if ($ip) {
                     $cidr = isset($ip['cidr']) && $ip['cidr'] !== null ? (int) $ip['cidr'] : 24;
@@ -1083,8 +1083,12 @@ class VmInstancesController
             } elseif ($vmType === 'lxc') {
                 if ($cpus !== null && $cores !== null) {
                     $config['cores'] = $cpus * $cores;
+                    $dbUpdate['cpus'] = $cpus;
+                    $dbUpdate['cores'] = $cores;
                 } elseif ($cores !== null) {
                     $config['cores'] = $cores;
+                    $dbUpdate['cores'] = $cores;
+                    $dbUpdate['cpus'] = 1;
                 }
             }
 
@@ -1099,7 +1103,16 @@ class VmInstancesController
             // (capacity views, reinstall and billing modules read them from the row).
             $resourceUpdate = array_intersect_key($dbUpdate, array_flip(['memory', 'cpus', 'cores', 'on_boot']));
             if (!empty($resourceUpdate)) {
-                VmInstance::update($id, $resourceUpdate);
+                if (!VmInstance::update($id, $resourceUpdate)) {
+                    App::getInstance(true)->getLogger()->error('VM instance ' . $id . ': Proxmox config applied but saving ' . json_encode($resourceUpdate) . ' failed');
+
+                    return ApiResponse::error(
+                        'The change was applied on Proxmox but could not be saved on the instance. Send the same values again to save them.',
+                        'UPDATE_FAILED',
+                        500,
+                        ['applied' => $resourceUpdate]
+                    );
+                }
                 $instance = VmInstance::getById($id) ?? $instance;
             }
 
@@ -1473,18 +1486,33 @@ class VmInstancesController
         }
 
         // Record the new size of the main disk so disk_gb matches the VM.
+        // Prefer the size Proxmox reports; if the config cannot be read, work it out from the request
+        // (the resize already succeeded, so it must not be repeated to fix the stored size).
+        $currentGb = (int) ($instance['disk_gb'] ?? 0);
+        $newGb = null;
         $cfgAfter = $client->getVmConfig($node, (int) $instance['vmid'], $vmType);
         if ($cfgAfter['ok'] && is_array($cfgAfter['config'] ?? null)) {
             $cfg = (array) $cfgAfter['config'];
             if ($disk === VmInstanceUtil::primaryDiskKey($cfg, $vmType)) {
                 $newGb = VmInstanceUtil::diskSizeGbFromSpec((string) ($cfg[$disk] ?? ''));
-                if ($newGb !== null && $newGb > 0 && $newGb !== (int) ($instance['disk_gb'] ?? 0)) {
-                    VmInstance::update($id, ['disk_gb' => $newGb]);
-                }
+            }
+        } elseif ($disk === ($vmType === 'lxc' ? 'rootfs' : 'scsi0')) {
+            $newGb = VmInstanceUtil::diskSizeGbAfterResize($size, $currentGb);
+        }
+        if ($newGb !== null && $newGb > 0 && $newGb !== $currentGb) {
+            if (!VmInstance::update($id, ['disk_gb' => $newGb])) {
+                App::getInstance(true)->getLogger()->error('VM instance ' . $id . ': disk resized to ' . $newGb . ' GB on Proxmox but saving disk_gb failed');
+
+                return ApiResponse::error(
+                    'The disk was resized on Proxmox but its new size could not be saved on the instance.',
+                    'UPDATE_FAILED',
+                    500,
+                    ['disk_gb' => $newGb]
+                );
             }
         }
 
-        return ApiResponse::success(['message' => 'Disk resized'], 'Disk resized successfully', 200);
+        return ApiResponse::success(['message' => 'Disk resized', 'disk_gb' => $newGb ?? $currentGb], 'Disk resized successfully', 200);
     }
 
     #[OA\Post(

@@ -1043,6 +1043,25 @@ final class VmInstanceUtil
     }
 
     /**
+     * New size in GB after a Proxmox resize request: "40G" sets it, "+5G" adds to $currentGb.
+     * M rounds up, T = 1024 GB, no unit means GB. Returns null for anything else.
+     */
+    public static function diskSizeGbAfterResize(string $size, int $currentGb): ?int
+    {
+        if (!preg_match('/^(\+)?(\d+)([GgMmTt])?$/', trim($size), $m)) {
+            return null;
+        }
+        $num = (int) $m[2];
+        $gb = match (strtolower($m[3] ?? 'g')) {
+            'm' => (int) ceil($num / 1024),
+            't' => $num * 1024,
+            default => $num,
+        };
+
+        return $m[1] === '+' ? $currentGb + $gb : $gb;
+    }
+
+    /**
      * Size in GB from a Proxmox disk spec such as "local-lvm:vm-100-disk-0,size=40G" (M rounds up, T = 1024 GB).
      */
     public static function diskSizeGbFromSpec(string $spec): ?int
