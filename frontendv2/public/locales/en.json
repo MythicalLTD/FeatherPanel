@@ -11910,7 +11910,7 @@
                     "email": "Email",
                     "role": "Role",
                     "external_id": "External ID (NULL to clear)",
-                    "external_id_help": "External ID for integration. Leave empty or set to 0 to clear.",
+                    "external_id_help": "ID from an external system such as a billing panel (letters, digits and ._:@-). Leave empty to clear.",
                     "password": "Password",
                     "password_placeholder": "Leave blank to keep current password",
                     "password_help": "Leave completely blank to keep the current password.",
