@@ -48,7 +48,7 @@ class Permissions
     public const ADMIN_USERS_EDIT = 'admin.users.edit';
     /** Delete users */
     public const ADMIN_USERS_DELETE = 'admin.users.delete';
-    /** View the panel as another user (audit logged) */
+    /** Impersonate another user and act as them (full audit log) */
     public const ADMIN_USERS_IMPERSONATE = 'admin.users.impersonate';
 
     // Admin Banned IPs Permissions
@@ -505,7 +505,7 @@ class Permissions
                 'constant' => 'ADMIN_USERS_IMPERSONATE',
                 'value' => self::ADMIN_USERS_IMPERSONATE,
                 'category' => 'Admin Users',
-                'description' => 'View the panel as another user (audit logged)',
+                'description' => 'Impersonate another user and act as them (full audit log)',
             ],
             [
                 'constant' => 'ADMIN_BLOCKED_IPS_VIEW',

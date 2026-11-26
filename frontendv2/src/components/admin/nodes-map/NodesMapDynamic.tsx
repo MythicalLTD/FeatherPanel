@@ -18,14 +18,9 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import dynamic from 'next/dynamic';
 import type { NodesMapNode } from './NodesMap';
 
-export const NodesMapDynamic = dynamic(
-    () => import('./NodesMap').then((m) => m.NodesMap),
-    {
-        ssr: false,
-        loading: () => (
-            <div className='fp-surface bg-muted/30 h-[280px] animate-pulse rounded-xl border sm:h-[360px]' />
-        ),
-    },
-);
+export const NodesMapDynamic = dynamic(() => import('./NodesMap').then((m) => m.NodesMap), {
+    ssr: false,
+    loading: () => <div className='fp-surface bg-muted/30 h-[280px] animate-pulse rounded-xl border sm:h-[360px]' />,
+});
 
 export type { NodesMapNode };

@@ -140,8 +140,8 @@ export default function ActivityTab() {
                 <div className='flex flex-wrap items-center gap-2'>
                     <h3 className='text-foreground text-lg font-semibold'>{t('account.activity.title')}</h3>
                     {liveStatus === 'open' && (
-                        <span className='bg-emerald-500/12 text-emerald-600 dark:text-emerald-400 inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-semibold tracking-wide uppercase'>
-                            <span className='bg-emerald-500 h-1.5 w-1.5 rounded-full' aria-hidden />
+                        <span className='inline-flex items-center gap-1 rounded-full bg-emerald-500/12 px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-emerald-600 uppercase dark:text-emerald-400'>
+                            <span className='h-1.5 w-1.5 rounded-full bg-emerald-500' aria-hidden />
                             {t('account.activity.live')}
                         </span>
                     )}

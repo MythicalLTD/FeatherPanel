@@ -64,13 +64,7 @@ function latencyTone(ms: number | null | undefined): string {
     return 'text-red-600 dark:text-red-400';
 }
 
-export function NodesMap({
-    nodes,
-    variant = 'admin',
-}: {
-    nodes: NodesMapNode[];
-    variant?: 'admin' | 'public';
-}) {
+export function NodesMap({ nodes, variant = 'admin' }: { nodes: NodesMapNode[]; variant?: 'admin' | 'public' }) {
     const { t } = useTranslation();
     const [isDark, setIsDark] = useState(false);
 
@@ -99,10 +93,7 @@ export function NodesMap({
     }, [nodes]);
 
     const unmappedCount = nodes.length - mapped.length;
-    const points = useMemo(
-        () => mapped.map((n) => [n.latitude, n.longitude] as LatLngExpression),
-        [mapped],
-    );
+    const points = useMemo(() => mapped.map((n) => [n.latitude, n.longitude] as LatLngExpression), [mapped]);
 
     const tileUrl = isDark
         ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
@@ -116,9 +107,7 @@ export function NodesMap({
         <div className='fp-surface space-y-3 rounded-xl border p-3 sm:p-4'>
             <div className='flex flex-wrap items-start justify-between gap-2'>
                 <div className='min-w-0'>
-                    <h2 className='text-base font-semibold tracking-tight sm:text-lg'>
-                        {t('admin.nodes.map_title')}
-                    </h2>
+                    <h2 className='text-base font-semibold tracking-tight sm:text-lg'>{t('admin.nodes.map_title')}</h2>
                     <p className='text-muted-foreground text-xs sm:text-sm'>{t('admin.nodes.map_subtitle')}</p>
                 </div>
                 <div className='flex flex-wrap items-center gap-2 text-xs'>
@@ -136,7 +125,10 @@ export function NodesMap({
             {mapped.length === 0 ? (
                 <div className='bg-muted/40 text-muted-foreground rounded-lg border border-dashed p-6 text-center text-sm'>
                     <p>{t('admin.nodes.map_empty')}</p>
-                    <Link href='/admin/locations' className='text-primary mt-2 inline-block underline-offset-4 hover:underline'>
+                    <Link
+                        href='/admin/locations'
+                        className='text-primary mt-2 inline-block underline-offset-4 hover:underline'
+                    >
                         {t('admin.nodes.map_set_coordinates')}
                     </Link>
                 </div>
@@ -158,8 +150,7 @@ export function NodesMap({
                         <FitBounds points={points} />
                         {mapped.map((node, index) => {
                             const healthy = node.status === 'healthy';
-                            const kindColor =
-                                node.kind === 'web' ? '#2563eb' : node.kind === 'vds' ? '#7c3aed' : null;
+                            const kindColor = node.kind === 'web' ? '#2563eb' : node.kind === 'vds' ? '#7c3aed' : null;
                             const color = kindColor ?? (healthy ? '#16a34a' : '#dc2626');
                             return (
                                 <CircleMarker
@@ -177,7 +168,7 @@ export function NodesMap({
                                         <div className='space-y-1 text-sm'>
                                             <div className='font-semibold'>{node.name}</div>
                                             {node.kind && (
-                                                <div className='text-muted-foreground uppercase tracking-wide text-[10px]'>
+                                                <div className='text-muted-foreground text-[10px] tracking-wide uppercase'>
                                                     {node.kind}
                                                 </div>
                                             )}
@@ -195,14 +186,16 @@ export function NodesMap({
                                                     {t('admin.nodes.latency_value', { ms: String(node.latency_ms) })}
                                                 </div>
                                             )}
-                                            {variant === 'admin' && node.id != null && (!node.kind || node.kind === 'game') && (
-                                                <Link
-                                                    href={`/admin/nodes/${node.id}`}
-                                                    className='text-primary inline-block underline-offset-4 hover:underline'
-                                                >
-                                                    {t('admin.nodes.map_open_node')}
-                                                </Link>
-                                            )}
+                                            {variant === 'admin' &&
+                                                node.id != null &&
+                                                (!node.kind || node.kind === 'game') && (
+                                                    <Link
+                                                        href={`/admin/nodes/${node.id}`}
+                                                        className='text-primary inline-block underline-offset-4 hover:underline'
+                                                    >
+                                                        {t('admin.nodes.map_open_node')}
+                                                    </Link>
+                                                )}
                                         </div>
                                     </Popup>
                                 </CircleMarker>

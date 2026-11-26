@@ -24,9 +24,9 @@ use OpenApi\Attributes as OA;
 use App\Chat\ChatConversation;
 use App\Services\Chatbot\TokenUsage;
 use App\Plugins\Events\Events\ChatbotEvent;
-use App\Services\Chatbot\WebSpaceChatbotService;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use App\Services\Chatbot\WebSpaceChatbotService;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 #[OA\Schema(

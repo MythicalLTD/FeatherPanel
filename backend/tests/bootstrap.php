@@ -112,3 +112,6 @@ if (!defined('APP_ADDONS_DIR')) {
 if (!defined('PHPUNIT_RUNNING')) {
     define('PHPUNIT_RUNNING', true);
 }
+if (!defined('APP_DEBUG')) {
+    define('APP_DEBUG', false);
+}

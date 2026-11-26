@@ -351,10 +351,7 @@ export default function VdsSettingsPage() {
                         >
                             <dt className='text-muted-foreground shrink-0 text-xs font-medium'>{label}</dt>
                             <dd
-                                className={cn(
-                                    'min-w-0 truncate text-sm font-medium',
-                                    mono && 'font-mono tabular-nums',
-                                )}
+                                className={cn('min-w-0 truncate text-sm font-medium', mono && 'font-mono tabular-nums')}
                             >
                                 {value}
                             </dd>
@@ -452,7 +449,7 @@ export default function VdsSettingsPage() {
             {isQemu && (
                 <Link
                     href={`/vds/${id}/boot`}
-                    className='fp-surface group flex items-center gap-3 rounded-xl border p-4 transition-colors hover:bg-muted/20 focus-visible:ring-primary focus-visible:ring-2 focus-visible:outline-none sm:p-5'
+                    className='fp-surface group hover:bg-muted/20 focus-visible:ring-primary flex items-center gap-3 rounded-xl border p-4 transition-colors focus-visible:ring-2 focus-visible:outline-none sm:p-5'
                 >
                     <span className='fp-icon-tile flex h-9 w-9 shrink-0 items-center justify-center rounded-lg'>
                         <HardDrive className='text-primary h-5 w-5' />
@@ -611,7 +608,7 @@ export default function VdsSettingsPage() {
                                         <button
                                             type='button'
                                             onClick={() => setShowPassword((v) => !v)}
-                                            className='text-muted-foreground hover:text-foreground absolute top-1/2 right-3 -translate-y-1/2 rounded-md p-0.5 focus-visible:ring-primary focus-visible:ring-2 focus-visible:outline-none'
+                                            className='text-muted-foreground hover:text-foreground focus-visible:ring-primary absolute top-1/2 right-3 -translate-y-1/2 rounded-md p-0.5 focus-visible:ring-2 focus-visible:outline-none'
                                             aria-label={
                                                 showPassword
                                                     ? t('common.hide', { defaultValue: 'Hide password' })

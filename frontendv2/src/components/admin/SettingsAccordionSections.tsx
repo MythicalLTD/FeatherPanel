@@ -75,9 +75,7 @@ export function SettingsAccordionSections({
     const introKey = 'admin.settings.groups.shared.intro';
     const introRaw = t(introKey, { count: String(grouped.length) });
     const intro =
-        introRaw !== introKey
-            ? introRaw
-            : t('admin.settings.vds_groups.intro', { count: String(grouped.length) });
+        introRaw !== introKey ? introRaw : t('admin.settings.vds_groups.intro', { count: String(grouped.length) });
 
     return (
         <div className='space-y-3'>

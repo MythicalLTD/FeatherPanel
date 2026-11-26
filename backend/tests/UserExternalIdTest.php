@@ -17,6 +17,8 @@
 
 use App\App;
 use App\Chat\User;
+use App\Chat\MailList;
+use App\Chat\MailQueue;
 use PHPUnit\Framework\TestCase;
 use App\Controllers\Admin\UsersController;
 use Symfony\Component\HttpFoundation\Request;
@@ -53,6 +55,8 @@ class UserExternalIdTest extends TestCase
         foreach ($this->created as $uuid) {
             $user = User::getUserByUuid($uuid);
             if ($user) {
+                MailList::deleteAllMailListsByUserId($uuid);
+                MailQueue::deleteAllMailQueueByUserId($uuid);
                 User::hardDeleteUser((int) $user['id']);
             }
         }

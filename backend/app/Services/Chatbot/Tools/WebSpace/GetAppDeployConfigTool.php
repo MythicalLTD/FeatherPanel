@@ -17,8 +17,8 @@
 
 namespace App\Services\Chatbot\Tools\WebSpace;
 
-use App\Helpers\WebSpaceGitDeployer;
 use App\WebSpaceSubuserPermissions;
+use App\Helpers\WebSpaceGitDeployer;
 use App\Services\Chatbot\Tools\ToolInterface;
 
 class GetAppDeployConfigTool implements ToolInterface

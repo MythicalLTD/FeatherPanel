@@ -17,8 +17,8 @@
 
 namespace App\Services\Chatbot\Tools\WebSpace;
 
-use App\Helpers\FeatherQuilldClient;
 use App\WebSpaceSubuserPermissions;
+use App\Helpers\FeatherQuilldClient;
 use App\Services\Chatbot\Tools\ToolInterface;
 
 class RenewSslTool implements ToolInterface
@@ -49,7 +49,7 @@ class RenewSslTool implements ToolInterface
 
     public function getDescription(): string
     {
-        return 'Renew Let's Encrypt SSL for a WebSpace.';
+        return "Renew Let's Encrypt SSL for a WebSpace.";
     }
 
     public function getParameters(): array

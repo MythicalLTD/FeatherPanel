@@ -17,8 +17,8 @@
 
 namespace App\Services\Chatbot\Tools\WebSpace;
 
-use App\Helpers\WebSpaceWafSettings;
 use App\WebSpaceSubuserPermissions;
+use App\Helpers\WebSpaceWafSettings;
 use App\Services\Chatbot\Tools\ToolInterface;
 
 class GetWafSettingsTool implements ToolInterface

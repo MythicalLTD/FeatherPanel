@@ -43,30 +43,33 @@ export function useAdminWidgetList<T>(
     const [state, setState] = useState<AdminWidgetListState>('loading');
     const requestIdRef = useRef(0);
 
-    const load = useCallback(async (opts?: { silent?: boolean }) => {
-        const requestId = ++requestIdRef.current;
-        const silent = opts?.silent === true;
-        if (!silent) setState('loading');
-        try {
-            const response = await fetcher();
-            if (requestId !== requestIdRef.current) return;
-            if (response.data.success) {
-                const list = extract(response.data.data) || [];
-                setItems(list);
-                setState(list.length ? 'ready' : 'empty');
-            } else if (!silent) {
-                setState('error');
+    const load = useCallback(
+        async (opts?: { silent?: boolean }) => {
+            const requestId = ++requestIdRef.current;
+            const silent = opts?.silent === true;
+            if (!silent) setState('loading');
+            try {
+                const response = await fetcher();
+                if (requestId !== requestIdRef.current) return;
+                if (response.data.success) {
+                    const list = extract(response.data.data) || [];
+                    setItems(list);
+                    setState(list.length ? 'ready' : 'empty');
+                } else if (!silent) {
+                    setState('error');
+                }
+            } catch (err) {
+                if (requestId !== requestIdRef.current) return;
+                if (silent) return;
+                if (axios.isAxiosError(err) && err.response?.status === 403) {
+                    setState('forbidden');
+                } else {
+                    setState('error');
+                }
             }
-        } catch (err) {
-            if (requestId !== requestIdRef.current) return;
-            if (silent) return;
-            if (axios.isAxiosError(err) && err.response?.status === 403) {
-                setState('forbidden');
-            } else {
-                setState('error');
-            }
-        }
-    }, [fetcher, extract]);
+        },
+        [fetcher, extract],
+    );
 
     useEffect(() => {
         void load();

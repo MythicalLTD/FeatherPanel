@@ -27,9 +27,7 @@ function latencyTone(ms: number | null | undefined): string {
 export function LatencyBadge({ ms }: { ms: number | null | undefined }) {
     const { t } = useTranslation();
     if (ms == null) {
-        return (
-            <span className='text-muted-foreground text-xs tabular-nums'>{t('admin.nodes.latency_unknown')}</span>
-        );
+        return <span className='text-muted-foreground text-xs tabular-nums'>{t('admin.nodes.latency_unknown')}</span>;
     }
     return (
         <span className={`text-xs font-medium tabular-nums ${latencyTone(ms)}`}>

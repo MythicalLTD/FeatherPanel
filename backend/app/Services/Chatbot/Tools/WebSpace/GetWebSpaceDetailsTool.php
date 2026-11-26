@@ -17,7 +17,6 @@
 
 namespace App\Services\Chatbot\Tools\WebSpace;
 
-
 use App\Services\Chatbot\Tools\ToolInterface;
 
 class GetWebSpaceDetailsTool implements ToolInterface

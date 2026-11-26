@@ -84,17 +84,15 @@ export function RecentActivityWidget() {
     return (
         <PageCard
             title={t('admin.activity.title')}
-            description={
-                liveStatus === 'open' ? t('admin.activity.description_live') : t('admin.activity.description')
-            }
+            description={liveStatus === 'open' ? t('admin.activity.description_live') : t('admin.activity.description')}
             icon={Activity}
             className='space-y-4 p-4 sm:p-5 [&>div:first-child]:flex-wrap [&>div:first-child]:gap-3 [&>div:first-child]:pb-4'
             action={
                 state !== 'forbidden' ? (
                     <div className='flex items-center gap-2'>
                         {liveStatus === 'open' && (
-                            <span className='bg-emerald-500/12 text-emerald-600 dark:text-emerald-400 inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-semibold tracking-wide uppercase'>
-                                <span className='bg-emerald-500 h-1.5 w-1.5 rounded-full' aria-hidden />
+                            <span className='inline-flex items-center gap-1 rounded-full bg-emerald-500/12 px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-emerald-600 uppercase dark:text-emerald-400'>
+                                <span className='h-1.5 w-1.5 rounded-full bg-emerald-500' aria-hidden />
                                 {t('admin.activity.live')}
                             </span>
                         )}

@@ -159,7 +159,8 @@ export default function NotificationsTab() {
     const load = useCallback(async () => {
         try {
             const { data } = await axios.get('/api/user/notification-settings');
-            if (data?.data) setSettings({ ...DEFAULTS, ...data.data, events: { ...DEFAULTS.events, ...(data.data.events || {}) } });
+            if (data?.data)
+                setSettings({ ...DEFAULTS, ...data.data, events: { ...DEFAULTS.events, ...(data.data.events || {}) } });
         } catch (err) {
             toast.error(getApiErrorMessage(err, t, 'account.notifications.loadFailed'));
         } finally {
@@ -179,7 +180,8 @@ export default function NotificationsTab() {
         setSaving(true);
         try {
             const { data } = await axios.put('/api/user/notification-settings', settings);
-            if (data?.data) setSettings({ ...DEFAULTS, ...data.data, events: { ...DEFAULTS.events, ...(data.data.events || {}) } });
+            if (data?.data)
+                setSettings({ ...DEFAULTS, ...data.data, events: { ...DEFAULTS.events, ...(data.data.events || {}) } });
             toast.success(t('account.notifications.saved'));
         } catch (err) {
             toast.error(getApiErrorMessage(err, t, 'account.notifications.saveFailed'));

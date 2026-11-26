@@ -108,9 +108,7 @@ export function FileActionToolbar({
 
     return (
         <div className='sticky top-0 z-20 pb-4'>
-            <div
-                className='fp-surface rounded-xl border p-1.5 sm:p-2'
-            >
+            <div className='fp-surface rounded-xl border p-1.5 sm:p-2'>
                 <div className='flex flex-row items-center justify-between gap-2 sm:gap-4'>
                     {hasSelection ? (
                         <>

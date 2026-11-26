@@ -156,7 +156,13 @@ const UserAvatar = memo(function UserAvatar({ avatar, username, firstName, size 
     );
 });
 
-export default function ChatbotContainer({ open, onClose, mode = 'server', vdsInstance, webspace }: ChatbotContainerProps) {
+export default function ChatbotContainer({
+    open,
+    onClose,
+    mode = 'server',
+    vdsInstance,
+    webspace,
+}: ChatbotContainerProps) {
     const { t } = useTranslation();
     const [messages, setMessages] = useState<Message[]>([]);
     const [inputMessage, setInputMessage] = useState('');

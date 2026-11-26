@@ -19,8 +19,8 @@ namespace App\Services\Chatbot\Tools\WebSpace;
 
 use App\Chat\WebSpace;
 use App\Helpers\WebSpaceDaemonSync;
-use App\Helpers\WebSpaceWafSettings;
 use App\WebSpaceSubuserPermissions;
+use App\Helpers\WebSpaceWafSettings;
 use App\Services\Chatbot\Tools\ToolInterface;
 
 class SetWafModeTool implements ToolInterface

@@ -18,12 +18,12 @@
 namespace App\Services\Chatbot;
 
 use App\App;
+use App\Permissions;
 use App\Chat\WebSpace;
 use App\Chat\WebSpaceDomain;
 use App\Chat\WebSpaceSubuser;
-use App\Permissions;
-use App\Helpers\PermissionHelper;
 use App\Helpers\WebSpaceGateway;
+use App\Helpers\PermissionHelper;
 
 class WebSpaceContextBuilder
 {

@@ -19,7 +19,6 @@ namespace App\Services\Chatbot\Tools\WebSpace;
 
 use App\Chat\WebNode;
 use App\Helpers\WebSpaceGateway;
-use App\WebSpaceSubuserPermissions;
 
 /**
  * Resolve the focused WebSpace for chatbot tools and enforce access/permissions.

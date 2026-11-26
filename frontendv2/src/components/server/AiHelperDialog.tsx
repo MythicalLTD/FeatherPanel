@@ -47,14 +47,7 @@ export function useAiHelperAvailable(): boolean {
     return settings?.chatbot_enabled === 'true' && settings?.chatbot_editor_helper_enabled !== 'false';
 }
 
-export function AiHelperDialog({
-    uuidShort,
-    open,
-    onOpenChange,
-    request,
-    onApplySuggestion,
-    canApply = false,
-}: Props) {
+export function AiHelperDialog({ uuidShort, open, onOpenChange, request, onApplySuggestion, canApply = false }: Props) {
     const { t } = useTranslation();
     const [loading, setLoading] = useState(false);
     const [result, setResult] = useState<AiHelperResponse | null>(null);
@@ -124,7 +117,9 @@ export function AiHelperDialog({
                                 {t('servers.aiHelper.redactedNotice')}
                             </p>
                         )}
-                        <div className='max-w-none whitespace-pre-wrap text-sm leading-relaxed'>{result.explanation}</div>
+                        <div className='max-w-none text-sm leading-relaxed whitespace-pre-wrap'>
+                            {result.explanation}
+                        </div>
                         {result.unified_diff && (
                             <div>
                                 <p className='mb-2 text-sm font-medium'>{t('servers.aiHelper.suggestedDiff')}</p>

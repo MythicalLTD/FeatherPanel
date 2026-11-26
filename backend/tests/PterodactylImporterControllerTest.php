@@ -22,6 +22,8 @@ use App\Chat\Realm;
 use App\Chat\Spell;
 use App\Chat\Server;
 use App\Chat\Location;
+use App\Chat\MailList;
+use App\Chat\MailQueue;
 use App\Chat\Allocation;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpFoundation\Request;
@@ -32,9 +34,9 @@ class PterodactylImporterControllerTest extends TestCase
     private PterodactylImporterController $controller;
     private string $adminUuid = 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee';
     private string $importedUserUuid = '11111111-2222-3333-4444-555555555555';
-    private string $nodeUuid = 'n0de0000-0000-4000-8000-000000000001';
-    private string $eggUuid = 'egg00000-0000-4000-8000-000000000001';
-    private string $serverUuid = 'serv0000-0000-4000-8000-000000000001';
+    private string $nodeUuid = 'a0de0000-0000-4000-8000-000000000001';
+    private string $eggUuid = 'e9900000-0000-4000-8000-000000000001';
+    private string $serverUuid = '5e7f0000-0000-4000-8000-000000000001';
     private string $bcryptHash = '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi';
 
     /** @var list<int> */
@@ -106,39 +108,27 @@ class PterodactylImporterControllerTest extends TestCase
             }
         }
         foreach ($this->createdUserIds as $id) {
-            if (User::getUserById($id)) {
+            $user = User::getUserById($id);
+            if ($user) {
+                MailList::deleteAllMailListsByUserId($user['uuid']);
+                MailQueue::deleteAllMailQueueByUserId($user['uuid']);
                 User::hardDeleteUser($id);
             }
         }
 
         $imported = User::getUserByUuid($this->importedUserUuid);
         if ($imported) {
+            MailList::deleteAllMailListsByUserId($imported['uuid']);
+            MailQueue::deleteAllMailQueueByUserId($imported['uuid']);
             User::hardDeleteUser($imported['id']);
         }
 
         $admin = User::getUserByUuid($this->adminUuid);
         if ($admin) {
+            MailList::deleteAllMailListsByUserId($admin['uuid']);
+            MailQueue::deleteAllMailQueueByUserId($admin['uuid']);
             User::hardDeleteUser($admin['id']);
         }
-    }
-
-    private function adminRequest(string $method, string $uri, array $payload = []): Request
-    {
-        $admin = User::getUserByUuid($this->adminUuid);
-        $this->assertNotNull($admin);
-
-        $request = Request::create(
-            $uri,
-            $method,
-            [],
-            [],
-            [],
-            ['CONTENT_TYPE' => 'application/json'],
-            $payload === [] ? null : json_encode($payload, JSON_THROW_ON_ERROR)
-        );
-        $request->attributes->set('user', $admin);
-
-        return $request;
     }
 
     public function testDeprecatedBulkImportReturns410(): void
@@ -309,7 +299,7 @@ class PterodactylImporterControllerTest extends TestCase
             'server' => [
                 'id' => 13,
                 'uuid' => $this->serverUuid,
-                'uuidShort' => 'ci000001',
+                'uuidShort' => 'c1000001',
                 'name' => 'CI Server',
                 'description' => 'Imported',
                 'status' => null,
@@ -349,5 +339,24 @@ class PterodactylImporterControllerTest extends TestCase
         $this->assertSame('CI Server', $createdServer['name']);
         $this->assertSame($spellId, (int) $createdServer['spell_id']);
         $this->assertSame($nodeId, (int) $createdServer['node_id']);
+    }
+
+    private function adminRequest(string $method, string $uri, array $payload = []): Request
+    {
+        $admin = User::getUserByUuid($this->adminUuid);
+        $this->assertNotNull($admin);
+
+        $request = Request::create(
+            $uri,
+            $method,
+            [],
+            [],
+            [],
+            ['CONTENT_TYPE' => 'application/json'],
+            $payload === [] ? null : json_encode($payload, JSON_THROW_ON_ERROR)
+        );
+        $request->attributes->set('user', $admin);
+
+        return $request;
     }
 }

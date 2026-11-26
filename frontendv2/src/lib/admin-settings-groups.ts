@@ -117,7 +117,10 @@ const VDS_GROUPS: SettingsGroupDef[] = [
 ];
 
 /** Display order for VDS: branding last (matchers already non-overlapping). */
-const VDS_DISPLAY = [...VDS_GROUPS.filter((g) => g.id !== 'branding'), ...VDS_GROUPS.filter((g) => g.id === 'branding')];
+const VDS_DISPLAY = [
+    ...VDS_GROUPS.filter((g) => g.id !== 'branding'),
+    ...VDS_GROUPS.filter((g) => g.id === 'branding'),
+];
 
 export const CATEGORY_GROUPS: Record<string, SettingsGroupDef[]> = {
     app: [
@@ -125,14 +128,7 @@ export const CATEGORY_GROUPS: Record<string, SettingsGroupDef[]> = {
             id: 'identity',
             icon: Settings,
             defaultOpen: true,
-            match: oneOf(
-                'app_name',
-                'app_url',
-                'wings_remote_url',
-                'app_logo_white',
-                'app_logo_dark',
-                'app_timezone',
-            ),
+            match: oneOf('app_name', 'app_url', 'wings_remote_url', 'app_logo_white', 'app_logo_dark', 'app_timezone'),
         },
         {
             id: 'sso_api',
@@ -223,13 +219,7 @@ export const CATEGORY_GROUPS: Record<string, SettingsGroupDef[]> = {
         {
             id: 'captcha',
             icon: ShieldAlert,
-            match: starts(
-                'captcha_',
-                'turnstile_',
-                'hcaptcha_',
-                'recaptcha_',
-                'friendly_captcha_',
-            ),
+            match: starts('captcha_', 'turnstile_', 'hcaptcha_', 'recaptcha_', 'friendly_captcha_'),
         },
         { id: 'abuseipdb', icon: Shield, master: 'abuseipdb_enabled', match: starts('abuseipdb_') },
         {
@@ -277,8 +267,7 @@ export const CATEGORY_GROUPS: Record<string, SettingsGroupDef[]> = {
             defaultOpen: true,
             master: 'status_page_enabled',
             match: (key) =>
-                starts('maintenance_mode_')(key) ||
-                oneOf('status_page_enabled', 'status_page_public_enabled')(key),
+                starts('maintenance_mode_')(key) || oneOf('status_page_enabled', 'status_page_public_enabled')(key),
         },
         {
             id: 'visibility',
@@ -338,8 +327,7 @@ export const CATEGORY_GROUPS: Record<string, SettingsGroupDef[]> = {
         {
             id: 'proxy_upload',
             icon: UploadCloud,
-            match: (key) =>
-                starts('server_proxy_', 'server_upload_')(key) || key === 'server_allow_user_made_proxy',
+            match: (key) => starts('server_proxy_', 'server_upload_')(key) || key === 'server_allow_user_made_proxy',
         },
         {
             id: 'network',
@@ -408,11 +396,7 @@ export const CATEGORY_GROUPS: Record<string, SettingsGroupDef[]> = {
         {
             id: 'upload',
             icon: UploadCloud,
-            match: oneOf(
-                'backup_upload_part_size_mb',
-                'backup_max_concurrent_uploads',
-                'backup_presign_ttl_minutes',
-            ),
+            match: oneOf('backup_upload_part_size_mb', 'backup_max_concurrent_uploads', 'backup_presign_ttl_minutes'),
         },
         {
             id: 'byo',
@@ -429,17 +413,15 @@ export const CATEGORY_GROUPS: Record<string, SettingsGroupDef[]> = {
         {
             id: 'oauth_apps',
             icon: KeyRound,
-            match: starts(
-                'backup_byo_google_',
-                'backup_byo_dropbox_',
-                'backup_byo_onedrive_',
-            ),
+            match: starts('backup_byo_google_', 'backup_byo_dropbox_', 'backup_byo_onedrive_'),
         },
     ],
 };
 
 export function getGroupsForCategory(categoryKey: string): SettingsGroupDef[] {
-    return CATEGORY_GROUPS[categoryKey] ?? [{ id: 'other', icon: SlidersHorizontal, alwaysOpen: true, match: () => true }];
+    return (
+        CATEGORY_GROUPS[categoryKey] ?? [{ id: 'other', icon: SlidersHorizontal, alwaysOpen: true, match: () => true }]
+    );
 }
 
 export function findGroupForSetting(categoryKey: string, settingKey: string): SettingsGroupDef {
@@ -448,11 +430,7 @@ export function findGroupForSetting(categoryKey: string, settingKey: string): Se
 }
 
 /** Group title + description for accordion sections (searchable). */
-export function groupSearchText(
-    categoryKey: string,
-    settingKey: string,
-    t: (key: string) => string,
-): string {
+export function groupSearchText(categoryKey: string, settingKey: string, t: (key: string) => string): string {
     const group = findGroupForSetting(categoryKey, settingKey);
     const id = group.id;
     const titleKey = `admin.settings.groups.${categoryKey}.${id}.title`;

@@ -63,7 +63,8 @@ export async function subscribeWebPush(): Promise<PushSubscription | null> {
     const permission = await Notification.requestPermission();
     if (permission !== 'granted') return null;
 
-    const registration = (await navigator.serviceWorker.getRegistration(SW_PATH)) || (await registerPanelServiceWorker());
+    const registration =
+        (await navigator.serviceWorker.getRegistration(SW_PATH)) || (await registerPanelServiceWorker());
     if (!registration) return null;
     await navigator.serviceWorker.ready;
 

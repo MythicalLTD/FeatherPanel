@@ -17,9 +17,9 @@
 
 namespace App\Services\Chatbot\Tools\WebSpace;
 
+use App\WebSpaceSubuserPermissions;
 use App\Helpers\FeatherQuilldClient;
 use App\Helpers\WebSpaceWafSettings;
-use App\WebSpaceSubuserPermissions;
 use App\Services\Chatbot\Tools\ToolInterface;
 
 class GetWafOverviewTool implements ToolInterface

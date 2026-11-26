@@ -19,8 +19,8 @@ use App\App;
 use RateLimit\Rate;
 use App\Helpers\ApiResponse;
 use Symfony\Component\HttpFoundation\Request;
-use App\Controllers\User\WebSpaceChatbotController;
 use Symfony\Component\Routing\RouteCollection;
+use App\Controllers\User\WebSpaceChatbotController;
 
 return function (RouteCollection $routes): void {
     App::getInstance(true)->registerAuthRoute(

@@ -57,7 +57,6 @@ function ChatbotOpenButton({ onClick }: { onClick: () => void }) {
     );
 }
 
-
 function WebSpaceChatbotWidget() {
     const [isOpen, setIsOpen] = useState(false);
     const { webspace } = useWebSpace();
@@ -104,12 +103,8 @@ function WebSpaceChatbotWidget() {
                                       uuid: webspace.uuid,
                                       name: webspace.name,
                                       status: webspace.status,
-                                      domains: Array.isArray(webspace.domains)
-                                          ? webspace.domains.map((d: any) =>
-                                                typeof d === 'string' ? d : d?.domain || '',
-                                            ).filter(Boolean)
-                                          : undefined,
-                                      webplate_name: (webspace as any).webplate_name ?? null,
+                                      domains: webspace.domains,
+                                      webplate_name: webspace.webplate_name ?? null,
                                   }
                                 : null
                         }

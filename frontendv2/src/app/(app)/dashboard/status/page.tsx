@@ -120,7 +120,6 @@ interface StatusData {
     };
 }
 
-
 function InfraNodesSection({
     title,
     summary,
@@ -154,7 +153,9 @@ function InfraNodesSection({
                                 <div className='flex flex-wrap items-center gap-2'>
                                     <span className='truncate font-bold'>{node.name}</span>
                                     {node.flag_code && (
-                                        <span className='text-muted-foreground text-xs uppercase'>{node.flag_code}</span>
+                                        <span className='text-muted-foreground text-xs uppercase'>
+                                            {node.flag_code}
+                                        </span>
                                     )}
                                 </div>
                                 {node.location_name && (
@@ -488,12 +489,13 @@ export default function StatusPage() {
 
             {statusData?.show_incidents !== false && (statusData?.data?.incidents?.length || 0) > 0 && (
                 <div className='space-y-3'>
-                    <h2 className='text-lg font-bold tracking-tight md:text-xl'>
-                        {t('dashboard.status.incidents')}
-                    </h2>
+                    <h2 className='text-lg font-bold tracking-tight md:text-xl'>{t('dashboard.status.incidents')}</h2>
                     <div className='fp-surface divide-border/40 divide-y overflow-hidden rounded-xl border'>
-                        {statusData.data?.incidents?.map((incident) => (
-                            <div key={incident.id} className='flex flex-col gap-1 p-4 sm:flex-row sm:items-center sm:justify-between'>
+                        {statusData?.data?.incidents?.map((incident) => (
+                            <div
+                                key={incident.id}
+                                className='flex flex-col gap-1 p-4 sm:flex-row sm:items-center sm:justify-between'
+                            >
                                 <div className='min-w-0'>
                                     <div className='flex flex-wrap items-center gap-2'>
                                         <Badge className='bg-amber-500/10 text-amber-600'>{incident.type}</Badge>
@@ -502,7 +504,9 @@ export default function StatusPage() {
                                     <p className='text-muted-foreground mt-1 text-sm'>{incident.message}</p>
                                 </div>
                                 {incident.started_at && (
-                                    <span className='text-muted-foreground shrink-0 text-xs'>{incident.started_at}</span>
+                                    <span className='text-muted-foreground shrink-0 text-xs'>
+                                        {incident.started_at}
+                                    </span>
                                 )}
                             </div>
                         ))}
@@ -513,7 +517,7 @@ export default function StatusPage() {
             {statusData?.show_map !== false && (statusData?.data?.map_nodes?.length || 0) > 0 && (
                 <NodesMapDynamic
                     variant='public'
-                    nodes={(statusData.data?.map_nodes || []).map((node, index) => ({
+                    nodes={(statusData?.data?.map_nodes || []).map((node, index) => ({
                         id: index + 1,
                         name: node.name,
                         status: node.status,
@@ -589,17 +593,11 @@ export default function StatusPage() {
             <WidgetRenderer widgets={getWidgets('dashboard-status', 'after-global-stats')} />
 
             {statusData?.show_web_nodes !== false && statusData?.data?.web_nodes && (
-                <InfraNodesSection
-                    title={t('dashboard.status.webNodes')}
-                    summary={statusData.data.web_nodes}
-                />
+                <InfraNodesSection title={t('dashboard.status.webNodes')} summary={statusData.data.web_nodes} />
             )}
 
             {statusData?.show_vds_nodes !== false && statusData?.data?.vds_nodes && (
-                <InfraNodesSection
-                    title={t('dashboard.status.vdsNodes')}
-                    summary={statusData.data.vds_nodes}
-                />
+                <InfraNodesSection title={t('dashboard.status.vdsNodes')} summary={statusData.data.vds_nodes} />
             )}
 
             {/*  Individual nodes  */}

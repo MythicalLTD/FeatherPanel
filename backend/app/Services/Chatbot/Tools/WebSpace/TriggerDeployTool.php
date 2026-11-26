@@ -18,8 +18,8 @@
 namespace App\Services\Chatbot\Tools\WebSpace;
 
 use App\Chat\WebSpaceSchedule;
-use App\Helpers\FeatherQuilldClient;
 use App\WebSpaceSubuserPermissions;
+use App\Helpers\FeatherQuilldClient;
 use App\Services\Chatbot\Tools\ToolInterface;
 
 class TriggerDeployTool implements ToolInterface

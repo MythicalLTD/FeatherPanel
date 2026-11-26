@@ -56,8 +56,6 @@ function sanitizePmaAppUrl(url: string): string {
     return trimmed;
 }
 
-
-
 export function preparePmaAuthContext(
     settings: AppSettings | null | undefined,
     t: TranslateFn,
