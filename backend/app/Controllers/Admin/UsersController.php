@@ -33,6 +33,7 @@ use App\Chat\MailQueue;
 use App\Chat\Allocation;
 use App\Chat\VmInstance;
 use App\Helpers\UUIDUtils;
+use App\Helpers\ExternalId;
 use App\Helpers\TimeHelper;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
@@ -102,6 +103,7 @@ use App\Services\Servers\UserServerAccessRevoker;
         new OA\Property(property: 'password', type: 'string', description: 'Password', minLength: 8, maxLength: 255),
         new OA\Property(property: 'avatar', type: 'string', format: 'uri', nullable: true, description: 'Avatar URL'),
         new OA\Property(property: 'role_id', type: 'integer', nullable: true, description: 'Role ID (defaults to 1)'),
+        new OA\Property(property: 'external_id', type: 'string', nullable: true, maxLength: 191, description: 'ID in an external system such as a billing panel: letters, digits and ._:@- (unique; null or empty clears it)'),
     ]
 )]
 #[OA\Schema(
@@ -116,6 +118,7 @@ use App\Services\Servers\UserServerAccessRevoker;
         new OA\Property(property: 'avatar', type: 'string', format: 'uri', nullable: true, description: 'Avatar URL'),
         new OA\Property(property: 'role_id', type: 'integer', nullable: true, description: 'Role ID'),
         new OA\Property(property: 'banned', type: 'boolean', nullable: true, description: 'Banned status'),
+        new OA\Property(property: 'external_id', type: 'string', nullable: true, maxLength: 191, description: 'ID in an external system such as a billing panel: letters, digits and ._:@- (unique; null or empty clears it; full administrators only)'),
     ]
 )]
 #[OA\Schema(
@@ -688,6 +691,12 @@ class UsersController
         if (User::getUserByUsername($data['username'])) {
             return ApiResponse::error('Username already exists', 'USERNAME_ALREADY_EXISTS', 409);
         }
+        if (array_key_exists('external_id', $data)) {
+            $externalIdError = self::applyExternalId($data, null);
+            if ($externalIdError !== null) {
+                return $externalIdError;
+            }
+        }
         // Hash password
         $tempPassword = $data['password'];
         $data['password'] = password_hash($data['password'], PASSWORD_BCRYPT);
@@ -719,19 +728,24 @@ class UsersController
             return ApiResponse::error('Failed to create user', 'FAILED_TO_CREATE_USER', 500);
         }
 
-        Welcome::send([
-            'email' => $data['email'],
-            'subject' => 'Welcome to ' . $config->getSetting(ConfigInterface::APP_NAME, 'FeatherPanel'),
-            'app_name' => $config->getSetting(ConfigInterface::APP_NAME, 'FeatherPanel'),
-            'app_url' => $config->getSetting(ConfigInterface::APP_URL, 'https://featherpanel.mythical.systems'),
-            'first_name' => $data['first_name'],
-            'last_name' => $data['last_name'],
-            'password' => $tempPassword,
-            'username' => $data['username'],
-            'app_support_url' => $config->getSetting(ConfigInterface::APP_SUPPORT_URL, 'https://discord.mythical.systems'),
-            'uuid' => $data['uuid'],
-            'enabled' => $config->getSetting(ConfigInterface::SMTP_ENABLED, 'false'),
-        ]);
+        // The account exists from here on; the welcome email is best effort.
+        try {
+            Welcome::send([
+                'email' => $data['email'],
+                'subject' => 'Welcome to ' . $config->getSetting(ConfigInterface::APP_NAME, 'FeatherPanel'),
+                'app_name' => $config->getSetting(ConfigInterface::APP_NAME, 'FeatherPanel'),
+                'app_url' => $config->getSetting(ConfigInterface::APP_URL, 'https://featherpanel.mythical.systems'),
+                'first_name' => $data['first_name'],
+                'last_name' => $data['last_name'],
+                'password' => $tempPassword,
+                'username' => $data['username'],
+                'app_support_url' => $config->getSetting(ConfigInterface::APP_SUPPORT_URL, 'https://discord.mythical.systems'),
+                'uuid' => $data['uuid'],
+                'enabled' => $config->getSetting(ConfigInterface::SMTP_ENABLED, 'false'),
+            ]);
+        } catch (\Throwable $e) {
+            App::getInstance(true)->getLogger()->error('User ' . $userId . ' created, but the welcome email could not be sent: ' . $e->getMessage());
+        }
 
         Activity::createActivity([
             'user_uuid' => $data['uuid'],
@@ -750,15 +764,19 @@ class UsersController
         // Emit event
         global $eventManager;
         if (isset($eventManager) && $eventManager !== null) {
-            $eventManager->emit(
-                UserEvent::onUserCreated(),
-                [
-                    'user' => $data,
-                    'user_id' => $userId,
-                    'uuid' => $data['uuid'],
-                    'created_by' => $request->attributes->get('user'),
-                ]
-            );
+            try {
+                $eventManager->emit(
+                    UserEvent::onUserCreated(),
+                    [
+                        'user' => $data,
+                        'user_id' => $userId,
+                        'uuid' => $data['uuid'],
+                        'created_by' => $request->attributes->get('user'),
+                    ]
+                );
+            } catch (\Throwable $e) {
+                App::getInstance(true)->getLogger()->error('User ' . $userId . ' created, but a user-created event listener failed: ' . $e->getMessage());
+            }
         }
 
         return ApiResponse::success([
@@ -967,6 +985,12 @@ class UsersController
             $existingUser = User::getUserByUsername($data['username']);
             if ($existingUser && $existingUser['uuid'] !== $user['uuid']) {
                 return ApiResponse::error('Username already exists', 'USERNAME_ALREADY_EXISTS', 409);
+            }
+        }
+        if (array_key_exists('external_id', $data)) {
+            $externalIdError = self::applyExternalId($data, (string) $user['uuid']);
+            if ($externalIdError !== null) {
+                return $externalIdError;
             }
         }
         // Hash password if updating password
@@ -2238,5 +2262,29 @@ class UsersController
             }
             WebSpace::updateStatus($spaceUuid, 'installed');
         }
+    }
+
+    /**
+     * Validate and normalise `external_id` in a create/update payload (null or "" clears it).
+     * Returns an error response, or null when $data is ready to be saved.
+     */
+    private static function applyExternalId(array &$data, ?string $currentUserUuid): ?Response
+    {
+        $check = ExternalId::normalize($data['external_id']);
+        if (!$check['ok']) {
+            return ApiResponse::error(ExternalId::invalidMessage(), 'INVALID_EXTERNAL_ID', 400);
+        }
+        $data['external_id'] = $check['value'];
+        if ($check['value'] === null) {
+            return null;
+        }
+        $existing = User::getUserByExternalId($check['value']);
+        if ($existing && (string) $existing['uuid'] !== $currentUserUuid) {
+            return ApiResponse::error('Another user already uses this external_id', 'EXTERNAL_ID_IN_USE', 409, [
+                'uuid' => (string) $existing['uuid'],
+            ]);
+        }
+
+        return null;
     }
 }
