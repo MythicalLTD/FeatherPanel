@@ -122,6 +122,57 @@ class UserExternalIdTest extends TestCase
         $this->assertNull(User::getUserByUuid($firstUuid)['external_id']);
     }
 
+    public function testLookupFindsExternalIdZero(): void
+    {
+        $existing = User::getUserByExternalId('0');
+        if ($existing) {
+            $this->markTestSkipped('external_id "0" is already used in this database');
+        }
+        [$status, $data] = $this->createUser(['external_id' => '0']);
+        $this->assertSame(201, $status, json_encode($data));
+
+        $response = $this->controller->showByExternalId(Request::create('/'), '0');
+        $this->assertSame(200, $response->getStatusCode());
+        $this->assertSame($this->uuidOf($data), $this->json($response)['data']['user']['uuid']);
+    }
+
+    public function testUpdateAnswersInvalidExternalIdLikeCreate(): void
+    {
+        [, $created] = $this->createUser([]);
+        [$status, $data] = $this->updateUser($this->uuidOf($created), ['external_id' => ['array']]);
+        $this->assertSame(400, $status);
+        $this->assertSame('INVALID_EXTERNAL_ID', $data['error_code']);
+    }
+
+    public function testExternalIdTakenAtWriteTimeAnswers409(): void
+    {
+        // The database refusing the value at write time stands in for another request claiming it
+        // between the controller's check and the write.
+        $taken = 'race-' . bin2hex(random_bytes(4));
+        [, $created] = $this->createUser([]);
+        $uuid = $this->uuidOf($created);
+
+        $pdo = \App\Chat\Database::getPdoConnection();
+        $table = User::getTableName();
+        $signal = "SIGNAL SQLSTATE '23000' SET MYSQL_ERRNO = 1062, MESSAGE_TEXT = 'Duplicate entry for key featherpanel_users_external_id_unique'";
+        $pdo->exec('DROP TRIGGER IF EXISTS fp_test_ext_id_insert');
+        $pdo->exec('DROP TRIGGER IF EXISTS fp_test_ext_id_update');
+        $pdo->exec("CREATE TRIGGER fp_test_ext_id_insert BEFORE INSERT ON `$table` FOR EACH ROW BEGIN IF NEW.external_id = " . $pdo->quote($taken) . " THEN $signal; END IF; END");
+        $pdo->exec("CREATE TRIGGER fp_test_ext_id_update BEFORE UPDATE ON `$table` FOR EACH ROW BEGIN IF NEW.external_id = " . $pdo->quote($taken) . " THEN $signal; END IF; END");
+        try {
+            [$status, $data] = $this->createUser(['external_id' => $taken]);
+            $this->assertSame(409, $status, json_encode($data));
+            $this->assertSame('EXTERNAL_ID_IN_USE', $data['error_code']);
+
+            [$status, $data] = $this->updateUser($uuid, ['external_id' => $taken]);
+            $this->assertSame(409, $status, json_encode($data));
+            $this->assertSame('EXTERNAL_ID_IN_USE', $data['error_code']);
+        } finally {
+            $pdo->exec('DROP TRIGGER IF EXISTS fp_test_ext_id_insert');
+            $pdo->exec('DROP TRIGGER IF EXISTS fp_test_ext_id_update');
+        }
+    }
+
     /**
      * @return array{0: int, 1: array}
      */

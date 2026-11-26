@@ -374,7 +374,7 @@ class User
     /**
      * Update a user by ID.
      */
-    public static function updateUser(string $uuid, array $data): bool
+    public static function updateUser(string $uuid, array $data, ?\PDOException &$error = null): bool
     {
         if (array_key_exists('role_id', $data)) {
             \App\Helpers\PermissionHelper::forgetUser($uuid);
@@ -419,6 +419,7 @@ class User
 
             return $stmt->execute($data);
         } catch (\PDOException $e) {
+            $error = $e;
             App::getInstance(true)->getLogger()->error('Failed to update user: ' . $e->getMessage());
 
             return false;
