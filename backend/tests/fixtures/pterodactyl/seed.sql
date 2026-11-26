@@ -7,7 +7,7 @@ INSERT INTO `locations` (`id`, `short`, `long`, `created_at`, `updated_at`) VALU
   (1, 'ci', 'CI Location', NOW(), NOW());
 
 INSERT INTO `nests` (`id`, `uuid`, `author`, `name`, `description`, `created_at`, `updated_at`) VALUES
-  (1, 'nest0000-0000-4000-8000-000000000001', 'ci@featherpanel.test', 'CI Nest', 'Nest for CI', NOW(), NOW());
+  (1, '11111111-1111-4111-8111-111111111111', 'ci@featherpanel.test', 'CI Nest', 'Nest for CI', NOW(), NOW());
 
 INSERT INTO `eggs` (
   `id`, `uuid`, `nest_id`, `author`, `name`, `description`, `features`, `docker_images`,
@@ -15,7 +15,7 @@ INSERT INTO `eggs` (
   `script_install`, `force_outgoing_ip`, `created_at`, `updated_at`
 ) VALUES (
   1,
-  'egg00000-0000-4000-8000-0000000000ci',
+  '22222222-2222-4222-8222-222222222222',
   1,
   'ci@featherpanel.test',
   'CI Egg',
@@ -48,7 +48,7 @@ INSERT INTO `nodes` (
   `created_at`, `updated_at`
 ) VALUES (
   1,
-  'node0000-0000-4000-8000-0000000000ci',
+  '33333333-3333-4333-8333-333333333333',
   1,
   'CI Node',
   'Node for CI',
@@ -81,7 +81,7 @@ INSERT INTO `users` (
 ) VALUES
   (
     1,
-    'user0000-0000-4000-8000-000000000001',
+    '44444444-4444-4444-8444-444444444441',
     'pteroadmin',
     'pteroadmin@example.com',
     'Ptero',
@@ -96,7 +96,7 @@ INSERT INTO `users` (
   ),
   (
     2,
-    'user0000-0000-4000-8000-000000000002',
+    '44444444-4444-4444-8444-444444444442',
     'pterouser',
     'pterouser@example.com',
     'Ptero',
@@ -117,7 +117,7 @@ INSERT INTO `servers` (
   `allocation_limit`, `database_limit`, `backup_limit`, `created_at`, `updated_at`, `installed_at`
 ) VALUES (
   1,
-  'serv0000-0000-4000-8000-0000000000ci',
+  '55555555-5555-4555-8555-555555555555',
   'cisrv001',
   1,
   'CI Minecraft',
