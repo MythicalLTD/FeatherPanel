@@ -247,3 +247,7 @@ ADMIN_AUDIT_LOG_VIEW=admin.audit_log.view | Admin Audit Log | View the admin aud
 ADMIN_WINGS_BACKUPS_VIEW=admin.wings_backups.view | Admin Wings Backups | View Wings backups
 ADMIN_WINGS_BACKUPS_MANAGE=admin.wings_backups.manage | Admin Wings Backups | Manage Wings backup settings
 ADMIN_WINGS_BACKUPS_RUN=admin.wings_backups.run | Admin Wings Backups | Run or trigger Wings backups
+
+# Admin Webhooks Permissions
+ADMIN_WEBHOOKS_VIEW=admin.webhooks.view | Admin Webhooks | View admin webhooks and their delivery log
+ADMIN_WEBHOOKS_MANAGE=admin.webhooks.manage | Admin Webhooks | Create, edit, delete, test and redeliver admin webhooks

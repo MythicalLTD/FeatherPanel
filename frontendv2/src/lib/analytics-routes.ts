@@ -104,6 +104,7 @@ export const ANALYTICS_ROUTES = [
     '/admin/webplates',
     '/admin/webspaces',
     '/auth/verify-2fa',
+    '/admin/webhooks',
     '/admin/api-keys',
     '/admin/dev/logs',
     '/admin/settings',

@@ -152,7 +152,8 @@ class ApiRateLimitMiddleware implements MiddlewareInterface
         // Match the route template, not the raw path, so a caller-chosen path
         // segment such as `/webhook` cannot opt a normal route out of the budget.
         $template = RequestContext::route();
-        if ($template !== null && str_contains(strtolower($template), '/webhook')) {
+        // Admin pages that manage outgoing webhooks are normal routes and stay counted.
+        if ($template !== null && str_contains(strtolower($template), '/webhook') && !str_starts_with($template, '/api/admin/')) {
             return true;
         }
         foreach ($stack as $middleware) {

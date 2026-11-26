@@ -448,6 +448,12 @@ class Permissions {
     /** Run or trigger Wings backups */
     public static ADMIN_WINGS_BACKUPS_RUN = 'admin.wings_backups.run';
 
+    // Admin Webhooks Permissions
+    /** View admin webhooks and their delivery log */
+    public static ADMIN_WEBHOOKS_VIEW = 'admin.webhooks.view';
+    /** Create, edit, delete, test and redeliver admin webhooks */
+    public static ADMIN_WEBHOOKS_MANAGE = 'admin.webhooks.manage';
+
     /**
      * Returns all permission nodes with metadata.
      */
@@ -1436,6 +1442,18 @@ class Permissions {
                 value: Permissions.ADMIN_WINGS_BACKUPS_RUN,
                 category: 'Admin Wings Backups',
                 description: 'Run or trigger Wings backups',
+            },
+            {
+                constant: 'ADMIN_WEBHOOKS_VIEW',
+                value: Permissions.ADMIN_WEBHOOKS_VIEW,
+                category: 'Admin Webhooks',
+                description: 'View admin webhooks and their delivery log',
+            },
+            {
+                constant: 'ADMIN_WEBHOOKS_MANAGE',
+                value: Permissions.ADMIN_WEBHOOKS_MANAGE,
+                category: 'Admin Webhooks',
+                description: 'Create, edit, delete, test and redeliver admin webhooks',
             },
         ];
     }

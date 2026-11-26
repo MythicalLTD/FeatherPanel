@@ -38,7 +38,9 @@ use App\Chat\VmInstanceBackup;
 use App\Config\ConfigInterface;
 use App\Chat\VmInstanceActivity;
 use App\Services\Proxmox\Proxmox;
+use App\Services\Webhooks\WebhookPayloads;
 use App\Services\Backup\BackupFifoEviction;
+use App\Services\Webhooks\WebhookDispatcher;
 
 final class VmInstanceUtil
 {
@@ -1403,6 +1405,13 @@ final class VmInstanceUtil
             'metadata' => ['hostname' => $hostname, 'vmid' => $vmid],
             'ip' => '127.0.0.1',
         ]);
+
+        if ($instance) {
+            WebhookDispatcher::dispatch('vds.created', static fn (): array => [
+                'vds' => WebhookPayloads::vds(VmInstance::getById((int) $instance['id']) ?? $instance),
+                'actor' => null,
+            ]);
+        }
     }
 
     private static function completeBackup(string $taskId, array $task, array $meta, Proxmox $client): void

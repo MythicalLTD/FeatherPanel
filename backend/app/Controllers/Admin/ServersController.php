@@ -50,8 +50,10 @@ use App\Mail\templates\ServerDeleted;
 use App\Mail\templates\ServerUnbanned;
 use App\Helpers\ModerationReasonHelper;
 use App\Plugins\Events\Events\ServerEvent;
+use App\Services\Webhooks\WebhookPayloads;
 use App\Services\Backup\BackupFifoEviction;
 use App\Services\Server\WingsSuspensionSync;
+use App\Services\Webhooks\WebhookDispatcher;
 use Symfony\Component\HttpFoundation\Request;
 use App\Services\Notifications\WarningService;
 use Symfony\Component\HttpFoundation\Response;
@@ -1318,6 +1320,11 @@ class ServersController
             }
         }
 
+        WebhookDispatcher::dispatch('server.created', static fn (): array => [
+            'server' => WebhookPayloads::server(Server::getServerById((int) $serverId)),
+            'actor' => WebhookPayloads::actor($request->attributes->get('user')),
+        ]);
+
         try {
             $allocation = Allocation::getAllocationById($data['allocation_id']);
             ServerCreated::send([
@@ -2057,6 +2064,10 @@ class ServersController
                                 ]
                             );
                         }
+                        WebhookDispatcher::dispatch('server.reinstalled', static fn (): array => [
+                            'server' => WebhookPayloads::server(Server::getServerById((int) $id)),
+                            'actor' => WebhookPayloads::actor($request->attributes->get('user')),
+                        ]);
                     } else {
                         $response = $wings->getServer()->syncServer($server['uuid']);
                     }
@@ -2093,6 +2104,12 @@ class ServersController
                 ]
             );
         }
+
+        WebhookDispatcher::dispatch('server.updated', static fn (): array => [
+            'server' => WebhookPayloads::server($updatedServer),
+            'changed' => WebhookPayloads::changedKeys($data),
+            'actor' => WebhookPayloads::actor($request->attributes->get('user')),
+        ]);
 
         return ApiResponse::success([
             'server' => [
@@ -2236,6 +2253,12 @@ class ServersController
             );
         }
 
+        WebhookDispatcher::dispatch('server.deleted', static fn (): array => [
+            'server' => WebhookPayloads::server($server),
+            'hard_delete' => false,
+            'actor' => WebhookPayloads::actor($request->attributes->get('user')),
+        ]);
+
         try {
             ServerDeleted::send([
                 'email' => $user['email'],
@@ -2356,6 +2379,12 @@ class ServersController
                 ]
             );
         }
+
+        WebhookDispatcher::dispatch('server.deleted', static fn (): array => [
+            'server' => WebhookPayloads::server($server),
+            'hard_delete' => true,
+            'actor' => WebhookPayloads::actor($request->attributes->get('user')),
+        ]);
 
         try {
             ServerDeleted::send([
@@ -2713,6 +2742,12 @@ class ServersController
             );
         }
 
+        WebhookDispatcher::dispatch('server.suspended', static fn (): array => [
+            'server' => WebhookPayloads::server(Server::getServerById((int) $server['id']) ?? $server),
+            'source' => 'admin',
+            'actor' => WebhookPayloads::actor($request->attributes->get('user')),
+        ]);
+
         try {
             ServerBanned::send([
                 'email' => $user['email'],
@@ -2913,6 +2948,12 @@ class ServersController
                 ]
             );
         }
+
+        WebhookDispatcher::dispatch('server.unsuspended', static fn (): array => [
+            'server' => WebhookPayloads::server(Server::getServerById((int) $server['id']) ?? $server),
+            'source' => 'admin',
+            'actor' => WebhookPayloads::actor($request->attributes->get('user')),
+        ]);
 
         try {
             ServerUnbanned::send([

@@ -607,4 +607,7 @@ interface ConfigInterface
     public const CACHE_DRIVER = 'cache_driver'; // file, redis
 
     public const APP_DEMO_YES = 'app_demo_yes';
+
+    /** Admin webhooks: allow targets on private, loopback or reserved addresses ('true'/'false'). */
+    public const WEBHOOKS_ALLOW_PRIVATE_TARGETS = 'webhooks_allow_private_targets';
 }

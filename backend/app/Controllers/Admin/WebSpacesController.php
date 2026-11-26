@@ -38,7 +38,9 @@ use App\Helpers\WebSpacePluginEvents;
 use App\Helpers\WebSpaceScheduleTasks;
 use App\Helpers\WebSpaceActivityLogger;
 use App\Helpers\WebSpaceHostingMaturity;
+use App\Services\Webhooks\WebhookPayloads;
 use App\Plugins\Events\Events\WebSpaceEvent;
+use App\Services\Webhooks\WebhookDispatcher;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use App\Helpers\WebSpaceInfrastructureReadiness;
@@ -657,6 +659,10 @@ class WebSpacesController
                 $space,
                 ['context' => ['source' => 'admin', 'seeded_schedules' => $seededSchedules, 'installing' => true]],
             ));
+            WebhookDispatcher::dispatch('webspace.created', static fn (): array => [
+                'webspace' => WebhookPayloads::webspace(WebSpace::getByUuid((string) $space['uuid']) ?? $space),
+                'actor' => WebhookPayloads::actor(is_array($user) ? $user : null),
+            ]);
 
             return ApiResponse::success([
                 'webspace' => $space,
@@ -702,6 +708,10 @@ class WebSpacesController
             $space,
             ['context' => ['source' => 'admin', 'seeded_schedules' => $seededSchedules]],
         ));
+        WebhookDispatcher::dispatch('webspace.created', static fn (): array => [
+            'webspace' => WebhookPayloads::webspace(WebSpace::getByUuid((string) $space['uuid']) ?? $space),
+            'actor' => WebhookPayloads::actor(is_array($user) ? $user : null),
+        ]);
 
         return ApiResponse::success([
             'webspace' => $space,
@@ -738,6 +748,10 @@ class WebSpacesController
             $space,
             ['context' => ['source' => 'admin', 'daemon_error' => $daemonError]],
         ));
+        WebhookDispatcher::dispatch('webspace.deleted', static fn (): array => [
+            'webspace' => WebhookPayloads::webspace($space),
+            'actor' => WebhookPayloads::actor(is_array($user) ? $user : null),
+        ]);
 
         return ApiResponse::success([
             'uuid' => $uuid,
@@ -1968,6 +1982,10 @@ class WebSpacesController
             $space,
             ['context' => ['source' => 'admin']],
         ));
+        WebhookDispatcher::dispatch('webspace.suspended', static fn (): array => [
+            'webspace' => WebhookPayloads::webspace(WebSpace::getByUuid((string) $space['uuid']) ?? $space),
+            'actor' => WebhookPayloads::actor(is_array($user) ? $user : null),
+        ]);
 
         return ApiResponse::success(['webspace' => $space], 'WebSpace suspended', 200);
     }
@@ -1993,6 +2011,10 @@ class WebSpacesController
             $space,
             ['context' => ['source' => 'admin']],
         ));
+        WebhookDispatcher::dispatch('webspace.unsuspended', static fn (): array => [
+            'webspace' => WebhookPayloads::webspace(WebSpace::getByUuid((string) $space['uuid']) ?? $space),
+            'actor' => WebhookPayloads::actor(is_array($user) ? $user : null),
+        ]);
 
         return ApiResponse::success(['webspace' => $space], 'WebSpace unsuspended', 200);
     }

@@ -28,8 +28,10 @@ use App\Helpers\OAuthStateCookie;
 use App\Helpers\PanelIpBlockGuard;
 use App\CloudFlare\CloudFlareRealIP;
 use App\Helpers\EmailDomainValidator;
+use App\Services\Webhooks\WebhookPayloads;
 use App\Helpers\AbuseIPDBRegistrationGuard;
 use App\Helpers\UserDeviceRegistrationGuard;
+use App\Services\Webhooks\WebhookDispatcher;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -629,6 +631,11 @@ class DiscordController
             'name' => 'register',
             'context' => 'User registered via Discord OAuth',
             'ip_address' => $ip,
+        ]);
+        WebhookDispatcher::dispatch('user.created', static fn (): array => [
+            'user' => WebhookPayloads::user(User::getUserByUuid($uuid)),
+            'source' => 'discord',
+            'actor' => null,
         ]);
 
         // Send first-user role promotion if applicable
