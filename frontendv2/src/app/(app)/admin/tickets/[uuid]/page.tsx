@@ -65,6 +65,7 @@ export interface UserData {
 }
 
 export interface UserMail {
+    id: number;
     subject: string;
     body?: string;
     status: string;
@@ -202,6 +203,21 @@ export default function TicketViewPage() {
             setLoading(false);
         }
     }, [uuid, t, router]);
+
+    const openMailPreview = async (mail: UserMail) => {
+        setMailPreview({ ...mail, body: undefined });
+        setMailPreviewOpen(true);
+        if (!userDetails?.uuid) return;
+        try {
+            const { data } = await axios.get(`/api/admin/users/${userDetails.uuid}/mails/${mail.id}`);
+            const body = data?.data?.mail?.body;
+            if (typeof body === 'string') {
+                setMailPreview((current) => (current && current.id === mail.id ? { ...current, body } : current));
+            }
+        } catch (e) {
+            console.error('Error fetching mail:', e);
+        }
+    };
 
     const fetchUserData = async (userUuid: string) => {
         setLoadingSidebar(true);
@@ -426,10 +442,7 @@ export default function TicketViewPage() {
                                     userServers={userServers}
                                     userTickets={userTickets}
                                     loadingSidebar={loadingSidebar}
-                                    onOpenMailPreview={(mail) => {
-                                        setMailPreview(mail);
-                                        setMailPreviewOpen(true);
-                                    }}
+                                    onOpenMailPreview={openMailPreview}
                                     widgets={getWidgets('admin-tickets-view', 'sidebar-bottom')}
                                     WidgetRenderer={WidgetRenderer}
                                 />
@@ -768,10 +781,7 @@ export default function TicketViewPage() {
                         userServers={userServers}
                         userTickets={userTickets}
                         loadingSidebar={loadingSidebar}
-                        onOpenMailPreview={(mail) => {
-                            setMailPreview(mail);
-                            setMailPreviewOpen(true);
-                        }}
+                        onOpenMailPreview={openMailPreview}
                         widgets={getWidgets('admin-tickets-view', 'sidebar-top')}
                         WidgetRenderer={WidgetRenderer}
                     />
