@@ -118,7 +118,7 @@ INSERT INTO `servers` (
 ) VALUES (
   1,
   '55555555-5555-4555-8555-555555555555',
-  'cisrv001',
+  '55555555',
   1,
   'CI Minecraft',
   'Server for CI migrate',
