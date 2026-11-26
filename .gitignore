@@ -40,6 +40,8 @@ backend/tests/*
 !backend/tests/Telemetry/SentryTelemetryTest.php
 !backend/tests/Observability/
 !backend/tests/Observability/*.php
+!backend/tests/Webhooks/
+!backend/tests/Webhooks/*.php
 runner/async-runner.out
 todokutzu.md
 TODO.txt
