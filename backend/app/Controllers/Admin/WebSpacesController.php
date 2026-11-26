@@ -22,13 +22,14 @@ use App\Chat\User;
 use App\Chat\WebNode;
 use App\Chat\WebPlate;
 use App\Chat\WebSpace;
-use App\Chat\WebSpaceDomain;
+use App\Helpers\ExternalId;
 use App\Chat\HostingPackage;
+use App\Chat\WebSpaceDomain;
 use App\Helpers\ApiResponse;
-use App\Helpers\WebSpaceWafRules;
 use OpenApi\Attributes as OA;
 use App\Chat\WebSpaceSchedule;
 use App\Helpers\DnsProvisioner;
+use App\Helpers\WebSpaceWafRules;
 use App\Helpers\WebSpacePresenter;
 use App\Helpers\WebSpaceDaemonSync;
 use App\Helpers\FeatherQuilldClient;
@@ -140,6 +141,22 @@ class WebSpacesController
         return ApiResponse::success(WebSpacePresenter::forAdmin($space), 'OK', 200);
     }
 
+    #[OA\Get(path: '/api/admin/webspaces/external/{externalId}', summary: 'Get WebSpace by external ID', tags: ['Admin - WebSpaces'])]
+    public function showByExternalId(Request $request, string $externalId): Response
+    {
+        $externalId = trim($externalId);
+        if (!ExternalId::isValid($externalId)) {
+            return ApiResponse::error(ExternalId::invalidMessage(), 'INVALID_EXTERNAL_ID', 400);
+        }
+
+        $space = WebSpace::getByExternalId($externalId);
+        if (!$space) {
+            return ApiResponse::error('WebSpace not found', 'WEBSPACE_NOT_FOUND', 404);
+        }
+
+        return ApiResponse::success(WebSpacePresenter::forAdmin($space), 'OK', 200);
+    }
+
     #[OA\Patch(path: '/api/admin/webspaces/{uuid}', summary: 'Update WebSpace settings', tags: ['Admin - WebSpaces'])]
     public function update(Request $request, string $uuid): Response
     {
@@ -151,6 +168,58 @@ class WebSpacesController
         $content = json_decode($request->getContent(), true);
         if (!is_array($content)) {
             return ApiResponse::error('Invalid JSON payload', 'INVALID_JSON', 400);
+        }
+
+        // Panel-only fields (no daemon sync needed): external_id and hosting_package_id.
+        // Validated here, written once the rest of the update has gone through.
+        $panelOnly = [];
+        $savePanelOnly = static function () use (&$panelOnly, $uuid): bool {
+            if (array_key_exists('external_id', $panelOnly) && !WebSpace::setExternalId($uuid, $panelOnly['external_id'])) {
+                return false;
+            }
+            if (array_key_exists('hosting_package_id', $panelOnly) && !WebSpace::setHostingPackageId($uuid, $panelOnly['hosting_package_id'])) {
+                return false;
+            }
+
+            return true;
+        };
+        if (array_key_exists('external_id', $content)) {
+            $externalIdCheck = ExternalId::normalize($content['external_id']);
+            if (!$externalIdCheck['ok']) {
+                return ApiResponse::error(ExternalId::invalidMessage(), 'INVALID_EXTERNAL_ID', 400);
+            }
+            $newExternalId = $externalIdCheck['value'];
+            if ($newExternalId !== null) {
+                $holder = WebSpace::getByExternalId($newExternalId);
+                if ($holder && (string) $holder['uuid'] !== (string) $space['uuid']) {
+                    return ApiResponse::error('Another WebSpace already uses this external_id', 'EXTERNAL_ID_IN_USE', 409, [
+                        'uuid' => (string) $holder['uuid'],
+                    ]);
+                }
+            }
+            $panelOnly['external_id'] = $newExternalId;
+            unset($content['external_id']);
+        }
+        if (array_key_exists('hosting_package_id', $content)) {
+            $rawPackage = $content['hosting_package_id'];
+            $packageId = $rawPackage === null || $rawPackage === '' ? 0 : (int) $rawPackage;
+            if ($packageId < 0 || ($rawPackage !== null && $rawPackage !== '' && !is_numeric($rawPackage))) {
+                return ApiResponse::error('hosting_package_id must be a positive integer or null', 'INVALID_DATA_TYPE', 400);
+            }
+            if ($packageId > 0) {
+                if (!HostingPackage::getById($packageId)) {
+                    return ApiResponse::error('Hosting package not found', 'HOSTING_PACKAGE_NOT_FOUND', 404);
+                }
+                // Same rule as create: package limits fill every field the request does not set.
+                // The WebPlate is kept, since switching runtimes needs its own checks below.
+                $hadWebplate = array_key_exists('webplate_id', $content);
+                $content = HostingPackage::applyToCreatePayload($content);
+                if (!$hadWebplate) {
+                    unset($content['webplate_id']);
+                }
+            }
+            $panelOnly['hosting_package_id'] = $packageId > 0 ? $packageId : null;
+            unset($content['hosting_package_id']);
         }
 
         $fields = [];
@@ -220,6 +289,15 @@ class WebSpacesController
         }
 
         if ($fields === []) {
+            if ($panelOnly !== []) {
+                if (!$savePanelOnly()) {
+                    return ApiResponse::error('Failed to update WebSpace', 'UPDATE_FAILED', 500);
+                }
+                $space = WebSpace::getByUuid($uuid) ?? $space;
+
+                return ApiResponse::success(['webspace' => $space, 'daemon' => [], 'runtime_recreated' => false], 'WebSpace updated', 200);
+            }
+
             return ApiResponse::error('No updatable fields provided', 'MISSING_FIELDS', 400);
         }
 
@@ -278,7 +356,7 @@ class WebSpacesController
             }
         }
 
-        if (!WebSpace::update($uuid, $fields)) {
+        if (!WebSpace::update($uuid, $fields) || !$savePanelOnly()) {
             return ApiResponse::error('Failed to update WebSpace', 'UPDATE_FAILED', 500);
         }
 
@@ -326,6 +404,21 @@ class WebSpacesController
         $content = json_decode($request->getContent(), true);
         if (!is_array($content)) {
             return ApiResponse::error('Invalid JSON payload', 'INVALID_JSON', 400);
+        }
+
+        // Billing systems retry orders; refuse a second WebSpace for the same external ID.
+        $externalIdCheck = ExternalId::normalize($content['external_id'] ?? null);
+        if (!$externalIdCheck['ok']) {
+            return ApiResponse::error(ExternalId::invalidMessage(), 'INVALID_EXTERNAL_ID', 400);
+        }
+        $externalId = $externalIdCheck['value'];
+        if ($externalId !== null) {
+            $existing = WebSpace::getByExternalId($externalId);
+            if ($existing) {
+                return ApiResponse::error('A WebSpace with this external_id already exists', 'EXTERNAL_ID_IN_USE', 409, [
+                    'uuid' => (string) $existing['uuid'],
+                ]);
+            }
         }
 
         $content = HostingPackage::applyToCreatePayload($content);
@@ -422,6 +515,7 @@ class WebSpacesController
             'status' => 'installing',
             'owner_id' => $ownerId,
             'backend_port' => isset($content['backend_port']) ? (int) $content['backend_port'] : 0,
+            'external_id' => $externalId,
         ]);
 
         if ($id === false) {

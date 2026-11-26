@@ -27,6 +27,7 @@ use App\Chat\Database;
 use App\Chat\VmInstance;
 use App\Chat\VmTemplate;
 use App\Chat\VmInstanceIp;
+use App\Helpers\ExternalId;
 use App\Helpers\TimeHelper;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
@@ -210,6 +211,27 @@ class VmInstancesController
         $data = json_decode($request->getContent(), true);
         if (!is_array($data)) {
             return ApiResponse::error('Invalid JSON body', 'INVALID_JSON', 400);
+        }
+
+        // Billing systems retry orders; refuse a second VM for the same external ID.
+        $externalIdCheck = ExternalId::normalize($data['external_id'] ?? null);
+        if (!$externalIdCheck['ok']) {
+            return ApiResponse::error(ExternalId::invalidMessage(), 'INVALID_EXTERNAL_ID', 400);
+        }
+        $externalId = $externalIdCheck['value'];
+        if ($externalId !== null) {
+            $existing = VmInstance::getByExternalId($externalId);
+            if ($existing) {
+                return ApiResponse::error('A VM instance with this external_id already exists', 'EXTERNAL_ID_IN_USE', 409, [
+                    'instance_id' => (int) $existing['id'],
+                ]);
+            }
+            $pending = VmTask::getActiveCreateByExternalId($externalId);
+            if ($pending) {
+                return ApiResponse::error('A VM instance with this external_id is already being created', 'CREATION_IN_PROGRESS', 409, [
+                    'creation_id' => (string) $pending['task_id'],
+                ]);
+            }
         }
 
         $vmNodeId = isset($data['vm_node_id']) ? (int) $data['vm_node_id'] : 0;
@@ -531,6 +553,7 @@ class VmInstancesController
             'backup_retention_mode' => $backupRetentionForMeta,
             'ci_user' => $ciUserInput,
             'ci_password' => $ciPasswordInput,
+            'external_id' => $externalId,
             'current_step' => 'initial',
         ];
 
@@ -689,6 +712,43 @@ class VmInstancesController
         );
     }
 
+    #[OA\Get(
+        path: '/api/admin/vm-instances/external/{externalId}',
+        summary: 'Get VM instance by external ID',
+        description: 'Find the VM instance a billing system created with this external_id. While the VM is still being created the response is 404 with the creation_id to poll.',
+        tags: ['Admin - VM Instances'],
+        parameters: [
+            new OA\Parameter(name: 'externalId', in: 'path', required: true, schema: new OA\Schema(type: 'string')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'VM instance retrieved successfully'),
+            new OA\Response(response: 400, description: 'Invalid external ID'),
+            new OA\Response(response: 404, description: 'Not found (data.creation_id is set while a create task is still queued or running)'),
+        ]
+    )]
+    public function showByExternalId(Request $request, string $externalId): Response
+    {
+        $externalId = trim($externalId);
+        if (!ExternalId::isValid($externalId)) {
+            return ApiResponse::error(ExternalId::invalidMessage(), 'INVALID_EXTERNAL_ID', 400);
+        }
+
+        $instance = VmInstance::getByExternalId($externalId);
+        if ($instance) {
+            return $this->show($request, (int) $instance['id']);
+        }
+
+        $pending = VmTask::getActiveCreateByExternalId($externalId);
+        if ($pending) {
+            return ApiResponse::error('VM instance is still being created', 'CREATION_IN_PROGRESS', 404, [
+                'creation_id' => (string) $pending['task_id'],
+                'status' => (string) $pending['status'],
+            ]);
+        }
+
+        return ApiResponse::error('VM instance not found', 'VM_INSTANCE_NOT_FOUND', 404);
+    }
+
     #[OA\Patch(
         path: '/api/admin/vm-instances/{id}',
         summary: 'Update VM instance',
@@ -730,6 +790,31 @@ class VmInstancesController
         $data = json_decode($request->getContent(), true);
         if (!is_array($data)) {
             return ApiResponse::error('Invalid JSON body', 'INVALID_JSON', 400);
+        }
+
+        if (array_key_exists('external_id', $data)) {
+            $externalIdCheck = ExternalId::normalize($data['external_id']);
+            if (!$externalIdCheck['ok']) {
+                return ApiResponse::error(ExternalId::invalidMessage(), 'INVALID_EXTERNAL_ID', 400);
+            }
+            $newExternalId = $externalIdCheck['value'];
+            if ($newExternalId !== null) {
+                $holder = VmInstance::getByExternalId($newExternalId);
+                if ($holder && (int) $holder['id'] !== $id) {
+                    return ApiResponse::error('Another VM instance already uses this external_id', 'EXTERNAL_ID_IN_USE', 409, [
+                        'instance_id' => (int) $holder['id'],
+                    ]);
+                }
+            }
+            if (!VmInstance::setExternalId($id, $newExternalId)) {
+                return ApiResponse::error('Failed to update external_id', 'UPDATE_FAILED', 500);
+            }
+            unset($data['external_id']);
+            if ($data === []) {
+                $instance = VmInstance::getById($id) ?? $instance;
+
+                return ApiResponse::success(['instance' => $instance], 'VM instance updated successfully', 200);
+            }
         }
 
         if (isset($data['backup_limit'])) {

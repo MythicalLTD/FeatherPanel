@@ -562,12 +562,17 @@ async fn create_vm_instance_record(
     let backup_limit = meta["backup_limit"].as_i64().unwrap_or(5);
     let on_boot = meta["on_boot"].as_bool().unwrap_or(false);
     let notes = meta["notes"].as_str();
+    // Set by billing systems so they can find the VM they ordered.
+    let external_id = meta["external_id"]
+        .as_str()
+        .map(str::trim)
+        .filter(|value| !value.is_empty());
     
     let result = sqlx::query(
         "INSERT INTO featherpanel_vm_instances 
         (vmid, vm_node_id, user_uuid, pve_node, plan_id, template_id, vm_type, hostname, status, 
-         ip_address, gateway, vm_ip_id, notes, backup_limit, memory, cpus, cores, disk_gb, on_boot)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'stopped', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+         ip_address, gateway, vm_ip_id, notes, backup_limit, memory, cpus, cores, disk_gb, on_boot, external_id)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'stopped', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
     )
     .bind(vmid)
     .bind(vm_node_id)
@@ -587,6 +592,7 @@ async fn create_vm_instance_record(
     .bind(cores)
     .bind(disk_gb)
     .bind(if on_boot { 1 } else { 0 })
+    .bind(external_id)
     .execute(pool)
     .await?;
     

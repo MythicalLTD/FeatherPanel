@@ -76,6 +76,23 @@ return function (RouteCollection $routes): void {
         ['GET']
     );
 
+    // Find a VM instance by the external ID a billing system gave it
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-vm-instances-show-by-external-id',
+        '/api/admin/vm-instances/external/{externalId}',
+        function (Request $request, array $args) {
+            $externalId = $args['externalId'] ?? null;
+            if (!is_string($externalId) || trim($externalId) === '') {
+                return ApiResponse::error('Missing or invalid external ID', 'INVALID_EXTERNAL_ID', 400);
+            }
+
+            return (new VmInstancesController())->showByExternalId($request, trim($externalId));
+        },
+        Permissions::ADMIN_VM_INSTANCES_VIEW,
+        ['GET']
+    );
+
     // Get single VM instance
     App::getInstance(true)->registerAdminRoute(
         $routes,
