@@ -136,7 +136,7 @@ interface ApiUser {
     ldap_provider_uuid?: string | null;
     ldap_dn?: string | null;
     activities?: { name: string; context: string; ip_address: string; created_at: string }[];
-    mails?: { id: number; subject: string; status: string; created_at: string; body?: string }[];
+    mails?: { id: number; subject: string; status: string; created_at: string }[];
 }
 
 interface EditForm {
@@ -218,6 +218,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
     const [ssoGenerating, setSsoGenerating] = useState(false);
     const [ssoLink, setSsoLink] = useState<string | null>(null);
     const [mailPreview, setMailPreview] = useState<{
+        id: number;
         subject: string;
         body?: string;
         status: string;
@@ -598,9 +599,22 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
         }
     };
 
-    const showMailPreview = (mail: { subject: string; body?: string; status: string; created_at: string }) => {
-        setMailPreview(mail);
+    const showMailPreview = async (mail: { id: number; subject: string; status: string; created_at: string }) => {
+        setMailPreview({ ...mail, body: undefined });
         setMailPreviewOpen(true);
+        if (!user) return;
+        try {
+            const { data } = await axios.get(`/api/admin/users/${user.uuid}/mails/${mail.id}`);
+            if (data?.success && data.data?.mail) {
+                setMailPreview((current) =>
+                    current && current.id === mail.id ? { ...current, body: data.data.mail.body ?? '' } : current,
+                );
+            } else {
+                toast.error(getApiErrorMessageFromPayload(data, t, 'common.error'));
+            }
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'common.error'));
+        }
     };
 
     const handleResendMail = async (mail: { id: number; subject: string; status: string }) => {
