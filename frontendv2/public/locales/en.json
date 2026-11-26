@@ -1760,7 +1760,11 @@
             "INVALID_SERVER_IDS": "Missing or invalid server IDs.",
             "TOO_MANY_SERVER_IDS": "Too many servers requested at once.",
             "DNS_NOTHING_SELECTED": "Select at least one group of records to write",
-            "FILES_DIRECTORY_NOT_FOUND": "The requested folder was not found."
+            "FILES_DIRECTORY_NOT_FOUND": "The requested folder was not found.",
+            "INVALID_YAML": "Invalid YAML",
+            "INVALID_EGG_URL": "Enter a valid http:// or https:// egg URL",
+            "EGG_URL_NOT_ALLOWED": "This URL points to a private or unreachable address and cannot be imported",
+            "EGG_URL_FETCH_FAILED": "Could not download the egg. Check that the URL is reachable and the file is smaller than 2 MB"
         },
         "global": {}
     },
@@ -14449,6 +14453,12 @@
             "create": "Create Spell",
             "import": "Import Spell",
             "import_dialog_description": "Select the realm where you want to import this spell.",
+            "import_url": "Import from URL",
+            "import_url_description": "Download an egg from a public link, such as a raw GitHub file from the pelican-eggs or parkervcp repositories.",
+            "import_url_label": "Egg URL",
+            "import_url_placeholder": "https://raw.githubusercontent.com/pelican-eggs/minecraft/main/java/paper/egg-paper.yaml",
+            "import_url_help": "http(s) only, up to 2 MB. GitHub page links are converted to the raw file automatically.",
+            "import_formats": "Supported: Pterodactyl PTDL_v1/PTDL_v2 and Pelican PLCN_v1/PLCN_v2/PLCN_v3 eggs, as JSON or YAML.",
             "browse_marketplace": "Browse Marketplace",
             "viewall": "View All Spells",
             "search_placeholder": "Search by name, description, or author...",
@@ -14569,7 +14579,9 @@
                 "variable_deleted": "Variable deleted successfully",
                 "variable_create_failed": "Failed to create variable",
                 "variable_update_failed": "Failed to update variable",
-                "variable_delete_failed": "Failed to delete variable"
+                "variable_delete_failed": "Failed to delete variable",
+                "import_warnings": "Some egg fields could not be kept:",
+                "invalid_import_url": "Enter a valid http:// or https:// URL"
             },
             "help": {
                 "cross_compatible": {

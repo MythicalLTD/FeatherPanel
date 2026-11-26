@@ -122,6 +122,16 @@ return function (RouteCollection $routes): void {
     );
     App::getInstance(true)->registerAdminRoute(
         $routes,
+        'admin-spells-import-url',
+        '/api/admin/spells/import/url',
+        function (Request $request) {
+            return (new SpellsController())->importFromUrl($request);
+        },
+        Permissions::ADMIN_SPELLS_CREATE,
+        ['POST']
+    );
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
         'admin-spells-export',
         '/api/admin/spells/{id}/export',
         function (Request $request, array $args) {

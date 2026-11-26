@@ -1,0 +1,224 @@
+{
+    "_comment": "DO NOT EDIT: FILE GENERATED AUTOMATICALLY BY PTERODACTYL PANEL - PTERODACTYL.IO",
+    "meta": {
+        "version": "PTDL_v2",
+        "update_url": null
+    },
+    "exported_at": "2026-05-10T02:18:05+00:00",
+    "name": "Rust",
+    "author": "panel@example.com",
+    "description": "The only aim in Rust is to survive. To do this you will need to overcome struggles such as hunger, thirst and cold. Build a fire. Build a shelter. Kill animals for meat. Protect yourself from other players, and kill them for meat. Create alliances with other players and form a town. Do whatever it takes to survive.",
+    "features": [
+        "steam_disk_space"
+    ],
+    "docker_images": {
+        "Rust": "ghcr.io\/pelican-eggs\/games:rust"
+    },
+    "file_denylist": [],
+    "startup": ".\/RustDedicated -batchmode +server.port {{SERVER_PORT}} +server.queryport {{QUERY_PORT}} +server.identity \"rust\" +rcon.port {{RCON_PORT}} +rcon.web true +server.maxplayers {{MAX_PLAYERS}} +rcon.password \"{{RCON_PASS}}\" +server.saveinterval {{SAVEINTERVAL}} +app.port {{APP_PORT}} {{ADDITIONAL_ARGS}}",
+    "config": {
+        "files": "{\n    \"server\/rust\/cfg\/server.cfg\": {\n        \"parser\": \"file\",\n        \"find\": {\n            \"server.hostname \": \"server.hostname \\\"{{server.build.env.SERVER_HOSTNAME}}\\\"\",\n            \"server.description \": \"server.description \\\"{{server.build.env.DESCRIPTION}}\\\"\",\n            \"server.url \": \"server.url \\\"{{server.build.env.SERVER_URL}}\\\"\",\n            \"server.headerimage \": \"server.headerimage \\\"{{server.build.env.SERVER_IMG}}\\\"\",\n            \"server.logoimage \": \"server.logoimage \\\"{{server.build.env.SERVER_LOGO}}\\\"\",\n            \"server.level \": \"server.level \\\"{{server.build.env.LEVEL}}\\\"\",\n            \"server.worldsize \": \"server.worldsize {{server.build.env.WORLD_SIZE}}\",\n            \"server.seed \": \"server.seed {{server.build.env.WORLD_SEED}}\",\n            \"server.tags \": \"server.tags \\\"{{server.build.env.SERVER_TAGS}}\\\"\",\n            \"server.levelurl \": \"server.levelurl \\\"{{server.build.env.MAP_URL}}\\\"\"\n        }\n    }\n}",
+        "startup": "{\n    \"done\": \"Server startup complete\"\n}",
+        "logs": "{}",
+        "stop": "quit"
+    },
+    "scripts": {
+        "installation": {
+            "script": "#!\/bin\/bash\n# steamcmd Base Installation Script\n#\n# Server Files: \/mnt\/server\n\n\n## just in case someone removed the defaults.\nif [ \"${STEAM_USER}\" == \"\" ]; then\n    echo -e \"steam user is not set.\n\"\n    echo -e \"Using anonymous user.\n\"\n    STEAM_USER=anonymous\n    STEAM_PASS=\"\"\n    STEAM_AUTH=\"\"\nelse\n    echo -e \"user set to ${STEAM_USER}\"\nfi\n\n## download and install steamcmd\ncd \/tmp\nmkdir -p \/mnt\/server\/steamcmd\ncurl -sSL -o steamcmd.tar.gz https:\/\/steamcdn-a.akamaihd.net\/client\/installer\/steamcmd_linux.tar.gz\ntar -xzvf steamcmd.tar.gz -C \/mnt\/server\/steamcmd\nmkdir -p \/mnt\/server\/steamapps # Fix steamcmd disk write error when this folder is missing\ncd \/mnt\/server\/steamcmd\n\n# SteamCMD fails otherwise for some reason, even running as root.\n# This is changed at the end of the install process anyways.\nchown -R root:root \/mnt\nexport HOME=\/mnt\/server\n\n## install game using steamcmd\n.\/steamcmd.sh +force_install_dir \/mnt\/server +login ${STEAM_USER} ${STEAM_PASS} ${STEAM_AUTH} +app_update ${SRCDS_APPID} ${EXTRA_FLAGS} validate +quit ## other flags may be needed depending on install. looking at you cs 1.6\n\n## set up 32 bit libraries\nmkdir -p \/mnt\/server\/.steam\/sdk32\ncp -v linux32\/steamclient.so ..\/.steam\/sdk32\/steamclient.so\n\n## set up 64 bit libraries\nmkdir -p \/mnt\/server\/.steam\/sdk64\ncp -v linux64\/steamclient.so ..\/.steam\/sdk64\/steamclient.so\n\n## Pelican config.files parser için server.cfg seed satırları\n## Parser bulamadığı satırı SKIP ediyor; bu satırlar olmadan hostname\/description Rust'a ulaşmaz.\nmkdir -p \/mnt\/server\/server\/rust\/cfg\nCFG=\/mnt\/server\/server\/rust\/cfg\/server.cfg\nif [ ! -s \"$CFG\" ] || ! grep -q '^server.hostname ' \"$CFG\"; then\n  cat > \"$CFG\" <<'SEED_EOF'\nserver.hostname \"default\"\nserver.description \"default\"\nserver.url \"\"\nserver.headerimage \"\"\nserver.logoimage \"\"\nserver.level \"Procedural Map\"\nserver.worldsize 4500\nserver.seed 12345\nserver.tags \"\"\nserver.levelurl \"\"\nSEED_EOF\n  echo \"  [seed] server.cfg pre-populated for Pelican file parser\"\nelse\n  echo \"  [seed] server.cfg already has hostname line; skip\"\nfi\n\n",
+            "container": "ghcr.io\/pelican-eggs\/installers:debian",
+            "entrypoint": "bash"
+        }
+    },
+    "variables": [
+        {
+            "name": "Server Name",
+            "description": "The name of your server in the public server list.",
+            "env_variable": "SERVER_HOSTNAME",
+            "default_value": "A Rust Server",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|string|max:60",
+            "field_type": "text"
+        },
+        {
+            "name": "Modding Framework",
+            "description": "The modding framework to be used: carbon, oxide, vanilla. Defaults to \"vanilla\" for a non-modded server installation.",
+            "env_variable": "FRAMEWORK",
+            "default_value": "vanilla",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|in:vanilla,oxide,carbon",
+            "field_type": "text"
+        },
+        {
+            "name": "Level",
+            "description": "The world file for Rust to use.",
+            "env_variable": "LEVEL",
+            "default_value": "Procedural Map",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|string|max:20",
+            "field_type": "text"
+        },
+        {
+            "name": "Description",
+            "description": "The description under your server title. Commonly used for rules & info. Use \\n for newlines.",
+            "env_variable": "DESCRIPTION",
+            "default_value": "Powered by Panel",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|string",
+            "field_type": "text"
+        },
+        {
+            "name": "URL",
+            "description": "The URL for your server. This is what comes up when clicking the \"Visit Website\" button.",
+            "env_variable": "SERVER_URL",
+            "default_value": "http:\/\/example.com",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|url",
+            "field_type": "text"
+        },
+        {
+            "name": "World Size",
+            "description": "The world size for a procedural map.",
+            "env_variable": "WORLD_SIZE",
+            "default_value": "3000",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|integer",
+            "field_type": "text"
+        },
+        {
+            "name": "World Seed",
+            "description": "The seed for a procedural map.",
+            "env_variable": "WORLD_SEED",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string",
+            "field_type": "text"
+        },
+        {
+            "name": "Max Players",
+            "description": "The maximum amount of players allowed in the server at once.",
+            "env_variable": "MAX_PLAYERS",
+            "default_value": "40",
+            "user_viewable": true,
+            "user_editable": false,
+            "rules": "required|integer",
+            "field_type": "text"
+        },
+        {
+            "name": "Server Image",
+            "description": "The header image for the top of your server listing.",
+            "env_variable": "SERVER_IMG",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|url",
+            "field_type": "text"
+        },
+        {
+            "name": "Query Port",
+            "description": "Server Query Port. Can't be the same as Game's primary port.",
+            "env_variable": "QUERY_PORT",
+            "default_value": "27017",
+            "user_viewable": true,
+            "user_editable": false,
+            "rules": "required|integer",
+            "field_type": "text"
+        },
+        {
+            "name": "RCON Port",
+            "description": "Port for RCON connections.",
+            "env_variable": "RCON_PORT",
+            "default_value": "28016",
+            "user_viewable": true,
+            "user_editable": false,
+            "rules": "required|integer",
+            "field_type": "text"
+        },
+        {
+            "name": "RCON Password",
+            "description": "RCON access password.",
+            "env_variable": "RCON_PASS",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|regex:\/^[\\w.-]*$\/|max:64",
+            "field_type": "text"
+        },
+        {
+            "name": "Save Interval",
+            "description": "Sets the server’s auto-save interval in seconds.",
+            "env_variable": "SAVEINTERVAL",
+            "default_value": "60",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|integer",
+            "field_type": "text"
+        },
+        {
+            "name": "Additional Arguments",
+            "description": "Add additional startup parameters to the server.",
+            "env_variable": "ADDITIONAL_ARGS",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string",
+            "field_type": "text"
+        },
+        {
+            "name": "App Port",
+            "description": "Port for the Rust+ App. -1 to disable.",
+            "env_variable": "APP_PORT",
+            "default_value": "28082",
+            "user_viewable": true,
+            "user_editable": false,
+            "rules": "required|integer",
+            "field_type": "text"
+        },
+        {
+            "name": "Server Logo",
+            "description": "The circular server logo for the Rust+ app.",
+            "env_variable": "SERVER_LOGO",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|url",
+            "field_type": "text"
+        },
+        {
+            "name": "Custom Map URL",
+            "description": "Overwrites the map with the one from the direct download URL. Invalid URLs will cause the server to crash.",
+            "env_variable": "MAP_URL",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|url",
+            "field_type": "text"
+        },
+        {
+            "name": "App ID",
+            "description": "",
+            "env_variable": "SRCDS_APPID",
+            "default_value": "258550",
+            "user_viewable": false,
+            "user_editable": false,
+            "rules": "required|string|in:258550",
+            "field_type": "text"
+        },
+        {
+            "name": "Server Tags",
+            "description": "Steam server browser keywords (comma-separated, lowercase, max 4 shown). Categories: wipe schedule (monthly, biweekly, weekly), difficulty (vanilla, hardcore, softcore), gameplay (pve, roleplay, creative, minigame, training, battlefield, broyale, builds, tut), modding (modded, oxide, carbon), region (na, sa, eu, wa, ea, oc, af). Use one tag per category — see https:\/\/wiki.facepunch.com\/rust\/server-browser-tags",
+            "env_variable": "SERVER_TAGS",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string|max:128",
+            "field_type": "text"
+        }
+    ]
+}

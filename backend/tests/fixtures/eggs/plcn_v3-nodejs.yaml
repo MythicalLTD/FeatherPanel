@@ -1,0 +1,218 @@
+_comment: 'DO NOT EDIT: FILE GENERATED AUTOMATICALLY BY PANEL'
+meta:
+  version: PLCN_v3
+  update_url: 'https://raw.githubusercontent.com/pelican-eggs/generic/refs/heads/main/nodejs/egg-nodejs-generic.yaml'
+exported_at: '2026-10-05T10:10:23+00:00'
+name: 'Node.js generic'
+author: parker@parkervcp.com
+uuid: fe73af9d-0d33-42f4-9572-fad52eb802f0
+description: "a generic node.js egg\r\n\r\nThis will clone a git repo. it defaults to master if no branch is specified.\r\n\r\nInstalls the node_modules on install. If you set user_upload then I assume you know what you are\ndoing."
+icon: 'data:image/png;base64,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'
+tags: {  }
+features: {  }
+docker_images:
+  'Nodejs 26': 'ghcr.io/pelican-eggs/yolks:nodejs_26'
+  'Nodejs 25': 'ghcr.io/pelican-eggs/yolks:nodejs_25'
+  'Nodejs 24': 'ghcr.io/pelican-eggs/yolks:nodejs_24'
+  'Nodejs 23': 'ghcr.io/pelican-eggs/yolks:nodejs_23'
+  'Nodejs 22': 'ghcr.io/pelican-eggs/yolks:nodejs_22'
+file_denylist: {  }
+startup_commands:
+  Default: 'if [[ -d .git ]] && [[ {{AUTO_UPDATE}} == "1" ]]; then git pull; fi; if [[ ! -z ${NODE_PACKAGES} ]]; then /usr/local/bin/npm install ${NODE_PACKAGES}; fi; if [[ ! -z ${UNNODE_PACKAGES} ]]; then /usr/local/bin/npm uninstall ${UNNODE_PACKAGES}; fi; if [ -f /home/container/package.json ]; then /usr/local/bin/npm install; fi; if [[ "${MAIN_FILE}" == "*.js" ]]; then /usr/local/bin/node "/home/container/${MAIN_FILE}" ${NODE_ARGS}; else /usr/local/bin/tsx "/home/container/${MAIN_FILE}" ${NODE_ARGS}; fi'
+config:
+  files: {  }
+  startup:
+    done:
+      - 'change this text 1'
+      - 'change this text 2'
+  logs: {  }
+  stop: ^C
+scripts:
+  installation:
+    script: |-
+      #!/bin/bash
+      # NodeJS App Installation Script
+      #
+      # Server Files: /mnt/server
+      apt update
+      apt install -y git curl jq file unzip make gcc g++ python3 python3-dev python3-pip libtool
+
+      echo -e "updating npm. please wait..."
+      npm install npm@latest --location=global
+
+      mkdir -p /mnt/server
+      cd /mnt/server
+
+      if [ "${USER_UPLOAD}" == "true" ] || [ "${USER_UPLOAD}" == "1" ]; then
+          echo -e "assuming user knows what they are doing have a good day."
+          exit 0
+      fi
+
+      ## add git ending if it's not on the address
+      if [[ ${GIT_ADDRESS} != *.git ]]; then
+          GIT_ADDRESS=${GIT_ADDRESS}.git
+      fi
+
+      if [ -z "${USERNAME}" ] && [ -z "${ACCESS_TOKEN}" ]; then
+          echo -e "using anon api call"
+      else
+          GIT_ADDRESS="https://${USERNAME}:${ACCESS_TOKEN}@$(echo -e ${GIT_ADDRESS} | cut -d/ -f3-)"
+      fi
+
+      ## pull git js repo
+      if [ "$(ls -A /mnt/server)" ]; then
+          echo -e "/mnt/server directory is not empty."
+          if [ -d .git ]; then
+              echo -e ".git directory exists"
+              if [ -f .git/config ]; then
+                  echo -e "loading info from git config"
+                  ORIGIN=$(git config --get remote.origin.url)
+              else
+                  echo -e "files found with no git config"
+                  echo -e "closing out without touching things to not break anything"
+                  exit 10
+              fi
+          fi
+
+          if [ "${ORIGIN}" == "${GIT_ADDRESS}" ]; then
+              echo "pulling latest from github"
+              git pull
+          fi
+      else
+          echo -e "/mnt/server is empty.\ncloning files into repo"
+          if [ -z ${BRANCH} ]; then
+              echo -e "cloning default branch"
+              git clone ${GIT_ADDRESS} .
+          else
+              echo -e "cloning ${BRANCH}'"
+              git clone --single-branch --branch ${BRANCH} ${GIT_ADDRESS} .
+          fi
+
+      fi
+
+      echo "Installing nodejs packages"
+      if [[ ! -z ${NODE_PACKAGES} ]]; then
+          /usr/local/bin/npm install ${NODE_PACKAGES}
+      fi
+
+      if [ -f /mnt/server/package.json ]; then
+          /usr/local/bin/npm install --production
+      fi
+
+      echo -e "install complete"
+      exit 0
+    container: 'node:22-trixie-slim'
+    entrypoint: bash
+variables:
+  -
+    sort: 6
+    name: 'Git Access Token'
+    description: "Password to use with git.\r\n\r\nIt's best practice to use a Personal Access Token.\r\nhttps://github.com/settings/tokens\r\nhttps://gitlab.com/-/profile/personal_access_tokens"
+    env_variable: ACCESS_TOKEN
+    default_value: ''
+    user_viewable: true
+    user_editable: true
+    rules:
+      - nullable
+      - string
+  -
+    sort: 2
+    name: 'Auto Update'
+    description: 'Pull the latest files on startup when using a GitHub repo.'
+    env_variable: AUTO_UPDATE
+    default_value: 0
+    user_viewable: true
+    user_editable: true
+    rules:
+      - required
+      - boolean
+  -
+    sort: 4
+    name: 'Install Branch'
+    description: 'The branch to install.'
+    env_variable: BRANCH
+    default_value: ''
+    user_viewable: true
+    user_editable: true
+    rules:
+      - nullable
+      - string
+  -
+    sort: 3
+    name: 'Git Repo Address'
+    description: "GitHub Repo to clone\r\n\r\nI.E. https://github.com/parkervcp/repo_name"
+    env_variable: GIT_ADDRESS
+    default_value: ''
+    user_viewable: true
+    user_editable: true
+    rules:
+      - nullable
+      - string
+  -
+    sort: 1
+    name: 'Main file'
+    description: "The file that starts the app.\r\nCan be .js and .ts"
+    env_variable: MAIN_FILE
+    default_value: index.js
+    user_viewable: true
+    user_editable: true
+    rules:
+      - required
+      - string
+      - 'max:16'
+  -
+    sort: 10
+    name: 'Additional Arguments.'
+    description: 'Any extra arguments for nodejs or tsx'
+    env_variable: NODE_ARGS
+    default_value: ''
+    user_viewable: true
+    user_editable: true
+    rules:
+      - nullable
+      - string
+      - 'max:64'
+  -
+    sort: 8
+    name: 'Additional Node packages'
+    description: "Install additional node packages.\r\n\r\nUse spaces to separate."
+    env_variable: NODE_PACKAGES
+    default_value: ''
+    user_viewable: true
+    user_editable: true
+    rules:
+      - nullable
+      - string
+  -
+    sort: 9
+    name: 'Uninstall Node packages'
+    description: "Uninstall node packages.\r\n\r\nUse spaces to separate."
+    env_variable: UNNODE_PACKAGES
+    default_value: ''
+    user_viewable: true
+    user_editable: true
+    rules:
+      - nullable
+      - string
+  -
+    sort: 7
+    name: 'User Uploaded Files'
+    description: "Skip all the install stuff if you are letting a user upload files.\r\n\r\n0 = false (default)\r\n1 = true"
+    env_variable: USER_UPLOAD
+    default_value: 0
+    user_viewable: true
+    user_editable: true
+    rules:
+      - required
+      - boolean
+  -
+    sort: 5
+    name: 'Git Username'
+    description: 'Username to auth with git.'
+    env_variable: USERNAME
+    default_value: ''
+    user_viewable: true
+    user_editable: true
+    rules:
+      - nullable
+      - string
