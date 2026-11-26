@@ -474,7 +474,7 @@ class WebSpaceChatbotService
 
         return array_values(array_filter(array_map(static function (string $value): string {
             return trim($value);
-        }, $matches[1] ?? [])));
+        }, $matches[1])));
     }
 
     /**

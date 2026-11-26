@@ -33,7 +33,7 @@ class ListBackupsTool implements ToolInterface
             return ['success' => false, 'error' => 'Web node not found.'];
         }
         $daemon = FeatherQuilldClient::listWebSpaceBackups($access['webNode'], $access['uuid']);
-        if (!($daemon['ok'] ?? false)) {
+        if (!$daemon['ok']) {
             return ['success' => false, 'error' => $daemon['error'] ?? 'Failed to list backups'];
         }
         $body = is_array($daemon['body'] ?? null) ? $daemon['body'] : [];

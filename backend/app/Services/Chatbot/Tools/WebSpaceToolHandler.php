@@ -167,7 +167,7 @@ class WebSpaceToolHandler
                 $formatted .= "Result: {$data['message']}\n";
             }
             foreach (['uuid_short', 'name', 'mode', 'schedule_id', 'schedule_name', 'job_id'] as $key) {
-                if (isset($data[$key]) && $data[$key] !== null && $data[$key] !== '') {
+                if (isset($data[$key]) && $data[$key] !== '') {
                     $label = ucwords(str_replace('_', ' ', $key));
                     $formatted .= "{$label}: {$data[$key]}\n";
                 }

@@ -52,10 +52,7 @@ class ListDnsRecordsTool implements ToolInterface
             return ['success' => false, 'error' => 'Failed to list records: ' . $e->getMessage()];
         }
         $safe = [];
-        foreach (is_array($records) ? $records : [] as $record) {
-            if (!is_array($record)) {
-                continue;
-            }
+        foreach ($records['records'] as $record) {
             $safe[] = [
                 'id' => $record['id'] ?? null,
                 'type' => $record['type'] ?? null,

@@ -32,7 +32,7 @@ class GetWebSpaceStatusTool implements ToolInterface
             return ['success' => false, 'error' => 'Web node not found.'];
         }
         $daemon = FeatherQuilldClient::getWebSpaceStatus($access['webNode'], $access['uuid']);
-        if (!($daemon['ok'] ?? false)) {
+        if (!$daemon['ok']) {
             return [
                 'success' => true,
                 'status' => $access['space']['status'] ?? 'unknown',

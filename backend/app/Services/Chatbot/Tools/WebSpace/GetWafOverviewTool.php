@@ -36,7 +36,7 @@ class GetWafOverviewTool implements ToolInterface
         $overview = ['mode' => $mode, 'daemon_unreachable' => true];
         if ($access['webNode']) {
             $daemon = FeatherQuilldClient::getWebSpaceWafStats($access['webNode'], $access['uuid'], '24h', 20);
-            if (($daemon['ok'] ?? false) && is_array($daemon['body'] ?? null)) {
+            if ($daemon['ok'] && is_array($daemon['body'])) {
                 $body = $daemon['body'];
                 $overview = ['mode' => $mode] + $body;
                 $overview['daemon_unreachable'] = false;

@@ -37,7 +37,7 @@ class GetFileContentTool implements ToolInterface
             return ['success' => false, 'error' => 'file path is required.'];
         }
         $daemon = FeatherQuilldClient::getWebSpaceFileContents($access['webNode'], $access['uuid'], $file);
-        if (!($daemon['ok'] ?? false)) {
+        if (!$daemon['ok']) {
             return ['success' => false, 'error' => $daemon['error'] ?? 'Failed to read file'];
         }
         $body = $daemon['body'] ?? '';

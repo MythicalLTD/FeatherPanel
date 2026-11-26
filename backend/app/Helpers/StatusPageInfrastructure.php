@@ -96,7 +96,7 @@ final class StatusPageInfrastructure
             $started = microtime(true);
             $probe = FeatherQuilldProbe::probeHealth($node, 3);
             $latency = (int) round((microtime(true) - $started) * 1000);
-            $status = ($probe['status'] ?? '') === 'healthy' ? 'healthy' : 'unhealthy';
+            $status = $probe['status'] === 'healthy' ? 'healthy' : 'unhealthy';
             if ($status === 'healthy') {
                 ++$healthy;
             } else {

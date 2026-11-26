@@ -56,7 +56,7 @@ class SetWafModeTool implements ToolInterface
         $updated = WebSpace::getByUuid((string) $space['uuid']) ?? $space;
         if ($access['webNode']) {
             $daemon = WebSpaceDaemonSync::syncAfterUpdate($access['webNode'], $updated, $space);
-            if (!($daemon['ok'] ?? false)) {
+            if (!$daemon['ok']) {
                 return [
                     'success' => false,
                     'error' => 'WAF mode saved but web node sync failed: ' . ($daemon['error'] ?? 'unknown'),

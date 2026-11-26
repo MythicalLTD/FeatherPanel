@@ -29,7 +29,7 @@ class GetWebSpaceDetailsTool implements ToolInterface
         }
         $space = $access['space'];
         $domains = \App\Chat\WebSpaceDomain::listForWebspaceId((int) ($space['id'] ?? 0));
-        $domainNames = array_values(array_filter(array_map(static fn ($d) => $d['domain'] ?? null, $domains)));
+        $domainNames = array_values(array_filter(array_map(static fn ($d) => $d['domain'], $domains)));
 
         return [
             'success' => true,

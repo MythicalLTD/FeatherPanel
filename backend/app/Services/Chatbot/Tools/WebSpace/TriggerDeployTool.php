@@ -46,7 +46,7 @@ class TriggerDeployTool implements ToolInterface
             return ['success' => false, 'error' => 'Schedule has no tasks to run.'];
         }
         $daemon = FeatherQuilldClient::triggerWebSpaceSchedule($access['webNode'], $access['uuid'], $scheduleId);
-        if (!($daemon['ok'] ?? false)) {
+        if (!$daemon['ok']) {
             return ['success' => false, 'error' => $daemon['error'] ?? 'Failed to trigger schedule'];
         }
 

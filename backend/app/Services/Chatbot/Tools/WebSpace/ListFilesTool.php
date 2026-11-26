@@ -34,7 +34,7 @@ class ListFilesTool implements ToolInterface
         }
         $directory = isset($params['directory']) && is_scalar($params['directory']) ? (string) $params['directory'] : '/';
         $daemon = FeatherQuilldClient::listWebSpaceFiles($access['webNode'], $access['uuid'], $directory);
-        if (!($daemon['ok'] ?? false)) {
+        if (!$daemon['ok']) {
             return ['success' => false, 'error' => $daemon['error'] ?? 'Failed to list files'];
         }
         $body = is_array($daemon['body'] ?? null) ? $daemon['body'] : [];

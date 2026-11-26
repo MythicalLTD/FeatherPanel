@@ -570,7 +570,7 @@ class WebSpaceChatbotController
     private static function emitEvent(string $eventName, array $payload): void
     {
         global $eventManager;
-        if (isset($eventManager) && $eventManager !== null) {
+        if (isset($eventManager)) {
             $eventManager->emit($eventName, $payload);
         }
     }

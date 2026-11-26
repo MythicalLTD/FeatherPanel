@@ -86,7 +86,7 @@ class WebSpaceContextBuilder
                     $context[] = 'Plate: ' . ($space['webplate_name'] ?? 'n/a');
                     $domains = WebSpaceDomain::listForWebspaceId((int) ($space['id'] ?? 0));
                     if ($domains !== []) {
-                        $names = array_values(array_filter(array_map(static fn ($d) => $d['domain'] ?? null, $domains)));
+                        $names = array_values(array_filter(array_map(static fn ($d) => $d['domain'], $domains)));
                         if ($names !== []) {
                             $context[] = 'Domains: ' . implode(', ', $names);
                         }

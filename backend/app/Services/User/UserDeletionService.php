@@ -63,7 +63,7 @@ class UserDeletionService
         if (class_exists(\App\Addons\billingplans\Chat\Subscription::class)) {
             try {
                 $active = \App\Addons\billingplans\Chat\Subscription::getActiveByUserId((int) $user['id']);
-                $subscriptionsCount = is_array($active) ? count($active) : 0;
+                $subscriptionsCount = count($active);
             } catch (\Throwable $e) {
                 App::getInstance(true)->getLogger()->warning(
                     'Failed to check billing subscriptions for account deletion: ' . $e->getMessage()

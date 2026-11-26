@@ -33,7 +33,7 @@ class RenewSslTool implements ToolInterface
             return ['success' => false, 'error' => 'Web node not found.'];
         }
         $daemon = FeatherQuilldClient::renewWebSpaceSsl($access['webNode'], $access['uuid']);
-        if (!($daemon['ok'] ?? false)) {
+        if (!$daemon['ok']) {
             return ['success' => false, 'error' => $daemon['error'] ?? 'SSL renew failed'];
         }
 

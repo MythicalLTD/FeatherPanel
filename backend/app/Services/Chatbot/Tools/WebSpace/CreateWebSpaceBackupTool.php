@@ -41,7 +41,7 @@ class CreateWebSpaceBackupTool implements ToolInterface
             'stop_during_backup' => !empty($params['stop_during_backup']),
             'async' => true,
         ]);
-        if (!($daemon['ok'] ?? false) && ($daemon['status'] ?? 0) !== 202) {
+        if (!$daemon['ok'] && $daemon['status'] !== 202) {
             return ['success' => false, 'error' => $daemon['error'] ?? 'Backup failed'];
         }
         $body = is_array($daemon['body'] ?? null) ? $daemon['body'] : [];
