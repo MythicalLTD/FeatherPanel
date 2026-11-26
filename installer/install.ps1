@@ -1655,7 +1655,7 @@ function Install-CLI {
     
     # Download Windows binary
     $binaryName = "feathercli-win-${archName}.exe"
-    $downloadUrl = "https://github.com/MythicalLTD/FeatherPanel-CLI/releases/latest/download/${binaryName}"
+    $downloadUrl = "https://github.com/mythicalltd/featherpanel/releases/latest/download/${binaryName}"
     
     Write-LogInfo "Downloading: $binaryName"
     
@@ -1686,7 +1686,7 @@ function Install-CLI {
     } catch {
         Write-LogError "Failed to download FeatherPanel CLI binary: $_"
         Write-LogInfo "Please check the GitHub releases page for available binaries:"
-        Write-LogInfo "https://github.com/MythicalLTD/FeatherPanel-CLI/releases"
+        Write-LogInfo "https://github.com/mythicalltd/featherpanel/releases"
         return $false
     }
     

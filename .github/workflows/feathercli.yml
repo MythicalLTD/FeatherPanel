@@ -1,0 +1,201 @@
+name: FeatherCli Migration
+
+on: [push, pull_request]
+
+permissions:
+  contents: read
+
+jobs:
+  migrate-smoke:
+    name: Build CLI + migrate smoke
+    runs-on: ubuntu-latest
+    services:
+      database:
+        image: mariadb:11
+        env:
+          MYSQL_ALLOW_EMPTY_PASSWORD: yes
+          MYSQL_DATABASE: featherpanel
+        ports:
+          - 3306
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+          --health-start-period=10s
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.5"
+          extensions: bcmath, curl, gd, mbstring, mysql, openssl, pdo, tokenizer, xml, zip
+          tools: composer:v2
+          coverage: none
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Cache Composer
+        uses: actions/cache@v4
+        with:
+          path: backend/storage/packages
+          key: ${{ runner.os }}-composer-${{ hashFiles('backend/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-composer-
+
+      - name: Cache NuGet
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('cli/FeatherCli.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Install PHP dependencies
+        working-directory: backend
+        run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Build FeatherCli
+        working-directory: cli
+        run: |
+          dotnet publish FeatherCli.csproj \
+            -c Release \
+            -r linux-x64 \
+            --self-contained true \
+            /p:PublishSingleFile=true \
+            /p:PublishTrimmed=false \
+            -o dist/linux-x64
+          chmod +x dist/linux-x64/FeatherCli
+          ./dist/linux-x64/FeatherCli --help
+          ./dist/linux-x64/FeatherCli migrate --help
+
+      - name: Create FeatherPanel .env
+        working-directory: backend
+        run: |
+          mkdir -p storage/config
+          KEY=$(head -c 32 /dev/urandom | base64)
+          cat > storage/config/.env <<EOF
+          DATABASE_HOST=127.0.0.1
+          DATABASE_PORT=${{ job.services.database.ports[3306] }}
+          DATABASE_DATABASE=featherpanel
+          DATABASE_USER=root
+          DATABASE_PASSWORD=
+          DATABASE_ENCRYPTION="xchacha20"
+          DATABASE_ENCRYPTION_KEY="${KEY}"
+          REDIS_HOST=127.0.0.1
+          REDIS_PASSWORD=testredis
+          APP_URL=http://127.0.0.1:8080
+          EOF
+
+      - name: Wait for MariaDB
+        working-directory: backend
+        run: |
+          php -r "
+          \$env = parse_ini_file('storage/config/.env');
+          \$dsn = 'mysql:host=' . \$env['DATABASE_HOST'] . ';port=' . \$env['DATABASE_PORT'];
+          for (\$i = 1; \$i <= 30; ++\$i) {
+            try {
+              \$pdo = new PDO(\$dsn, \$env['DATABASE_USER'], \$env['DATABASE_PASSWORD'], [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_TIMEOUT => 5]);
+              \$pdo->exec('CREATE DATABASE IF NOT EXISTS featherpanel');
+              \$pdo->exec('CREATE DATABASE IF NOT EXISTS pterodactyl_source');
+              \$pdo->exec('CREATE DATABASE IF NOT EXISTS pterodactyl_staging');
+              echo \"ready after \$i attempts\n\";
+              exit(0);
+            } catch (Exception \$e) {
+              echo \$e->getMessage() . PHP_EOL;
+              sleep(2);
+            }
+          }
+          exit(1);
+          "
+
+      - name: Migrate FeatherPanel schema
+        working-directory: backend
+        run: php cli migrate --skip-path-check
+
+      - name: Install MariaDB client
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq mariadb-client
+
+      - name: Seed Pterodactyl source DB + dump
+        working-directory: backend
+        env:
+          DB_PORT: ${{ job.services.database.ports[3306] }}
+        run: |
+          mysql -h 127.0.0.1 -P "$DB_PORT" -u root pterodactyl_source < tests/fixtures/pterodactyl/schema.sql
+          mysql -h 127.0.0.1 -P "$DB_PORT" -u root pterodactyl_source < tests/fixtures/pterodactyl/seed.sql
+          mysqldump -h 127.0.0.1 -P "$DB_PORT" -u root pterodactyl_source > /tmp/panel.sql
+          cp tests/fixtures/pterodactyl/panel.env /tmp/panel.env
+          test -s /tmp/panel.sql
+
+      - name: Bootstrap admin API key
+        working-directory: backend
+        run: php tests/fixtures/pterodactyl/bootstrap_admin.php /tmp/feathercli-api-key
+
+      - name: Start panel HTTP
+        working-directory: backend
+        run: |
+          nohup php -S 127.0.0.1:8080 -t public public/index.php > /tmp/panel-http.log 2>&1 &
+          echo $! > /tmp/panel-http.pid
+          for i in $(seq 1 30); do
+            if curl -sf http://127.0.0.1:8080/api/system >/dev/null 2>&1 || curl -sf http://127.0.0.1:8080/ >/dev/null 2>&1; then
+              echo "panel up"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "panel failed to start"
+          cat /tmp/panel-http.log || true
+          exit 1
+
+      - name: Run feathercli migrate
+        env:
+          DB_PORT: ${{ job.services.database.ports[3306] }}
+          FEATHERCLI_API_URL: http://127.0.0.1:8080
+        run: |
+          export FEATHERCLI_API_KEY="$(cat /tmp/feathercli-api-key)"
+          cli/dist/linux-x64/FeatherCli migrate \
+            --sql-dump /tmp/panel.sql \
+            --env-file /tmp/panel.env \
+            --staging-db-host 127.0.0.1 \
+            --staging-db-port "$DB_PORT" \
+            --staging-db-user root \
+            --staging-db-password '' \
+            --confirm-blueprint \
+            --confirm-migrate \
+            --reset
+
+      - name: Assert imported entities
+        working-directory: backend
+        run: |
+          php -r "
+          \$env = parse_ini_file('storage/config/.env');
+          \$pdo = new PDO(
+            'mysql:host=' . \$env['DATABASE_HOST'] . ';port=' . \$env['DATABASE_PORT'] . ';dbname=' . \$env['DATABASE_DATABASE'],
+            \$env['DATABASE_USER'],
+            \$env['DATABASE_PASSWORD'],
+            [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
+          );
+          \$users = (int) \$pdo->query('SELECT COUNT(*) FROM featherpanel_users')->fetchColumn();
+          \$nodes = (int) \$pdo->query('SELECT COUNT(*) FROM featherpanel_nodes')->fetchColumn();
+          \$servers = (int) \$pdo->query('SELECT COUNT(*) FROM featherpanel_servers')->fetchColumn();
+          \$spells = (int) \$pdo->query('SELECT COUNT(*) FROM featherpanel_spells')->fetchColumn();
+          echo \"users=\$users nodes=\$nodes servers=\$servers spells=\$spells\n\";
+          if (\$users < 2) { fwrite(STDERR, \"expected >=2 users\n\"); exit(1); }
+          if (\$nodes < 1) { fwrite(STDERR, \"expected >=1 nodes\n\"); exit(1); }
+          if (\$servers < 1) { fwrite(STDERR, \"expected >=1 servers\n\"); exit(1); }
+          if (\$spells < 1) { fwrite(STDERR, \"expected >=1 spells\n\"); exit(1); }
+          echo \"migration assertions passed\n\";
+          "
+
+      - name: Stop panel HTTP
+        if: always()
+        run: |
+          if [ -f /tmp/panel-http.pid ]; then kill "$(cat /tmp/panel-http.pid)" || true; fi
+          cat /tmp/panel-http.log || true

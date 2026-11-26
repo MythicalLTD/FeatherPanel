@@ -1,0 +1,33 @@
+FeatherCli for Debian
+=====================
+
+FeatherCli is the official FeatherPanel CLI and Pterodactyl/Pelican migration agent.
+The binary is installed to `/usr/local/bin/feathercli`.
+
+Quick start
+-----------
+
+1. Configure the panel URL and API key:
+
+       feathercli config setup
+       # or headless:
+       # feathercli config set api_url https://panel.example.com
+       # feathercli config set api_key YOUR_KEY
+
+2. Migrate from Pterodactyl/Pelican:
+
+       feathercli migrate --pterodactyl-dir /var/www/pterodactyl
+
+Channels
+--------
+
+- `feathercli` — stable releases (GitHub `v*` tags with the panel)
+- `feathercli-dev` — per-commit / nightly builds
+
+These packages conflict with each other and cannot be installed together.
+
+Support
+-------
+
+Homepage: https://github.com/mythicalltd/featherpanel
+Issues:   https://github.com/mythicalltd/featherpanel/issues

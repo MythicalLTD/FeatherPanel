@@ -125,6 +125,7 @@ while [[ $# -gt 0 ]]; do
 		echo "  Env for daemons:       FP_WINGS_METHOD = apt|direct  FP_WINGS_CHANNEL = stable|nightly"
 		echo "                         FP_QUILLD_CHANNEL = stable|nightly  (FeatherQuilld is APT-only)"
 		echo "                         FP_TAIL_CHANNEL = stable|nightly  (FeatherTail is APT-only)"
+		echo "                         FP_CLI_METHOD = apt|direct  FP_CLI_CHANNEL = stable|nightly"
 		echo "                         FP_SYSTEM_UPGRADE = yes|no  (optional full apt upgrade at start; default: ask / no if non-interactive)"
 		echo "                         FP_COMPONENT=featherquilld FP_ACTION=install FP_QUILLD_SKIP_CONFIGURE=true"
 		echo "  --dev                  Use latest dev release images"
@@ -3328,7 +3329,7 @@ setup_cloudflare_tunnel_client() {
 	fi
 }
 
-# MythicalSystems APT repository (FeatherWings / FeatherQuilld / FeatherTail packages)
+# MythicalSystems APT repository (FeatherWings / FeatherQuilld / FeatherTail / FeatherCli packages)
 mythicalsystems_apt_supported() {
 	command -v apt-get >/dev/null 2>&1 && command -v dpkg >/dev/null 2>&1
 }
@@ -4633,10 +4634,38 @@ update_feathertail() {
 }
 
 # CLI installation functions
-install_feathercli() {
-	log_step "Installing FeatherPanel CLI..."
+feathercli_apt_package_name() {
+	if mythicalsystems_apt_package_installed feathercli-dev; then
+		echo "feathercli-dev"
+	elif mythicalsystems_apt_package_installed feathercli; then
+		echo "feathercli"
+	else
+		echo ""
+	fi
+}
 
-	# Detect architecture like Wings does
+install_feathercli_apt() {
+	local pkg="feathercli"
+	if [ "${DAEMON_APT_CHANNEL:-stable}" = "nightly" ]; then
+		pkg="feathercli-dev"
+	fi
+
+	if ! setup_mythicalsystems_apt_repo; then
+		return 1
+	fi
+
+	log_info "Installing APT package: ${pkg}"
+	if ! apt-get install -y "$pkg" >>"$LOG_FILE" 2>&1; then
+		log_error "Failed to install ${pkg} from MythicalSystems APT repository."
+		return 1
+	fi
+
+	log_success "Installed ${pkg} via APT."
+}
+
+install_feathercli_direct() {
+	log_step "Installing FeatherPanel CLI from GitHub release..."
+
 	ARCH=$(uname -m)
 	case "$ARCH" in
 	x86_64)
@@ -4657,13 +4686,11 @@ install_feathercli() {
 
 	log_info "Detected architecture: $ARCH ($ARCH_NAME)"
 
-	# Download using the correct format: feathercli-linux-{arch}
 	BINARY_NAME="feathercli-linux-${ARCH_NAME}"
-	DOWNLOAD_URL="https://github.com/MythicalLTD/FeatherPanel-CLI/releases/latest/download/${BINARY_NAME}"
+	DOWNLOAD_URL="https://github.com/mythicalltd/featherpanel/releases/latest/download/${BINARY_NAME}"
 
 	log_info "Downloading: ${BINARY_NAME}"
 	if curl -L -f -o /usr/local/bin/feathercli "$DOWNLOAD_URL" 2>>"$LOG_FILE"; then
-		# Check if the downloaded file is actually a binary (not HTML error page)
 		if file /usr/local/bin/feathercli 2>/dev/null | grep -qE "(ELF|executable|binary)"; then
 			log_success "Downloaded CLI binary: ${BINARY_NAME}"
 		else
@@ -4671,23 +4698,43 @@ install_feathercli() {
 			rm -f /usr/local/bin/feathercli
 			log_error "Failed to download FeatherPanel CLI binary."
 			log_info "Please check the GitHub releases page for available binaries:"
-			log_info "https://github.com/MythicalLTD/FeatherPanel-CLI/releases"
+			log_info "https://github.com/mythicalltd/featherpanel/releases"
 			return 1
 		fi
 	else
 		log_error "Failed to download FeatherPanel CLI binary."
 		log_info "Please check the GitHub releases page for available binaries:"
-		log_info "https://github.com/MythicalLTD/FeatherPanel-CLI/releases"
+		log_info "https://github.com/mythicalltd/featherpanel/releases"
 		return 1
 	fi
 
-	# Make it executable
 	chmod +x /usr/local/bin/feathercli
+	return 0
+}
 
-	apt-get install -y libicu-dev
+install_feathercli() {
+	log_step "Installing FeatherPanel CLI..."
 
-	# Verify installation
-	if command -v feathercli >/dev/null 2>&1; then
+	if ! prompt_daemon_install_method "FeatherCli" "FP_CLI_METHOD" "FP_CLI_CHANNEL"; then
+		return 1
+	fi
+
+	if [ "${DAEMON_INSTALL_METHOD:-apt}" = "apt" ]; then
+		if install_feathercli_apt; then
+			:
+		else
+			log_warn "APT install failed; falling back to GitHub release binary."
+			if ! install_feathercli_direct; then
+				return 1
+			fi
+		fi
+	else
+		if ! install_feathercli_direct; then
+			return 1
+		fi
+	fi
+
+	if command -v feathercli >/dev/null 2>&1 || [ -x /usr/local/bin/feathercli ]; then
 		CLI_VERSION=$(feathercli --version 2>/dev/null || feathercli version 2>/dev/null || echo "unknown")
 		log_success "FeatherPanel CLI installed successfully."
 		if [ "$CLI_VERSION" != "unknown" ]; then
@@ -4695,7 +4742,7 @@ install_feathercli() {
 		fi
 		log_info "You can now use 'feathercli' command from anywhere."
 		log_info "Use cases:"
-		log_info "  • Migrate from Pterodactyl to FeatherPanel"
+		log_info "  • Migrate from Pterodactyl/Pelican to FeatherPanel"
 		log_info "  • Server management via CLI using FeatherPanel API"
 	else
 		log_warn "CLI binary installed but may not be in PATH."
@@ -4706,32 +4753,56 @@ install_feathercli() {
 uninstall_feathercli() {
 	log_step "Uninstalling FeatherPanel CLI..."
 
-	if [ ! -f /usr/local/bin/feathercli ]; then
+	local apt_pkg
+	apt_pkg="$(feathercli_apt_package_name)"
+	if [ -n "$apt_pkg" ]; then
+		apt-get remove -y "$apt_pkg" >>"$LOG_FILE" 2>&1 || true
+	fi
+
+	if [ ! -f /usr/local/bin/feathercli ] && [ -z "$apt_pkg" ]; then
 		log_warn "FeatherPanel CLI does not appear to be installed."
 		return 0
 	fi
 
-	# Remove binary
 	rm -f /usr/local/bin/feathercli
-
 	log_success "FeatherPanel CLI uninstalled successfully."
 }
 
 update_feathercli() {
 	log_step "Updating FeatherPanel CLI..."
 
-	if [ ! -f /usr/local/bin/feathercli ]; then
+	local apt_pkg
+	apt_pkg="$(feathercli_apt_package_name)"
+
+	if [ -n "$apt_pkg" ]; then
+		if ! setup_mythicalsystems_apt_repo; then
+			return 1
+		fi
+		CURRENT_VERSION=$(feathercli --version 2>/dev/null || feathercli version 2>/dev/null || echo "unknown")
+		if [ "$CURRENT_VERSION" != "unknown" ]; then
+			log_info "Current version: $CURRENT_VERSION"
+		fi
+		if apt-get install --only-upgrade -y "$apt_pkg" >>"$LOG_FILE" 2>&1; then
+			NEW_VERSION=$(feathercli --version 2>/dev/null || feathercli version 2>/dev/null || echo "unknown")
+			if [ "$NEW_VERSION" != "unknown" ]; then
+				log_info "Updated to version: $NEW_VERSION"
+			fi
+			log_success "FeatherPanel CLI updated successfully via APT."
+			return 0
+		fi
+		log_warn "APT upgrade failed; falling back to reinstall."
+	fi
+
+	if [ ! -f /usr/local/bin/feathercli ] && [ -z "$apt_pkg" ]; then
 		log_error "FeatherPanel CLI is not installed. Please install it first."
 		return 1
 	fi
 
-	# Get current version if available
 	CURRENT_VERSION=$(feathercli --version 2>/dev/null || feathercli version 2>/dev/null || echo "unknown")
 	if [ "$CURRENT_VERSION" != "unknown" ]; then
 		log_info "Current version: $CURRENT_VERSION"
 	fi
 
-	# Install latest version (same as install, but we know it exists)
 	if install_feathercli; then
 		NEW_VERSION=$(feathercli --version 2>/dev/null || feathercli version 2>/dev/null || echo "unknown")
 		if [ "$NEW_VERSION" != "unknown" ]; then

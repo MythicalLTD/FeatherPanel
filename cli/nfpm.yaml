@@ -1,0 +1,45 @@
+name: "${NFPM_NAME}"
+arch: "${NFPM_ARCH}"
+platform: linux
+version: "${NFPM_VERSION}"
+section: admin
+priority: optional
+maintainer: MythicalSystems <support@mythicalsystems.org>
+vendor: MythicalSystems
+description: |-
+  FeatherCli — FeatherPanel command-line client and Pterodactyl/Pelican migration agent.
+homepage: https://github.com/mythicalltd/featherpanel
+license: MIT
+depends:
+  - ca-certificates
+recommends:
+  - curl
+conflicts:
+  - "${NFPM_CONFLICT}"
+replaces:
+  - "${NFPM_CONFLICT}"
+provides:
+  - feathercli-agent
+
+deb:
+  fields:
+    Bugs: https://github.com/mythicalltd/featherpanel/issues
+    Vcs-Browser: https://github.com/mythicalltd/featherpanel
+    Vcs-Git: https://github.com/mythicalltd/featherpanel.git
+
+contents:
+  - src: dist/feathercli
+    dst: /usr/local/bin/feathercli
+    file_info:
+      mode: 0755
+  - src: packaging/copyright
+    dst: /usr/share/doc/feathercli/copyright
+    file_info:
+      mode: 0644
+  - src: packaging/README.Debian
+    dst: /usr/share/doc/feathercli/README.Debian
+    file_info:
+      mode: 0644
+
+scripts:
+  postinstall: packaging/postinstall.sh

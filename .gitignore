@@ -34,6 +34,7 @@ tests
 !backend/tests/
 backend/tests/*
 !backend/tests/SpellEggCompatibilityTest.php
+!backend/tests/PterodactylImporterControllerTest.php
 !backend/tests/Backup/
 !backend/tests/Backup/*.php
 !backend/tests/Telemetry/
@@ -42,6 +43,8 @@ backend/tests/*
 !backend/tests/Observability/*.php
 !backend/tests/Webhooks/
 !backend/tests/Webhooks/*.php
+!backend/tests/fixtures/
+!backend/tests/fixtures/**
 runner/async-runner.out
 todokutzu.md
 TODO.txt
@@ -62,3 +65,7 @@ Untitled
 .env.*
 !.env.example
 FeatherTail/
+cli/bin/
+cli/obj/
+cli/publish/
+cli/dist/

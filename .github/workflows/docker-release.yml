@@ -526,3 +526,111 @@ jobs:
           docker buildx imagetools create --tag ghcr.io/mythicalltd/featherpanel-mcp:latest \
             ghcr.io/mythicalltd/featherpanel-mcp:${{ steps.version.outputs.tag }}-linux-amd64 \
             ghcr.io/mythicalltd/featherpanel-mcp:${{ steps.version.outputs.tag }}-linux-arm64
+
+  publish-feathercli:
+    name: Build & Publish FeatherCli (Release)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.version || github.ref }}
+
+      - name: Set version tag
+        id: version
+        run: |
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            TAG="${{ github.event.inputs.version }}"
+          elif [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            TAG="${GITHUB_REF#refs/tags/}"
+          else
+            TAG=latest
+          fi
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "version=${TAG#v}" >> $GITHUB_OUTPUT
+          echo "Version: $TAG"
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Install nfpm
+        run: |
+          echo 'deb [trusted=yes] https://repo.goreleaser.com/apt/ /' | sudo tee /etc/apt/sources.list.d/goreleaser.list
+          sudo apt-get update -qq
+          sudo apt-get install -y nfpm
+
+      - name: Build binaries and debs
+        working-directory: cli
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          PACKAGE_CHANNEL: prod
+          ARCHES: amd64 arm64
+        run: |
+          chmod +x scripts/build-deb.sh scripts/nexus-upload-deb.sh packaging/postinstall.sh
+          VERSION="$VERSION" ./scripts/build-deb.sh
+          for RID in win-x64 win-arm64 osx-x64 osx-arm64 linux-arm; do
+            echo "Building $RID..."
+            dotnet publish FeatherCli.csproj -c Release -r "$RID" --self-contained true \
+              /p:PublishSingleFile=true /p:PublishTrimmed=false /p:Version="$VERSION" \
+              -o "dist/publish-$RID"
+            if [[ "$RID" == win-* ]]; then
+              cp "dist/publish-$RID/FeatherCli.exe" "dist/feathercli-$RID.exe"
+            else
+              case "$RID" in
+                linux-arm) OUT=feathercli-linux-arm ;;
+                osx-x64) OUT=feathercli-osx-x64 ;;
+                osx-arm64) OUT=feathercli-osx-arm64 ;;
+                *) OUT="feathercli-$RID" ;;
+              esac
+              cp "dist/publish-$RID/FeatherCli" "dist/$OUT"
+              chmod +x "dist/$OUT"
+            fi
+          done
+          ls -lh dist/feathercli-* dist/*.deb
+
+      - name: Upload GitHub Release assets
+        if: github.ref_type == 'tag' || github.event.inputs.version != ''
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          files: |
+            cli/dist/feathercli-linux-x64
+            cli/dist/feathercli-linux-arm64
+            cli/dist/feathercli-linux-arm
+            cli/dist/feathercli-osx-x64
+            cli/dist/feathercli-osx-arm64
+            cli/dist/feathercli-win-x64.exe
+            cli/dist/feathercli-win-arm64.exe
+            cli/dist/*.deb
+          fail_on_unmatched_files: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload debs to MythicalSystems APT (Nexus)
+        if: github.ref_type == 'tag' || github.event.inputs.version != ''
+        working-directory: cli
+        env:
+          NEXUS_HOST: https://apt.mythicalsystems.org
+          NEXUS_REPOSITORY: MythicalSystems
+          NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
+          NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
+        run: |
+          if [ -z "$NEXUS_USERNAME" ] || [ -z "$NEXUS_PASSWORD" ]; then
+            echo "NEXUS_USERNAME/NEXUS_PASSWORD secrets missing; skipping APT upload."
+            exit 0
+          fi
+          shopt -s nullglob
+          for deb in dist/feathercli_*.deb; do
+            ./scripts/nexus-upload-deb.sh "$deb" || {
+              code=$?
+              if [ $code -eq 2 ]; then
+                echo "Already present: $deb"
+              else
+                exit $code
+              fi
+            }
+          done
