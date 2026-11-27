@@ -58,6 +58,24 @@ export const editorDrafts = {
     },
 };
 
+const pendingSaves = new Map<string, Promise<unknown>>();
+
+/**
+ * Saves per file run one after another. Every tab has its own editor instance, so a save started
+ * before switching tabs could otherwise race a newer save of the same file and overwrite it.
+ */
+export function queueFileSave<T>(server: string, path: string, save: () => Promise<T>): Promise<T> {
+    const key = `${server}:${path}`;
+    const previous = pendingSaves.get(key) ?? Promise.resolve();
+    const next = previous.catch(() => undefined).then(save);
+    const settled = next.catch(() => undefined);
+    pendingSaves.set(key, settled);
+    void settled.then(() => {
+        if (pendingSaves.get(key) === settled) pendingSaves.delete(key);
+    });
+    return next;
+}
+
 /** Open tabs per server, shared with the editor page so Cancel can close the active one. */
 export const editorTabs = {
     /** Forget a file's tab and its unsaved draft. */

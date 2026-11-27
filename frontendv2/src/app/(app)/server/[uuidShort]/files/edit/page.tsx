@@ -32,7 +32,7 @@ import { ServerPageHeader } from '@/components/server/ServerPageHeader';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { FileTextEditor } from '@/components/server/files/FileTextEditor';
-import { EditorTabs, editorDrafts, editorTabs } from '@/components/server/files/EditorTabs';
+import { EditorTabs, editorDrafts, editorTabs, queueFileSave } from '@/components/server/files/EditorTabs';
 import { MinecraftServerPropertiesEditor } from '@/components/server/files/editors/MinecraftServerPropertiesEditor';
 import { SpigotConfigurationEditor } from '@/components/server/files/editors/SpigotConfigurationEditor';
 import { OpsEditor } from '@/components/server/files/editors/OpsEditor';
@@ -326,7 +326,9 @@ function FileEditor({
             setSaving(true);
             const toastId = toast.loading(t('files.editor.saving'));
             try {
-                await filesApi.saveFileContent(uuidShort, fullPath, contentToSave);
+                await queueFileSave(uuidShort, fullPath, () =>
+                    filesApi.saveFileContent(uuidShort, fullPath, contentToSave),
+                );
                 setContent(contentToSave);
                 setOriginalContent(contentToSave);
                 toast.success(t('files.editor.save_success'), { id: toastId });

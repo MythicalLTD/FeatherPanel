@@ -12,6 +12,7 @@
 - Admin webhooks for panel events (HMAC signed, queued, delivery log). by @nayskutzu
 
 ### Fixed
+- Saves of the same file from the editor run in order. by @nayskutzu
 - File editor tabs no longer show or save another tab's content after switching; Cancel now asks about unsaved edits and closes the tab. by @nayskutzu
 - User external ID `0` lookup, validation, and concurrent conflict handling. by @nayskutzu
 - Lighter admin user details; mail body loaded on demand. by @nayskutzu

@@ -28,9 +28,26 @@ const editUrl = (file: string) =>
 const editor = (page: Page) => page.locator('.cm-content');
 
 async function typeAtStart(page: Page, text: string) {
-    await editor(page).click();
-    await page.keyboard.press('ControlOrMeta+Home');
-    await page.keyboard.type(text);
+    const typed = text.trim();
+    const draftStored = () =>
+        page.evaluate(
+            (needle) =>
+                Object.keys(sessionStorage).some(
+                    (key) => key.startsWith('fp-editor-draft:') && sessionStorage.getItem(key)?.includes(needle),
+                ),
+            typed,
+        );
+    // The editor can still re-render right after it first shows the file, which may drop an early edit.
+    // Retry until the edit is stored as a draft (inserting only if it is not in the buffer yet), so a
+    // following full page load cannot lose it either.
+    await expect(async () => {
+        if (!(await editor(page).innerText()).includes(typed)) {
+            await editor(page).click();
+            await page.keyboard.press('ControlOrMeta+Home');
+            await page.keyboard.insertText(text);
+        }
+        await expect.poll(draftStored, { timeout: 2_000 }).toBe(true);
+    }).toPass({ timeout: 20_000 });
 }
 
 function mockFiles(api: MockApi) {
@@ -132,4 +149,53 @@ test('cancel asks before dropping unsaved edits and closes the tab', async ({ pa
     await page.goto(editUrl('features.sk'));
     await expect(editor(page)).toContainText('prefix: features');
     await expect(editor(page)).not.toContainText('# throwaway');
+});
+
+test('a later save of the same file waits for the earlier one', async ({ page, api, signIn }) => {
+    await signIn();
+    const files = mockFiles(api);
+    const writePath = `/api/user/servers/${SERVER_SHORT}/write-file`;
+
+    // Hold the first write until the test releases it.
+    let release: () => void = () => undefined;
+    const held = new Promise<void>((resolve) => (release = resolve));
+    let writes = 0;
+    api.post(writePath, async (request) => {
+        writes += 1;
+        if (writes === 1) await held;
+        files[new URL(request.url()).searchParams.get('path') ?? ''] = request.postData() ?? '';
+        return ok(null, 'File written');
+    });
+
+    await page.goto(editUrl('config.sk'));
+    await expect(editor(page)).toContainText('language: english');
+    await page.goto(editUrl('features.sk'));
+    await expect(editor(page)).toContainText('prefix: features');
+    await typeAtStart(page, '# first\n');
+    await page.getByRole('button', { name: /Save Changes/ }).click();
+    await expect.poll(() => writes).toBe(1);
+
+    // Leave and come back while the first save is still in flight, then save again.
+    const tabs = page.getByRole('tablist');
+    await tabs
+        .getByRole('tab', { name: /config\.sk/ })
+        .getByRole('button')
+        .first()
+        .click();
+    await expect(editor(page)).toContainText('language: english');
+    await tabs
+        .getByRole('tab', { name: /features\.sk/ })
+        .getByRole('button')
+        .first()
+        .click();
+    await expect(editor(page)).toContainText('# first');
+    await typeAtStart(page, '# second\n');
+    await page.getByRole('button', { name: /Save Changes/ }).click();
+
+    await page.waitForTimeout(1_000);
+    expect(writes).toBe(1);
+
+    release();
+    await expect.poll(() => writes).toBe(2);
+    await expect.poll(() => files[`${DIR}/features.sk`]).toBe(`# second\n# first\n${FEATURES}`);
 });
