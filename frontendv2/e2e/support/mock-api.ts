@@ -27,6 +27,8 @@ export interface MockResponse {
     status?: number;
     body?: unknown;
     headers?: Record<string, string>;
+    /** Raw text body (e.g. file contents) instead of a JSON envelope. */
+    text?: string;
 }
 
 type Responder = MockResponse | ((request: Request, match: RegExpMatchArray) => MockResponse | Promise<MockResponse>);
@@ -143,6 +145,15 @@ export class MockApi {
             }
             const response =
                 typeof handler.respond === 'function' ? await handler.respond(request, match) : handler.respond;
+            if (response.text !== undefined) {
+                await route.fulfill({
+                    status: response.status ?? 200,
+                    contentType: 'text/plain',
+                    headers: response.headers,
+                    body: response.text,
+                });
+                return;
+            }
             await route.fulfill({
                 status: response.status ?? 200,
                 contentType: 'application/json',
