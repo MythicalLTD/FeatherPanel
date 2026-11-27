@@ -20,6 +20,7 @@ import { useRouter } from 'next/navigation';
 import { FileCode, X } from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { cn } from '@/lib/utils';
+import { normalizePath } from '@/lib/files-api';
 
 interface EditorTab {
     directory: string;
@@ -57,6 +58,25 @@ export const editorDrafts = {
         }
     },
 };
+
+const pendingSaves = new Map<string, Promise<unknown>>();
+
+/**
+ * Saves per file run one after another. Every tab has its own editor instance, so a save started
+ * before switching tabs could otherwise race a newer save of the same file and overwrite it.
+ */
+export function queueFileSave<T>(server: string, path: string, save: () => Promise<T>): Promise<T> {
+    // Same canonical path the write goes to, so `/a//b` and `/a/b` share one queue.
+    const key = `${server}:${normalizePath(path)}`;
+    const previous = pendingSaves.get(key) ?? Promise.resolve();
+    const next = previous.catch(() => undefined).then(save);
+    const settled = next.catch(() => undefined);
+    pendingSaves.set(key, settled);
+    void settled.then(() => {
+        if (pendingSaves.get(key) === settled) pendingSaves.delete(key);
+    });
+    return next;
+}
 
 /** Open tabs per server, shared with the editor page so Cancel can close the active one. */
 export const editorTabs = {
