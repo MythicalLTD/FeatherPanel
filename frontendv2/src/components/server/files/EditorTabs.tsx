@@ -20,6 +20,7 @@ import { useRouter } from 'next/navigation';
 import { FileCode, X } from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { cn } from '@/lib/utils';
+import { normalizePath } from '@/lib/files-api';
 
 interface EditorTab {
     directory: string;
@@ -65,7 +66,8 @@ const pendingSaves = new Map<string, Promise<unknown>>();
  * before switching tabs could otherwise race a newer save of the same file and overwrite it.
  */
 export function queueFileSave<T>(server: string, path: string, save: () => Promise<T>): Promise<T> {
-    const key = `${server}:${path}`;
+    // Same canonical path the write goes to, so `/a//b` and `/a/b` share one queue.
+    const key = `${server}:${normalizePath(path)}`;
     const previous = pendingSaves.get(key) ?? Promise.resolve();
     const next = previous.catch(() => undefined).then(save);
     const settled = next.catch(() => undefined);

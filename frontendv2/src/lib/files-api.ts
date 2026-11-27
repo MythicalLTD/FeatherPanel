@@ -133,7 +133,7 @@ export interface AdvancedFileSearchFilters {
     include_oversized?: boolean;
 }
 
-const normalizePath = (path: string): string => {
+export const normalizePath = (path: string): string => {
     const withLeading = path.startsWith('/') ? path : `/${path}`;
     const collapsed = withLeading.replace(/\/+/g, '/');
     return collapsed.length > 1 ? collapsed.replace(/\/+$/, '') : collapsed;
