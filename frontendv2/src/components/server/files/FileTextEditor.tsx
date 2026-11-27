@@ -45,6 +45,8 @@ const CodeMirrorEditor = dynamic(() => import('@uiw/react-codemirror'), {
 type FileTextEditorProps = {
     engine: FileEditorEngine;
     fileName: string;
+    /** Full path of the file; Monaco keeps one model per path so tabs never share a buffer. */
+    path?: string;
     content: string;
     canEdit: boolean;
     theme: string;
@@ -84,6 +86,7 @@ function getMonacoLanguage(name: string) {
 export function FileTextEditor({
     engine,
     fileName,
+    path,
     content,
     canEdit,
     theme,
@@ -116,7 +119,8 @@ export function FileTextEditor({
     return (
         <MonacoEditor
             height='100%'
-            defaultLanguage={getMonacoLanguage(fileName)}
+            path={path}
+            language={getMonacoLanguage(fileName)}
             value={content}
             theme={isDark ? 'vs-dark' : 'light'}
             onMount={onMonacoMount}

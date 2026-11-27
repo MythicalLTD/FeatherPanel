@@ -32,7 +32,7 @@ import { ServerPageHeader } from '@/components/server/ServerPageHeader';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { FileTextEditor } from '@/components/server/files/FileTextEditor';
-import { EditorTabs, editorDrafts } from '@/components/server/files/EditorTabs';
+import { EditorTabs, editorDrafts, editorTabs } from '@/components/server/files/EditorTabs';
 import { MinecraftServerPropertiesEditor } from '@/components/server/files/editors/MinecraftServerPropertiesEditor';
 import { SpigotConfigurationEditor } from '@/components/server/files/editors/SpigotConfigurationEditor';
 import { OpsEditor } from '@/components/server/files/editors/OpsEditor';
@@ -54,13 +54,39 @@ export default function FileEditorPage({
     params: Promise<{ uuidShort: string }>;
     searchParams: Promise<{ file?: string; directory?: string }>;
 }) {
-    const { t } = useTranslation();
     const { uuidShort } = use(params);
     const { file: rawFileName, directory = '/' } = use(searchParams);
     const fileName = rawFileName?.trim() ?? '';
+    const fullPath = fileName ? joinServerFilePath(directory, fileName) : '';
+
+    // Switching tabs only changes the query string, so Next keeps this page mounted. A key per file
+    // gives every tab its own editor state (content, dirty flag, language, editor model) instead of
+    // carrying the previous file's buffer into the next one.
+    return (
+        <FileEditor
+            key={`${uuidShort}:${fullPath}`}
+            uuidShort={uuidShort}
+            fileName={fileName}
+            directory={directory}
+            fullPath={fullPath}
+        />
+    );
+}
+
+function FileEditor({
+    uuidShort,
+    fileName,
+    directory,
+    fullPath,
+}: {
+    uuidShort: string;
+    fileName: string;
+    directory: string;
+    fullPath: string;
+}) {
+    const { t } = useTranslation();
     const router = useRouter();
     const { theme } = useTheme();
-    const fullPath = fileName ? joinServerFilePath(directory, fileName) : '';
 
     const [content, setContent] = useState('');
     const [originalContent, setOriginalContent] = useState('');
@@ -80,6 +106,9 @@ export default function FileEditorPage({
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const editorRef = useRef<any>(null);
+    // Path whose content is currently loaded; drafts are only stored under that path.
+    const loadedPathRef = useRef<string | null>(null);
+    const discardedRef = useRef(false);
 
     const { engine, toggleEngine } = useFileEditorEngine();
 
@@ -253,6 +282,7 @@ export default function FileEditorPage({
             const draft = editorDrafts.get(uuidShort, fullPath);
             setContent(draft !== null && draft !== data ? draft : data);
             setOriginalContent(data);
+            loadedPathRef.current = fullPath;
         } catch (error) {
             console.error(error);
             if (isFileNotFoundError(error)) {
@@ -284,7 +314,7 @@ export default function FileEditorPage({
     }, [fetchWidgets]);
 
     useEffect(() => {
-        if (loading || !fullPath) return;
+        if (loading || !fullPath || loadedPathRef.current !== fullPath || discardedRef.current) return;
         editorDrafts.set(uuidShort, fullPath, content !== originalContent ? content : null);
     }, [content, originalContent, loading, fullPath, uuidShort]);
 
@@ -535,6 +565,15 @@ export default function FileEditorPage({
                                 variant='ghost'
                                 size='sm'
                                 onClick={() => {
+                                    // Cancel discards this file's edits and closes its tab.
+                                    if (
+                                        content !== originalContent &&
+                                        !window.confirm(t('files.editor.unsaved_prompt'))
+                                    ) {
+                                        return;
+                                    }
+                                    discardedRef.current = true;
+                                    editorTabs.close(uuidShort, fullPath);
                                     const dir = directory || '/';
                                     const fallback =
                                         dir === '/'
@@ -595,6 +634,7 @@ export default function FileEditorPage({
                             <FileTextEditor
                                 engine={engine}
                                 fileName={fileName}
+                                path={fullPath}
                                 content={content}
                                 canEdit={canEdit}
                                 theme={theme}

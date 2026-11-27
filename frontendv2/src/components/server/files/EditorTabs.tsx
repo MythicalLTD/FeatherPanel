@@ -58,6 +58,20 @@ export const editorDrafts = {
     },
 };
 
+/** Open tabs per server, shared with the editor page so Cancel can close the active one. */
+export const editorTabs = {
+    /** Forget a file's tab and its unsaved draft. */
+    close(server: string, path: string) {
+        try {
+            const next = readTabs(server).filter((tab) => joinTab(tab) !== path);
+            sessionStorage.setItem(tabsKey(server), JSON.stringify(next));
+        } catch {
+            /* storage unavailable */
+        }
+        editorDrafts.set(server, path, null);
+    },
+};
+
 /** Tab strip for the file editor: several files open, unsaved dot per tab. */
 export function EditorTabs({
     serverUuid,
